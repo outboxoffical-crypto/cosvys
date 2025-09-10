@@ -13,7 +13,7 @@ export default function DealerInfoScreen() {
   const [formData, setFormData] = useState({
     dealerName: "",
     shopName: "",
-    dealerId: "",
+    employeeId: "",
     phone: "",
     address: "",
     email: "",
