@@ -1,77 +1,61 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 import { 
   ArrowLeft, 
-  Settings, 
-  DollarSign, 
-  Ruler, 
-  Cloud, 
+  Settings as SettingsIcon, 
+  Store,
+  Package,
+  Cloud,
+  Trash2,
+  Edit,
   User,
-  Bell,
-  Shield,
-  Info
+  Phone,
+  MapPin
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import asianPaintsLogo from "@/assets/asian-paints-logo.png";
 
 export default function SettingsScreen() {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  
   const [settings, setSettings] = useState({
-    unitPreference: "sqft" as "sqft" | "sqm",
-    cloudBackup: true,
+    cloudBackup: false,
     notifications: true,
-    autoSave: true,
-    offlineMode: false
+    darkMode: false
   });
+  const [dealerInfo, setDealerInfo] = useState<any>(null);
+  const [productCount, setProductCount] = useState(0);
 
-  const [paintPrices, setPaintPrices] = useState({
-    royaleAspira: 850,
-    royaleLuxury: 720,
-    apcolite: 580,
-    tractor: 420,
-    ace: 380
-  });
+  useEffect(() => {
+    const stored = localStorage.getItem('dealerInfo');
+    if (stored) {
+      setDealerInfo(JSON.parse(stored));
+    }
 
-  const handleSettingChange = (key: string, value: any) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
-    toast({
-      title: "Settings Updated",
-      description: "Your preferences have been saved successfully.",
-    });
+    const storedPrices = localStorage.getItem('productPrices');
+    if (storedPrices) {
+      const prices = JSON.parse(storedPrices);
+      setProductCount(Object.keys(prices).length);
+    }
+  }, []);
+
+  const handleToggle = (setting: string) => {
+    setSettings(prev => ({
+      ...prev,
+      [setting]: !prev[setting as keyof typeof prev]
+    }));
   };
 
-  const handlePriceUpdate = (product: string, price: number) => {
-    setPaintPrices(prev => ({ ...prev, [product]: price }));
-  };
-
-  const handleSavePrices = () => {
-    toast({
-      title: "Prices Updated",
-      description: "Paint pricing has been updated successfully.",
-    });
-  };
-
-  const handleCloudSync = () => {
-    toast({
-      title: "Cloud Sync",
-      description: "Your data has been synced to the cloud.",
-    });
-  };
-
-  const handleLogout = () => {
-    toast({
-      title: "Logged Out",
-      description: "You have been logged out successfully.",
-    });
-    navigate("/login");
+  const handleResetData = () => {
+    if (confirm('Are you sure? This will delete all dealer information and product pricing.')) {
+      localStorage.removeItem('dealerInfo');
+      localStorage.removeItem('productPrices');
+      localStorage.removeItem('setupComplete');
+      navigate('/dealer-info');
+    }
   };
 
   return (
@@ -89,243 +73,163 @@ export default function SettingsScreen() {
           </Button>
           <div>
             <h1 className="text-xl font-semibold">Settings</h1>
-            <p className="text-white/80 text-sm">Customize your ECA Pro experience</p>
+            <p className="text-white/80 text-sm">Manage your ECA Pro preferences</p>
           </div>
         </div>
       </div>
 
       <div className="p-4 space-y-6">
-        {/* User Profile Section */}
-        <Card className="eca-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center text-lg">
-              <User className="mr-2 h-5 w-5 text-primary" />
-              Profile Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center space-x-4">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-                <User className="h-8 w-8 text-primary" />
+        {/* Dealer Information */}
+        {dealerInfo && (
+          <Card className="eca-shadow">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between text-lg">
+                <div className="flex items-center">
+                  <Store className="mr-2 h-5 w-5 text-primary" />
+                  Dealer Information
+                </div>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => navigate("/dealer-info")}
+                >
+                  <Edit className="h-3 w-3 mr-1" />
+                  Edit
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center space-x-3">
+                <User className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="font-medium">{dealerInfo.dealerName}</p>
+                  <p className="text-sm text-muted-foreground">{dealerInfo.shopName}</p>
+                </div>
               </div>
-              <div>
-                <p className="font-semibold text-foreground">ECA User</p>
-                <p className="text-sm text-muted-foreground">Asian Paints Associate</p>
-                <p className="text-xs text-muted-foreground">ID: ECA001</p>
+              <div className="flex items-center space-x-3">
+                <Phone className="h-4 w-4 text-muted-foreground" />
+                <p className="text-sm">{dealerInfo.phone}</p>
               </div>
-            </div>
-            <Button variant="outline" className="w-full">
-              Edit Profile
-            </Button>
-          </CardContent>
-        </Card>
+              {dealerInfo.address && (
+                <div className="flex items-center space-x-3">
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                  <p className="text-sm">{dealerInfo.address}</p>
+                </div>
+              )}
+              {dealerInfo.margin && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Dealer Margin</span>
+                  <Badge variant="outline">{dealerInfo.margin}%</Badge>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
-        {/* Unit Preferences */}
+        {/* Product Pricing */}
         <Card className="eca-shadow">
           <CardHeader>
-            <CardTitle className="flex items-center text-lg">
-              <Ruler className="mr-2 h-5 w-5 text-secondary" />
-              Unit Preferences
+            <CardTitle className="flex items-center justify-between text-lg">
+              <div className="flex items-center">
+                <Package className="mr-2 h-5 w-5 text-secondary" />
+                Product Pricing
+              </div>
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => navigate("/dealer-pricing")}
+              >
+                <Edit className="h-3 w-3 mr-1" />
+                Manage
+              </Button>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              <Label className="text-sm font-medium">Measurement Units</Label>
-              <RadioGroup
-                value={settings.unitPreference}
-                onValueChange={(value) => handleSettingChange("unitPreference", value)}
-                className="grid grid-cols-2 gap-4"
-              >
-                <div className="flex items-center space-x-2 p-3 border border-border rounded-lg">
-                  <RadioGroupItem value="sqft" id="sqft" />
-                  <Label htmlFor="sqft" className="cursor-pointer">
-                    <div className="font-medium">Square Feet</div>
-                    <div className="text-xs text-muted-foreground">ft²</div>
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2 p-3 border border-border rounded-lg">
-                  <RadioGroupItem value="sqm" id="sqm" />
-                  <Label htmlFor="sqm" className="cursor-pointer">
-                    <div className="font-medium">Square Meters</div>
-                    <div className="text-xs text-muted-foreground">m²</div>
-                  </Label>
-                </div>
-              </RadioGroup>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">{productCount} Products Configured</p>
+                <p className="text-sm text-muted-foreground">
+                  Custom pricing for dealer-specific products
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Paint Pricing */}
+        {/* App Settings */}
         <Card className="eca-shadow">
           <CardHeader>
             <CardTitle className="flex items-center text-lg">
-              <DollarSign className="mr-2 h-5 w-5 text-accent-foreground" />
-              Update Paint Pricing
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Label className="text-sm">Royale Aspira (₹/L)</Label>
-                <Input
-                  type="number"
-                  value={paintPrices.royaleAspira}
-                  onChange={(e) => handlePriceUpdate("royaleAspira", parseInt(e.target.value))}
-                  className="w-24 h-8"
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <Label className="text-sm">Royale Luxury (₹/L)</Label>
-                <Input
-                  type="number"
-                  value={paintPrices.royaleLuxury}
-                  onChange={(e) => handlePriceUpdate("royaleLuxury", parseInt(e.target.value))}
-                  className="w-24 h-8"
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <Label className="text-sm">Apcolite Premium (₹/L)</Label>
-                <Input
-                  type="number"
-                  value={paintPrices.apcolite}
-                  onChange={(e) => handlePriceUpdate("apcolite", parseInt(e.target.value))}
-                  className="w-24 h-8"
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <Label className="text-sm">Tractor Emulsion (₹/L)</Label>
-                <Input
-                  type="number"
-                  value={paintPrices.tractor}
-                  onChange={(e) => handlePriceUpdate("tractor", parseInt(e.target.value))}
-                  className="w-24 h-8"
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <Label className="text-sm">Ace Exterior (₹/L)</Label>
-                <Input
-                  type="number"
-                  value={paintPrices.ace}
-                  onChange={(e) => handlePriceUpdate("ace", parseInt(e.target.value))}
-                  className="w-24 h-8"
-                />
-              </div>
-            </div>
-            <Button onClick={handleSavePrices} className="w-full">
-              Update Prices
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* App Preferences */}
-        <Card className="eca-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center text-lg">
-              <Settings className="mr-2 h-5 w-5 text-primary" />
-              App Preferences
+              <SettingsIcon className="mr-2 h-5 w-5 text-accent-foreground" />
+              App Settings
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label className="text-sm font-medium">Notifications</Label>
-                <p className="text-xs text-muted-foreground">Receive app notifications</p>
+              <div>
+                <Label htmlFor="cloud-backup" className="font-medium">Cloud Backup</Label>
+                <p className="text-sm text-muted-foreground">Sync data across devices</p>
               </div>
               <Switch
-                checked={settings.notifications}
-                onCheckedChange={(checked) => handleSettingChange("notifications", checked)}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label className="text-sm font-medium">Auto Save</Label>
-                <p className="text-xs text-muted-foreground">Automatically save project data</p>
-              </div>
-              <Switch
-                checked={settings.autoSave}
-                onCheckedChange={(checked) => handleSettingChange("autoSave", checked)}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label className="text-sm font-medium">Offline Mode</Label>
-                <p className="text-xs text-muted-foreground">Work without internet connection</p>
-              </div>
-              <Switch
-                checked={settings.offlineMode}
-                onCheckedChange={(checked) => handleSettingChange("offlineMode", checked)}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Cloud Backup */}
-        <Card className="eca-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center text-lg">
-              <Cloud className="mr-2 h-5 w-5 text-secondary" />
-              Cloud Backup
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label className="text-sm font-medium">Cloud Sync</Label>
-                <p className="text-xs text-muted-foreground">Backup projects to cloud</p>
-              </div>
-              <Switch
+                id="cloud-backup"
                 checked={settings.cloudBackup}
-                onCheckedChange={(checked) => handleSettingChange("cloudBackup", checked)}
+                onCheckedChange={() => handleToggle('cloudBackup')}
               />
             </div>
-            <div className="bg-muted rounded-lg p-3">
-              <p className="text-sm text-muted-foreground">Last sync: 2 hours ago</p>
-              <p className="text-xs text-muted-foreground">5 projects backed up</p>
+
+            <Separator />
+
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="notifications" className="font-medium">Notifications</Label>
+                <p className="text-sm text-muted-foreground">Project reminders and updates</p>
+              </div>
+              <Switch
+                id="notifications"
+                checked={settings.notifications}
+                onCheckedChange={() => handleToggle('notifications')}
+              />
             </div>
-            <Button variant="outline" onClick={handleCloudSync} className="w-full">
-              Sync Now
-            </Button>
+
+            <Separator />
+
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="dark-mode" className="font-medium">Dark Mode</Label>
+                <p className="text-sm text-muted-foreground">Toggle app appearance</p>
+              </div>
+              <Switch
+                id="dark-mode"
+                checked={settings.darkMode}
+                onCheckedChange={() => handleToggle('darkMode')}
+              />
+            </div>
           </CardContent>
         </Card>
 
-        {/* About */}
+        {/* Data Management */}
         <Card className="eca-shadow">
           <CardHeader>
             <CardTitle className="flex items-center text-lg">
-              <Info className="mr-2 h-5 w-5 text-accent-foreground" />
-              About ECA Pro
+              <Cloud className="mr-2 h-5 w-5 text-destructive" />
+              Data Management
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-center">
-              <img 
-                src={asianPaintsLogo} 
-                alt="Asian Paints" 
-                className="h-12 w-auto object-contain"
-              />
-            </div>
-            <div className="text-center space-y-1">
-              <p className="font-semibold text-foreground">ECA Pro</p>
-              <p className="text-sm text-muted-foreground">Version 1.0.0</p>
-              <p className="text-xs text-muted-foreground">© 2024 Asian Paints Ltd.</p>
-            </div>
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground">
-                "Measure. Save. Calculate. Faster."
-              </p>
-            </div>
+            <Button 
+              variant="destructive"
+              onClick={handleResetData}
+              className="w-full"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Reset All Data
+            </Button>
+            <p className="text-xs text-muted-foreground text-center">
+              This will delete all dealer information, product pricing, and project data. This action cannot be undone.
+            </p>
           </CardContent>
         </Card>
-
-        {/* Logout */}
-        <div className="space-y-3">
-          <Button variant="outline" onClick={handleLogout} className="w-full h-12">
-            Sign Out
-          </Button>
-        </div>
       </div>
-
-      <div className="h-6"></div>
     </div>
   );
 }

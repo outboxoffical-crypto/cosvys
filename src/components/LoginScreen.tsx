@@ -20,12 +20,24 @@ export default function LoginScreen() {
 
   const handleVerifyOTP = () => {
     if (otp.length === 6) {
-      navigate("/dashboard");
+      // Check if dealer setup is complete
+      const setupComplete = localStorage.getItem('setupComplete');
+      if (setupComplete) {
+        navigate("/dashboard");
+      } else {
+        navigate("/dealer-info");
+      }
     }
   };
 
   const handleSkip = () => {
-    navigate("/dashboard");
+    // Check if dealer setup is complete
+    const setupComplete = localStorage.getItem('setupComplete');
+    if (setupComplete) {
+      navigate("/dashboard");
+    } else {
+      navigate("/dealer-info");
+    }
   };
 
   return (

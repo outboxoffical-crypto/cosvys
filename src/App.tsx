@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import SplashScreen from "./components/SplashScreen";
 import LoginScreen from "./components/LoginScreen";
+import DealerInfoScreen from "./components/DealerInfoScreen";
+import DealerPricingScreen from "./components/DealerPricingScreen";
 import Dashboard from "./components/Dashboard";
 import AddProjectScreen from "./components/AddProjectScreen";
 import RoomMeasurementScreen from "./components/RoomMeasurementScreen";
@@ -25,6 +27,8 @@ const App = () => (
         <Routes>
           <Route path="/" element={<SplashScreen />} />
           <Route path="/login" element={<LoginScreen />} />
+          <Route path="/dealer-info" element={<DealerInfoScreen />} />
+          <Route path="/dealer-pricing" element={<DealerPricingScreen />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/add-project" element={<AddProjectScreen />} />
           <Route path="/room-measurement/:projectId" element={<RoomMeasurementScreen />} />

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,8 @@ import {
   MapPin,
   Phone,
   MoreVertical,
-  Settings
+  Settings,
+  Package
 } from "lucide-react";
 import asianPaintsLogo from "@/assets/asian-paints-logo.png";
 
@@ -33,6 +34,14 @@ interface Project {
 export default function Dashboard() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
+  const [dealerInfo, setDealerInfo] = useState<any>(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem('dealerInfo');
+    if (stored) {
+      setDealerInfo(JSON.parse(stored));
+    }
+  }, []);
 
   // Mock project data
   const [projects] = useState<Project[]>([
@@ -98,7 +107,9 @@ export default function Dashboard() {
             />
             <div>
               <h1 className="text-xl font-semibold">ECA Pro</h1>
-              <p className="text-white/80 text-sm">Welcome back, User!</p>
+              <p className="text-white/80 text-sm">
+                {dealerInfo ? `${dealerInfo.shopName} • ${dealerInfo.dealerName}` : 'Welcome back, User!'}
+              </p>
             </div>
           </div>
           <Button 
@@ -149,15 +160,26 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* New Project Button */}
-        <Button 
-          onClick={() => navigate("/add-project")}
-          className="w-full h-14 text-base font-medium eca-shadow"
-          size="lg"
-        >
-          <Plus className="mr-2 h-5 w-5" />
-          New Project
-        </Button>
+        {/* Quick Actions */}
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          <Button 
+            onClick={() => navigate("/add-project")}
+            className="h-14 text-base font-medium eca-shadow"
+            size="lg"
+          >
+            <Plus className="mr-2 h-5 w-5" />
+            New Project
+          </Button>
+          <Button 
+            onClick={() => navigate("/dealer-pricing")}
+            variant="outline"
+            className="h-14 text-base font-medium eca-shadow"
+            size="lg"
+          >
+            <Package className="mr-2 h-5 w-5" />
+            Manage Pricing
+          </Button>
+        </div>
 
         {/* Projects List */}
         <div className="space-y-4">
