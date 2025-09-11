@@ -22,7 +22,7 @@ interface ProductCategory {
 
 const productCategories: ProductCategory[] = [
   {
-    name: "Essentials & Others",
+    name: "Essential & Other",
     products: [
       "Repair Polymer 200g", "Repair Polymer 500g", "Repair Polymer 1kg", "Repair Polymer 5kg", 
       "Repair Polymer 10kg", "Repair Polymer 20kg", "Repair Polymer 50kg", "Vitalia Neo 200ml", 
