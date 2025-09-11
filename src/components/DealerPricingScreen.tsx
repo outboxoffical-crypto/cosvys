@@ -24,12 +24,7 @@ const productCategories: ProductCategory[] = [
   {
     name: "Essential & Other",
     products: [
-      "Repair Polymer 200g", "Repair Polymer 500g", "Repair Polymer 1kg", "Repair Polymer 5kg", 
-      "Repair Polymer 10kg", "Repair Polymer 20kg", "Repair Polymer 50kg", "Vitalia Neo 200ml", 
-      "Vitalia Neo 1L", "Vitalia Neo 5L", "Vitalia Neo 10L", "Vitalia Neo 20L", "Masking Kit 1 pack",
-      "Putty 1kg", "Putty 5kg", "Putty 20kg", "Putty 40kg", "Acrylic Putty 1kg", "Acrylic Putty 5kg", 
-      "Acrylic Putty 10kg", "Acrylic Putty 20kg", "Acrylic Putty 25kg", "Crack Seal 360g", 
-      "Crack Seal 900g", "Crack Seal 5kg"
+      "Repair Polymer", "Vitalia Neo", "Masking Kit", "Putty", "Acrylic Putty", "Crack Seal"
     ]
   },
   {
