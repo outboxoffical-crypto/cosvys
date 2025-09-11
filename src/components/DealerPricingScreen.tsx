@@ -181,7 +181,7 @@ export default function DealerPricingScreen() {
 
       <div className="p-4">
         <Tabs defaultValue={productCategories[0].name} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 gap-1 mb-6 h-auto p-1">
+          <TabsList className="grid w-full grid-cols-2 gap-1 mb-4 h-auto p-1">
             {productCategories.slice(0, 2).map((category) => (
               <TabsTrigger 
                 key={category.name} 
@@ -196,7 +196,7 @@ export default function DealerPricingScreen() {
 
           {/* Scrollable category tabs */}
           <div className="overflow-x-auto mb-4">
-            <div className="flex space-x-2 min-w-max">
+            <TabsList className="flex space-x-2 min-w-max h-auto p-1">
               {productCategories.slice(2).map((category) => (
                 <TabsTrigger 
                   key={category.name} 
@@ -207,7 +207,7 @@ export default function DealerPricingScreen() {
                   {category.name}
                 </TabsTrigger>
               ))}
-            </div>
+            </TabsList>
           </div>
 
           {productCategories.map((category) => (
