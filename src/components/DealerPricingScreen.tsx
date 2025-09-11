@@ -18,73 +18,52 @@ interface ProductPrice {
 interface ProductCategory {
   name: string;
   products: string[];
-  icon: string;
 }
 
 const productCategories: ProductCategory[] = [
   {
-    name: "Primer of Wall",
-    icon: "🎨",
+    name: "Essentials & Others",
+    products: [
+      "Repair Polymer 200g", "Repair Polymer 500g", "Repair Polymer 1kg", "Repair Polymer 5kg", 
+      "Repair Polymer 10kg", "Repair Polymer 20kg", "Repair Polymer 50kg", "Vitalia Neo 200ml", 
+      "Vitalia Neo 1L", "Vitalia Neo 5L", "Vitalia Neo 10L", "Vitalia Neo 20L", "Masking Kit 1 pack",
+      "Putty 1kg", "Putty 5kg", "Putty 20kg", "Putty 40kg", "Acrylic Putty 1kg", "Acrylic Putty 5kg", 
+      "Acrylic Putty 10kg", "Acrylic Putty 20kg", "Acrylic Putty 25kg", "Crack Seal 360g", 
+      "Crack Seal 900g", "Crack Seal 5kg"
+    ]
+  },
+  {
+    name: "Primers",
     products: ["Interior Wall Primer", "Exterior Wall Primer", "Damp Sheath Interior", "Damp Sheath Exterior"]
   },
   {
-    name: "Tractor Category", 
-    icon: "🚜",
-    products: ["Tractor Sparc", "Tractor Emulsion", "Tractor Shyne", "Tractor Advance", "Tractor Shyne Advance"]
+    name: "Interior Products",
+    products: [
+      "Tractor Sparc", "Tractor Emulsion", "Tractor UNO", "Tractor Shyne", "Tractor Advance", 
+      "Tractor Shyne Advance", "Premium Emulsion", "Premium Advance", "Premium Advance Shyne", 
+      "Premium All Protek Shyne", "Premium All Protek Matt", "Royale Emulsion", "Royale Matt", 
+      "Royale Shyne", "Royale Atomos", "Royale Glitz", "Royale Aspira"
+    ]
   },
   {
-    name: "Premium Category",
-    icon: "⭐",
-    products: ["Premium Emulsion", "Premium Advance", "Premium Advance Shyne", "Premium All Protek Shyne", "Premium All Protek Matt"]
+    name: "Exterior Products",
+    products: [
+      "Ace Emulsion", "Ace Advance", "Ace Shyne", "Ace Shyne Advance", "Apex Emulsion", 
+      "Apex Advance", "Apex Shyne", "Apex Shyne Advance", "Ultima", "Ultima Stretch", 
+      "Ultima Protek Base Coat", "Ultima Protek Top Coat", "Ultima Protek Durolife Base Coat", 
+      "Ultima Protek Durolife Top Coat"
+    ]
   },
   {
-    name: "Royale Category",
-    icon: "👑",
-    products: ["Royale Emulsion", "Royale Shyne", "Royale Matt", "Royale Atomos", "Royale Glitz", "Royale Aspira"]
-  },
-  {
-    name: "Ace Category",
-    icon: "🏠",
-    products: ["Ace Emulsion", "Ace Shyne", "Ace Shyne Advance"]
-  },
-  {
-    name: "Apex Category", 
-    icon: "🏢",
-    products: ["Apex Emulsion", "Apex Advance", "Apex Shyne", "Apex Shyne Advance"]
-  },
-  {
-    name: "Ultima",
-    icon: "🔥",
-    products: ["Ultima Stretch", "Ultima Protek Top Coat", "Ultima Protek Base Coat", "Ultima Protek Durolife Top Coat", "Ultima Protek Durolife Base Coat"]
-  },
-  {
-    name: "Waterproofing - Terrace",
-    icon: "☂️",
-    products: ["Damp Proof", "Damp Proof Advance", "Damp Proof Xtreme", "Damp Proof Ultra"]
-  },
-  {
-    name: "Terrace Design",
-    icon: "🎯",
-    products: ["Damp Proof Play", "Marble Pattern", "Wooden Pattern", "Terrazzo Pattern", "Ornate Pattern"]
-  },
-  {
-    name: "Efflorescence Walls",
-    icon: "🧱",
-    products: ["Hydrolac", "Damp Block 2K"]
-  },
-  {
-    name: "Water Tank Leakage",
-    icon: "💧",
-    products: ["Epoxy Tri Block 2K"]
-  },
-  {
-    name: "Other Products",
-    icon: "🔧",
-    products: ["Putty 20kg", "Putty 40kg", "Crack Seal 500g", "Crack Seal 1kg", "Crack Seal 5kg", "Acrylic Putty 500g", "Acrylic Putty 1kg", "Acrylic Putty 5kg", "Masking Tape 1/4\"", "Masking Tape 3/4\"", "Masking Tape 1\"", "Masking Tape 2\"", "Vitalia Neo 1L", "Vitalia Neo 4L", "Repair Polymer 1L", "Repair Polymer 4L"]
+    name: "Waterproofing",
+    products: [
+      "Damp Proof", "Damp Proof Advance", "Damp Proof Xtreme", "Damp Proof Ultra", 
+      "Hydrolac", "Damp Block 2K 3kg", "Damp Block 2K 15kg", "Epoxy Tri Block 2K 5kg"
+    ]
   }
 ];
 
-const availableSizes = ["1L", "4L", "10L", "20L"];
+const availableSizes = ["200g", "360g", "500g", "900g", "1kg", "3kg", "5kg", "10kg", "15kg", "20kg", "25kg", "40kg", "50kg", "200ml", "1L", "5L", "10L", "20L", "1 pack"];
 
 export default function DealerPricingScreen() {
   const navigate = useNavigate();
@@ -108,8 +87,8 @@ export default function DealerPricingScreen() {
 
   const handleAddProduct = (productName: string) => {
     setEditingProduct(productName);
-    setTempSizes(['1L']);
-    setTempPrices({ '1L': 0 });
+    setTempSizes(['1kg']);
+    setTempPrices({ '1kg': 0 });
   };
 
   const handleSaveProduct = () => {
@@ -188,7 +167,6 @@ export default function DealerPricingScreen() {
                 value={category.name}
                 className="text-xs p-2 data-[state=active]:bg-primary data-[state=active]:text-white"
               >
-                <span className="mr-1">{category.icon}</span>
                 {category.name}
               </TabsTrigger>
             ))}
@@ -203,7 +181,6 @@ export default function DealerPricingScreen() {
                   value={category.name}
                   className="text-xs p-2 whitespace-nowrap data-[state=active]:bg-primary data-[state=active]:text-white"
                 >
-                  <span className="mr-1">{category.icon}</span>
                   {category.name}
                 </TabsTrigger>
               ))}
