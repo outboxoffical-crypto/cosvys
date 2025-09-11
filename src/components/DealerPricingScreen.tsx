@@ -58,7 +58,7 @@ const productCategories: ProductCategory[] = [
   }
 ];
 
-const availableSizes = ["200g", "360g", "500g", "900g", "1kg", "3kg", "5kg", "10kg", "15kg", "20kg", "25kg", "40kg", "50kg", "200ml", "1L", "5L", "10L", "20L", "1 pack"];
+const availableSizes = ["200g", "360g", "500g", "900g", "1kg", "3kg", "5kg", "10kg", "15kg", "20kg", "25kg", "40kg", "50kg", "200ml", "1L", "4L", "5L", "10L", "20L", "1 pack"];
 
 export default function DealerPricingScreen() {
   const navigate = useNavigate();
