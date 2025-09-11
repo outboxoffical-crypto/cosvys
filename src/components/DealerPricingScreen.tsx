@@ -53,7 +53,7 @@ const productCategories: ProductCategory[] = [
     name: "Waterproofing",
     products: [
       "Damp Proof", "Damp Proof Advance", "Damp Proof Xtreme", "Damp Proof Ultra", 
-      "Hydrolac", "Damp Block 2K 3kg", "Damp Block 2K 15kg", "Epoxy Tri Block 2K 5kg"
+      "Hydrolac", "Damp Block 2K", "Epoxy Tri Block 2K"
     ]
   }
 ];
