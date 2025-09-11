@@ -29,7 +29,7 @@ export default function DealerInfoScreen() {
     }
   };
 
-  const isFormValid = formData.dealerName && formData.shopName && formData.employeeId && formData.phone.length === 10;
+  const isFormValid = formData.dealerName && formData.shopName && formData.employeeId && formData.phone.length === 10 && formData.margin;
 
   return (
     <div className="min-h-screen bg-background">
@@ -89,13 +89,13 @@ export default function DealerInfoScreen() {
 
               <div className="space-y-2">
                 <Label htmlFor="employeeId" className="text-sm font-medium">
-                  Employee ID *
+                  Dealer Code *
                 </Label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
                     id="employeeId"
-                    placeholder="Enter employee ID"
+                    placeholder="Enter dealer code"
                     value={formData.employeeId}
                     onChange={(e) => setFormData(prev => ({ ...prev, employeeId: e.target.value }))}
                     className="pl-10 h-12"
@@ -144,7 +144,7 @@ export default function DealerInfoScreen() {
 
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-sm font-medium">
-                  Email ID
+                  Dealer Email ID
                 </Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
@@ -161,7 +161,7 @@ export default function DealerInfoScreen() {
 
               <div className="space-y-2">
                 <Label htmlFor="margin" className="text-sm font-medium">
-                  Dealer Margin (Optional, Max 10%)
+                  Dealer Margin *
                 </Label>
                 <div className="relative">
                   <Percent className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
@@ -170,18 +170,15 @@ export default function DealerInfoScreen() {
                     type="number"
                     placeholder="0"
                     value={formData.margin}
-                    onChange={(e) => {
-                      const value = Math.min(10, Math.max(0, parseFloat(e.target.value) || 0));
-                      setFormData(prev => ({ ...prev, margin: value.toString() }));
-                    }}
+                    onChange={(e) => setFormData(prev => ({ ...prev, margin: e.target.value }))}
                     className="pl-10 h-12"
                     min="0"
-                    max="10"
                     step="0.5"
+                    required
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Enter percentage (0-10%). This will be applied to all product pricing.
+                  Enter percentage. This will be applied to all product pricing.
                 </p>
               </div>
             </CardContent>
