@@ -67,6 +67,9 @@ export default function DealerPricingScreen() {
   const [tempPrices, setTempPrices] = useState<{ [key: string]: number }>({});
   const [tempSizes, setTempSizes] = useState<string[]>([]);
   const [dealerInfo, setDealerInfo] = useState<any>(null);
+  const [customProducts, setCustomProducts] = useState<{ [key: string]: string[] }>({});
+  const [addingProductTo, setAddingProductTo] = useState<string | null>(null);
+  const [newProductName, setNewProductName] = useState<string>('');
 
   useEffect(() => {
     const stored = localStorage.getItem('dealerInfo');
@@ -77,6 +80,11 @@ export default function DealerPricingScreen() {
     const storedPrices = localStorage.getItem('productPrices');
     if (storedPrices) {
       setProductPrices(JSON.parse(storedPrices));
+    }
+
+    const storedCustomProducts = localStorage.getItem('customProducts');
+    if (storedCustomProducts) {
+      setCustomProducts(JSON.parse(storedCustomProducts));
     }
   }, []);
 
@@ -123,6 +131,31 @@ export default function DealerPricingScreen() {
   const handleFinishSetup = () => {
     localStorage.setItem('setupComplete', 'true');
     navigate('/dashboard');
+  };
+
+  const handleAddCustomProduct = (categoryName: string) => {
+    setAddingProductTo(categoryName);
+    setNewProductName('');
+  };
+
+  const handleSaveCustomProduct = () => {
+    if (!addingProductTo || !newProductName.trim()) return;
+
+    const updatedCustomProducts = {
+      ...customProducts,
+      [addingProductTo]: [...(customProducts[addingProductTo] || []), newProductName.trim()]
+    };
+
+    setCustomProducts(updatedCustomProducts);
+    localStorage.setItem('customProducts', JSON.stringify(updatedCustomProducts));
+    
+    setAddingProductTo(null);
+    setNewProductName('');
+  };
+
+  const getAllProductsInCategory = (category: ProductCategory) => {
+    const customCategoryProducts = customProducts[category.name] || [];
+    return [...category.products, ...customCategoryProducts];
   };
 
   const getTotalProducts = () => {
@@ -192,7 +225,7 @@ export default function DealerPricingScreen() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {category.products.map((product) => (
+                  {getAllProductsInCategory(category).map((product) => (
                     <div key={product} className="border border-border rounded-lg p-3">
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="font-medium text-sm">{product}</h4>
@@ -298,6 +331,57 @@ export default function DealerPricingScreen() {
                       )}
                     </div>
                   ))}
+
+                  {/* Add Custom Product Section */}
+                  <div className="border border-dashed border-primary/30 rounded-lg p-3">
+                    {addingProductTo === category.name ? (
+                      <div className="space-y-3">
+                        <Label className="text-xs font-medium">Add New Product</Label>
+                        <Input
+                          type="text"
+                          placeholder="Enter product name"
+                          value={newProductName}
+                          onChange={(e) => setNewProductName(e.target.value)}
+                          className="h-8 text-sm"
+                        />
+                        <div className="flex space-x-2">
+                          <Button 
+                            size="sm" 
+                            onClick={handleSaveCustomProduct}
+                            className="text-xs h-7"
+                            disabled={!newProductName.trim()}
+                          >
+                            <Check className="h-3 w-3 mr-1" />
+                            Add Product
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => setAddingProductTo(null)}
+                            className="text-xs h-7"
+                          >
+                            <X className="h-3 w-3 mr-1" />
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center">
+                        <Button 
+                          size="sm" 
+                          variant="ghost"
+                          onClick={() => handleAddCustomProduct(category.name)}
+                          className="text-xs h-7 text-primary"
+                        >
+                          <Plus className="h-3 w-3 mr-1" />
+                          Add Custom Product
+                        </Button>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Add products not in the list
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
