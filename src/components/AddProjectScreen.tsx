@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, User, Phone, MapPin, Home } from "lucide-react";
@@ -14,7 +14,7 @@ export default function AddProjectScreen() {
     customerName: "",
     mobile: "",
     address: "",
-    projectType: "Interior" as "Interior" | "Exterior" | "Both"
+    projectTypes: [] as string[]
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -33,7 +33,16 @@ export default function AddProjectScreen() {
     }
   };
 
-  const isFormValid = formData.customerName && formData.mobile.length === 10 && formData.address;
+  const handleProjectTypeToggle = (type: string) => {
+    setFormData(prev => ({
+      ...prev,
+      projectTypes: prev.projectTypes.includes(type)
+        ? prev.projectTypes.filter(t => t !== type)
+        : [...prev.projectTypes, type]
+    }));
+  };
+
+  const isFormValid = formData.customerName && formData.mobile.length === 10 && formData.address && formData.projectTypes.length > 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -130,38 +139,43 @@ export default function AddProjectScreen() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <RadioGroup
-                value={formData.projectType}
-                onValueChange={(value) => setFormData(prev => ({ 
-                  ...prev, 
-                  projectType: value as "Interior" | "Exterior" | "Both" 
-                }))}
-                className="grid grid-cols-1 gap-4"
-              >
+              <div className="grid grid-cols-1 gap-4">
                 <div className="flex items-center space-x-2 p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors">
-                  <RadioGroupItem value="Interior" id="interior" />
+                  <Checkbox
+                    id="interior"
+                    checked={formData.projectTypes.includes("Interior")}
+                    onCheckedChange={() => handleProjectTypeToggle("Interior")}
+                  />
                   <Label htmlFor="interior" className="flex-1 cursor-pointer">
-                    <div className="font-medium">Interior Only</div>
+                    <div className="font-medium">Interior</div>
                     <div className="text-sm text-muted-foreground">Indoor walls, ceilings, rooms</div>
                   </Label>
                 </div>
                 
                 <div className="flex items-center space-x-2 p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors">
-                  <RadioGroupItem value="Exterior" id="exterior" />
+                  <Checkbox
+                    id="exterior"
+                    checked={formData.projectTypes.includes("Exterior")}
+                    onCheckedChange={() => handleProjectTypeToggle("Exterior")}
+                  />
                   <Label htmlFor="exterior" className="flex-1 cursor-pointer">
-                    <div className="font-medium">Exterior Only</div>
+                    <div className="font-medium">Exterior</div>
                     <div className="text-sm text-muted-foreground">Outer walls, facades, exteriors</div>
                   </Label>
                 </div>
                 
                 <div className="flex items-center space-x-2 p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors">
-                  <RadioGroupItem value="Both" id="both" />
-                  <Label htmlFor="both" className="flex-1 cursor-pointer">
-                    <div className="font-medium">Interior + Exterior</div>
-                    <div className="text-sm text-muted-foreground">Complete painting solution</div>
+                  <Checkbox
+                    id="waterproofing"
+                    checked={formData.projectTypes.includes("Waterproofing")}
+                    onCheckedChange={() => handleProjectTypeToggle("Waterproofing")}
+                  />
+                  <Label htmlFor="waterproofing" className="flex-1 cursor-pointer">
+                    <div className="font-medium">Waterproofing</div>
+                    <div className="text-sm text-muted-foreground">Damp proofing and waterproofing solutions</div>
                   </Label>
                 </div>
-              </RadioGroup>
+              </div>
             </CardContent>
           </Card>
 

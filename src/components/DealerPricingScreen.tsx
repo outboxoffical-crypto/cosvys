@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Package, Plus, Edit, Check, X } from "lucide-react";
+import { ArrowLeft, Package, Plus, Edit, Check, X, Trash2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 
 interface ProductPrice {
@@ -70,6 +70,8 @@ export default function DealerPricingScreen() {
   const [customProducts, setCustomProducts] = useState<{ [key: string]: string[] }>({});
   const [addingProductTo, setAddingProductTo] = useState<string | null>(null);
   const [newProductName, setNewProductName] = useState<string>('');
+  const [editingCustomProduct, setEditingCustomProduct] = useState<string | null>(null);
+  const [editingCustomProductCategory, setEditingCustomProductCategory] = useState<string | null>(null);
 
   useEffect(() => {
     const stored = localStorage.getItem('dealerInfo');
@@ -153,6 +155,54 @@ export default function DealerPricingScreen() {
     setNewProductName('');
   };
 
+  const handleEditCustomProduct = (productName: string, categoryName: string) => {
+    setEditingCustomProduct(productName);
+    setEditingCustomProductCategory(categoryName);
+    setNewProductName(productName);
+  };
+
+  const handleSaveEditedCustomProduct = () => {
+    if (!editingCustomProduct || !editingCustomProductCategory || !newProductName.trim()) return;
+
+    const categoryProducts = customProducts[editingCustomProductCategory] || [];
+    const updatedCategoryProducts = categoryProducts.map(product => 
+      product === editingCustomProduct ? newProductName.trim() : product
+    );
+
+    const updatedCustomProducts = {
+      ...customProducts,
+      [editingCustomProductCategory]: updatedCategoryProducts
+    };
+
+    setCustomProducts(updatedCustomProducts);
+    localStorage.setItem('customProducts', JSON.stringify(updatedCustomProducts));
+    
+    setEditingCustomProduct(null);
+    setEditingCustomProductCategory(null);
+    setNewProductName('');
+  };
+
+  const handleDeleteCustomProduct = (productName: string, categoryName: string) => {
+    const categoryProducts = customProducts[categoryName] || [];
+    const updatedCategoryProducts = categoryProducts.filter(product => product !== productName);
+
+    const updatedCustomProducts = {
+      ...customProducts,
+      [categoryName]: updatedCategoryProducts
+    };
+
+    setCustomProducts(updatedCustomProducts);
+    localStorage.setItem('customProducts', JSON.stringify(updatedCustomProducts));
+
+    // Also remove from productPrices if exists
+    if (productPrices[productName]) {
+      const updatedPrices = { ...productPrices };
+      delete updatedPrices[productName];
+      setProductPrices(updatedPrices);
+      localStorage.setItem('productPrices', JSON.stringify(updatedPrices));
+    }
+  };
+
   const getAllProductsInCategory = (category: ProductCategory) => {
     const customCategoryProducts = customProducts[category.name] || [];
     return [...category.products, ...customCategoryProducts];
@@ -225,25 +275,85 @@ export default function DealerPricingScreen() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {getAllProductsInCategory(category).map((product) => (
+                  {getAllProductsInCategory(category).map((product) => {
+                    const isCustomProduct = (customProducts[category.name] || []).includes(product);
+                    const isEditingThis = editingCustomProduct === product && editingCustomProductCategory === category.name;
+                    
+                    return (
                     <div key={product} className="border border-border rounded-lg p-3">
                       <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium text-sm">{product}</h4>
-                        {productPrices[product] ? (
-                          <Badge variant="outline" className="text-xs">
-                            <Check className="h-3 w-3 mr-1" />
-                            Added
-                          </Badge>
+                        {isEditingThis ? (
+                          <div className="flex-1 flex items-center space-x-2">
+                            <Input
+                              type="text"
+                              value={newProductName}
+                              onChange={(e) => setNewProductName(e.target.value)}
+                              className="h-8 text-sm flex-1"
+                              placeholder="Product name"
+                            />
+                            <Button 
+                              size="sm" 
+                              onClick={handleSaveEditedCustomProduct}
+                              className="text-xs h-7"
+                              disabled={!newProductName.trim()}
+                            >
+                              <Check className="h-3 w-3" />
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => {
+                                setEditingCustomProduct(null);
+                                setEditingCustomProductCategory(null);
+                                setNewProductName('');
+                              }}
+                              className="text-xs h-7"
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
                         ) : (
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => handleAddProduct(product)}
-                            className="text-xs h-7"
-                          >
-                            <Plus className="h-3 w-3 mr-1" />
-                            Add Price
-                          </Button>
+                          <>
+                            <div className="flex items-center space-x-2">
+                              <h4 className="font-medium text-sm">{product}</h4>
+                              {isCustomProduct && (
+                                <div className="flex items-center space-x-1">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleEditCustomProduct(product, category.name)}
+                                    className="text-xs h-6 p-1"
+                                  >
+                                    <Edit className="h-3 w-3" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleDeleteCustomProduct(product, category.name)}
+                                    className="text-xs h-6 p-1 text-destructive hover:text-destructive"
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                            {productPrices[product] ? (
+                              <Badge variant="outline" className="text-xs">
+                                <Check className="h-3 w-3 mr-1" />
+                                Added
+                              </Badge>
+                            ) : (
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => handleAddProduct(product)}
+                                className="text-xs h-7"
+                              >
+                                <Plus className="h-3 w-3 mr-1" />
+                                Add Price
+                              </Button>
+                            )}
+                          </>
                         )}
                       </div>
 
@@ -330,7 +440,8 @@ export default function DealerPricingScreen() {
                         </div>
                       )}
                     </div>
-                  ))}
+                  );
+                  })}
 
                   {/* Add Custom Product Section */}
                   <div className="border border-dashed border-primary/30 rounded-lg p-3">
