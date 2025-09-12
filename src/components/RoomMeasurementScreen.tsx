@@ -12,9 +12,13 @@ interface Room {
   length: number;
   width: number;
   height: number;
+  openingArea: number;
+  extraSurface: number;
+  doorWindowGrillArea: number;
   floorArea: number;
   wallArea: number;
   ceilingArea: number;
+  adjustedWallArea: number;
 }
 
 export default function RoomMeasurementScreen() {
@@ -25,14 +29,18 @@ export default function RoomMeasurementScreen() {
     name: "",
     length: "",
     width: "",
-    height: ""
+    height: "",
+    openingArea: "",
+    extraSurface: "",
+    doorWindowGrillArea: ""
   });
 
-  const calculateAreas = (length: number, width: number, height: number) => {
+  const calculateAreas = (length: number, width: number, height: number, openingArea: number, extraSurface: number) => {
     const floorArea = length * width;
     const wallArea = 2 * (length + width) * height;
     const ceilingArea = length * width;
-    return { floorArea, wallArea, ceilingArea };
+    const adjustedWallArea = wallArea - openingArea + extraSurface;
+    return { floorArea, wallArea, ceilingArea, adjustedWallArea };
   };
 
   const addRoom = () => {
@@ -40,8 +48,11 @@ export default function RoomMeasurementScreen() {
       const length = parseFloat(newRoom.length);
       const width = parseFloat(newRoom.width);
       const height = parseFloat(newRoom.height);
+      const openingArea = parseFloat(newRoom.openingArea) || 0;
+      const extraSurface = parseFloat(newRoom.extraSurface) || 0;
+      const doorWindowGrillArea = parseFloat(newRoom.doorWindowGrillArea) || 0;
       
-      const areas = calculateAreas(length, width, height);
+      const areas = calculateAreas(length, width, height, openingArea, extraSurface);
       
       const room: Room = {
         id: Date.now().toString(),
@@ -49,11 +60,14 @@ export default function RoomMeasurementScreen() {
         length,
         width,
         height,
+        openingArea,
+        extraSurface,
+        doorWindowGrillArea,
         ...areas
       };
       
       setRooms(prev => [...prev, room]);
-      setNewRoom({ name: "", length: "", width: "", height: "" });
+      setNewRoom({ name: "", length: "", width: "", height: "", openingArea: "", extraSurface: "", doorWindowGrillArea: "" });
     }
   };
 
@@ -64,10 +78,11 @@ export default function RoomMeasurementScreen() {
   const totalAreas = rooms.reduce(
     (acc, room) => ({
       floorArea: acc.floorArea + room.floorArea,
-      wallArea: acc.wallArea + room.wallArea,
-      ceilingArea: acc.ceilingArea + room.ceilingArea
+      wallArea: acc.wallArea + room.adjustedWallArea,
+      ceilingArea: acc.ceilingArea + room.ceilingArea,
+      doorWindowGrillArea: acc.doorWindowGrillArea + room.doorWindowGrillArea
     }),
-    { floorArea: 0, wallArea: 0, ceilingArea: 0 }
+    { floorArea: 0, wallArea: 0, ceilingArea: 0, doorWindowGrillArea: 0 }
   );
 
   const handleContinue = () => {
@@ -154,6 +169,46 @@ export default function RoomMeasurementScreen() {
               </div>
             </div>
 
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Opening Area (sq.ft)</label>
+                <Input
+                  type="number"
+                  placeholder="0"
+                  value={newRoom.openingArea}
+                  onChange={(e) => setNewRoom(prev => ({ ...prev, openingArea: e.target.value }))}
+                  className="h-12"
+                  step="0.1"
+                />
+                <p className="text-xs text-muted-foreground">Subtract from wall area</p>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Extra Surface (sq.ft)</label>
+                <Input
+                  type="number"
+                  placeholder="0"
+                  value={newRoom.extraSurface}
+                  onChange={(e) => setNewRoom(prev => ({ ...prev, extraSurface: e.target.value }))}
+                  className="h-12"
+                  step="0.1"
+                />
+                <p className="text-xs text-muted-foreground">Add to wall area</p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Door/Window/Grill Area (sq.ft)</label>
+              <Input
+                type="number"
+                placeholder="0 (Optional)"
+                value={newRoom.doorWindowGrillArea}
+                onChange={(e) => setNewRoom(prev => ({ ...prev, doorWindowGrillArea: e.target.value }))}
+                className="h-12"
+                step="0.1"
+              />
+              <p className="text-xs text-muted-foreground">Only if customer wants enamel painting</p>
+            </div>
+
             <Button 
               onClick={addRoom}
               className="w-full h-12"
@@ -193,23 +248,54 @@ export default function RoomMeasurementScreen() {
                     </Button>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4 text-center">
-                    <div className="bg-muted rounded-lg p-3">
-                      <p className="text-sm text-muted-foreground">Floor Area</p>
-                      <p className="text-lg font-semibold text-foreground">{room.floorArea.toFixed(1)}</p>
-                      <p className="text-xs text-muted-foreground">sq.ft</p>
-                    </div>
-                    <div className="bg-muted rounded-lg p-3">
-                      <p className="text-sm text-muted-foreground">Wall Area</p>
-                      <p className="text-lg font-semibold text-foreground">{room.wallArea.toFixed(1)}</p>
-                      <p className="text-xs text-muted-foreground">sq.ft</p>
-                    </div>
-                    <div className="bg-muted rounded-lg p-3">
-                      <p className="text-sm text-muted-foreground">Ceiling Area</p>
-                      <p className="text-lg font-semibold text-foreground">{room.ceilingArea.toFixed(1)}</p>
-                      <p className="text-xs text-muted-foreground">sq.ft</p>
-                    </div>
-                  </div>
+                   <div className="grid grid-cols-2 gap-4 text-center mb-3">
+                     <div className="bg-muted rounded-lg p-3">
+                       <p className="text-sm text-muted-foreground">Floor Area</p>
+                       <p className="text-lg font-semibold text-foreground">{room.floorArea.toFixed(1)}</p>
+                       <p className="text-xs text-muted-foreground">sq.ft</p>
+                     </div>
+                     <div className="bg-muted rounded-lg p-3">
+                       <p className="text-sm text-muted-foreground">Ceiling Area</p>
+                       <p className="text-lg font-semibold text-foreground">{room.ceilingArea.toFixed(1)}</p>
+                       <p className="text-xs text-muted-foreground">sq.ft</p>
+                     </div>
+                   </div>
+                   
+                   <div className="grid grid-cols-2 gap-4 text-center mb-3">
+                     <div className="bg-muted rounded-lg p-3">
+                       <p className="text-sm text-muted-foreground">Original Wall</p>
+                       <p className="text-lg font-semibold text-foreground">{room.wallArea.toFixed(1)}</p>
+                       <p className="text-xs text-muted-foreground">sq.ft</p>
+                     </div>
+                     <div className="bg-primary/10 rounded-lg p-3 border border-primary/20">
+                       <p className="text-sm text-primary">Adjusted Wall</p>
+                       <p className="text-lg font-semibold text-primary">{room.adjustedWallArea.toFixed(1)}</p>
+                       <p className="text-xs text-primary">sq.ft</p>
+                     </div>
+                   </div>
+
+                   {(room.openingArea > 0 || room.extraSurface > 0 || room.doorWindowGrillArea > 0) && (
+                     <div className="grid grid-cols-3 gap-2 text-center">
+                       {room.openingArea > 0 && (
+                         <div className="bg-destructive/10 rounded-lg p-2">
+                           <p className="text-xs text-destructive">Opening</p>
+                           <p className="text-sm font-semibold text-destructive">-{room.openingArea.toFixed(1)}</p>
+                         </div>
+                       )}
+                       {room.extraSurface > 0 && (
+                         <div className="bg-green-100 dark:bg-green-900/20 rounded-lg p-2">
+                           <p className="text-xs text-green-700 dark:text-green-400">Extra Surface</p>
+                           <p className="text-sm font-semibold text-green-700 dark:text-green-400">+{room.extraSurface.toFixed(1)}</p>
+                         </div>
+                       )}
+                       {room.doorWindowGrillArea > 0 && (
+                         <div className="bg-amber-100 dark:bg-amber-900/20 rounded-lg p-2">
+                           <p className="text-xs text-amber-700 dark:text-amber-400">Door/Window</p>
+                           <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">{room.doorWindowGrillArea.toFixed(1)}</p>
+                         </div>
+                       )}
+                     </div>
+                   )}
                 </CardContent>
               </Card>
             ))}
@@ -225,25 +311,38 @@ export default function RoomMeasurementScreen() {
                 Total Area Summary
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div>
-                  <p className="text-white/80 text-sm">Total Floor</p>
-                  <p className="text-2xl font-bold">{totalAreas.floorArea.toFixed(1)}</p>
-                  <p className="text-white/80 text-xs">sq.ft</p>
-                </div>
-                <div>
-                  <p className="text-white/80 text-sm">Total Wall</p>
-                  <p className="text-2xl font-bold">{totalAreas.wallArea.toFixed(1)}</p>
-                  <p className="text-white/80 text-xs">sq.ft</p>
-                </div>
-                <div>
-                  <p className="text-white/80 text-sm">Total Ceiling</p>
-                  <p className="text-2xl font-bold">{totalAreas.ceilingArea.toFixed(1)}</p>
-                  <p className="text-white/80 text-xs">sq.ft</p>
-                </div>
-              </div>
-            </CardContent>
+             <CardContent>
+               <div className="grid grid-cols-2 gap-4 text-center mb-4">
+                 <div>
+                   <p className="text-white/80 text-sm">Total Floor</p>
+                   <p className="text-2xl font-bold">{totalAreas.floorArea.toFixed(1)}</p>
+                   <p className="text-white/80 text-xs">sq.ft</p>
+                 </div>
+                 <div>
+                   <p className="text-white/80 text-sm">Total Ceiling</p>
+                   <p className="text-2xl font-bold">{totalAreas.ceilingArea.toFixed(1)}</p>
+                   <p className="text-white/80 text-xs">sq.ft</p>
+                 </div>
+               </div>
+               
+               <div className="grid grid-cols-1 gap-4 text-center mb-4">
+                 <div className="bg-white/10 rounded-lg p-4">
+                   <p className="text-white/80 text-sm">Total Adjusted Wall Area</p>
+                   <p className="text-3xl font-bold">{totalAreas.wallArea.toFixed(1)}</p>
+                   <p className="text-white/80 text-xs">sq.ft (after adjustments)</p>
+                 </div>
+               </div>
+
+               {totalAreas.doorWindowGrillArea > 0 && (
+                 <div className="grid grid-cols-1 gap-4 text-center">
+                   <div className="bg-white/10 rounded-lg p-3">
+                     <p className="text-white/80 text-sm">Total Door/Window/Grill</p>
+                     <p className="text-xl font-bold">{totalAreas.doorWindowGrillArea.toFixed(1)}</p>
+                     <p className="text-white/80 text-xs">sq.ft (for enamel)</p>
+                   </div>
+                 </div>
+               )}
+             </CardContent>
           </Card>
         )}
 
