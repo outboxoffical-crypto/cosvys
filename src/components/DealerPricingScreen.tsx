@@ -443,17 +443,40 @@ export default function DealerPricingScreen() {
                   );
                   })}
 
+                  {/* Add Materials Button */}
+                  <div className="border border-dashed border-primary/30 rounded-lg p-3 hover:border-primary/50 transition-colors bg-primary/5 mb-3">
+                    <div className="text-center">
+                      <Button 
+                        size="sm" 
+                        variant="ghost"
+                        onClick={() => handleAddCustomProduct(category.name)}
+                        className="text-xs h-8 text-primary hover:text-primary/80 font-medium"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Materials
+                      </Button>
+                      <p className="text-xs text-primary/60 mt-1">
+                        Quick add missing materials
+                      </p>
+                    </div>
+                  </div>
+
                   {/* Add Custom Product Section */}
-                  <div className="border border-dashed border-primary/30 rounded-lg p-3">
+                  <div className="border border-dashed border-muted-foreground/30 rounded-lg p-3 hover:border-primary/50 transition-colors">
                     {addingProductTo === category.name ? (
                       <div className="space-y-3">
                         <Label className="text-xs font-medium">Add New Product</Label>
                         <Input
                           type="text"
-                          placeholder="Enter product name"
+                          placeholder="Enter custom product name"
                           value={newProductName}
                           onChange={(e) => setNewProductName(e.target.value)}
                           className="h-8 text-sm"
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              handleSaveCustomProduct();
+                            }
+                          }}
                         />
                         <div className="flex space-x-2">
                           <Button 
@@ -468,7 +491,10 @@ export default function DealerPricingScreen() {
                           <Button 
                             size="sm" 
                             variant="outline"
-                            onClick={() => setAddingProductTo(null)}
+                            onClick={() => {
+                              setAddingProductTo(null);
+                              setNewProductName('');
+                            }}
                             className="text-xs h-7"
                           >
                             <X className="h-3 w-3 mr-1" />
@@ -482,9 +508,9 @@ export default function DealerPricingScreen() {
                           size="sm" 
                           variant="ghost"
                           onClick={() => handleAddCustomProduct(category.name)}
-                          className="text-xs h-7 text-primary"
+                          className="text-xs h-7 text-muted-foreground hover:text-primary"
                         >
-                          <Plus className="h-3 w-3 mr-1" />
+                          <Package className="h-3 w-3 mr-1" />
                           Add Custom Product
                         </Button>
                         <p className="text-xs text-muted-foreground mt-1">
