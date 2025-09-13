@@ -443,23 +443,6 @@ export default function DealerPricingScreen() {
                   );
                   })}
 
-                  {/* Add Materials Button */}
-                  <div className="border border-dashed border-primary/30 rounded-lg p-3 hover:border-primary/50 transition-colors bg-primary/5 mb-3">
-                    <div className="text-center">
-                      <Button 
-                        size="sm" 
-                        variant="ghost"
-                        onClick={() => handleAddCustomProduct(category.name)}
-                        className="text-xs h-8 text-primary hover:text-primary/80 font-medium"
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Materials
-                      </Button>
-                      <p className="text-xs text-primary/60 mt-1">
-                        Quick add missing materials
-                      </p>
-                    </div>
-                  </div>
 
                   {/* Add Custom Product Section */}
                   <div className="border border-dashed border-muted-foreground/30 rounded-lg p-3 hover:border-primary/50 transition-colors">
@@ -524,6 +507,32 @@ export default function DealerPricingScreen() {
             </TabsContent>
           ))}
         </Tabs>
+
+        {/* Add Materials Section */}
+        <Card className="eca-shadow mt-6">
+          <CardContent className="p-4">
+            <div className="text-center">
+              <div className="border border-dashed border-primary/30 rounded-lg p-4 hover:border-primary/50 transition-colors bg-primary/5">
+                <Button 
+                  size="lg" 
+                  variant="ghost"
+                  onClick={() => {
+                    // This could open a modal or navigate to a different screen for adding materials
+                    // For now, we'll use the existing custom product functionality
+                    setAddingProductTo("Additional Materials");
+                  }}
+                  className="text-base h-12 text-primary hover:text-primary/80 font-medium"
+                >
+                  <Plus className="h-5 w-5 mr-3" />
+                  Add Materials
+                </Button>
+                <p className="text-sm text-primary/60 mt-2">
+                  Add any missing Asian Paints materials not listed in categories
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Summary & Continue */}
         <Card className="eca-shadow mt-6">
