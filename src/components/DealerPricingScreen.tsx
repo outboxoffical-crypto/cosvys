@@ -55,10 +55,6 @@ const productCategories: ProductCategory[] = [
       "Damp Proof", "Damp Proof Advance", "Damp Proof Xtreme", "Damp Proof Ultra", 
       "Hydrolac", "Damp Block 2K", "Epoxy Tri Block 2K"
     ]
-  },
-  {
-    name: "Add Materials",
-    products: []
   }
 ];
 
@@ -72,10 +68,13 @@ export default function DealerPricingScreen() {
   const [tempSizes, setTempSizes] = useState<string[]>([]);
   const [dealerInfo, setDealerInfo] = useState<any>(null);
   const [customProducts, setCustomProducts] = useState<{ [key: string]: string[] }>({});
+  const [customCategories, setCustomCategories] = useState<ProductCategory[]>([]);
   const [addingProductTo, setAddingProductTo] = useState<string | null>(null);
   const [newProductName, setNewProductName] = useState<string>('');
   const [editingCustomProduct, setEditingCustomProduct] = useState<string | null>(null);
   const [editingCustomProductCategory, setEditingCustomProductCategory] = useState<string | null>(null);
+  const [renamingCategory, setRenamingCategory] = useState<string | null>(null);
+  const [newCategoryName, setNewCategoryName] = useState<string>('');
 
   useEffect(() => {
     const stored = localStorage.getItem('dealerInfo');
@@ -92,7 +91,16 @@ export default function DealerPricingScreen() {
     if (storedCustomProducts) {
       setCustomProducts(JSON.parse(storedCustomProducts));
     }
+
+    const storedCustomCategories = localStorage.getItem('customCategories');
+    if (storedCustomCategories) {
+      setCustomCategories(JSON.parse(storedCustomCategories));
+    }
   }, []);
+
+  const getAllCategories = () => {
+    return [...productCategories, ...customCategories];
+  };
 
   const handleAddProduct = (productName: string) => {
     setEditingProduct(productName);
@@ -207,6 +215,68 @@ export default function DealerPricingScreen() {
     }
   };
 
+  const handleAddNewCategory = () => {
+    const newCategory: ProductCategory = {
+      name: "Add Materials",
+      products: []
+    };
+    
+    const updatedCategories = [...customCategories, newCategory];
+    setCustomCategories(updatedCategories);
+    localStorage.setItem('customCategories', JSON.stringify(updatedCategories));
+  };
+
+  const handleRenameCategoryStart = (categoryName: string) => {
+    setRenamingCategory(categoryName);
+    setNewCategoryName(categoryName);
+  };
+
+  const handleRenameCategory = () => {
+    if (!renamingCategory || !newCategoryName.trim()) return;
+
+    const updatedCategories = customCategories.map(category => 
+      category.name === renamingCategory 
+        ? { ...category, name: newCategoryName.trim() }
+        : category
+    );
+
+    // Update custom products mapping
+    const updatedCustomProducts = { ...customProducts };
+    if (customProducts[renamingCategory]) {
+      updatedCustomProducts[newCategoryName.trim()] = customProducts[renamingCategory];
+      delete updatedCustomProducts[renamingCategory];
+    }
+
+    setCustomCategories(updatedCategories);
+    setCustomProducts(updatedCustomProducts);
+    localStorage.setItem('customCategories', JSON.stringify(updatedCategories));
+    localStorage.setItem('customProducts', JSON.stringify(updatedCustomProducts));
+    
+    setRenamingCategory(null);
+    setNewCategoryName('');
+  };
+
+  const handleDeleteCategory = (categoryName: string) => {
+    const updatedCategories = customCategories.filter(category => category.name !== categoryName);
+    setCustomCategories(updatedCategories);
+    localStorage.setItem('customCategories', JSON.stringify(updatedCategories));
+
+    // Remove category products
+    const updatedCustomProducts = { ...customProducts };
+    delete updatedCustomProducts[categoryName];
+    setCustomProducts(updatedCustomProducts);
+    localStorage.setItem('customProducts', JSON.stringify(updatedCustomProducts));
+
+    // Remove product prices for this category
+    const categoryProducts = customProducts[categoryName] || [];
+    const updatedPrices = { ...productPrices };
+    categoryProducts.forEach(product => {
+      delete updatedPrices[product];
+    });
+    setProductPrices(updatedPrices);
+    localStorage.setItem('productPrices', JSON.stringify(updatedPrices));
+  };
+
   const getAllProductsInCategory = (category: ProductCategory) => {
     const customCategoryProducts = customProducts[category.name] || [];
     return [...category.products, ...customCategoryProducts];
@@ -241,9 +311,9 @@ export default function DealerPricingScreen() {
       </div>
 
       <div className="p-4">
-        <Tabs defaultValue={productCategories[0].name} className="w-full">
+        <Tabs defaultValue={getAllCategories()[0].name} className="w-full">
           <TabsList className="grid w-full grid-cols-3 gap-1 mb-4 h-auto p-1">
-            {productCategories.slice(0, 3).map((category) => (
+            {getAllCategories().slice(0, 3).map((category) => (
               <TabsTrigger 
                 key={category.name} 
                 value={category.name}
@@ -255,9 +325,9 @@ export default function DealerPricingScreen() {
           </TabsList>
 
           {/* Scrollable category tabs for remaining categories */}
-          <div className="overflow-x-auto mb-4">
+          <div className="flex items-center space-x-2 overflow-x-auto mb-4">
             <TabsList className="flex space-x-2 min-w-max h-auto p-1">
-              {productCategories.slice(3).map((category) => (
+              {getAllCategories().slice(3).map((category) => (
                 <TabsTrigger 
                   key={category.name} 
                   value={category.name}
@@ -267,15 +337,85 @@ export default function DealerPricingScreen() {
                 </TabsTrigger>
               ))}
             </TabsList>
+            
+            {/* Add Category Button */}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleAddNewCategory}
+              className="text-xs h-8 whitespace-nowrap border-dashed border-primary text-primary hover:bg-primary/10"
+            >
+              <Plus className="h-3 w-3 mr-1" />
+              Add Tab
+            </Button>
           </div>
 
-          {productCategories.map((category) => (
+          {getAllCategories().map((category) => (
             <TabsContent key={category.name} value={category.name} className="space-y-4">
               <Card className="eca-shadow">
                 <CardHeader>
-                  <CardTitle className="flex items-center text-lg">
-                    <Package className="mr-2 h-5 w-5 text-primary" />
-                    {category.name}
+                  <CardTitle className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Package className="mr-2 h-5 w-5 text-primary" />
+                      {renamingCategory === category.name ? (
+                        <div className="flex items-center space-x-2">
+                          <Input
+                            type="text"
+                            value={newCategoryName}
+                            onChange={(e) => setNewCategoryName(e.target.value)}
+                            className="h-8 text-sm"
+                            placeholder="Category name"
+                            onKeyPress={(e) => {
+                              if (e.key === 'Enter') {
+                                handleRenameCategory();
+                              }
+                            }}
+                          />
+                          <Button 
+                            size="sm" 
+                            onClick={handleRenameCategory}
+                            className="text-xs h-7"
+                            disabled={!newCategoryName.trim()}
+                          >
+                            <Check className="h-3 w-3" />
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => {
+                              setRenamingCategory(null);
+                              setNewCategoryName('');
+                            }}
+                            className="text-xs h-7"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <span>{category.name}</span>
+                      )}
+                    </div>
+                    {/* Show edit/delete only for custom categories */}
+                    {customCategories.some(c => c.name === category.name) && renamingCategory !== category.name && (
+                      <div className="flex items-center space-x-1">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleRenameCategoryStart(category.name)}
+                          className="text-xs h-7 p-1"
+                        >
+                          <Edit className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleDeleteCategory(category.name)}
+                          className="text-xs h-7 p-1 text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
