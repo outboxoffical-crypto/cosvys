@@ -55,6 +55,10 @@ const productCategories: ProductCategory[] = [
       "Damp Proof", "Damp Proof Advance", "Damp Proof Xtreme", "Damp Proof Ultra", 
       "Hydrolac", "Damp Block 2K", "Epoxy Tri Block 2K"
     ]
+  },
+  {
+    name: "Add Materials",
+    products: []
   }
 ];
 
@@ -238,8 +242,8 @@ export default function DealerPricingScreen() {
 
       <div className="p-4">
         <Tabs defaultValue={productCategories[0].name} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 gap-1 mb-4 h-auto p-1">
-            {productCategories.slice(0, 2).map((category) => (
+          <TabsList className="grid w-full grid-cols-3 gap-1 mb-4 h-auto p-1">
+            {productCategories.slice(0, 3).map((category) => (
               <TabsTrigger 
                 key={category.name} 
                 value={category.name}
@@ -250,10 +254,10 @@ export default function DealerPricingScreen() {
             ))}
           </TabsList>
 
-          {/* Scrollable category tabs */}
+          {/* Scrollable category tabs for remaining categories */}
           <div className="overflow-x-auto mb-4">
             <TabsList className="flex space-x-2 min-w-max h-auto p-1">
-              {productCategories.slice(2).map((category) => (
+              {productCategories.slice(3).map((category) => (
                 <TabsTrigger 
                   key={category.name} 
                   value={category.name}
@@ -507,32 +511,6 @@ export default function DealerPricingScreen() {
             </TabsContent>
           ))}
         </Tabs>
-
-        {/* Add Materials Section */}
-        <Card className="eca-shadow mt-6">
-          <CardContent className="p-4">
-            <div className="text-center">
-              <div className="border border-dashed border-primary/30 rounded-lg p-4 hover:border-primary/50 transition-colors bg-primary/5">
-                <Button 
-                  size="lg" 
-                  variant="ghost"
-                  onClick={() => {
-                    // This could open a modal or navigate to a different screen for adding materials
-                    // For now, we'll use the existing custom product functionality
-                    setAddingProductTo("Additional Materials");
-                  }}
-                  className="text-base h-12 text-primary hover:text-primary/80 font-medium"
-                >
-                  <Plus className="h-5 w-5 mr-3" />
-                  Add Materials
-                </Button>
-                <p className="text-sm text-primary/60 mt-2">
-                  Add any missing Asian Paints materials not listed in categories
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Summary & Continue */}
         <Card className="eca-shadow mt-6">
