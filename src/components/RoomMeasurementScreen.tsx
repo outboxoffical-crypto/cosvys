@@ -11,6 +11,7 @@ interface OpeningArea {
   id: string;
   height: number;
   width: number;
+  quantity: number;
   area: number;
 }
 
@@ -18,6 +19,7 @@ interface ExtraSurface {
   id: string;
   height: number;
   width: number;
+  quantity: number;
   area: number;
 }
 
@@ -68,8 +70,8 @@ export default function RoomMeasurementScreen() {
     width: "",
     height: ""
   });
-  const [newOpeningArea, setNewOpeningArea] = useState({ height: "", width: "" });
-  const [newExtraSurface, setNewExtraSurface] = useState({ height: "", width: "" });
+  const [newOpeningArea, setNewOpeningArea] = useState({ height: "", width: "", quantity: "1" });
+  const [newExtraSurface, setNewExtraSurface] = useState({ height: "", width: "", quantity: "1" });
   const [newDoorWindowGrill, setNewDoorWindowGrill] = useState({
     name: "Door/Window/Grill",
     height: "",
@@ -119,12 +121,14 @@ export default function RoomMeasurementScreen() {
     if (newOpeningArea.height && newOpeningArea.width) {
       const height = parseFloat(newOpeningArea.height);
       const width = parseFloat(newOpeningArea.width);
-      const area = height * width;
+      const quantity = parseFloat(newOpeningArea.quantity) || 1;
+      const area = height * width * quantity;
       
       return {
         id: Date.now().toString(),
         height,
         width,
+        quantity,
         area
       };
     }
@@ -135,12 +139,14 @@ export default function RoomMeasurementScreen() {
     if (newExtraSurface.height && newExtraSurface.width) {
       const height = parseFloat(newExtraSurface.height);
       const width = parseFloat(newExtraSurface.width);
-      const area = height * width;
+      const quantity = parseFloat(newExtraSurface.quantity) || 1;
+      const area = height * width * quantity;
       
       return {
         id: Date.now().toString(),
         height,
         width,
+        quantity,
         area
       };
     }
@@ -212,7 +218,7 @@ export default function RoomMeasurementScreen() {
         }
         return room;
       }));
-      setNewOpeningArea({ height: "", width: "" });
+      setNewOpeningArea({ height: "", width: "", quantity: "1" });
     }
   };
 
@@ -227,7 +233,7 @@ export default function RoomMeasurementScreen() {
         }
         return room;
       }));
-      setNewExtraSurface({ height: "", width: "" });
+      setNewExtraSurface({ height: "", width: "", quantity: "1" });
     }
   };
 
@@ -350,7 +356,7 @@ export default function RoomMeasurementScreen() {
       <div className="p-4 space-y-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="main">L×W×H Measurements</TabsTrigger>
+            <TabsTrigger value="main">Space Calculator</TabsTrigger>
             <TabsTrigger value="doorwindow">Door/Window/Grill</TabsTrigger>
           </TabsList>
 
@@ -462,14 +468,14 @@ export default function RoomMeasurementScreen() {
                               {/* Opening Areas */}
                               <div className="space-y-3 mb-4">
                                 <div className="flex items-center justify-between">
-                                  <h4 className="text-sm font-medium text-destructive">Opening Areas (Subtract)</h4>
+                                  <h4 className="text-sm font-medium text-destructive">Open Areas (Subtract)</h4>
                                 </div>
                                 
                                 {room.openingAreas.map((opening) => (
                                   <div key={opening.id} className="flex items-center justify-between bg-destructive/10 rounded-lg p-2">
-                                    <span className="text-sm">
-                                      {opening.height}' × {opening.width}' = {opening.area.toFixed(1)} sq.ft
-                                    </span>
+                                     <span className="text-sm">
+                                       {opening.height}' × {opening.width}' × {opening.quantity} = {opening.area.toFixed(1)} sq.ft
+                                     </span>
                                     <Button
                                       variant="ghost"
                                       size="icon"
@@ -481,24 +487,32 @@ export default function RoomMeasurementScreen() {
                                   </div>
                                 ))}
                                 
-                                <div className="grid grid-cols-2 gap-2">
-                                  <Input
-                                    type="number"
-                                    placeholder="Height"
-                                    value={newOpeningArea.height}
-                                    onChange={(e) => setNewOpeningArea(prev => ({ ...prev, height: e.target.value }))}
-                                    className="h-10"
-                                    step="0.1"
-                                  />
-                                  <Input
-                                    type="number"
-                                    placeholder="Width"
-                                    value={newOpeningArea.width}
-                                    onChange={(e) => setNewOpeningArea(prev => ({ ...prev, width: e.target.value }))}
-                                    className="h-10"
-                                    step="0.1"
-                                  />
-                                </div>
+                                 <div className="grid grid-cols-3 gap-2">
+                                   <Input
+                                     type="number"
+                                     placeholder="Height"
+                                     value={newOpeningArea.height}
+                                     onChange={(e) => setNewOpeningArea(prev => ({ ...prev, height: e.target.value }))}
+                                     className="h-10"
+                                     step="0.1"
+                                   />
+                                   <Input
+                                     type="number"
+                                     placeholder="Width"
+                                     value={newOpeningArea.width}
+                                     onChange={(e) => setNewOpeningArea(prev => ({ ...prev, width: e.target.value }))}
+                                     className="h-10"
+                                     step="0.1"
+                                   />
+                                   <Input
+                                     type="number"
+                                     placeholder="Qty (Optional)"
+                                     value={newOpeningArea.quantity}
+                                     onChange={(e) => setNewOpeningArea(prev => ({ ...prev, quantity: e.target.value }))}
+                                     className="h-10"
+                                     step="1"
+                                   />
+                                 </div>
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -507,7 +521,7 @@ export default function RoomMeasurementScreen() {
                                   disabled={!newOpeningArea.height || !newOpeningArea.width}
                                 >
                                   <Plus className="mr-1 h-3 w-3" />
-                                  Add Opening Area
+                                  Add Open Area
                                 </Button>
                               </div>
 
@@ -519,9 +533,9 @@ export default function RoomMeasurementScreen() {
                                 
                                 {room.extraSurfaces.map((extra) => (
                                   <div key={extra.id} className="flex items-center justify-between bg-green-100 dark:bg-green-900/20 rounded-lg p-2">
-                                    <span className="text-sm">
-                                      {extra.height}' × {extra.width}' = {extra.area.toFixed(1)} sq.ft
-                                    </span>
+                                     <span className="text-sm">
+                                       {extra.height}' × {extra.width}' × {extra.quantity} = {extra.area.toFixed(1)} sq.ft
+                                     </span>
                                     <Button
                                       variant="ghost"
                                       size="icon"
@@ -533,24 +547,32 @@ export default function RoomMeasurementScreen() {
                                   </div>
                                 ))}
                                 
-                                <div className="grid grid-cols-2 gap-2">
-                                  <Input
-                                    type="number"
-                                    placeholder="Height"
-                                    value={newExtraSurface.height}
-                                    onChange={(e) => setNewExtraSurface(prev => ({ ...prev, height: e.target.value }))}
-                                    className="h-10"
-                                    step="0.1"
-                                  />
-                                  <Input
-                                    type="number"
-                                    placeholder="Width"
-                                    value={newExtraSurface.width}
-                                    onChange={(e) => setNewExtraSurface(prev => ({ ...prev, width: e.target.value }))}
-                                    className="h-10"
-                                    step="0.1"
-                                  />
-                                </div>
+                                 <div className="grid grid-cols-3 gap-2">
+                                   <Input
+                                     type="number"
+                                     placeholder="Height"
+                                     value={newExtraSurface.height}
+                                     onChange={(e) => setNewExtraSurface(prev => ({ ...prev, height: e.target.value }))}
+                                     className="h-10"
+                                     step="0.1"
+                                   />
+                                   <Input
+                                     type="number"
+                                     placeholder="Width"
+                                     value={newExtraSurface.width}
+                                     onChange={(e) => setNewExtraSurface(prev => ({ ...prev, width: e.target.value }))}
+                                     className="h-10"
+                                     step="0.1"
+                                   />
+                                   <Input
+                                     type="number"
+                                     placeholder="Qty (Optional)"
+                                     value={newExtraSurface.quantity}
+                                     onChange={(e) => setNewExtraSurface(prev => ({ ...prev, quantity: e.target.value }))}
+                                     className="h-10"
+                                     step="1"
+                                   />
+                                 </div>
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -766,7 +788,7 @@ export default function RoomMeasurementScreen() {
                 
                 {rooms.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
-                    <p>Add rooms first in the "L×W×H Measurements" tab</p>
+                    <p>Add rooms first in the "Space Calculator" tab</p>
                   </div>
                 )}
               </CardContent>
