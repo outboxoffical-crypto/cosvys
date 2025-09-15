@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Plus, Ruler, Home, Trash2, Calculator, X, Edit3, Camera, Image, Upload } from "lucide-react";
+import { ArrowLeft, Plus, Ruler, Home, Trash2, Calculator, X, Edit3, Camera, Image } from "lucide-react";
 
 interface OpeningArea {
   id: string;
@@ -193,7 +193,6 @@ export default function RoomMeasurementScreen() {
     
     const currentPictureCount = newRoom.pictures.length;
     const maxPictures = 5;
-    const minPictures = 2;
     
     Array.from(files).forEach((file, index) => {
       if (currentPictureCount + index >= maxPictures) return;
@@ -255,7 +254,6 @@ export default function RoomMeasurementScreen() {
   const removeRoom = (roomId: string) => {
     const updatedRooms = rooms.filter(room => room.id !== roomId);
     setRooms(updatedRooms);
-    // Save updated rooms to localStorage
     localStorage.setItem(`rooms_${projectId}`, JSON.stringify(updatedRooms));
   };
 
@@ -369,26 +367,12 @@ export default function RoomMeasurementScreen() {
     localStorage.setItem(`rooms_${projectId}`, JSON.stringify(updatedRooms));
   };
 
-  const getTotalAreas = (projectType: string) => {
-    const filteredRooms = rooms.filter(room => room.projectType === projectType);
-    return filteredRooms.reduce(
-      (acc, room) => ({
-        floorArea: acc.floorArea + room.floorArea,
-        wallArea: acc.wallArea + room.adjustedWallArea,
-        ceilingArea: acc.ceilingArea + room.ceilingArea,
-        doorWindowGrillArea: acc.doorWindowGrillArea + room.totalDoorWindowGrillArea
-      }),
-      { floorArea: 0, wallArea: 0, ceilingArea: 0, doorWindowGrillArea: 0 }
-    );
-  };
-
   const getRoomsByProjectType = (projectType: string) => {
     return rooms.filter(room => room.projectType === projectType);
   };
 
   const handleContinue = () => {
     if (rooms.length > 0) {
-      // Store room data in localStorage
       localStorage.setItem(`rooms_${projectId}`, JSON.stringify(rooms));
       navigate(`/paint-estimation/${projectId}`);
     }
@@ -426,10 +410,9 @@ export default function RoomMeasurementScreen() {
 
       <div className="p-4 space-y-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="sqft">Sq.ft Calculator</TabsTrigger>
             <TabsTrigger value="doorwindow">Add Door & Window</TabsTrigger>
-            <TabsTrigger value="projecttype">Room by Type</TabsTrigger>
           </TabsList>
 
           <TabsContent value="sqft" className="space-y-6">
@@ -515,10 +498,129 @@ export default function RoomMeasurementScreen() {
                     </div>
                   </div>
 
-                  {/* Add Pictures Section */}
+                  <Button 
+                    onClick={addRoom}
+                    className="w-full h-12"
+                    disabled={!newRoom.name || !newRoom.length || !newRoom.width || !newRoom.height || newRoom.pictures.length < 2}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Room to {activeProjectType}
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Open Area Section */}
+            {activeProjectType && (
+              <Card className="eca-shadow">
+                <CardHeader>
+                  <CardTitle className="flex items-center text-lg text-destructive">
+                    <Ruler className="mr-2 h-5 w-5" />
+                    Open Area (Subtract from Wall)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Height (ft)</label>
+                      <Input
+                        type="number"
+                        placeholder="0"
+                        value={newOpeningArea.height}
+                        onChange={(e) => setNewOpeningArea(prev => ({ ...prev, height: e.target.value }))}
+                        className="h-12"
+                        step="0.1"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Width (ft)</label>
+                      <Input
+                        type="number"
+                        placeholder="0"
+                        value={newOpeningArea.width}
+                        onChange={(e) => setNewOpeningArea(prev => ({ ...prev, width: e.target.value }))}
+                        className="h-12"
+                        step="0.1"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Qty (Optional)</label>
+                      <Input
+                        type="number"
+                        placeholder="1"
+                        value={newOpeningArea.quantity}
+                        onChange={(e) => setNewOpeningArea(prev => ({ ...prev, quantity: e.target.value }))}
+                        className="h-12"
+                        step="1"
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Extra Surface Section */}
+            {activeProjectType && (
+              <Card className="eca-shadow">
+                <CardHeader>
+                  <CardTitle className="flex items-center text-lg text-green-700 dark:text-green-400">
+                    <Plus className="mr-2 h-5 w-5" />
+                    Extra Surface (Add to Wall)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Height (ft)</label>
+                      <Input
+                        type="number"
+                        placeholder="0"
+                        value={newExtraSurface.height}
+                        onChange={(e) => setNewExtraSurface(prev => ({ ...prev, height: e.target.value }))}
+                        className="h-12"
+                        step="0.1"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Width (ft)</label>
+                      <Input
+                        type="number"
+                        placeholder="0"
+                        value={newExtraSurface.width}
+                        onChange={(e) => setNewExtraSurface(prev => ({ ...prev, width: e.target.value }))}
+                        className="h-12"
+                        step="0.1"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Qty (Optional)</label>
+                      <Input
+                        type="number"
+                        placeholder="1"
+                        value={newExtraSurface.quantity}
+                        onChange={(e) => setNewExtraSurface(prev => ({ ...prev, quantity: e.target.value }))}
+                        className="h-12"
+                        step="1"
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Add Pictures Section */}
+            {activeProjectType && (
+              <Card className="eca-shadow">
+                <CardHeader>
+                  <CardTitle className="flex items-center text-lg">
+                    <Camera className="mr-2 h-5 w-5 text-primary" />
+                    Add Pictures
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <label className="text-sm font-medium">Add Pictures (Min: 2, Max: 5)</label>
+                      <label className="text-sm font-medium">Room Pictures (Min: 2, Max: 5)</label>
                       <Badge variant="outline">
                         {newRoom.pictures.length}/5
                       </Badge>
@@ -588,16 +690,11 @@ export default function RoomMeasurementScreen() {
                         ))}
                       </div>
                     )}
-                  </div>
 
-                  <Button 
-                    onClick={addRoom}
-                    className="w-full h-12"
-                    disabled={!newRoom.name || !newRoom.length || !newRoom.width || !newRoom.height || newRoom.pictures.length < 2}
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Room to {activeProjectType}
-                  </Button>
+                    <p className="text-xs text-muted-foreground">
+                      Note: Pictures are required when adding a room (minimum 2 pictures)
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
             )}
@@ -648,7 +745,125 @@ export default function RoomMeasurementScreen() {
                           </div>
                         )}
 
-                        {/* ... keep existing code for opening areas, extra surfaces, and calculations ... */}
+                        {/* Opening Areas */}
+                        <div className="space-y-3 mb-4">
+                          <div className="flex items-center justify-between">
+                            <h4 className="text-sm font-medium text-destructive">Open Areas (Subtract)</h4>
+                          </div>
+                          
+                          {room.openingAreas.map((opening) => (
+                            <div key={opening.id} className="flex items-center justify-between bg-destructive/10 rounded-lg p-2">
+                               <span className="text-sm">
+                                 {opening.height}' × {opening.width}' × {opening.quantity} = {opening.area.toFixed(1)} sq.ft
+                               </span>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 text-destructive"
+                                onClick={() => removeOpeningArea(room.id, opening.id)}
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          ))}
+                          
+                           <div className="grid grid-cols-3 gap-2">
+                             <Input
+                               type="number"
+                               placeholder="Height"
+                               value={newOpeningArea.height}
+                               onChange={(e) => setNewOpeningArea(prev => ({ ...prev, height: e.target.value }))}
+                               className="h-10"
+                               step="0.1"
+                             />
+                             <Input
+                               type="number"
+                               placeholder="Width"
+                               value={newOpeningArea.width}
+                               onChange={(e) => setNewOpeningArea(prev => ({ ...prev, width: e.target.value }))}
+                               className="h-10"
+                               step="0.1"
+                             />
+                             <Input
+                               type="number"
+                               placeholder="Qty (Optional)"
+                               value={newOpeningArea.quantity}
+                               onChange={(e) => setNewOpeningArea(prev => ({ ...prev, quantity: e.target.value }))}
+                               className="h-10"
+                               step="1"
+                             />
+                           </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full"
+                            onClick={() => addOpeningAreaToRoom(room.id)}
+                            disabled={!newOpeningArea.height || !newOpeningArea.width}
+                          >
+                            <Plus className="mr-1 h-3 w-3" />
+                            Add Open Area
+                          </Button>
+                        </div>
+
+                        {/* Extra Surfaces */}
+                        <div className="space-y-3 mb-4">
+                          <div className="flex items-center justify-between">
+                            <h4 className="text-sm font-medium text-green-700 dark:text-green-400">Extra Surfaces (Add)</h4>
+                          </div>
+                          
+                          {room.extraSurfaces.map((extra) => (
+                            <div key={extra.id} className="flex items-center justify-between bg-green-100 dark:bg-green-900/20 rounded-lg p-2">
+                               <span className="text-sm">
+                                 {extra.height}' × {extra.width}' × {extra.quantity} = {extra.area.toFixed(1)} sq.ft
+                               </span>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 text-green-700 dark:text-green-400"
+                                onClick={() => removeExtraSurface(room.id, extra.id)}
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          ))}
+                          
+                           <div className="grid grid-cols-3 gap-2">
+                             <Input
+                               type="number"
+                               placeholder="Height"
+                               value={newExtraSurface.height}
+                               onChange={(e) => setNewExtraSurface(prev => ({ ...prev, height: e.target.value }))}
+                               className="h-10"
+                               step="0.1"
+                             />
+                             <Input
+                               type="number"
+                               placeholder="Width"
+                               value={newExtraSurface.width}
+                               onChange={(e) => setNewExtraSurface(prev => ({ ...prev, width: e.target.value }))}
+                               className="h-10"
+                               step="0.1"
+                             />
+                             <Input
+                               type="number"
+                               placeholder="Qty (Optional)"
+                               value={newExtraSurface.quantity}
+                               onChange={(e) => setNewExtraSurface(prev => ({ ...prev, quantity: e.target.value }))}
+                               className="h-10"
+                               step="1"
+                             />
+                           </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full"
+                            onClick={() => addExtraSurfaceToRoom(room.id)}
+                            disabled={!newExtraSurface.height || !newExtraSurface.width}
+                          >
+                            <Plus className="mr-1 h-3 w-3" />
+                            Add Extra Surface
+                          </Button>
+                        </div>
                         
                         <div className="bg-primary/10 rounded-lg p-3 border border-primary/20 text-center">
                           <p className="text-sm text-primary">Final Wall Area</p>
@@ -658,257 +873,6 @@ export default function RoomMeasurementScreen() {
                     </Card>
                   ))}
                 </div>
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="projecttype" className="space-y-6">
-
-            {projectData && (
-              <div className="space-y-4">
-                <h2 className="text-lg font-semibold text-foreground flex items-center">
-                  <Home className="mr-2 h-5 w-5" />
-                  Room Measurements by Project Type
-                </h2>
-                
-                <Tabs defaultValue={projectData.projectTypes[0]} className="w-full">
-                  <TabsList className={`grid w-full ${projectData.projectTypes.length === 1 ? 'grid-cols-1' : projectData.projectTypes.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
-                    {projectData.projectTypes.map((type) => (
-                      <TabsTrigger key={type} value={type}>{type}</TabsTrigger>
-                    ))}
-                  </TabsList>
-                  
-                  {projectData.projectTypes.map((projectType) => (
-                    <TabsContent key={projectType} value={projectType} className="space-y-4">
-                      {getRoomsByProjectType(projectType).length === 0 ? (
-                        <div className="text-center py-12">
-                          <Home className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                          <p className="text-muted-foreground mb-4">No {projectType.toLowerCase()} rooms added yet</p>
-                          <Button onClick={() => setActiveTab('sqft')} variant="outline">
-                            <Plus className="mr-2 h-4 w-4" />
-                            Add {projectType} Room
-                          </Button>
-                        </div>
-                      ) : (
-                        <>
-                          <div className="grid gap-4">
-                            {getRoomsByProjectType(projectType).map((room) => (
-                              <Card key={`${room.id}-${projectType}`} className="eca-shadow">
-                                <CardContent className="p-4">
-                                  <div className="flex items-start justify-between mb-3">
-                                    <div>
-                                      <h3 className="font-semibold text-foreground">{room.name}</h3>
-                                      <p className="text-sm text-muted-foreground">
-                                        {room.length}' × {room.width}' × {room.height}' ({room.projectType})
-                                      </p>
-                                    </div>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="icon"
-                                      className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                                      onClick={() => removeRoom(room.id)}
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-
-                                  {/* Room Pictures */}
-                                  {room.pictures.length > 0 && (
-                                    <div className="mb-4">
-                                      <p className="text-sm font-medium mb-2">Room Pictures:</p>
-                                      <div className="grid grid-cols-5 gap-2">
-                                        {room.pictures.map((picture, index) => (
-                                          <img
-                                            key={index}
-                                            src={picture}
-                                            alt={`${room.name} picture ${index + 1}`}
-                                            className="w-full h-16 object-cover rounded-lg border"
-                                          />
-                                        ))}
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {/* Opening Areas */}
-                                  <div className="space-y-3 mb-4">
-                                    <div className="flex items-center justify-between">
-                                      <h4 className="text-sm font-medium text-destructive">Open Areas (Subtract)</h4>
-                                    </div>
-                                    
-                                    {room.openingAreas.map((opening) => (
-                                      <div key={opening.id} className="flex items-center justify-between bg-destructive/10 rounded-lg p-2">
-                                         <span className="text-sm">
-                                           {opening.height}' × {opening.width}' × {opening.quantity} = {opening.area.toFixed(1)} sq.ft
-                                         </span>
-                                        <Button
-                                          variant="ghost"
-                                          size="icon"
-                                          className="h-6 w-6 text-destructive"
-                                          onClick={() => removeOpeningArea(room.id, opening.id)}
-                                        >
-                                          <X className="h-3 w-3" />
-                                        </Button>
-                                      </div>
-                                    ))}
-                                    
-                                     <div className="grid grid-cols-3 gap-2">
-                                       <Input
-                                         type="number"
-                                         placeholder="Height"
-                                         value={newOpeningArea.height}
-                                         onChange={(e) => setNewOpeningArea(prev => ({ ...prev, height: e.target.value }))}
-                                         className="h-10"
-                                         step="0.1"
-                                       />
-                                       <Input
-                                         type="number"
-                                         placeholder="Width"
-                                         value={newOpeningArea.width}
-                                         onChange={(e) => setNewOpeningArea(prev => ({ ...prev, width: e.target.value }))}
-                                         className="h-10"
-                                         step="0.1"
-                                       />
-                                       <Input
-                                         type="number"
-                                         placeholder="Qty (Optional)"
-                                         value={newOpeningArea.quantity}
-                                         onChange={(e) => setNewOpeningArea(prev => ({ ...prev, quantity: e.target.value }))}
-                                         className="h-10"
-                                         step="1"
-                                       />
-                                     </div>
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      className="w-full"
-                                      onClick={() => addOpeningAreaToRoom(room.id)}
-                                      disabled={!newOpeningArea.height || !newOpeningArea.width}
-                                    >
-                                      <Plus className="mr-1 h-3 w-3" />
-                                      Add Open Area
-                                    </Button>
-                                  </div>
-
-                                  {/* Extra Surfaces */}
-                                  <div className="space-y-3 mb-4">
-                                    <div className="flex items-center justify-between">
-                                      <h4 className="text-sm font-medium text-green-700 dark:text-green-400">Extra Surfaces (Add)</h4>
-                                    </div>
-                                    
-                                    {room.extraSurfaces.map((extra) => (
-                                      <div key={extra.id} className="flex items-center justify-between bg-green-100 dark:bg-green-900/20 rounded-lg p-2">
-                                         <span className="text-sm">
-                                           {extra.height}' × {extra.width}' × {extra.quantity} = {extra.area.toFixed(1)} sq.ft
-                                         </span>
-                                        <Button
-                                          variant="ghost"
-                                          size="icon"
-                                          className="h-6 w-6 text-green-700 dark:text-green-400"
-                                          onClick={() => removeExtraSurface(room.id, extra.id)}
-                                        >
-                                          <X className="h-3 w-3" />
-                                        </Button>
-                                      </div>
-                                    ))}
-                                    
-                                     <div className="grid grid-cols-3 gap-2">
-                                       <Input
-                                         type="number"
-                                         placeholder="Height"
-                                         value={newExtraSurface.height}
-                                         onChange={(e) => setNewExtraSurface(prev => ({ ...prev, height: e.target.value }))}
-                                         className="h-10"
-                                         step="0.1"
-                                       />
-                                       <Input
-                                         type="number"
-                                         placeholder="Width"
-                                         value={newExtraSurface.width}
-                                         onChange={(e) => setNewExtraSurface(prev => ({ ...prev, width: e.target.value }))}
-                                         className="h-10"
-                                         step="0.1"
-                                       />
-                                       <Input
-                                         type="number"
-                                         placeholder="Qty (Optional)"
-                                         value={newExtraSurface.quantity}
-                                         onChange={(e) => setNewExtraSurface(prev => ({ ...prev, quantity: e.target.value }))}
-                                         className="h-10"
-                                         step="1"
-                                       />
-                                     </div>
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      className="w-full"
-                                      onClick={() => addExtraSurfaceToRoom(room.id)}
-                                      disabled={!newExtraSurface.height || !newExtraSurface.width}
-                                    >
-                                      <Plus className="mr-1 h-3 w-3" />
-                                      Add Extra Surface
-                                    </Button>
-                                  </div>
-
-                                  {/* Area Summary */}
-                                  <div className="grid grid-cols-2 gap-4 text-center mb-3">
-                                    <div className="bg-muted rounded-lg p-3">
-                                      <p className="text-sm text-muted-foreground">Floor Area</p>
-                                      <p className="text-lg font-semibold text-foreground">{room.floorArea.toFixed(1)}</p>
-                                      <p className="text-xs text-muted-foreground">sq.ft</p>
-                                    </div>
-                                    <div className="bg-muted rounded-lg p-3">
-                                      <p className="text-sm text-muted-foreground">Ceiling Area</p>
-                                      <p className="text-lg font-semibold text-foreground">{room.ceilingArea.toFixed(1)}</p>
-                                      <p className="text-xs text-muted-foreground">sq.ft</p>
-                                    </div>
-                                  </div>
-                                  
-                                  <div className="bg-primary/10 rounded-lg p-3 border border-primary/20 text-center">
-                                    <p className="text-sm text-primary">Final Wall Area</p>
-                                    <p className="text-xl font-bold text-primary">{room.adjustedWallArea.toFixed(1)}</p>
-                                    <p className="text-xs text-primary">
-                                      {room.wallArea.toFixed(1)} - {room.totalOpeningArea.toFixed(1)} + {room.totalExtraSurface.toFixed(1)} = {room.adjustedWallArea.toFixed(1)} sq.ft
-                                    </p>
-                                  </div>
-                                </CardContent>
-                              </Card>
-                            ))}
-                          </div>
-
-                          {/* Total Summary for Project Type */}
-                          <Card className="eca-gradient text-white eca-shadow">
-                            <CardHeader>
-                              <CardTitle className="flex items-center text-lg">
-                                <Calculator className="mr-2 h-5 w-5" />
-                                Total {projectType} Area Summary
-                              </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                              <div className="grid grid-cols-2 gap-4 text-center mb-4">
-                                <div>
-                                  <p className="text-white/80 text-sm">Total Floor</p>
-                                  <p className="text-2xl font-bold">{getTotalAreas(projectType).floorArea.toFixed(1)}</p>
-                                  <p className="text-white/80 text-xs">sq.ft</p>
-                                </div>
-                                <div>
-                                  <p className="text-white/80 text-sm">Total Ceiling</p>
-                                  <p className="text-2xl font-bold">{getTotalAreas(projectType).ceilingArea.toFixed(1)}</p>
-                                  <p className="text-white/80 text-xs">sq.ft</p>
-                                </div>
-                              </div>
-                              
-                              <div className="bg-white/10 rounded-lg p-4 text-center">
-                                <p className="text-white/80 text-sm">Total Wall Area ({projectType})</p>
-                                <p className="text-3xl font-bold">{getTotalAreas(projectType).wallArea.toFixed(1)}</p>
-                                <p className="text-white/80 text-xs">sq.ft (final calculation)</p>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        </>
-                      )}
-                    </TabsContent>
-                  ))}
-                </Tabs>
               </div>
             )}
           </TabsContent>
@@ -957,104 +921,64 @@ export default function RoomMeasurementScreen() {
                               </p>
                             </div>
                           ))}
-                          
-                          <div className="space-y-3">
+
+                          <div className="grid grid-cols-2 gap-3 mb-3">
                             <Input
-                              placeholder="Item name (e.g., Main Door, Window Grill)"
+                              placeholder="Name (e.g., Door, Window)"
                               value={newDoorWindowGrill.name}
                               onChange={(e) => setNewDoorWindowGrill(prev => ({ ...prev, name: e.target.value }))}
                               className="h-10"
                             />
-                            
-                            <div className="grid grid-cols-2 gap-2">
-                              <Input
-                                type="number"
-                                placeholder="Height"
-                                value={newDoorWindowGrill.height}
-                                onChange={(e) => setNewDoorWindowGrill(prev => ({ ...prev, height: e.target.value }))}
-                                className="h-10"
-                                step="0.1"
-                              />
-                              <Input
-                                type="number"
-                                placeholder="Width"
-                                value={newDoorWindowGrill.width}
-                                onChange={(e) => setNewDoorWindowGrill(prev => ({ ...prev, width: e.target.value }))}
-                                className="h-10"
-                                step="0.1"
-                              />
-                            </div>
-                            
-                            <div className="grid grid-cols-2 gap-2">
-                              <Input
-                                type="number"
-                                placeholder="No. of Sides"
-                                value={newDoorWindowGrill.sides}
-                                onChange={(e) => setNewDoorWindowGrill(prev => ({ ...prev, sides: e.target.value }))}
-                                className="h-10"
-                                step="1"
-                              />
-                              <Input
-                                type="number"
-                                placeholder="Approx Grill (Optional)"
-                                value={newDoorWindowGrill.grillMultiplier}
-                                onChange={(e) => setNewDoorWindowGrill(prev => ({ ...prev, grillMultiplier: e.target.value }))}
-                                className="h-10"
-                                step="0.1"
-                              />
-                            </div>
-                            
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="w-full border-amber-300 text-amber-700 hover:bg-amber-50 dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-900/20"
-                              onClick={() => addDoorWindowGrillToRoom(room.id)}
-                              disabled={!newDoorWindowGrill.height || !newDoorWindowGrill.width || !newDoorWindowGrill.sides}
-                            >
-                              <Plus className="mr-1 h-3 w-3" />
-                              Add to {room.name}
-                            </Button>
+                            <Input
+                              type="number"
+                              placeholder="Sides"
+                              value={newDoorWindowGrill.sides}
+                              onChange={(e) => setNewDoorWindowGrill(prev => ({ ...prev, sides: e.target.value }))}
+                              className="h-10"
+                              step="1"
+                            />
                           </div>
+
+                          <div className="grid grid-cols-3 gap-3 mb-3">
+                            <Input
+                              type="number"
+                              placeholder="Height"
+                              value={newDoorWindowGrill.height}
+                              onChange={(e) => setNewDoorWindowGrill(prev => ({ ...prev, height: e.target.value }))}
+                              className="h-10"
+                              step="0.1"
+                            />
+                            <Input
+                              type="number"
+                              placeholder="Width"
+                              value={newDoorWindowGrill.width}
+                              onChange={(e) => setNewDoorWindowGrill(prev => ({ ...prev, width: e.target.value }))}
+                              className="h-10"
+                              step="0.1"
+                            />
+                            <Input
+                              type="number"
+                              placeholder="Grill Multiplier"
+                              value={newDoorWindowGrill.grillMultiplier}
+                              onChange={(e) => setNewDoorWindowGrill(prev => ({ ...prev, grillMultiplier: e.target.value }))}
+                              className="h-10"
+                              step="0.1"
+                            />
+                          </div>
+
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full"
+                            onClick={() => addDoorWindowGrillToRoom(room.id)}
+                            disabled={!newDoorWindowGrill.height || !newDoorWindowGrill.width || !newDoorWindowGrill.sides}
+                          >
+                            <Plus className="mr-1 h-3 w-3" />
+                            Add to {room.name}
+                          </Button>
                         </CardContent>
                       </Card>
                     ))}
-                    
-                    {/* Door/Window/Grill Total */}
-                    {rooms.some(room => room.doorWindowGrills.length > 0) && (
-                      <Card className="bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800">
-                        <CardHeader>
-                          <CardTitle className="flex items-center text-lg text-amber-700 dark:text-amber-400">
-                            <Calculator className="mr-2 h-5 w-5" />
-                            Total Door/Window/Grill Area
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="text-center">
-                            <p className="text-3xl font-bold text-amber-700 dark:text-amber-400">
-                              {rooms.reduce((total, room) => total + room.totalDoorWindowGrillArea, 0).toFixed(1)}
-                            </p>
-                            <p className="text-amber-600 dark:text-amber-500 text-sm">sq.ft (for enamel/oil paint)</p>
-                          </div>
-                          
-                          <div className="mt-4 space-y-2">
-                            {rooms.filter(room => room.doorWindowGrills.length > 0).map(room => (
-                              <div key={room.id} className="flex justify-between text-sm">
-                                <span className="text-amber-700 dark:text-amber-400">{room.name}:</span>
-                                <span className="font-medium text-amber-700 dark:text-amber-400">
-                                  {room.totalDoorWindowGrillArea.toFixed(1)} sq.ft
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    )}
-                  </div>
-                )}
-                
-                {rooms.length === 0 && (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <p>Add rooms first in the "Sq.ft Calculator" tab</p>
                   </div>
                 )}
               </CardContent>
@@ -1062,21 +986,16 @@ export default function RoomMeasurementScreen() {
           </TabsContent>
         </Tabs>
 
-
         {/* Continue Button */}
         {rooms.length > 0 && (
-          <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border">
-            <Button 
-              onClick={handleContinue}
-              className="w-full h-12 text-base font-medium"
-            >
+          <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm border-t p-4 -mx-4">
+            <Button onClick={handleContinue} className="w-full h-12">
               Continue to Paint Estimation
+              <ArrowLeft className="ml-2 h-4 w-4 rotate-180" />
             </Button>
           </div>
         )}
       </div>
-
-      <div className="h-20"></div>
     </div>
   );
 }
