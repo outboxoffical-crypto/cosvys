@@ -67,6 +67,7 @@ export default function RoomMeasurementScreen() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [activeTab, setActiveTab] = useState<string>("sqft");
   const [activeProjectType, setActiveProjectType] = useState<string>("");
+  const [showOpenAreaSection, setShowOpenAreaSection] = useState<boolean>(false);
   const [newRoom, setNewRoom] = useState({
     name: "",
     length: "",
@@ -216,6 +217,10 @@ export default function RoomMeasurementScreen() {
     }));
   };
 
+  const handleAddRoomClick = () => {
+    setShowOpenAreaSection(true);
+  };
+
   const addRoom = () => {
     if (newRoom.name && newRoom.length && newRoom.width && newRoom.height && newRoom.pictures.length >= 2) {
       const length = parseFloat(newRoom.length);
@@ -244,6 +249,7 @@ export default function RoomMeasurementScreen() {
       
       setRooms(prev => [...prev, room]);
       setNewRoom({ name: "", length: "", width: "", height: "", pictures: [] });
+      setShowOpenAreaSection(false); // Reset the section visibility
       
       // Save rooms to localStorage
       const updatedRooms = [...rooms, room];
@@ -499,9 +505,9 @@ export default function RoomMeasurementScreen() {
                   </div>
 
                   <Button 
-                    onClick={addRoom}
+                    onClick={handleAddRoomClick}
                     className="w-full h-12"
-                    disabled={!newRoom.name || !newRoom.length || !newRoom.width || !newRoom.height || newRoom.pictures.length < 2}
+                    disabled={!newRoom.name || !newRoom.length || !newRoom.width || !newRoom.height}
                   >
                     <Plus className="mr-2 h-4 w-4" />
                     Add Room to {activeProjectType}
@@ -510,8 +516,8 @@ export default function RoomMeasurementScreen() {
               </Card>
             )}
 
-            {/* Open Area Section */}
-            {activeProjectType && (
+            {/* Open Area Section - Only show after clicking Add Room */}
+            {activeProjectType && showOpenAreaSection && (
               <Card className="eca-shadow">
                 <CardHeader>
                   <CardTitle className="flex items-center text-lg text-destructive">
@@ -555,12 +561,27 @@ export default function RoomMeasurementScreen() {
                       />
                     </div>
                   </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => {
+                      const opening = addOpeningArea();
+                      if (opening && newRoom.name) {
+                        // Add to temporary list for preview
+                      }
+                    }}
+                    disabled={!newOpeningArea.height || !newOpeningArea.width}
+                  >
+                    <Plus className="mr-1 h-3 w-3" />
+                    Add Open Area
+                  </Button>
                 </CardContent>
               </Card>
             )}
 
-            {/* Extra Surface Section */}
-            {activeProjectType && (
+            {/* Extra Surface Section - Only show after clicking Add Room */}
+            {activeProjectType && showOpenAreaSection && (
               <Card className="eca-shadow">
                 <CardHeader>
                   <CardTitle className="flex items-center text-lg text-green-700 dark:text-green-400">
@@ -604,12 +625,118 @@ export default function RoomMeasurementScreen() {
                       />
                     </div>
                   </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => {
+                      const surface = addExtraSurface();
+                      if (surface && newRoom.name) {
+                        // Add to temporary list for preview
+                      }
+                    }}
+                    disabled={!newExtraSurface.height || !newExtraSurface.width}
+                  >
+                    <Plus className="mr-1 h-3 w-3" />
+                    Add Extra Surface
+                  </Button>
                 </CardContent>
               </Card>
             )}
 
-            {/* Add Pictures Section */}
-            {activeProjectType && (
+            {/* Initial Picture Upload Section - Show after Add Room button is clicked */}
+            {activeProjectType && showOpenAreaSection && newRoom.pictures.length < 2 && (
+              <Card className="eca-shadow">
+                <CardHeader>
+                  <CardTitle className="flex items-center text-lg">
+                    <Camera className="mr-2 h-5 w-5 text-primary" />
+                    Add Pictures (Required)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="text-sm font-medium">Room Pictures (Min: 2, Max: 5)</label>
+                      <Badge variant="outline">
+                        {newRoom.pictures.length}/5
+                      </Badge>
+                    </div>
+                    
+                    {/* Picture Upload Buttons */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => cameraInputRef.current?.click()}
+                        disabled={newRoom.pictures.length >= 5}
+                        className="h-12"
+                      >
+                        <Camera className="mr-2 h-4 w-4" />
+                        Take Picture
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={newRoom.pictures.length >= 5}
+                        className="h-12"
+                      >
+                        <Image className="mr-2 h-4 w-4" />
+                        Choose Picture
+                      </Button>
+                    </div>
+
+                    {/* Hidden File Inputs */}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={(e) => handlePictureUpload(e.target.files)}
+                      className="hidden"
+                    />
+                    <input
+                      ref={cameraInputRef}
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={(e) => handlePictureUpload(e.target.files, true)}
+                      className="hidden"
+                    />
+
+                    {/* Picture Preview */}
+                    {newRoom.pictures.length > 0 && (
+                      <div className="grid grid-cols-3 gap-2">
+                        {newRoom.pictures.map((picture, index) => (
+                          <div key={index} className="relative">
+                            <img
+                              src={picture}
+                              alt={`Room picture ${index + 1}`}
+                              className="w-full h-20 object-cover rounded-lg"
+                            />
+                            <Button
+                              variant="destructive"
+                              size="icon"
+                              className="absolute -top-2 -right-2 h-6 w-6"
+                              onClick={() => removePicture(index)}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <p className="text-xs text-muted-foreground">
+                      Please upload at least 2 pictures to continue with room addition
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Add Pictures Section - Only show after Open Area section is visible and has at least 2 pictures */}
+            {activeProjectType && showOpenAreaSection && newRoom.pictures.length >= 2 && (
               <Card className="eca-shadow">
                 <CardHeader>
                   <CardTitle className="flex items-center text-lg">
@@ -695,6 +822,18 @@ export default function RoomMeasurementScreen() {
                       Note: Pictures are required when adding a room (minimum 2 pictures)
                     </p>
                   </div>
+
+                  {/* Final Add Room Button - Only show when all requirements are met */}
+                  {newRoom.pictures.length >= 2 && (
+                    <Button 
+                      onClick={addRoom}
+                      className="w-full h-12"
+                      disabled={!newRoom.name || !newRoom.length || !newRoom.width || !newRoom.height || newRoom.pictures.length < 2}
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Complete Room Addition
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             )}
