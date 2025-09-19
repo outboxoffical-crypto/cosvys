@@ -51,6 +51,11 @@ interface Room {
   totalOpeningArea: number;
   totalExtraSurface: number;
   totalDoorWindowGrillArea: number;
+  selectedAreas: {
+    floor: boolean;
+    wall: boolean;
+    ceiling: boolean;
+  };
 }
 
 interface ProjectData {
@@ -68,6 +73,11 @@ export default function RoomMeasurementScreen() {
   const [activeTab, setActiveTab] = useState<string>("sqft");
   const [activeProjectType, setActiveProjectType] = useState<string>("");
   const [showOpenAreaSection, setShowOpenAreaSection] = useState<boolean>(false);
+  const [selectedAreas, setSelectedAreas] = useState({
+    floor: true,
+    wall: true,
+    ceiling: false
+  });
   const [newRoom, setNewRoom] = useState({
     name: "",
     length: "",
@@ -244,7 +254,12 @@ export default function RoomMeasurementScreen() {
         adjustedWallArea: 2 * (length + width) * height,
         totalOpeningArea: 0,
         totalExtraSurface: 0,
-        totalDoorWindowGrillArea: 0
+        totalDoorWindowGrillArea: 0,
+        selectedAreas: {
+          floor: true,
+          wall: true,
+          ceiling: false
+        }
       };
       
       setRooms(prev => [...prev, room]);
@@ -375,6 +390,33 @@ export default function RoomMeasurementScreen() {
 
   const getRoomsByProjectType = (projectType: string) => {
     return rooms.filter(room => room.projectType === projectType);
+  };
+
+  const toggleAreaSelection = (roomId: string, areaType: 'floor' | 'wall' | 'ceiling') => {
+    const updatedRooms = rooms.map(room => {
+      if (room.id === roomId) {
+        return {
+          ...room,
+          selectedAreas: {
+            ...room.selectedAreas,
+            [areaType]: !room.selectedAreas[areaType]
+          }
+        };
+      }
+      return room;
+    });
+    setRooms(updatedRooms);
+    localStorage.setItem(`rooms_${projectId}`, JSON.stringify(updatedRooms));
+  };
+
+  const getTotalSelectedArea = (rooms: Room[]) => {
+    return rooms.reduce((totals, room) => {
+      return {
+        floor: totals.floor + (room.selectedAreas.floor ? room.floorArea : 0),
+        wall: totals.wall + (room.selectedAreas.wall ? room.adjustedWallArea : 0),
+        ceiling: totals.ceiling + (room.selectedAreas.ceiling ? room.ceilingArea : 0)
+      };
+    }, { floor: 0, wall: 0, ceiling: 0 });
   };
 
   const handleContinue = () => {
@@ -1004,9 +1046,82 @@ export default function RoomMeasurementScreen() {
                           </Button>
                         </div>
                         
-                        <div className="bg-primary/10 rounded-lg p-3 border border-primary/20 text-center">
-                          <p className="text-sm text-primary">Final Wall Area</p>
-                          <p className="text-xl font-bold text-primary">{room.adjustedWallArea.toFixed(1)} sq.ft</p>
+                        {/* Area Categories */}
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-3 gap-3">
+                            {/* Floor Area */}
+                            <div 
+                              className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                                room.selectedAreas.floor 
+                                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
+                                  : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/20'
+                              }`}
+                              onClick={() => toggleAreaSelection(room.id, 'floor')}
+                            >
+                              <div className="text-center">
+                                <p className="text-xs text-muted-foreground mb-1">Floor Area</p>
+                                <p className="text-lg font-bold text-foreground">{room.floorArea.toFixed(1)}</p>
+                                <p className="text-xs text-muted-foreground">sq.ft</p>
+                              </div>
+                            </div>
+
+                            {/* Wall Area */}
+                            <div 
+                              className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                                room.selectedAreas.wall 
+                                  ? 'border-red-500 bg-red-50 dark:bg-red-900/20' 
+                                  : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/20'
+                              }`}
+                              onClick={() => toggleAreaSelection(room.id, 'wall')}
+                            >
+                              <div className="text-center">
+                                <p className="text-xs text-muted-foreground mb-1">Wall Area</p>
+                                <p className="text-lg font-bold text-foreground">{room.adjustedWallArea.toFixed(1)}</p>
+                                <p className="text-xs text-muted-foreground">sq.ft</p>
+                              </div>
+                            </div>
+
+                            {/* Ceiling Area */}
+                            <div 
+                              className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                                room.selectedAreas.ceiling 
+                                  ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20' 
+                                  : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/20'
+                              }`}
+                              onClick={() => toggleAreaSelection(room.id, 'ceiling')}
+                            >
+                              <div className="text-center">
+                                <p className="text-xs text-muted-foreground mb-1">Ceiling Area</p>
+                                <p className="text-lg font-bold text-foreground">{room.ceilingArea.toFixed(1)}</p>
+                                <p className="text-xs text-muted-foreground">sq.ft</p>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Total Area Summary */}
+                          <div className="bg-gradient-to-r from-red-500 via-purple-500 to-blue-500 rounded-lg p-4 text-white">
+                            <div className="flex items-center mb-3">
+                              <Calculator className="mr-2 h-5 w-5" />
+                              <h4 className="font-semibold">Total Area Summary</h4>
+                            </div>
+                            <div className="grid grid-cols-3 gap-4">
+                              <div className="text-center">
+                                <p className="text-sm text-white/80">Total Floor</p>
+                                <p className="text-xl font-bold">{room.selectedAreas.floor ? room.floorArea.toFixed(1) : '0.0'}</p>
+                                <p className="text-xs text-white/80">sq.ft</p>
+                              </div>
+                              <div className="text-center">
+                                <p className="text-sm text-white/80">Total Wall</p>
+                                <p className="text-xl font-bold">{room.selectedAreas.wall ? room.adjustedWallArea.toFixed(1) : '0.0'}</p>
+                                <p className="text-xs text-white/80">sq.ft</p>
+                              </div>
+                              <div className="text-center">
+                                <p className="text-sm text-white/80">Total Ceiling</p>
+                                <p className="text-xl font-bold">{room.selectedAreas.ceiling ? room.ceilingArea.toFixed(1) : '0.0'}</p>
+                                <p className="text-xs text-white/80">sq.ft</p>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
