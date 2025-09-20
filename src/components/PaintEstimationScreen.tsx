@@ -21,7 +21,6 @@ const paintProducts: PaintProduct[] = [
   { id: "2", name: "Royale Luxury Emulsion", type: "Interior", coverage: 130, price: 720, category: "Premium" },
   { id: "3", name: "Apcolite Premium Emulsion", type: "Interior", coverage: 120, price: 580, category: "Standard" },
   { id: "4", name: "Tractor Emulsion", type: "Interior", coverage: 110, price: 420, category: "Economy" },
-  { id: "5", name: "Ace Exterior Emulsion", type: "Interior", coverage: 100, price: 380, category: "Economy" },
   { id: "16", name: "Tractor Sparc", type: "Interior", coverage: 125, price: 450, category: "Standard" },
   { id: "17", name: "Tractor UNO", type: "Interior", coverage: 115, price: 380, category: "Economy" },
   { id: "18", name: "Tractor Shyne", type: "Interior", coverage: 120, price: 520, category: "Standard" },
@@ -30,11 +29,14 @@ const paintProducts: PaintProduct[] = [
   { id: "21", name: "Royale Shyne", type: "Interior", coverage: 130, price: 780, category: "Premium" },
   { id: "22", name: "Royale Atomos", type: "Interior", coverage: 145, price: 920, category: "Premium" },
   { id: "23", name: "Royale Glitz", type: "Interior", coverage: 140, price: 880, category: "Premium" },
+  { id: "31", name: "Tractor Shyne Advance", type: "Interior", coverage: 125, price: 550, category: "Standard" },
+  { id: "32", name: "Apcolite all Protek Shyn", type: "Interior", coverage: 135, price: 620, category: "Standard" },
+  { id: "33", name: "Apcolite all Protek Matt", type: "Interior", coverage: 130, price: 600, category: "Standard" },
+  { id: "34", name: "Apcolite Shyn Advance", type: "Interior", coverage: 125, price: 590, category: "Standard" },
   
   // Exterior Paints
   { id: "6", name: "Apex Ultima", type: "Exterior", coverage: 120, price: 950, category: "Premium" },
   { id: "7", name: "Apex Weatherproof", type: "Exterior", coverage: 110, price: 780, category: "Premium" },
-  { id: "8", name: "Tractor Acrylic Distemper", type: "Exterior", coverage: 100, price: 520, category: "Standard" },
   { id: "9", name: "Utsav Exterior Paint", type: "Exterior", coverage: 90, price: 450, category: "Economy" },
   { id: "10", name: "Ace Emulsion", type: "Exterior", coverage: 95, price: 420, category: "Economy" },
   { id: "11", name: "Ace Advance", type: "Exterior", coverage: 105, price: 480, category: "Standard" },
@@ -42,6 +44,11 @@ const paintProducts: PaintProduct[] = [
   { id: "13", name: "Apex Emulsion", type: "Exterior", coverage: 110, price: 650, category: "Premium" },
   { id: "14", name: "Apex Advance", type: "Exterior", coverage: 115, price: 720, category: "Premium" },
   { id: "15", name: "Ultima Stretch", type: "Exterior", coverage: 125, price: 1050, category: "Premium" },
+  { id: "35", name: "Ace Shyne Advance", type: "Exterior", coverage: 105, price: 550, category: "Standard" },
+  { id: "36", name: "Apex Shyne", type: "Exterior", coverage: 115, price: 680, category: "Premium" },
+  { id: "37", name: "Apex Shyne Advance", type: "Exterior", coverage: 120, price: 750, category: "Premium" },
+  { id: "38", name: "Apex Ultima Protek", type: "Exterior", coverage: 125, price: 980, category: "Premium" },
+  { id: "39", name: "Apex Ultima Protek Durolife", type: "Exterior", coverage: 130, price: 1100, category: "Premium" },
 
   // Waterproofing Products
   { id: "24", name: "Damp Proof", type: "Waterproofing", coverage: 80, price: 650, category: "Standard" },
@@ -216,32 +223,32 @@ export default function PaintEstimationScreen() {
             <CardTitle className="text-lg">Select Paint Product</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <input
-                type="text"
-                placeholder={`Search ${selectedPaintType.toLowerCase()} products...`}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full h-10 px-3 border border-input rounded-md bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-              />
-              <Select value={selectedProduct} onValueChange={setSelectedProduct}>
-                <SelectTrigger className="h-12">
-                  <SelectValue placeholder="Choose a paint product" />
-                </SelectTrigger>
-                <SelectContent>
-                  {filteredProducts.map((product) => (
-                    <SelectItem key={product.id} value={product.id}>
-                      <div className="flex items-center justify-between w-full">
-                        <span>{product.name}</span>
-                        <Badge variant="outline" className="ml-2">
-                          {product.category}
-                        </Badge>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <Select value={selectedProduct} onValueChange={setSelectedProduct}>
+              <SelectTrigger className="h-12">
+                <SelectValue placeholder={`Search & select ${selectedPaintType.toLowerCase()} paint product...`} />
+              </SelectTrigger>
+              <SelectContent>
+                <div className="p-2">
+                  <input
+                    type="text"
+                    placeholder={`Search ${selectedPaintType.toLowerCase()} products...`}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full h-8 px-2 border border-input rounded-md bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                  />
+                </div>
+                {filteredProducts.map((product) => (
+                  <SelectItem key={product.id} value={product.id}>
+                    <div className="flex items-center justify-between w-full">
+                      <span>{product.name}</span>
+                      <Badge variant="outline" className="ml-2">
+                        {product.category}
+                      </Badge>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
             {selectedProductData && (
               <div className="bg-muted rounded-lg p-4 space-y-2">
