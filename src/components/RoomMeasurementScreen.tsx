@@ -87,6 +87,8 @@ export default function RoomMeasurementScreen() {
   });
   const [newOpeningArea, setNewOpeningArea] = useState({ height: "", width: "", quantity: "1" });
   const [newExtraSurface, setNewExtraSurface] = useState({ height: "", width: "", quantity: "1" });
+  const [tempOpeningAreas, setTempOpeningAreas] = useState<OpeningArea[]>([]);
+  const [tempExtraSurfaces, setTempExtraSurfaces] = useState<ExtraSurface[]>([]);
   const [newDoorWindowGrill, setNewDoorWindowGrill] = useState({
     name: "Door/Window",
     height: "",
@@ -140,6 +142,54 @@ export default function RoomMeasurementScreen() {
       totalExtraSurface,
       totalDoorWindowGrillArea
     };
+  };
+
+  const addTempOpeningArea = () => {
+    if (newOpeningArea.height && newOpeningArea.width) {
+      const height = parseFloat(newOpeningArea.height);
+      const width = parseFloat(newOpeningArea.width);
+      const quantity = parseFloat(newOpeningArea.quantity) || 1;
+      const area = height * width * quantity;
+      
+      const openingArea = {
+        id: Date.now().toString(),
+        height,
+        width,
+        quantity,
+        area
+      };
+      
+      setTempOpeningAreas(prev => [...prev, openingArea]);
+      setNewOpeningArea({ height: "", width: "", quantity: "1" });
+    }
+  };
+
+  const addTempExtraSurface = () => {
+    if (newExtraSurface.height && newExtraSurface.width) {
+      const height = parseFloat(newExtraSurface.height);
+      const width = parseFloat(newExtraSurface.width);
+      const quantity = parseFloat(newExtraSurface.quantity) || 1;
+      const area = height * width * quantity;
+      
+      const extraSurface = {
+        id: Date.now().toString(),
+        height,
+        width,
+        quantity,
+        area
+      };
+      
+      setTempExtraSurfaces(prev => [...prev, extraSurface]);
+      setNewExtraSurface({ height: "", width: "", quantity: "1" });
+    }
+  };
+
+  const removeTempOpeningArea = (id: string) => {
+    setTempOpeningAreas(prev => prev.filter(item => item.id !== id));
+  };
+
+  const removeTempExtraSurface = (id: string) => {
+    setTempExtraSurfaces(prev => prev.filter(item => item.id !== id));
   };
 
   const addOpeningArea = () => {
@@ -245,8 +295,8 @@ export default function RoomMeasurementScreen() {
         height,
         projectType: activeProjectType,
         pictures: newRoom.pictures,
-        openingAreas: [],
-        extraSurfaces: [],
+        openingAreas: [...tempOpeningAreas], // Include temporary opening areas
+        extraSurfaces: [...tempExtraSurfaces], // Include temporary extra surfaces
         doorWindowGrills: [],
         floorArea: length * width,
         wallArea: 2 * (length + width) * height,
@@ -261,10 +311,22 @@ export default function RoomMeasurementScreen() {
           ceiling: false
         }
       };
+
+      // Calculate areas with the temporary measurements
+      const areas = calculateAreas(length, width, height, tempOpeningAreas, tempExtraSurfaces, []);
+      room.floorArea = areas.floorArea;
+      room.wallArea = areas.wallArea;
+      room.ceilingArea = areas.ceilingArea;
+      room.adjustedWallArea = areas.adjustedWallArea;
+      room.totalOpeningArea = areas.totalOpeningArea;
+      room.totalExtraSurface = areas.totalExtraSurface;
+      room.totalDoorWindowGrillArea = areas.totalDoorWindowGrillArea;
       
       setRooms(prev => [...prev, room]);
       setNewRoom({ name: "", length: "", width: "", height: "", pictures: [] });
       setShowOpenAreaSection(false); // Reset the section visibility
+      setTempOpeningAreas([]); // Clear temporary measurements
+      setTempExtraSurfaces([]); // Clear temporary measurements
       
       // Save rooms to localStorage
       const updatedRooms = [...rooms, room];
@@ -607,17 +669,34 @@ export default function RoomMeasurementScreen() {
                     variant="outline"
                     size="sm"
                     className="w-full"
-                    onClick={() => {
-                      const opening = addOpeningArea();
-                      if (opening && newRoom.name) {
-                        // Add to temporary list for preview
-                      }
-                    }}
+                    onClick={addTempOpeningArea}
                     disabled={!newOpeningArea.height || !newOpeningArea.width}
                   >
                     <Plus className="mr-1 h-3 w-3" />
                     Add Open Area
                   </Button>
+
+                  {/* Display temporary opening areas */}
+                  {tempOpeningAreas.length > 0 && (
+                    <div className="space-y-2 mt-3">
+                      <p className="text-sm font-medium text-muted-foreground">Added Open Areas:</p>
+                      {tempOpeningAreas.map((opening) => (
+                        <div key={opening.id} className="flex items-center justify-between p-2 bg-destructive/10 rounded-lg border border-destructive/20">
+                          <p className="text-sm text-destructive">
+                            {opening.height}' × {opening.width}' × {opening.quantity} = {opening.area.toFixed(1)} sq.ft
+                          </p>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 text-destructive"
+                            onClick={() => removeTempOpeningArea(opening.id)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -671,17 +750,34 @@ export default function RoomMeasurementScreen() {
                     variant="outline"
                     size="sm"
                     className="w-full"
-                    onClick={() => {
-                      const surface = addExtraSurface();
-                      if (surface && newRoom.name) {
-                        // Add to temporary list for preview
-                      }
-                    }}
+                    onClick={addTempExtraSurface}
                     disabled={!newExtraSurface.height || !newExtraSurface.width}
                   >
                     <Plus className="mr-1 h-3 w-3" />
                     Add Extra Surface
                   </Button>
+
+                  {/* Display temporary extra surfaces */}
+                  {tempExtraSurfaces.length > 0 && (
+                    <div className="space-y-2 mt-3">
+                      <p className="text-sm font-medium text-muted-foreground">Added Extra Surfaces:</p>
+                      {tempExtraSurfaces.map((surface) => (
+                        <div key={surface.id} className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                          <p className="text-sm text-green-700 dark:text-green-400">
+                            {surface.height}' × {surface.width}' × {surface.quantity} = {surface.area.toFixed(1)} sq.ft
+                          </p>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 text-green-700 dark:text-green-400"
+                            onClick={() => removeTempExtraSurface(surface.id)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -896,47 +992,31 @@ export default function RoomMeasurementScreen() {
                           <div>
                             <h3 className="font-semibold text-foreground">{room.name}</h3>
                             <p className="text-sm text-muted-foreground">
-                              {room.length}' × {room.width}' × {room.height}' ({room.projectType})
+                              {room.length}' × {room.width}' × {room.height}' 
                             </p>
                           </div>
-                          <Button 
-                            variant="ghost" 
+                          <Button
+                            variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                            className="h-8 w-8 text-destructive"
                             onClick={() => removeRoom(room.id)}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
 
-                        {/* Room Pictures */}
-                        {room.pictures.length > 0 && (
-                          <div className="mb-4">
-                            <p className="text-sm font-medium mb-2">Room Pictures:</p>
-                            <div className="grid grid-cols-5 gap-2">
-                              {room.pictures.map((picture, index) => (
-                                <img
-                                  key={index}
-                                  src={picture}
-                                  alt={`${room.name} picture ${index + 1}`}
-                                  className="w-full h-16 object-cover rounded-lg border"
-                                />
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Opening Areas */}
-                        <div className="space-y-3 mb-4">
-                          <div className="flex items-center justify-between">
-                            <h4 className="text-sm font-medium text-destructive">Open Areas (Subtract)</h4>
-                          </div>
+                        {/* Open Areas - Editable after room completion */}
+                        <div className="space-y-3">
+                          <h4 className="text-sm font-medium text-destructive flex items-center">
+                            <Ruler className="mr-1 h-3 w-3" />
+                            Open Area (Subtract from Wall)
+                          </h4>
                           
                           {room.openingAreas.map((opening) => (
-                            <div key={opening.id} className="flex items-center justify-between bg-destructive/10 rounded-lg p-2">
-                               <span className="text-sm">
-                                 {opening.height}' × {opening.width}' × {opening.quantity} = {opening.area.toFixed(1)} sq.ft
-                               </span>
+                            <div key={opening.id} className="flex items-center justify-between p-2 bg-destructive/10 rounded-lg border border-destructive/20">
+                              <p className="text-sm text-destructive">
+                                {opening.height}' × {opening.width}' × {opening.quantity} = {opening.area.toFixed(1)} sq.ft
+                              </p>
                               <Button
                                 variant="ghost"
                                 size="icon"
@@ -986,17 +1066,18 @@ export default function RoomMeasurementScreen() {
                           </Button>
                         </div>
 
-                        {/* Extra Surfaces */}
-                        <div className="space-y-3 mb-4">
-                          <div className="flex items-center justify-between">
-                            <h4 className="text-sm font-medium text-green-700 dark:text-green-400">Extra Surfaces (Add)</h4>
-                          </div>
+                        {/* Extra Surfaces - Editable after room completion */}
+                        <div className="space-y-3 mt-4">
+                          <h4 className="text-sm font-medium text-green-700 dark:text-green-400 flex items-center">
+                            <Plus className="mr-1 h-3 w-3" />
+                            Extra Surface (Add to Wall)
+                          </h4>
                           
                           {room.extraSurfaces.map((extra) => (
-                            <div key={extra.id} className="flex items-center justify-between bg-green-100 dark:bg-green-900/20 rounded-lg p-2">
-                               <span className="text-sm">
-                                 {extra.height}' × {extra.width}' × {extra.quantity} = {extra.area.toFixed(1)} sq.ft
-                               </span>
+                            <div key={extra.id} className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                              <p className="text-sm text-green-700 dark:text-green-400">
+                                {extra.height}' × {extra.width}' × {extra.quantity} = {extra.area.toFixed(1)} sq.ft
+                              </p>
                               <Button
                                 variant="ghost"
                                 size="icon"
@@ -1047,7 +1128,7 @@ export default function RoomMeasurementScreen() {
                         </div>
                         
                         {/* Area Categories */}
-                        <div className="space-y-4">
+                        <div className="space-y-4 mt-4">
                           <div className="grid grid-cols-3 gap-3">
                             {/* Floor Area */}
                             <div 
