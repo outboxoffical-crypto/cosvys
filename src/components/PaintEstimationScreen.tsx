@@ -19,7 +19,7 @@ const paintProducts: PaintProduct[] = [
   // Interior Paints
   { id: "1", name: "Royale Aspira", type: "Interior", coverage: 140, price: 850, category: "Premium" },
   { id: "2", name: "Royale Luxury Emulsion", type: "Interior", coverage: 130, price: 720, category: "Premium" },
-  { id: "3", name: "Apcolite Premium Emulsion", type: "Interior", coverage: 120, price: 580, category: "Standard" },
+  { id: "3", name: "Apcolite Premium Advance", type: "Interior", coverage: 120, price: 580, category: "Standard" },
   { id: "4", name: "Tractor Emulsion", type: "Interior", coverage: 110, price: 420, category: "Economy" },
   { id: "16", name: "Tractor Sparc", type: "Interior", coverage: 125, price: 450, category: "Standard" },
   { id: "17", name: "Tractor UNO", type: "Interior", coverage: 115, price: 380, category: "Economy" },
@@ -234,6 +234,9 @@ export default function PaintEstimationScreen() {
                     placeholder={`Search ${selectedPaintType.toLowerCase()} products...`}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => e.stopPropagation()}
+                    autoFocus
                     className="w-full h-8 px-2 border border-input rounded-md bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                   />
                 </div>
