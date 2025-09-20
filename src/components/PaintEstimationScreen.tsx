@@ -71,16 +71,22 @@ export default function PaintEstimationScreen() {
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    // Load room data and selected areas
+    // Load room data and extract selected areas
     const storedRooms = localStorage.getItem(`rooms_${projectId}`);
     if (storedRooms) {
       const roomData = JSON.parse(storedRooms);
       setRooms(roomData);
-    }
-
-    const storedSelectedAreas = localStorage.getItem(`selectedAreas_${projectId}`);
-    if (storedSelectedAreas) {
-      setSelectedAreas(JSON.parse(storedSelectedAreas));
+      
+      // Extract selected area types from all rooms
+      const selectedAreaTypes = new Set<string>();
+      roomData.forEach((room: any) => {
+        if (room.selectedAreas) {
+          if (room.selectedAreas.wall) selectedAreaTypes.add('Wall');
+          if (room.selectedAreas.ceiling) selectedAreaTypes.add('Ceiling');
+          if (room.selectedAreas.floor) selectedAreaTypes.add('Floor');
+        }
+      });
+      setSelectedAreas(Array.from(selectedAreaTypes));
     }
   }, [projectId]);
 
@@ -92,12 +98,16 @@ export default function PaintEstimationScreen() {
         let ceilingArea = 0;
 
         // Calculate areas based on what was selected in room measurements
-        if (selectedAreas.includes('Wall')) {
-          wallArea = rooms.reduce((acc, room) => acc + (room.wallArea || 0), 0);
-        }
-        if (selectedAreas.includes('Ceiling')) {
-          ceilingArea = rooms.reduce((acc, room) => acc + (room.ceilingArea || 0), 0);
-        }
+        rooms.forEach((room: any) => {
+          if (room.selectedAreas) {
+            if (room.selectedAreas.wall) {
+              wallArea += room.adjustedWallArea || room.wallArea || 0;
+            }
+            if (room.selectedAreas.ceiling) {
+              ceilingArea += room.ceilingArea || 0;
+            }
+          }
+        });
 
         const totalArea = wallArea + ceilingArea;
         const litersRequired = (totalArea * estimation.coats) / product.coverage;
@@ -255,13 +265,22 @@ export default function PaintEstimationScreen() {
         </Card>
 
         {/* Area Summary */}
-        {rooms.length > 0 && selectedAreas.length > 0 && (
+        {rooms.length > 0 && (
           <Card className="eca-shadow">
             <CardHeader>
               <CardTitle className="text-lg">Area to be Painted</CardTitle>
             </CardHeader>
             <CardContent>
-              {selectedAreas.length === 1 ? (
+              {selectedAreas.length === 0 ? (
+                <div className="bg-muted rounded-lg p-4 text-center">
+                  <p className="text-sm text-muted-foreground mb-2">
+                    No areas selected for painting
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Please go back to Room Measurements and select Wall, Ceiling, or Floor areas
+                  </p>
+                </div>
+              ) : selectedAreas.length === 1 ? (
                 <div className="bg-muted rounded-lg p-4">
                   <div className="text-center">
                     <p className="text-sm text-muted-foreground">
