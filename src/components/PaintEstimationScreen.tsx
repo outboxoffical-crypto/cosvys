@@ -5,68 +5,39 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Palette, Calculator, DollarSign } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
-interface PaintProduct {
+interface CoverageData {
   id: string;
-  name: string;
-  type: "Interior" | "Exterior" | "Waterproofing";
-  coverage: number; // sq.ft per liter
-  price: number; // price per liter
   category: string;
+  product_name: string;
+  coats: string;
+  coverage_range: string;
+  surface_type?: string;
+  notes?: string;
 }
 
-const paintProducts: PaintProduct[] = [
-  // Interior Paints
-  { id: "1", name: "Royale Aspira", type: "Interior", coverage: 140, price: 850, category: "Premium" },
-  { id: "2", name: "Royale Luxury Emulsion", type: "Interior", coverage: 130, price: 720, category: "Premium" },
-  { id: "3", name: "Apcolite Premium Advance", type: "Interior", coverage: 120, price: 580, category: "Standard" },
-  { id: "4", name: "Tractor Emulsion", type: "Interior", coverage: 110, price: 420, category: "Economy" },
-  { id: "16", name: "Tractor Sparc", type: "Interior", coverage: 125, price: 450, category: "Standard" },
-  { id: "17", name: "Tractor UNO", type: "Interior", coverage: 115, price: 380, category: "Economy" },
-  { id: "18", name: "Tractor Shyne", type: "Interior", coverage: 120, price: 520, category: "Standard" },
-  { id: "19", name: "Premium Emulsion", type: "Interior", coverage: 130, price: 650, category: "Premium" },
-  { id: "20", name: "Royale Matt", type: "Interior", coverage: 135, price: 750, category: "Premium" },
-  { id: "21", name: "Royale Shyne", type: "Interior", coverage: 130, price: 780, category: "Premium" },
-  { id: "22", name: "Royale Atomos", type: "Interior", coverage: 145, price: 920, category: "Premium" },
-  { id: "23", name: "Royale Glitz", type: "Interior", coverage: 140, price: 880, category: "Premium" },
-  { id: "31", name: "Tractor Shyne Advance", type: "Interior", coverage: 125, price: 550, category: "Standard" },
-  { id: "32", name: "Apcolite all Protek Shyn", type: "Interior", coverage: 135, price: 620, category: "Standard" },
-  { id: "33", name: "Apcolite all Protek Matt", type: "Interior", coverage: 130, price: 600, category: "Standard" },
-  { id: "34", name: "Apcolite Shyn Advance", type: "Interior", coverage: 125, price: 590, category: "Standard" },
-  
-  // Exterior Paints
-  { id: "6", name: "Apex Ultima", type: "Exterior", coverage: 120, price: 950, category: "Premium" },
-  { id: "7", name: "Apex Weatherproof", type: "Exterior", coverage: 110, price: 780, category: "Premium" },
-  { id: "9", name: "Utsav Exterior Paint", type: "Exterior", coverage: 90, price: 450, category: "Economy" },
-  { id: "10", name: "Ace Emulsion", type: "Exterior", coverage: 95, price: 420, category: "Economy" },
-  { id: "11", name: "Ace Advance", type: "Exterior", coverage: 105, price: 480, category: "Standard" },
-  { id: "12", name: "Ace Shyne", type: "Exterior", coverage: 100, price: 520, category: "Standard" },
-  { id: "13", name: "Apex Emulsion", type: "Exterior", coverage: 110, price: 650, category: "Premium" },
-  { id: "14", name: "Apex Advance", type: "Exterior", coverage: 115, price: 720, category: "Premium" },
-  { id: "15", name: "Ultima Stretch", type: "Exterior", coverage: 125, price: 1050, category: "Premium" },
-  { id: "35", name: "Ace Shyne Advance", type: "Exterior", coverage: 105, price: 550, category: "Standard" },
-  { id: "36", name: "Apex Shyne", type: "Exterior", coverage: 115, price: 680, category: "Premium" },
-  { id: "37", name: "Apex Shyne Advance", type: "Exterior", coverage: 120, price: 750, category: "Premium" },
-  { id: "38", name: "Apex Ultima Protek", type: "Exterior", coverage: 125, price: 980, category: "Premium" },
-  { id: "39", name: "Apex Ultima Protek Durolife", type: "Exterior", coverage: 130, price: 1100, category: "Premium" },
-
-  // Waterproofing Products
-  { id: "24", name: "Damp Proof", type: "Waterproofing", coverage: 80, price: 650, category: "Standard" },
-  { id: "25", name: "Damp Proof Advance", type: "Waterproofing", coverage: 85, price: 750, category: "Premium" },
-  { id: "26", name: "Damp Proof Xtreme", type: "Waterproofing", coverage: 90, price: 850, category: "Premium" },
-  { id: "27", name: "Damp Proof Ultra", type: "Waterproofing", coverage: 95, price: 950, category: "Premium" },
-  { id: "28", name: "Hydrolac", type: "Waterproofing", coverage: 75, price: 580, category: "Standard" },
-  { id: "29", name: "Damp Block 2K", type: "Waterproofing", coverage: 70, price: 1200, category: "Premium" },
-  { id: "30", name: "Epoxy Tri Block 2K", type: "Waterproofing", coverage: 65, price: 1450, category: "Premium" },
-];
+interface QuantityCalculation {
+  minQuantity: number;
+  maxQuantity: number;
+  recommendedQuantity: number;
+  unit: string;
+}
 
 export default function PaintEstimationScreen() {
   const navigate = useNavigate();
   const { projectId } = useParams();
-  const [selectedPaintType, setSelectedPaintType] = useState<"Interior" | "Exterior" | "Waterproofing">("Interior");
+  const [selectedPaintType, setSelectedPaintType] = useState<"Interior Paint" | "Exterior Paint" | "Waterproofing">("Interior Paint");
   const [selectedProduct, setSelectedProduct] = useState<string>("");
+  const [selectedCoats, setSelectedCoats] = useState<string>("2 coat");
   const [rooms, setRooms] = useState<any[]>([]);
   const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
+  const [totalArea, setTotalArea] = useState<number>(0);
+  const [coverageData, setCoverageData] = useState<CoverageData[]>([]);
+  const [quantityCalculation, setQuantityCalculation] = useState<QuantityCalculation | null>(null);
   const [estimation, setEstimation] = useState({
     wallArea: 0,
     ceilingArea: 0,
@@ -77,6 +48,79 @@ export default function PaintEstimationScreen() {
   });
   const [searchTerm, setSearchTerm] = useState("");
 
+  // Fetch coverage data from database
+  useEffect(() => {
+    fetchCoverageData();
+  }, []);
+
+  const fetchCoverageData = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('coverage_data')
+        .select('*')
+        .order('product_name');
+      
+      if (error) {
+        console.error('Error fetching coverage data:', error);
+        toast.error('Failed to load coverage data');
+        return;
+      }
+      
+      setCoverageData(data || []);
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Failed to load coverage data');
+    }
+  };
+
+  // Parse coverage range to get min and max values
+  const parseCoverageRange = (coverageRange: string) => {
+    const match = coverageRange.match(/(\d+(?:\.\d+)?)[–-](\d+(?:\.\d+)?)\s*sq\.ft\s*per\s*(ltr|kg)/);
+    if (match) {
+      return {
+        min: parseFloat(match[1]),
+        max: parseFloat(match[2]),
+        unit: match[3]
+      };
+    }
+    
+    // Handle single values like "25 sq.ft per ltr"
+    const singleMatch = coverageRange.match(/(\d+(?:\.\d+)?)\s*sq\.ft\s*per\s*(ltr|kg)/);
+    if (singleMatch) {
+      const value = parseFloat(singleMatch[1]);
+      return {
+        min: value,
+        max: value,
+        unit: singleMatch[2]
+      };
+    }
+    
+    return null;
+  };
+
+  // Calculate quantity based on area and coverage
+  const calculateQuantity = (area: number, selectedProductName: string, coats: string) => {
+    const productData = coverageData.find(
+      item => item.product_name === selectedProductName && item.coats === coats
+    );
+    
+    if (!productData) return null;
+    
+    const coverage = parseCoverageRange(productData.coverage_range);
+    if (!coverage) return null;
+    
+    const minQuantity = Math.ceil(area / coverage.max); // Use max coverage for min quantity
+    const maxQuantity = Math.ceil(area / coverage.min); // Use min coverage for max quantity
+    const recommendedQuantity = Math.ceil(area / coverage.min); // Conservative estimate
+    
+    return {
+      minQuantity,
+      maxQuantity,
+      recommendedQuantity,
+      unit: coverage.unit
+    };
+  };
+
   useEffect(() => {
     // Load room data and extract selected areas
     const storedRooms = localStorage.getItem(`rooms_${projectId}`);
@@ -84,65 +128,73 @@ export default function PaintEstimationScreen() {
       const roomData = JSON.parse(storedRooms);
       setRooms(roomData);
       
-      // Extract selected area types from all rooms
+      // Extract selected area types from all rooms and calculate total area
       const selectedAreaTypes = new Set<string>();
+      let wallArea = 0;
+      let ceilingArea = 0;
+      
       roomData.forEach((room: any) => {
         if (room.selectedAreas) {
-          if (room.selectedAreas.wall) selectedAreaTypes.add('Wall');
-          if (room.selectedAreas.ceiling) selectedAreaTypes.add('Ceiling');
+          if (room.selectedAreas.wall) {
+            selectedAreaTypes.add('Wall');
+            wallArea += room.adjustedWallArea || room.wallArea || 0;
+          }
+          if (room.selectedAreas.ceiling) {
+            selectedAreaTypes.add('Ceiling');
+            ceilingArea += room.ceilingArea || 0;
+          }
           if (room.selectedAreas.floor) selectedAreaTypes.add('Floor');
         }
       });
+      
       setSelectedAreas(Array.from(selectedAreaTypes));
+      const total = wallArea + ceilingArea;
+      setTotalArea(total);
+      setEstimation(prev => ({
+        ...prev,
+        wallArea,
+        ceilingArea,
+        totalArea: total
+      }));
     }
   }, [projectId]);
 
+  // Update quantity calculation when product, coats, or area changes
   useEffect(() => {
-    if (selectedProduct && rooms.length > 0) {
-      const product = paintProducts.find(p => p.id === selectedProduct);
-      if (product) {
-        let wallArea = 0;
-        let ceilingArea = 0;
-
-        // Calculate areas based on what was selected in room measurements
-        rooms.forEach((room: any) => {
-          if (room.selectedAreas) {
-            if (room.selectedAreas.wall) {
-              wallArea += room.adjustedWallArea || room.wallArea || 0;
-            }
-            if (room.selectedAreas.ceiling) {
-              ceilingArea += room.ceilingArea || 0;
-            }
-          }
-        });
-
-        const totalArea = wallArea + ceilingArea;
-        const litersRequired = (totalArea * estimation.coats) / product.coverage;
-        const totalCost = litersRequired * product.price;
-        
-        setEstimation(prev => ({
-          ...prev,
-          wallArea,
-          ceilingArea,
-          totalArea,
-          litersRequired: Math.ceil(litersRequired),
-          totalCost: Math.round(totalCost)
-        }));
-      }
+    if (selectedProduct && totalArea > 0) {
+      const calculation = calculateQuantity(totalArea, selectedProduct, selectedCoats);
+      setQuantityCalculation(calculation);
+    } else {
+      setQuantityCalculation(null);
     }
-  }, [selectedProduct, selectedPaintType, rooms, selectedAreas, estimation.coats]);
+  }, [selectedProduct, selectedCoats, coverageData, totalArea]);
 
-  const filteredProducts = paintProducts
-    .filter(p => p.type === selectedPaintType)
-    .filter(p => searchTerm === "" || p.name.toLowerCase().includes(searchTerm.toLowerCase()));
-  const selectedProductData = paintProducts.find(p => p.id === selectedProduct);
+  // Get available coat options for selected product
+  const getAvailableCoats = (productName: string) => {
+    const coatOptions = coverageData
+      .filter(item => item.product_name === productName)
+      .map(item => item.coats)
+      .filter((value, index, self) => self.indexOf(value) === index);
+    return coatOptions;
+  };
+
+  // Get unique products for selected category
+  const getUniqueProducts = () => {
+    return coverageData
+      .filter(item => item.category === selectedPaintType)
+      .map(item => item.product_name)
+      .filter((value, index, self) => self.indexOf(value) === index)
+      .filter(name => searchTerm === "" || name.toLowerCase().includes(searchTerm.toLowerCase()));
+  };
 
   const handleContinue = () => {
-    if (selectedProduct && estimation.litersRequired > 0) {
+    if (selectedProduct && quantityCalculation) {
       const estimationData = {
         paintType: selectedPaintType,
-        product: selectedProductData,
-        estimation
+        product: selectedProduct,
+        coats: selectedCoats,
+        totalArea,
+        quantityCalculation
       };
       localStorage.setItem(`estimation_${projectId}`, JSON.stringify(estimationData));
       navigate(`/project-summary/${projectId}`);
@@ -181,9 +233,9 @@ export default function PaintEstimationScreen() {
           <CardContent>
             <div className="grid grid-cols-3 gap-2">
               <Button
-                variant={selectedPaintType === "Interior" ? "default" : "outline"}
+                variant={selectedPaintType === "Interior Paint" ? "default" : "outline"}
                 onClick={() => {
-                  setSelectedPaintType("Interior");
+                  setSelectedPaintType("Interior Paint");
                   setSelectedProduct("");
                   setSearchTerm("");
                 }}
@@ -192,9 +244,9 @@ export default function PaintEstimationScreen() {
                 Interior Paint
               </Button>
               <Button
-                variant={selectedPaintType === "Exterior" ? "default" : "outline"}
+                variant={selectedPaintType === "Exterior Paint" ? "default" : "outline"}
                 onClick={() => {
-                  setSelectedPaintType("Exterior");
+                  setSelectedPaintType("Exterior Paint");
                   setSelectedProduct("");
                   setSearchTerm("");
                 }}
@@ -240,35 +292,63 @@ export default function PaintEstimationScreen() {
                     className="w-full h-8 px-2 border border-input rounded-md bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                   />
                 </div>
-                {filteredProducts.map((product) => (
-                  <SelectItem key={product.id} value={product.id}>
+                {getUniqueProducts().map((productName) => (
+                  <SelectItem key={productName} value={productName}>
                     <div className="flex items-center justify-between w-full">
-                      <span>{product.name}</span>
-                      <Badge variant="outline" className="ml-2">
-                        {product.category}
-                      </Badge>
+                      <span>{productName}</span>
                     </div>
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
 
-            {selectedProductData && (
+            {/* Coat Selection */}
+            {selectedProduct && getAvailableCoats(selectedProduct).length > 0 && (
+              <div className="space-y-2">
+                <Label>Number of Coats</Label>
+                <Select value={selectedCoats} onValueChange={setSelectedCoats}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select number of coats" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getAvailableCoats(selectedProduct).map((coatOption) => (
+                      <SelectItem key={coatOption} value={coatOption}>
+                        {coatOption}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Coverage Information */}
+            {selectedProduct && selectedCoats && (
               <div className="bg-muted rounded-lg p-4 space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Coverage:</span>
-                  <span className="text-sm font-medium">{selectedProductData.coverage} sq.ft/L</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Price per Liter:</span>
-                  <span className="text-sm font-medium">₹{selectedProductData.price}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Category:</span>
-                  <Badge variant="outline" className="text-xs">
-                    {selectedProductData.category}
-                  </Badge>
-                </div>
+                {(() => {
+                  const productData = coverageData.find(
+                    item => item.product_name === selectedProduct && item.coats === selectedCoats
+                  );
+                  return productData ? (
+                    <>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground">Coverage Range:</span>
+                        <span className="text-sm font-medium">{productData.coverage_range}</span>
+                      </div>
+                      {productData.surface_type && (
+                        <div className="flex justify-between">
+                          <span className="text-sm text-muted-foreground">Surface Type:</span>
+                          <span className="text-sm font-medium">{productData.surface_type}</span>
+                        </div>
+                      )}
+                      {productData.notes && (
+                        <div className="mt-2">
+                          <span className="text-sm text-muted-foreground">Notes:</span>
+                          <p className="text-xs text-muted-foreground mt-1">{productData.notes}</p>
+                        </div>
+                      )}
+                    </>
+                  ) : null;
+                })()}
               </div>
             )}
           </CardContent>
@@ -334,42 +414,42 @@ export default function PaintEstimationScreen() {
           </Card>
         )}
 
-        {/* Estimation Results */}
-        {selectedProduct && estimation.litersRequired > 0 && (
+        {/* Quantity Calculation Results */}
+        {selectedProduct && quantityCalculation && (
           <Card className="eca-gradient text-white eca-shadow">
             <CardHeader>
               <CardTitle className="flex items-center text-lg">
                 <Calculator className="mr-2 h-5 w-5" />
-                Cost Estimation
+                Quantity Estimation
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="text-center">
-                    <p className="text-white/80 text-sm">Paint Required</p>
-                    <p className="text-2xl font-bold">{estimation.litersRequired}</p>
-                    <p className="text-white/80 text-xs">Liters</p>
+                    <p className="text-white/80 text-sm">Recommended Quantity</p>
+                    <p className="text-2xl font-bold">{quantityCalculation.recommendedQuantity}</p>
+                    <p className="text-white/80 text-xs">{quantityCalculation.unit}</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-white/80 text-sm">Total Cost</p>
-                    <p className="text-2xl font-bold">₹{estimation.totalCost.toLocaleString()}</p>
-                    <p className="text-white/80 text-xs">Including 2 coats</p>
+                    <p className="text-white/80 text-sm">Quantity Range</p>
+                    <p className="text-lg font-bold">{quantityCalculation.minQuantity} - {quantityCalculation.maxQuantity}</p>
+                    <p className="text-white/80 text-xs">{quantityCalculation.unit}</p>
                   </div>
                 </div>
 
                 <div className="bg-white/20 rounded-lg p-3">
                   <div className="flex justify-between items-center text-sm">
                     <span>Product:</span>
-                    <span>{selectedProductData?.name}</span>
+                    <span>{selectedProduct}</span>
                   </div>
                   <div className="flex justify-between items-center text-sm mt-1">
                     <span>Area covered:</span>
-                    <span>{estimation.totalArea.toFixed(1)} sq.ft</span>
+                    <span>{totalArea.toFixed(1)} sq.ft</span>
                   </div>
                   <div className="flex justify-between items-center text-sm mt-1">
-                    <span>No. of coats:</span>
-                    <span>{estimation.coats}</span>
+                    <span>Coats:</span>
+                    <span>{selectedCoats}</span>
                   </div>
                 </div>
               </div>
@@ -378,7 +458,7 @@ export default function PaintEstimationScreen() {
         )}
 
         {/* Continue Button */}
-        {selectedProduct && estimation.litersRequired > 0 && (
+        {selectedProduct && quantityCalculation && (
           <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border">
             <Button 
               onClick={handleContinue}
