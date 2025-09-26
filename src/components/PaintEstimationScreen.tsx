@@ -4,11 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Palette, Calculator, DollarSign } from "lucide-react";
+import { ArrowLeft, Palette, Calculator, DollarSign, Settings, Plus, Minus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 interface CoverageData {
   id: string;
@@ -47,6 +48,15 @@ export default function PaintEstimationScreen() {
     coats: 2
   });
   const [searchTerm, setSearchTerm] = useState("");
+  
+  // Painting system states
+  const [paintingSystem, setPaintingSystem] = useState<"Fresh Painting" | "Repainting" | null>(null);
+  const [systemDialogOpen, setSystemDialogOpen] = useState(false);
+  const [coatConfiguration, setCoatConfiguration] = useState({
+    putty: 2,
+    primer: 2,
+    emulsion: 2
+  });
 
   // Fetch coverage data from database
   useEffect(() => {
@@ -371,27 +381,352 @@ export default function PaintEstimationScreen() {
                   </p>
                 </div>
               ) : selectedAreas.length === 1 ? (
-                <div className="bg-muted rounded-lg p-4">
-                  <div className="text-center">
-                    <p className="text-sm text-muted-foreground">
-                      {selectedAreas[0]} Area
-                    </p>
-                    <p className="text-3xl font-bold text-foreground">
-                      {selectedAreas[0] === 'Wall' ? estimation.wallArea.toFixed(1) : estimation.ceilingArea.toFixed(1)}
-                    </p>
-                    <p className="text-sm text-muted-foreground">sq.ft</p>
-                  </div>
+                <div className="space-y-4">
+                  {selectedAreas[0] === 'Wall' ? (
+                    <Dialog open={systemDialogOpen} onOpenChange={setSystemDialogOpen}>
+                      <DialogTrigger asChild>
+                        <div className="bg-muted rounded-lg p-4 cursor-pointer hover:bg-muted/80 transition-colors border-2 border-dashed border-primary/30 hover:border-primary/50">
+                          <div className="text-center">
+                            <div className="flex items-center justify-center gap-2 mb-2">
+                              <Settings className="h-4 w-4 text-primary" />
+                              <p className="text-sm font-medium text-primary">
+                                {paintingSystem ? `${paintingSystem} System` : 'Select Painting System'}
+                              </p>
+                            </div>
+                            <p className="text-3xl font-bold text-foreground">
+                              {estimation.wallArea.toFixed(1)}
+                            </p>
+                            <p className="text-sm text-muted-foreground">sq.ft (Wall Area)</p>
+                            {paintingSystem && (
+                              <div className="mt-2 text-xs text-muted-foreground">
+                                Click to modify system
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                          <DialogTitle>Select Painting System</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-2 gap-3">
+                            <Button
+                              variant={paintingSystem === "Fresh Painting" ? "default" : "outline"}
+                              onClick={() => setPaintingSystem("Fresh Painting")}
+                              className="h-20 flex flex-col items-center justify-center text-center"
+                            >
+                              <div>
+                                <p className="font-medium">Fresh Painting</p>
+                                <p className="text-xs opacity-80">6-coat system</p>
+                              </div>
+                            </Button>
+                            <Button
+                              variant={paintingSystem === "Repainting" ? "default" : "outline"}
+                              onClick={() => setPaintingSystem("Repainting")}
+                              className="h-20 flex flex-col items-center justify-center text-center"
+                            >
+                              <div>
+                                <p className="font-medium">Repainting</p>
+                                <p className="text-xs opacity-80">Standard system</p>
+                              </div>
+                            </Button>
+                          </div>
+
+                          {paintingSystem === "Fresh Painting" && (
+                            <div className="bg-muted rounded-lg p-4 space-y-3">
+                              <h4 className="font-medium text-sm">Coat Configuration</h4>
+                              
+                              <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                  <Label className="text-sm">Putty Coats</Label>
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => setCoatConfiguration(prev => ({ 
+                                        ...prev, 
+                                        putty: Math.max(1, prev.putty - 1) 
+                                      }))}
+                                    >
+                                      <Minus className="h-3 w-3" />
+                                    </Button>
+                                    <span className="w-8 text-center font-medium">
+                                      {coatConfiguration.putty}
+                                    </span>
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => setCoatConfiguration(prev => ({ 
+                                        ...prev, 
+                                        putty: Math.min(3, prev.putty + 1) 
+                                      }))}
+                                    >
+                                      <Plus className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center justify-between">
+                                  <Label className="text-sm">Primer Coats</Label>
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => setCoatConfiguration(prev => ({ 
+                                        ...prev, 
+                                        primer: Math.max(1, prev.primer - 1) 
+                                      }))}
+                                    >
+                                      <Minus className="h-3 w-3" />
+                                    </Button>
+                                    <span className="w-8 text-center font-medium">
+                                      {coatConfiguration.primer}
+                                    </span>
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => setCoatConfiguration(prev => ({ 
+                                        ...prev, 
+                                        primer: Math.min(3, prev.primer + 1) 
+                                      }))}
+                                    >
+                                      <Plus className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center justify-between">
+                                  <Label className="text-sm">Emulsion Coats</Label>
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => setCoatConfiguration(prev => ({ 
+                                        ...prev, 
+                                        emulsion: Math.max(1, prev.emulsion - 1) 
+                                      }))}
+                                    >
+                                      <Minus className="h-3 w-3" />
+                                    </Button>
+                                    <span className="w-8 text-center font-medium">
+                                      {coatConfiguration.emulsion}
+                                    </span>
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => setCoatConfiguration(prev => ({ 
+                                        ...prev, 
+                                        emulsion: Math.min(3, prev.emulsion + 1) 
+                                      }))}
+                                    >
+                                      <Plus className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="bg-primary/10 rounded p-2 mt-3">
+                                <p className="text-xs text-primary font-medium">
+                                  Total: {coatConfiguration.putty + coatConfiguration.primer + coatConfiguration.emulsion} coats
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                          <Button 
+                            onClick={() => setSystemDialogOpen(false)}
+                            className="w-full"
+                            disabled={!paintingSystem}
+                          >
+                            Apply System
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  ) : (
+                    <div className="bg-muted rounded-lg p-4">
+                      <div className="text-center">
+                        <p className="text-sm text-muted-foreground">
+                          {selectedAreas[0]} Area
+                        </p>
+                        <p className="text-3xl font-bold text-foreground">
+                          {selectedAreas[0] === 'Ceiling' ? estimation.ceilingArea.toFixed(1) : estimation.ceilingArea.toFixed(1)}
+                        </p>
+                        <p className="text-sm text-muted-foreground">sq.ft</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-4">
                   {selectedAreas.includes('Wall') && (
-                    <div className="bg-muted rounded-lg p-4">
-                      <div className="text-center">
-                        <p className="text-sm text-muted-foreground">Wall Area</p>
-                        <p className="text-2xl font-bold text-foreground">{estimation.wallArea.toFixed(1)}</p>
-                        <p className="text-xs text-muted-foreground">sq.ft</p>
-                      </div>
-                    </div>
+                    <Dialog open={systemDialogOpen} onOpenChange={setSystemDialogOpen}>
+                      <DialogTrigger asChild>
+                        <div className="bg-muted rounded-lg p-4 cursor-pointer hover:bg-muted/80 transition-colors border-2 border-dashed border-primary/30 hover:border-primary/50">
+                          <div className="text-center">
+                            <div className="flex items-center justify-center gap-1 mb-1">
+                              <Settings className="h-3 w-3 text-primary" />
+                              <p className="text-xs font-medium text-primary">
+                                {paintingSystem ? paintingSystem : 'Select System'}
+                              </p>
+                            </div>
+                            <p className="text-2xl font-bold text-foreground">{estimation.wallArea.toFixed(1)}</p>
+                            <p className="text-xs text-muted-foreground">Wall Area</p>
+                          </div>
+                        </div>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                          <DialogTitle>Select Painting System</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-2 gap-3">
+                            <Button
+                              variant={paintingSystem === "Fresh Painting" ? "default" : "outline"}
+                              onClick={() => setPaintingSystem("Fresh Painting")}
+                              className="h-20 flex flex-col items-center justify-center text-center"
+                            >
+                              <div>
+                                <p className="font-medium">Fresh Painting</p>
+                                <p className="text-xs opacity-80">6-coat system</p>
+                              </div>
+                            </Button>
+                            <Button
+                              variant={paintingSystem === "Repainting" ? "default" : "outline"}
+                              onClick={() => setPaintingSystem("Repainting")}
+                              className="h-20 flex flex-col items-center justify-center text-center"
+                            >
+                              <div>
+                                <p className="font-medium">Repainting</p>
+                                <p className="text-xs opacity-80">Standard system</p>
+                              </div>
+                            </Button>
+                          </div>
+
+                          {paintingSystem === "Fresh Painting" && (
+                            <div className="bg-muted rounded-lg p-4 space-y-3">
+                              <h4 className="font-medium text-sm">Coat Configuration</h4>
+                              
+                              <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                  <Label className="text-sm">Putty Coats</Label>
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => setCoatConfiguration(prev => ({ 
+                                        ...prev, 
+                                        putty: Math.max(1, prev.putty - 1) 
+                                      }))}
+                                    >
+                                      <Minus className="h-3 w-3" />
+                                    </Button>
+                                    <span className="w-8 text-center font-medium">
+                                      {coatConfiguration.putty}
+                                    </span>
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => setCoatConfiguration(prev => ({ 
+                                        ...prev, 
+                                        putty: Math.min(3, prev.putty + 1) 
+                                      }))}
+                                    >
+                                      <Plus className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center justify-between">
+                                  <Label className="text-sm">Primer Coats</Label>
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => setCoatConfiguration(prev => ({ 
+                                        ...prev, 
+                                        primer: Math.max(1, prev.primer - 1) 
+                                      }))}
+                                    >
+                                      <Minus className="h-3 w-3" />
+                                    </Button>
+                                    <span className="w-8 text-center font-medium">
+                                      {coatConfiguration.primer}
+                                    </span>
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => setCoatConfiguration(prev => ({ 
+                                        ...prev, 
+                                        primer: Math.min(3, prev.primer + 1) 
+                                      }))}
+                                    >
+                                      <Plus className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center justify-between">
+                                  <Label className="text-sm">Emulsion Coats</Label>
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => setCoatConfiguration(prev => ({ 
+                                        ...prev, 
+                                        emulsion: Math.max(1, prev.emulsion - 1) 
+                                      }))}
+                                    >
+                                      <Minus className="h-3 w-3" />
+                                    </Button>
+                                    <span className="w-8 text-center font-medium">
+                                      {coatConfiguration.emulsion}
+                                    </span>
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => setCoatConfiguration(prev => ({ 
+                                        ...prev, 
+                                        emulsion: Math.min(3, prev.emulsion + 1) 
+                                      }))}
+                                    >
+                                      <Plus className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="bg-primary/10 rounded p-2 mt-3">
+                                <p className="text-xs text-primary font-medium">
+                                  Total: {coatConfiguration.putty + coatConfiguration.primer + coatConfiguration.emulsion} coats
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                          <Button 
+                            onClick={() => setSystemDialogOpen(false)}
+                            className="w-full"
+                            disabled={!paintingSystem}
+                          >
+                            Apply System
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
                   )}
                   {selectedAreas.includes('Ceiling') && (
                     <div className="bg-muted rounded-lg p-4">
@@ -408,6 +743,16 @@ export default function PaintEstimationScreen() {
                 <div className="text-center">
                   <p className="text-sm text-primary font-medium">Total Area</p>
                   <p className="text-xl font-bold text-foreground">{estimation.totalArea.toFixed(1)} sq.ft</p>
+                  {paintingSystem && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      System: {paintingSystem}
+                      {paintingSystem === "Fresh Painting" && (
+                        <span className="ml-1">
+                          ({coatConfiguration.putty + coatConfiguration.primer + coatConfiguration.emulsion} coats)
+                        </span>
+                      )}
+                    </p>
+                  )}
                 </div>
               </div>
             </CardContent>
