@@ -49,7 +49,7 @@ export default function PaintEstimationScreen() {
   });
   const [searchTerm, setSearchTerm] = useState("");
   
-  // Painting system states
+  // Painting system states for Wall Area
   const [paintingSystem, setPaintingSystem] = useState<"Fresh Painting" | "Repainting" | null>(null);
   const [systemDialogOpen, setSystemDialogOpen] = useState(false);
   const [coatConfiguration, setCoatConfiguration] = useState({
@@ -62,6 +62,24 @@ export default function PaintEstimationScreen() {
     emulsion: 2
   });
   const [selectedMaterials, setSelectedMaterials] = useState({
+    putty: "",
+    primer: "",
+    emulsion: ""
+  });
+  
+  // Painting system states for Ceiling Area
+  const [ceilingPaintingSystem, setCeilingPaintingSystem] = useState<"Fresh Painting" | "Repainting" | null>(null);
+  const [ceilingSystemDialogOpen, setCeilingSystemDialogOpen] = useState(false);
+  const [ceilingCoatConfiguration, setCeilingCoatConfiguration] = useState({
+    putty: 2,
+    primer: 2,
+    emulsion: 2
+  });
+  const [ceilingRepaintingConfiguration, setCeilingRepaintingConfiguration] = useState({
+    primer: 1,
+    emulsion: 2
+  });
+  const [ceilingSelectedMaterials, setCeilingSelectedMaterials] = useState({
     putty: "",
     primer: "",
     emulsion: ""
@@ -1174,13 +1192,348 @@ export default function PaintEstimationScreen() {
                     </Dialog>
                   )}
                   {selectedAreas.includes('Ceiling') && (
-                    <div className="bg-muted rounded-lg p-4">
-                      <div className="text-center">
-                        <p className="text-sm text-muted-foreground">Ceiling Area</p>
-                        <p className="text-2xl font-bold text-foreground">{estimation.ceilingArea.toFixed(1)}</p>
-                        <p className="text-xs text-muted-foreground">sq.ft</p>
-                      </div>
-                    </div>
+                    <Dialog open={ceilingSystemDialogOpen} onOpenChange={setCeilingSystemDialogOpen}>
+                      <DialogTrigger asChild>
+                        <div className="bg-muted rounded-lg p-4 cursor-pointer hover:bg-muted/80 transition-colors border-2 border-dashed border-primary/30 hover:border-primary/50">
+                          <div className="text-center">
+                            <div className="flex items-center justify-center gap-1 mb-1">
+                              <Settings className="h-3 w-3 text-primary" />
+                              <p className="text-xs font-medium text-primary">
+                                {ceilingPaintingSystem ? ceilingPaintingSystem : 'Select System'}
+                              </p>
+                            </div>
+                            <p className="text-2xl font-bold text-foreground">{estimation.ceilingArea.toFixed(1)}</p>
+                            <p className="text-xs text-muted-foreground">Ceiling Area</p>
+                          </div>
+                        </div>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
+                        <DialogHeader>
+                          <DialogTitle>Select Ceiling Painting System</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-2 gap-3">
+                            <Button
+                              variant={ceilingPaintingSystem === "Fresh Painting" ? "default" : "outline"}
+                              onClick={() => setCeilingPaintingSystem("Fresh Painting")}
+                              className="h-20 flex flex-col items-center justify-center text-center"
+                            >
+                              <div>
+                                <p className="font-medium">Fresh Painting</p>
+                                <p className="text-xs opacity-80">Complete system</p>
+                              </div>
+                            </Button>
+                            <Button
+                              variant={ceilingPaintingSystem === "Repainting" ? "default" : "outline"}
+                              onClick={() => setCeilingPaintingSystem("Repainting")}
+                              className="h-20 flex flex-col items-center justify-center text-center"
+                            >
+                              <div>
+                                <p className="font-medium">Repainting</p>
+                                <p className="text-xs opacity-80">Refresh system</p>
+                              </div>
+                            </Button>
+                          </div>
+
+                          {ceilingPaintingSystem === "Fresh Painting" && (
+                            <div className="bg-muted rounded-lg p-4 space-y-4">
+                              <h4 className="font-medium text-sm">Fresh Painting Configuration</h4>
+                              
+                              {/* Putty Section */}
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <Label className="text-sm font-medium">Putty Coats</Label>
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => setCeilingCoatConfiguration(prev => ({ 
+                                        ...prev, 
+                                        putty: Math.max(1, prev.putty - 1) 
+                                      }))}
+                                    >
+                                      <Minus className="h-3 w-3" />
+                                    </Button>
+                                    <span className="w-8 text-center font-medium">
+                                      {ceilingCoatConfiguration.putty}
+                                    </span>
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => setCeilingCoatConfiguration(prev => ({ 
+                                        ...prev, 
+                                        putty: Math.min(3, prev.putty + 1) 
+                                      }))}
+                                    >
+                                      <Plus className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                                <Select 
+                                  value={ceilingSelectedMaterials.putty} 
+                                  onValueChange={(value) => setCeilingSelectedMaterials(prev => ({...prev, putty: value}))}
+                                >
+                                  <SelectTrigger className="h-9">
+                                    <SelectValue placeholder="Select putty type" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {coverageData
+                                      .filter(item => item.category === "Putty")
+                                      .map(item => item.product_name)
+                                      .filter((value, index, self) => self.indexOf(value) === index)
+                                      .map((puttyName) => (
+                                        <SelectItem key={puttyName} value={puttyName}>
+                                          {puttyName}
+                                        </SelectItem>
+                                      ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              {/* Primer Section */}
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <Label className="text-sm font-medium">Primer Coats</Label>
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => setCeilingCoatConfiguration(prev => ({ 
+                                        ...prev, 
+                                        primer: Math.max(1, prev.primer - 1) 
+                                      }))}
+                                    >
+                                      <Minus className="h-3 w-3" />
+                                    </Button>
+                                    <span className="w-8 text-center font-medium">
+                                      {ceilingCoatConfiguration.primer}
+                                    </span>
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => setCeilingCoatConfiguration(prev => ({ 
+                                        ...prev, 
+                                        primer: Math.min(3, prev.primer + 1) 
+                                      }))}
+                                    >
+                                      <Plus className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                                <Select 
+                                  value={ceilingSelectedMaterials.primer} 
+                                  onValueChange={(value) => setCeilingSelectedMaterials(prev => ({...prev, primer: value}))}
+                                >
+                                  <SelectTrigger className="h-9">
+                                    <SelectValue placeholder="Select primer type" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {coverageData
+                                      .filter(item => item.category === "Primer")
+                                      .map(item => item.product_name)
+                                      .filter((value, index, self) => self.indexOf(value) === index)
+                                      .map((primerName) => (
+                                        <SelectItem key={primerName} value={primerName}>
+                                          {primerName}
+                                        </SelectItem>
+                                      ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              {/* Emulsion Section */}
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <Label className="text-sm font-medium">Emulsion Coats</Label>
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => setCeilingCoatConfiguration(prev => ({ 
+                                        ...prev, 
+                                        emulsion: Math.max(1, prev.emulsion - 1) 
+                                      }))}
+                                    >
+                                      <Minus className="h-3 w-3" />
+                                    </Button>
+                                    <span className="w-8 text-center font-medium">
+                                      {ceilingCoatConfiguration.emulsion}
+                                    </span>
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => setCeilingCoatConfiguration(prev => ({ 
+                                        ...prev, 
+                                        emulsion: Math.min(3, prev.emulsion + 1) 
+                                      }))}
+                                    >
+                                      <Plus className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                                <Select 
+                                  value={ceilingSelectedMaterials.emulsion} 
+                                  onValueChange={(value) => setCeilingSelectedMaterials(prev => ({...prev, emulsion: value}))}
+                                >
+                                  <SelectTrigger className="h-9">
+                                    <SelectValue placeholder="Select emulsion type" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {coverageData
+                                      .filter(item => item.category === "Interior Paint")
+                                      .map(item => item.product_name)
+                                      .filter((value, index, self) => self.indexOf(value) === index)
+                                      .map((emulsionName) => (
+                                        <SelectItem key={emulsionName} value={emulsionName}>
+                                          {emulsionName}
+                                        </SelectItem>
+                                      ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              <div className="bg-primary/10 rounded p-2 mt-3">
+                                <p className="text-xs text-primary font-medium">
+                                  Total: {ceilingCoatConfiguration.putty + ceilingCoatConfiguration.primer + ceilingCoatConfiguration.emulsion} coats
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                          {ceilingPaintingSystem === "Repainting" && (
+                            <div className="bg-muted rounded-lg p-4 space-y-4">
+                              <h4 className="font-medium text-sm">Repainting Configuration</h4>
+                              
+                              {/* Primer Section */}
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <Label className="text-sm font-medium">Primer Coats</Label>
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => setCeilingRepaintingConfiguration(prev => ({ 
+                                        ...prev, 
+                                        primer: Math.max(1, prev.primer - 1) 
+                                      }))}
+                                    >
+                                      <Minus className="h-3 w-3" />
+                                    </Button>
+                                    <span className="w-8 text-center font-medium">
+                                      {ceilingRepaintingConfiguration.primer}
+                                    </span>
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => setCeilingRepaintingConfiguration(prev => ({ 
+                                        ...prev, 
+                                        primer: Math.min(3, prev.primer + 1) 
+                                      }))}
+                                    >
+                                      <Plus className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                                <Select 
+                                  value={ceilingSelectedMaterials.primer} 
+                                  onValueChange={(value) => setCeilingSelectedMaterials(prev => ({...prev, primer: value}))}
+                                >
+                                  <SelectTrigger className="h-9">
+                                    <SelectValue placeholder="Select primer type" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {coverageData
+                                      .filter(item => item.category === "Primer")
+                                      .map(item => item.product_name)
+                                      .filter((value, index, self) => self.indexOf(value) === index)
+                                      .map((primerName) => (
+                                        <SelectItem key={primerName} value={primerName}>
+                                          {primerName}
+                                        </SelectItem>
+                                      ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              {/* Emulsion Section */}
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <Label className="text-sm font-medium">Emulsion Coats</Label>
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => setCeilingRepaintingConfiguration(prev => ({ 
+                                        ...prev, 
+                                        emulsion: Math.max(1, prev.emulsion - 1) 
+                                      }))}
+                                    >
+                                      <Minus className="h-3 w-3" />
+                                    </Button>
+                                    <span className="w-8 text-center font-medium">
+                                      {ceilingRepaintingConfiguration.emulsion}
+                                    </span>
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => setCeilingRepaintingConfiguration(prev => ({ 
+                                        ...prev, 
+                                        emulsion: Math.min(3, prev.emulsion + 1) 
+                                      }))}
+                                    >
+                                      <Plus className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                                <Select 
+                                  value={ceilingSelectedMaterials.emulsion} 
+                                  onValueChange={(value) => setCeilingSelectedMaterials(prev => ({...prev, emulsion: value}))}
+                                >
+                                  <SelectTrigger className="h-9">
+                                    <SelectValue placeholder="Select emulsion type" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {coverageData
+                                      .filter(item => item.category === "Interior Paint")
+                                      .map(item => item.product_name)
+                                      .filter((value, index, self) => self.indexOf(value) === index)
+                                      .map((emulsionName) => (
+                                        <SelectItem key={emulsionName} value={emulsionName}>
+                                          {emulsionName}
+                                        </SelectItem>
+                                      ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              <div className="bg-primary/10 rounded p-2 mt-3">
+                                <p className="text-xs text-primary font-medium">
+                                  Total: {ceilingRepaintingConfiguration.primer + ceilingRepaintingConfiguration.emulsion} coats
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                          <Button 
+                            onClick={() => setCeilingSystemDialogOpen(false)}
+                            className="w-full"
+                            disabled={!ceilingPaintingSystem}
+                          >
+                            Apply System
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
                   )}
                 </div>
               )}
