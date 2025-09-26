@@ -57,6 +57,15 @@ export default function PaintEstimationScreen() {
     primer: 2,
     emulsion: 2
   });
+  const [repaintingConfiguration, setRepaintingConfiguration] = useState({
+    primer: 1,
+    emulsion: 2
+  });
+  const [selectedMaterials, setSelectedMaterials] = useState({
+    putty: "",
+    primer: "",
+    emulsion: ""
+  });
 
   // Fetch coverage data from database
   useEffect(() => {
@@ -405,7 +414,7 @@ export default function PaintEstimationScreen() {
                           </div>
                         </div>
                       </DialogTrigger>
-                      <DialogContent className="sm:max-w-md">
+                      <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
                         <DialogHeader>
                           <DialogTitle>Select Painting System</DialogTitle>
                         </DialogHeader>
@@ -418,7 +427,7 @@ export default function PaintEstimationScreen() {
                             >
                               <div>
                                 <p className="font-medium">Fresh Painting</p>
-                                <p className="text-xs opacity-80">6-coat system</p>
+                                <p className="text-xs opacity-80">Complete system</p>
                               </div>
                             </Button>
                             <Button
@@ -428,18 +437,19 @@ export default function PaintEstimationScreen() {
                             >
                               <div>
                                 <p className="font-medium">Repainting</p>
-                                <p className="text-xs opacity-80">Standard system</p>
+                                <p className="text-xs opacity-80">Refresh system</p>
                               </div>
                             </Button>
                           </div>
 
                           {paintingSystem === "Fresh Painting" && (
-                            <div className="bg-muted rounded-lg p-4 space-y-3">
-                              <h4 className="font-medium text-sm">Coat Configuration</h4>
+                            <div className="bg-muted rounded-lg p-4 space-y-4">
+                              <h4 className="font-medium text-sm">Fresh Painting Configuration</h4>
                               
-                              <div className="space-y-3">
+                              {/* Putty Section */}
+                              <div className="space-y-2">
                                 <div className="flex items-center justify-between">
-                                  <Label className="text-sm">Putty Coats</Label>
+                                  <Label className="text-sm font-medium">Putty Coats</Label>
                                   <div className="flex items-center gap-2">
                                     <Button
                                       variant="outline"
@@ -468,9 +478,31 @@ export default function PaintEstimationScreen() {
                                     </Button>
                                   </div>
                                 </div>
+                                <Select 
+                                  value={selectedMaterials.putty} 
+                                  onValueChange={(value) => setSelectedMaterials(prev => ({...prev, putty: value}))}
+                                >
+                                  <SelectTrigger className="h-9">
+                                    <SelectValue placeholder="Select putty type" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {coverageData
+                                      .filter(item => item.category === "Putty")
+                                      .map(item => item.product_name)
+                                      .filter((value, index, self) => self.indexOf(value) === index)
+                                      .map((puttyName) => (
+                                        <SelectItem key={puttyName} value={puttyName}>
+                                          {puttyName}
+                                        </SelectItem>
+                                      ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
 
+                              {/* Primer Section */}
+                              <div className="space-y-2">
                                 <div className="flex items-center justify-between">
-                                  <Label className="text-sm">Primer Coats</Label>
+                                  <Label className="text-sm font-medium">Primer Coats</Label>
                                   <div className="flex items-center gap-2">
                                     <Button
                                       variant="outline"
@@ -499,9 +531,31 @@ export default function PaintEstimationScreen() {
                                     </Button>
                                   </div>
                                 </div>
+                                <Select 
+                                  value={selectedMaterials.primer} 
+                                  onValueChange={(value) => setSelectedMaterials(prev => ({...prev, primer: value}))}
+                                >
+                                  <SelectTrigger className="h-9">
+                                    <SelectValue placeholder="Select primer type" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {coverageData
+                                      .filter(item => item.category === "Primer")
+                                      .map(item => item.product_name)
+                                      .filter((value, index, self) => self.indexOf(value) === index)
+                                      .map((primerName) => (
+                                        <SelectItem key={primerName} value={primerName}>
+                                          {primerName}
+                                        </SelectItem>
+                                      ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
 
+                              {/* Emulsion Section */}
+                              <div className="space-y-2">
                                 <div className="flex items-center justify-between">
-                                  <Label className="text-sm">Emulsion Coats</Label>
+                                  <Label className="text-sm font-medium">Emulsion Coats</Label>
                                   <div className="flex items-center gap-2">
                                     <Button
                                       variant="outline"
@@ -530,11 +584,148 @@ export default function PaintEstimationScreen() {
                                     </Button>
                                   </div>
                                 </div>
+                                <Select 
+                                  value={selectedMaterials.emulsion} 
+                                  onValueChange={(value) => setSelectedMaterials(prev => ({...prev, emulsion: value}))}
+                                >
+                                  <SelectTrigger className="h-9">
+                                    <SelectValue placeholder="Select emulsion type" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {coverageData
+                                      .filter(item => item.category === "Interior Paint")
+                                      .map(item => item.product_name)
+                                      .filter((value, index, self) => self.indexOf(value) === index)
+                                      .map((emulsionName) => (
+                                        <SelectItem key={emulsionName} value={emulsionName}>
+                                          {emulsionName}
+                                        </SelectItem>
+                                      ))}
+                                  </SelectContent>
+                                </Select>
                               </div>
 
                               <div className="bg-primary/10 rounded p-2 mt-3">
                                 <p className="text-xs text-primary font-medium">
                                   Total: {coatConfiguration.putty + coatConfiguration.primer + coatConfiguration.emulsion} coats
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                          {paintingSystem === "Repainting" && (
+                            <div className="bg-muted rounded-lg p-4 space-y-4">
+                              <h4 className="font-medium text-sm">Repainting Configuration</h4>
+                              
+                              {/* Primer Section */}
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <Label className="text-sm font-medium">Primer Coats</Label>
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => setRepaintingConfiguration(prev => ({ 
+                                        ...prev, 
+                                        primer: Math.max(1, prev.primer - 1) 
+                                      }))}
+                                    >
+                                      <Minus className="h-3 w-3" />
+                                    </Button>
+                                    <span className="w-8 text-center font-medium">
+                                      {repaintingConfiguration.primer}
+                                    </span>
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => setRepaintingConfiguration(prev => ({ 
+                                        ...prev, 
+                                        primer: Math.min(3, prev.primer + 1) 
+                                      }))}
+                                    >
+                                      <Plus className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                                <Select 
+                                  value={selectedMaterials.primer} 
+                                  onValueChange={(value) => setSelectedMaterials(prev => ({...prev, primer: value}))}
+                                >
+                                  <SelectTrigger className="h-9">
+                                    <SelectValue placeholder="Select primer type" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {coverageData
+                                      .filter(item => item.category === "Primer")
+                                      .map(item => item.product_name)
+                                      .filter((value, index, self) => self.indexOf(value) === index)
+                                      .map((primerName) => (
+                                        <SelectItem key={primerName} value={primerName}>
+                                          {primerName}
+                                        </SelectItem>
+                                      ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              {/* Emulsion Section */}
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <Label className="text-sm font-medium">Emulsion Coats</Label>
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => setRepaintingConfiguration(prev => ({ 
+                                        ...prev, 
+                                        emulsion: Math.max(1, prev.emulsion - 1) 
+                                      }))}
+                                    >
+                                      <Minus className="h-3 w-3" />
+                                    </Button>
+                                    <span className="w-8 text-center font-medium">
+                                      {repaintingConfiguration.emulsion}
+                                    </span>
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => setRepaintingConfiguration(prev => ({ 
+                                        ...prev, 
+                                        emulsion: Math.min(3, prev.emulsion + 1) 
+                                      }))}
+                                    >
+                                      <Plus className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                                <Select 
+                                  value={selectedMaterials.emulsion} 
+                                  onValueChange={(value) => setSelectedMaterials(prev => ({...prev, emulsion: value}))}
+                                >
+                                  <SelectTrigger className="h-9">
+                                    <SelectValue placeholder="Select emulsion type" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {coverageData
+                                      .filter(item => item.category === "Interior Paint")
+                                      .map(item => item.product_name)
+                                      .filter((value, index, self) => self.indexOf(value) === index)
+                                      .map((emulsionName) => (
+                                        <SelectItem key={emulsionName} value={emulsionName}>
+                                          {emulsionName}
+                                        </SelectItem>
+                                      ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              <div className="bg-primary/10 rounded p-2 mt-3">
+                                <p className="text-xs text-primary font-medium">
+                                  Total: {repaintingConfiguration.primer + repaintingConfiguration.emulsion} coats
                                 </p>
                               </div>
                             </div>
@@ -582,7 +773,7 @@ export default function PaintEstimationScreen() {
                           </div>
                         </div>
                       </DialogTrigger>
-                      <DialogContent className="sm:max-w-md">
+                      <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
                         <DialogHeader>
                           <DialogTitle>Select Painting System</DialogTitle>
                         </DialogHeader>
@@ -595,7 +786,7 @@ export default function PaintEstimationScreen() {
                             >
                               <div>
                                 <p className="font-medium">Fresh Painting</p>
-                                <p className="text-xs opacity-80">6-coat system</p>
+                                <p className="text-xs opacity-80">Complete system</p>
                               </div>
                             </Button>
                             <Button
@@ -605,18 +796,19 @@ export default function PaintEstimationScreen() {
                             >
                               <div>
                                 <p className="font-medium">Repainting</p>
-                                <p className="text-xs opacity-80">Standard system</p>
+                                <p className="text-xs opacity-80">Refresh system</p>
                               </div>
                             </Button>
                           </div>
 
                           {paintingSystem === "Fresh Painting" && (
-                            <div className="bg-muted rounded-lg p-4 space-y-3">
-                              <h4 className="font-medium text-sm">Coat Configuration</h4>
+                            <div className="bg-muted rounded-lg p-4 space-y-4">
+                              <h4 className="font-medium text-sm">Fresh Painting Configuration</h4>
                               
-                              <div className="space-y-3">
+                              {/* Putty Section */}
+                              <div className="space-y-2">
                                 <div className="flex items-center justify-between">
-                                  <Label className="text-sm">Putty Coats</Label>
+                                  <Label className="text-sm font-medium">Putty Coats</Label>
                                   <div className="flex items-center gap-2">
                                     <Button
                                       variant="outline"
@@ -645,9 +837,31 @@ export default function PaintEstimationScreen() {
                                     </Button>
                                   </div>
                                 </div>
+                                <Select 
+                                  value={selectedMaterials.putty} 
+                                  onValueChange={(value) => setSelectedMaterials(prev => ({...prev, putty: value}))}
+                                >
+                                  <SelectTrigger className="h-9">
+                                    <SelectValue placeholder="Select putty type" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {coverageData
+                                      .filter(item => item.category === "Putty")
+                                      .map(item => item.product_name)
+                                      .filter((value, index, self) => self.indexOf(value) === index)
+                                      .map((puttyName) => (
+                                        <SelectItem key={puttyName} value={puttyName}>
+                                          {puttyName}
+                                        </SelectItem>
+                                      ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
 
+                              {/* Primer Section */}
+                              <div className="space-y-2">
                                 <div className="flex items-center justify-between">
-                                  <Label className="text-sm">Primer Coats</Label>
+                                  <Label className="text-sm font-medium">Primer Coats</Label>
                                   <div className="flex items-center gap-2">
                                     <Button
                                       variant="outline"
@@ -676,9 +890,31 @@ export default function PaintEstimationScreen() {
                                     </Button>
                                   </div>
                                 </div>
+                                <Select 
+                                  value={selectedMaterials.primer} 
+                                  onValueChange={(value) => setSelectedMaterials(prev => ({...prev, primer: value}))}
+                                >
+                                  <SelectTrigger className="h-9">
+                                    <SelectValue placeholder="Select primer type" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {coverageData
+                                      .filter(item => item.category === "Primer")
+                                      .map(item => item.product_name)
+                                      .filter((value, index, self) => self.indexOf(value) === index)
+                                      .map((primerName) => (
+                                        <SelectItem key={primerName} value={primerName}>
+                                          {primerName}
+                                        </SelectItem>
+                                      ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
 
+                              {/* Emulsion Section */}
+                              <div className="space-y-2">
                                 <div className="flex items-center justify-between">
-                                  <Label className="text-sm">Emulsion Coats</Label>
+                                  <Label className="text-sm font-medium">Emulsion Coats</Label>
                                   <div className="flex items-center gap-2">
                                     <Button
                                       variant="outline"
@@ -707,6 +943,25 @@ export default function PaintEstimationScreen() {
                                     </Button>
                                   </div>
                                 </div>
+                                <Select 
+                                  value={selectedMaterials.emulsion} 
+                                  onValueChange={(value) => setSelectedMaterials(prev => ({...prev, emulsion: value}))}
+                                >
+                                  <SelectTrigger className="h-9">
+                                    <SelectValue placeholder="Select emulsion type" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {coverageData
+                                      .filter(item => item.category === "Interior Paint")
+                                      .map(item => item.product_name)
+                                      .filter((value, index, self) => self.indexOf(value) === index)
+                                      .map((emulsionName) => (
+                                        <SelectItem key={emulsionName} value={emulsionName}>
+                                          {emulsionName}
+                                        </SelectItem>
+                                      ))}
+                                  </SelectContent>
+                                </Select>
                               </div>
 
                               <div className="bg-primary/10 rounded p-2 mt-3">
@@ -716,6 +971,196 @@ export default function PaintEstimationScreen() {
                               </div>
                             </div>
                           )}
+
+                          {paintingSystem === "Repainting" && (
+                            <div className="bg-muted rounded-lg p-4 space-y-4">
+                              <h4 className="font-medium text-sm">Repainting Configuration</h4>
+                              
+                              {/* Primer Section */}
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <Label className="text-sm font-medium">Primer Coats</Label>
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => setRepaintingConfiguration(prev => ({ 
+                                        ...prev, 
+                                        primer: Math.max(1, prev.primer - 1) 
+                                      }))}
+                                    >
+                                      <Minus className="h-3 w-3" />
+                                    </Button>
+                                    <span className="w-8 text-center font-medium">
+                                      {repaintingConfiguration.primer}
+                                    </span>
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => setRepaintingConfiguration(prev => ({ 
+                                        ...prev, 
+                                        primer: Math.min(3, prev.primer + 1) 
+                                      }))}
+                                    >
+                                      <Plus className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                                <Select 
+                                  value={selectedMaterials.primer} 
+                                  onValueChange={(value) => setSelectedMaterials(prev => ({...prev, primer: value}))}
+                                >
+                                  <SelectTrigger className="h-9">
+                                    <SelectValue placeholder="Select primer type" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {coverageData
+                                      .filter(item => item.category === "Primer")
+                                      .map(item => item.product_name)
+                                      .filter((value, index, self) => self.indexOf(value) === index)
+                                      .map((primerName) => (
+                                        <SelectItem key={primerName} value={primerName}>
+                                          {primerName}
+                                        </SelectItem>
+                                      ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              {/* Emulsion Section */}
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <Label className="text-sm font-medium">Emulsion Coats</Label>
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => setRepaintingConfiguration(prev => ({ 
+                                        ...prev, 
+                                        emulsion: Math.max(1, prev.emulsion - 1) 
+                                      }))}
+                                    >
+                                      <Minus className="h-3 w-3" />
+                                    </Button>
+                                    <span className="w-8 text-center font-medium">
+                                      {repaintingConfiguration.emulsion}
+                                    </span>
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => setRepaintingConfiguration(prev => ({ 
+                                        ...prev, 
+                                        emulsion: Math.min(3, prev.emulsion + 1) 
+                                      }))}
+                                    >
+                                      <Plus className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                                <Select 
+                                  value={selectedMaterials.emulsion} 
+                                  onValueChange={(value) => setSelectedMaterials(prev => ({...prev, emulsion: value}))}
+                                >
+                                  <SelectTrigger className="h-9">
+                                    <SelectValue placeholder="Select emulsion type" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {coverageData
+                                      .filter(item => item.category === "Interior Paint")
+                                      .map(item => item.product_name)
+                                      .filter((value, index, self) => self.indexOf(value) === index)
+                                      .map((emulsionName) => (
+                                        <SelectItem key={emulsionName} value={emulsionName}>
+                                          {emulsionName}
+                                        </SelectItem>
+                                      ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              <div className="bg-primary/10 rounded p-2 mt-3">
+                                <p className="text-xs text-primary font-medium">
+                                  Total: {repaintingConfiguration.primer + repaintingConfiguration.emulsion} coats
+                                </p>
+                              </div>
+                            </div>
+        )}
+
+        {/* Application System Summary */}
+        {paintingSystem && (
+          <Card className="eca-shadow">
+            <CardHeader>
+              <CardTitle className="flex items-center text-lg">
+                <Settings className="mr-2 h-5 w-5 text-primary" />
+                Application System
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="bg-muted rounded-lg p-4">
+                <h4 className="font-medium mb-3">{paintingSystem} Configuration</h4>
+                
+                {paintingSystem === "Fresh Painting" ? (
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span>Putty:</span>
+                      <span className="font-medium">
+                        {coatConfiguration.putty} coat{coatConfiguration.putty > 1 ? 's' : ''} 
+                        {selectedMaterials.putty && ` (${selectedMaterials.putty})`}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Primer:</span>
+                      <span className="font-medium">
+                        {coatConfiguration.primer} coat{coatConfiguration.primer > 1 ? 's' : ''} 
+                        {selectedMaterials.primer && ` (${selectedMaterials.primer})`}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Emulsion:</span>
+                      <span className="font-medium">
+                        {coatConfiguration.emulsion} coat{coatConfiguration.emulsion > 1 ? 's' : ''} 
+                        {selectedMaterials.emulsion && ` (${selectedMaterials.emulsion})`}
+                      </span>
+                    </div>
+                    <div className="pt-2 border-t border-border">
+                      <div className="flex justify-between font-medium">
+                        <span>Total Coats:</span>
+                        <span>{coatConfiguration.putty + coatConfiguration.primer + coatConfiguration.emulsion}</span>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span>Primer:</span>
+                      <span className="font-medium">
+                        {repaintingConfiguration.primer} coat{repaintingConfiguration.primer > 1 ? 's' : ''} 
+                        {selectedMaterials.primer && ` (${selectedMaterials.primer})`}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Emulsion:</span>
+                      <span className="font-medium">
+                        {repaintingConfiguration.emulsion} coat{repaintingConfiguration.emulsion > 1 ? 's' : ''} 
+                        {selectedMaterials.emulsion && ` (${selectedMaterials.emulsion})`}
+                      </span>
+                    </div>
+                    <div className="pt-2 border-t border-border">
+                      <div className="flex justify-between font-medium">
+                        <span>Total Coats:</span>
+                        <span>{repaintingConfiguration.primer + repaintingConfiguration.emulsion}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
                           <Button 
                             onClick={() => setSystemDialogOpen(false)}
