@@ -851,7 +851,7 @@ export default function PaintEstimationScreen() {
                                       className="h-8 w-8"
                                       onClick={() => setCoatConfiguration(prev => ({ 
                                         ...prev, 
-                                        putty: Math.max(1, prev.putty - 1) 
+                                        putty: Math.max(0, prev.putty - 1) 
                                       }))}
                                     >
                                       <Minus className="h-3 w-3" />
@@ -865,7 +865,7 @@ export default function PaintEstimationScreen() {
                                       className="h-8 w-8"
                                       onClick={() => setCoatConfiguration(prev => ({ 
                                         ...prev, 
-                                        putty: Math.min(3, prev.putty + 1) 
+                                        putty: Math.min(5, prev.putty + 1) 
                                       }))}
                                     >
                                       <Plus className="h-3 w-3" />
@@ -904,7 +904,7 @@ export default function PaintEstimationScreen() {
                                       className="h-8 w-8"
                                       onClick={() => setCoatConfiguration(prev => ({ 
                                         ...prev, 
-                                        primer: Math.max(1, prev.primer - 1) 
+                                        primer: Math.max(0, prev.primer - 1) 
                                       }))}
                                     >
                                       <Minus className="h-3 w-3" />
@@ -918,7 +918,7 @@ export default function PaintEstimationScreen() {
                                       className="h-8 w-8"
                                       onClick={() => setCoatConfiguration(prev => ({ 
                                         ...prev, 
-                                        primer: Math.min(3, prev.primer + 1) 
+                                        primer: Math.min(5, prev.primer + 1) 
                                       }))}
                                     >
                                       <Plus className="h-3 w-3" />
@@ -957,7 +957,7 @@ export default function PaintEstimationScreen() {
                                       className="h-8 w-8"
                                       onClick={() => setCoatConfiguration(prev => ({ 
                                         ...prev, 
-                                        emulsion: Math.max(1, prev.emulsion - 1) 
+                                        emulsion: Math.max(0, prev.emulsion - 1) 
                                       }))}
                                     >
                                       <Minus className="h-3 w-3" />
@@ -971,7 +971,7 @@ export default function PaintEstimationScreen() {
                                       className="h-8 w-8"
                                       onClick={() => setCoatConfiguration(prev => ({ 
                                         ...prev, 
-                                        emulsion: Math.min(3, prev.emulsion + 1) 
+                                        emulsion: Math.min(5, prev.emulsion + 1) 
                                       }))}
                                     >
                                       <Plus className="h-3 w-3" />
@@ -1022,7 +1022,7 @@ export default function PaintEstimationScreen() {
                                       className="h-8 w-8"
                                       onClick={() => setRepaintingConfiguration(prev => ({ 
                                         ...prev, 
-                                        primer: Math.max(1, prev.primer - 1) 
+                                        primer: Math.max(0, prev.primer - 1) 
                                       }))}
                                     >
                                       <Minus className="h-3 w-3" />
@@ -1036,7 +1036,7 @@ export default function PaintEstimationScreen() {
                                       className="h-8 w-8"
                                       onClick={() => setRepaintingConfiguration(prev => ({ 
                                         ...prev, 
-                                        primer: Math.min(3, prev.primer + 1) 
+                                        primer: Math.min(5, prev.primer + 1) 
                                       }))}
                                     >
                                       <Plus className="h-3 w-3" />
@@ -1075,7 +1075,7 @@ export default function PaintEstimationScreen() {
                                       className="h-8 w-8"
                                       onClick={() => setRepaintingConfiguration(prev => ({ 
                                         ...prev, 
-                                        emulsion: Math.max(1, prev.emulsion - 1) 
+                                        emulsion: Math.max(0, prev.emulsion - 1) 
                                       }))}
                                     >
                                       <Minus className="h-3 w-3" />
@@ -1089,7 +1089,7 @@ export default function PaintEstimationScreen() {
                                       className="h-8 w-8"
                                       onClick={() => setRepaintingConfiguration(prev => ({ 
                                         ...prev, 
-                                        emulsion: Math.min(3, prev.emulsion + 1) 
+                                        emulsion: Math.min(5, prev.emulsion + 1) 
                                       }))}
                                     >
                                       <Plus className="h-3 w-3" />
