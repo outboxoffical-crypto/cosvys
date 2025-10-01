@@ -282,10 +282,14 @@ export default function RoomMeasurementScreen() {
   };
 
   const addRoom = () => {
-    if (newRoom.name && newRoom.length && newRoom.width && newRoom.height && newRoom.pictures.length >= 2) {
+    // Height is now optional - only require name, length, width, and pictures
+    if (newRoom.name && newRoom.length && newRoom.width && newRoom.pictures.length >= 2) {
       const length = parseFloat(newRoom.length);
       const width = parseFloat(newRoom.width);
-      const height = parseFloat(newRoom.height);
+      const height = newRoom.height ? parseFloat(newRoom.height) : 0;
+      
+      // When height is 0 or not provided, use L*W for all three areas
+      const baseArea = length * width;
       
       const room: Room = {
         id: Date.now().toString(),
@@ -295,13 +299,13 @@ export default function RoomMeasurementScreen() {
         height,
         projectType: activeProjectType,
         pictures: newRoom.pictures,
-        openingAreas: [...tempOpeningAreas], // Include temporary opening areas
-        extraSurfaces: [...tempExtraSurfaces], // Include temporary extra surfaces
+        openingAreas: [...tempOpeningAreas],
+        extraSurfaces: [...tempExtraSurfaces],
         doorWindowGrills: [],
-        floorArea: length * width,
-        wallArea: 2 * (length + width) * height,
-        ceilingArea: length * width,
-        adjustedWallArea: 2 * (length + width) * height,
+        floorArea: baseArea,
+        wallArea: height > 0 ? 2 * (length + width) * height : baseArea,
+        ceilingArea: baseArea,
+        adjustedWallArea: height > 0 ? 2 * (length + width) * height : baseArea,
         totalOpeningArea: 0,
         totalExtraSurface: 0,
         totalDoorWindowGrillArea: 0,
@@ -313,22 +317,30 @@ export default function RoomMeasurementScreen() {
       };
 
       // Calculate areas with the temporary measurements
-      const areas = calculateAreas(length, width, height, tempOpeningAreas, tempExtraSurfaces, []);
-      room.floorArea = areas.floorArea;
-      room.wallArea = areas.wallArea;
-      room.ceilingArea = areas.ceilingArea;
-      room.adjustedWallArea = areas.adjustedWallArea;
-      room.totalOpeningArea = areas.totalOpeningArea;
-      room.totalExtraSurface = areas.totalExtraSurface;
-      room.totalDoorWindowGrillArea = areas.totalDoorWindowGrillArea;
+      if (height > 0) {
+        const areas = calculateAreas(length, width, height, tempOpeningAreas, tempExtraSurfaces, []);
+        room.floorArea = areas.floorArea;
+        room.wallArea = areas.wallArea;
+        room.ceilingArea = areas.ceilingArea;
+        room.adjustedWallArea = areas.adjustedWallArea;
+        room.totalOpeningArea = areas.totalOpeningArea;
+        room.totalExtraSurface = areas.totalExtraSurface;
+        room.totalDoorWindowGrillArea = areas.totalDoorWindowGrillArea;
+      } else {
+        // When height is not provided, opening areas reduce from base area
+        const totalOpeningArea = tempOpeningAreas.reduce((sum, opening) => sum + opening.area, 0);
+        const totalExtraSurface = tempExtraSurfaces.reduce((sum, extra) => sum + extra.area, 0);
+        room.totalOpeningArea = totalOpeningArea;
+        room.totalExtraSurface = totalExtraSurface;
+        room.adjustedWallArea = baseArea - totalOpeningArea + totalExtraSurface;
+      }
       
       setRooms(prev => [...prev, room]);
       setNewRoom({ name: "", length: "", width: "", height: "", pictures: [] });
-      setShowOpenAreaSection(false); // Reset the section visibility
-      setTempOpeningAreas([]); // Clear temporary measurements
-      setTempExtraSurfaces([]); // Clear temporary measurements
+      setShowOpenAreaSection(false);
+      setTempOpeningAreas([]);
+      setTempExtraSurfaces([]);
       
-      // Save rooms to localStorage
       const updatedRooms = [...rooms, room];
       localStorage.setItem(`rooms_${projectId}`, JSON.stringify(updatedRooms));
     }
