@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Plus, Ruler, Home, Trash2, Calculator, X, Edit3, Camera, Image } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface OpeningArea {
   id: string;
@@ -100,19 +102,60 @@ export default function RoomMeasurementScreen() {
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // Load project data to get project types
-    const savedProjectData = localStorage.getItem(`project_${projectId}`);
-    if (savedProjectData) {
-      const data = JSON.parse(savedProjectData);
-      setProjectData(data);
-      setActiveProjectType(data.projectTypes[0] || "");
-    }
+    const loadData = async () => {
+      // Load project data to get project types
+      const savedProjectData = localStorage.getItem(`project_${projectId}`);
+      if (savedProjectData) {
+        const data = JSON.parse(savedProjectData);
+        setProjectData(data);
+        setActiveProjectType(data.projectTypes[0] || "");
+      }
+      
+      // Load existing rooms from Supabase
+      try {
+        const { data: roomsData, error } = await supabase
+          .from('rooms')
+          .select('*')
+          .eq('project_id', projectId);
+        
+        if (error) {
+          console.error('Error loading rooms:', error);
+          toast.error('Failed to load rooms');
+          return;
+        }
+        
+        if (roomsData && roomsData.length > 0) {
+          const formattedRooms: Room[] = roomsData.map(room => ({
+            id: room.room_id,
+            name: room.name,
+            length: Number(room.length),
+            width: Number(room.width),
+            height: Number(room.height),
+            projectType: room.project_type,
+            pictures: Array.isArray(room.pictures) ? room.pictures as string[] : [],
+            openingAreas: Array.isArray(room.opening_areas) ? room.opening_areas as unknown as OpeningArea[] : [],
+            extraSurfaces: Array.isArray(room.extra_surfaces) ? room.extra_surfaces as unknown as ExtraSurface[] : [],
+            doorWindowGrills: Array.isArray(room.door_window_grills) ? room.door_window_grills as unknown as DoorWindowGrill[] : [],
+            floorArea: Number(room.floor_area),
+            wallArea: Number(room.wall_area),
+            ceilingArea: Number(room.ceiling_area),
+            adjustedWallArea: Number(room.adjusted_wall_area),
+            totalOpeningArea: Number(room.total_opening_area),
+            totalExtraSurface: Number(room.total_extra_surface),
+            totalDoorWindowGrillArea: Number(room.total_door_window_grill_area),
+            selectedAreas: (typeof room.selected_areas === 'object' && room.selected_areas !== null) ? 
+              room.selected_areas as { floor: boolean; wall: boolean; ceiling: boolean } : 
+              { floor: true, wall: true, ceiling: false }
+          }));
+          setRooms(formattedRooms);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        toast.error('Failed to load rooms');
+      }
+    };
     
-    // Load existing rooms
-    const savedRooms = localStorage.getItem(`rooms_${projectId}`);
-    if (savedRooms) {
-      setRooms(JSON.parse(savedRooms));
-    }
+    loadData();
   }, [projectId]);
 
   const calculateAreas = (
@@ -281,7 +324,7 @@ export default function RoomMeasurementScreen() {
     setShowOpenAreaSection(true);
   };
 
-  const addRoom = () => {
+  const addRoom = async () => {
     // Height is now optional - only require name, length, width, and pictures
     if (newRoom.name && newRoom.length && newRoom.width && newRoom.pictures.length >= 2) {
       const length = parseFloat(newRoom.length);
@@ -291,8 +334,9 @@ export default function RoomMeasurementScreen() {
       // When height is 0 or not provided, use L*W for all three areas
       const baseArea = length * width;
       
+      const roomId = Date.now().toString();
       const room: Room = {
-        id: Date.now().toString(),
+        id: roomId,
         name: newRoom.name,
         length,
         width,
@@ -335,24 +379,75 @@ export default function RoomMeasurementScreen() {
         room.adjustedWallArea = baseArea - totalOpeningArea + totalExtraSurface;
       }
       
-      setRooms(prev => [...prev, room]);
-      setNewRoom({ name: "", length: "", width: "", height: "", pictures: [] });
-      setShowOpenAreaSection(false);
-      setTempOpeningAreas([]);
-      setTempExtraSurfaces([]);
-      
-      const updatedRooms = [...rooms, room];
-      localStorage.setItem(`rooms_${projectId}`, JSON.stringify(updatedRooms));
+      // Save to Supabase
+      try {
+        const { error } = await supabase
+          .from('rooms')
+          .insert({
+            project_id: projectId!,
+            room_id: roomId,
+            name: room.name,
+            length: room.length,
+            width: room.width,
+            height: room.height,
+            project_type: room.projectType,
+            pictures: room.pictures as any,
+            opening_areas: room.openingAreas as any,
+            extra_surfaces: room.extraSurfaces as any,
+            door_window_grills: room.doorWindowGrills as any,
+            floor_area: room.floorArea,
+            wall_area: room.wallArea,
+            ceiling_area: room.ceilingArea,
+            adjusted_wall_area: room.adjustedWallArea,
+            total_opening_area: room.totalOpeningArea,
+            total_extra_surface: room.totalExtraSurface,
+            total_door_window_grill_area: room.totalDoorWindowGrillArea,
+            selected_areas: room.selectedAreas as any
+          });
+        
+        if (error) {
+          console.error('Error saving room:', error);
+          toast.error('Failed to save room');
+          return;
+        }
+        
+        setRooms(prev => [...prev, room]);
+        setNewRoom({ name: "", length: "", width: "", height: "", pictures: [] });
+        setShowOpenAreaSection(false);
+        setTempOpeningAreas([]);
+        setTempExtraSurfaces([]);
+        toast.success('Room added successfully');
+      } catch (error) {
+        console.error('Error:', error);
+        toast.error('Failed to save room');
+      }
     }
   };
 
-  const removeRoom = (roomId: string) => {
-    const updatedRooms = rooms.filter(room => room.id !== roomId);
-    setRooms(updatedRooms);
-    localStorage.setItem(`rooms_${projectId}`, JSON.stringify(updatedRooms));
+  const removeRoom = async (roomId: string) => {
+    try {
+      const { error } = await supabase
+        .from('rooms')
+        .delete()
+        .eq('room_id', roomId)
+        .eq('project_id', projectId!);
+      
+      if (error) {
+        console.error('Error deleting room:', error);
+        toast.error('Failed to delete room');
+        return;
+      }
+      
+      const updatedRooms = rooms.filter(room => room.id !== roomId);
+      setRooms(updatedRooms);
+      toast.success('Room deleted');
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Failed to delete room');
+    }
   };
 
-  const addOpeningAreaToRoom = (roomId: string) => {
+  const addOpeningAreaToRoom = async (roomId: string) => {
     const openingArea = addOpeningArea();
     if (openingArea) {
       const updatedRooms = rooms.map(room => {
@@ -363,13 +458,25 @@ export default function RoomMeasurementScreen() {
         }
         return room;
       });
-      setRooms(updatedRooms);
-      localStorage.setItem(`rooms_${projectId}`, JSON.stringify(updatedRooms));
-      setNewOpeningArea({ height: "", width: "", quantity: "1" });
+      
+      const updatedRoom = updatedRooms.find(r => r.id === roomId);
+      if (updatedRoom) {
+        try {
+          await supabase.from('rooms').update({
+            opening_areas: updatedRoom.openingAreas as any,
+            total_opening_area: updatedRoom.totalOpeningArea,
+            adjusted_wall_area: updatedRoom.adjustedWallArea
+          }).eq('room_id', roomId).eq('project_id', projectId!);
+          setRooms(updatedRooms);
+          setNewOpeningArea({ height: "", width: "", quantity: "1" });
+        } catch (error) {
+          console.error('Error:', error);
+        }
+      }
     }
   };
 
-  const addExtraSurfaceToRoom = (roomId: string) => {
+  const addExtraSurfaceToRoom = async (roomId: string) => {
     const extraSurface = addExtraSurface();
     if (extraSurface) {
       const updatedRooms = rooms.map(room => {
@@ -380,13 +487,25 @@ export default function RoomMeasurementScreen() {
         }
         return room;
       });
-      setRooms(updatedRooms);
-      localStorage.setItem(`rooms_${projectId}`, JSON.stringify(updatedRooms));
-      setNewExtraSurface({ height: "", width: "", quantity: "1" });
+      
+      const updatedRoom = updatedRooms.find(r => r.id === roomId);
+      if (updatedRoom) {
+        try {
+          await supabase.from('rooms').update({
+            extra_surfaces: updatedRoom.extraSurfaces as any,
+            total_extra_surface: updatedRoom.totalExtraSurface,
+            adjusted_wall_area: updatedRoom.adjustedWallArea
+          }).eq('room_id', roomId).eq('project_id', projectId!);
+          setRooms(updatedRooms);
+          setNewExtraSurface({ height: "", width: "", quantity: "1" });
+        } catch (error) {
+          console.error('Error:', error);
+        }
+      }
     }
   };
 
-  const addDoorWindowGrillToRoom = (roomId: string) => {
+  const addDoorWindowGrillToRoom = async (roomId: string) => {
     const doorWindowGrill = addDoorWindowGrill();
     if (doorWindowGrill) {
       const updatedRooms = rooms.map(room => {
@@ -397,19 +516,44 @@ export default function RoomMeasurementScreen() {
         }
         return room;
       });
-      setRooms(updatedRooms);
-      localStorage.setItem(`rooms_${projectId}`, JSON.stringify(updatedRooms));
-      setNewDoorWindowGrill({
-        name: "Door/Window",
-        height: "",
-        width: "",
-        sides: "",
-        grillMultiplier: "1"
-      });
+      
+      const updatedRoom = updatedRooms.find(r => r.id === roomId);
+      if (updatedRoom) {
+        try {
+          const { error } = await supabase
+            .from('rooms')
+            .update({
+              door_window_grills: updatedRoom.doorWindowGrills as any,
+              total_door_window_grill_area: updatedRoom.totalDoorWindowGrillArea,
+              adjusted_wall_area: updatedRoom.adjustedWallArea
+            })
+            .eq('room_id', roomId)
+            .eq('project_id', projectId!);
+          
+          if (error) {
+            console.error('Error updating room:', error);
+            toast.error('Failed to update room');
+            return;
+          }
+          
+          setRooms(updatedRooms);
+          setNewDoorWindowGrill({
+            name: "Door/Window",
+            height: "",
+            width: "",
+            sides: "",
+            grillMultiplier: "1"
+          });
+          toast.success('Door/Window added');
+        } catch (error) {
+          console.error('Error:', error);
+          toast.error('Failed to update room');
+        }
+      }
     }
   };
 
-  const removeOpeningArea = (roomId: string, openingId: string) => {
+  const removeOpeningArea = async (roomId: string, openingId: string) => {
     const updatedRooms = rooms.map(room => {
       if (room.id === roomId) {
         const updatedOpeningAreas = room.openingAreas.filter(o => o.id !== openingId);
@@ -418,11 +562,18 @@ export default function RoomMeasurementScreen() {
       }
       return room;
     });
+    const updatedRoom = updatedRooms.find(r => r.id === roomId);
+    if (updatedRoom) {
+      await supabase.from('rooms').update({
+        opening_areas: updatedRoom.openingAreas as any,
+        total_opening_area: updatedRoom.totalOpeningArea,
+        adjusted_wall_area: updatedRoom.adjustedWallArea
+      }).eq('room_id', roomId).eq('project_id', projectId!);
+    }
     setRooms(updatedRooms);
-    localStorage.setItem(`rooms_${projectId}`, JSON.stringify(updatedRooms));
   };
 
-  const removeExtraSurface = (roomId: string, extraId: string) => {
+  const removeExtraSurface = async (roomId: string, extraId: string) => {
     const updatedRooms = rooms.map(room => {
       if (room.id === roomId) {
         const updatedExtraSurfaces = room.extraSurfaces.filter(e => e.id !== extraId);
@@ -431,11 +582,18 @@ export default function RoomMeasurementScreen() {
       }
       return room;
     });
+    const updatedRoom = updatedRooms.find(r => r.id === roomId);
+    if (updatedRoom) {
+      await supabase.from('rooms').update({
+        extra_surfaces: updatedRoom.extraSurfaces as any,
+        total_extra_surface: updatedRoom.totalExtraSurface,
+        adjusted_wall_area: updatedRoom.adjustedWallArea
+      }).eq('room_id', roomId).eq('project_id', projectId!);
+    }
     setRooms(updatedRooms);
-    localStorage.setItem(`rooms_${projectId}`, JSON.stringify(updatedRooms));
   };
 
-  const removeDoorWindowGrill = (roomId: string, dwgId: string) => {
+  const removeDoorWindowGrill = async (roomId: string, dwgId: string) => {
     const updatedRooms = rooms.map(room => {
       if (room.id === roomId) {
         const updatedDoorWindowGrills = room.doorWindowGrills.filter(d => d.id !== dwgId);
@@ -444,11 +602,18 @@ export default function RoomMeasurementScreen() {
       }
       return room;
     });
+    const updatedRoom = updatedRooms.find(r => r.id === roomId);
+    if (updatedRoom) {
+      await supabase.from('rooms').update({
+        door_window_grills: updatedRoom.doorWindowGrills as any,
+        total_door_window_grill_area: updatedRoom.totalDoorWindowGrillArea,
+        adjusted_wall_area: updatedRoom.adjustedWallArea
+      }).eq('room_id', roomId).eq('project_id', projectId!);
+    }
     setRooms(updatedRooms);
-    localStorage.setItem(`rooms_${projectId}`, JSON.stringify(updatedRooms));
   };
 
-  const updateDoorWindowGrillName = (roomId: string, dwgId: string, newName: string) => {
+  const updateDoorWindowGrillName = async (roomId: string, dwgId: string, newName: string) => {
     const updatedRooms = rooms.map(room => {
       if (room.id === roomId) {
         const updatedDoorWindowGrills = room.doorWindowGrills.map(dwg => 
@@ -458,15 +623,20 @@ export default function RoomMeasurementScreen() {
       }
       return room;
     });
+    const updatedRoom = updatedRooms.find(r => r.id === roomId);
+    if (updatedRoom) {
+      await supabase.from('rooms').update({
+        door_window_grills: updatedRoom.doorWindowGrills as any
+      }).eq('room_id', roomId).eq('project_id', projectId!);
+    }
     setRooms(updatedRooms);
-    localStorage.setItem(`rooms_${projectId}`, JSON.stringify(updatedRooms));
   };
 
   const getRoomsByProjectType = (projectType: string) => {
     return rooms.filter(room => room.projectType === projectType);
   };
 
-  const toggleAreaSelection = (roomId: string, areaType: 'floor' | 'wall' | 'ceiling') => {
+  const toggleAreaSelection = async (roomId: string, areaType: 'floor' | 'wall' | 'ceiling') => {
     const updatedRooms = rooms.map(room => {
       if (room.id === roomId) {
         return {
@@ -479,8 +649,13 @@ export default function RoomMeasurementScreen() {
       }
       return room;
     });
+    const updatedRoom = updatedRooms.find(r => r.id === roomId);
+    if (updatedRoom) {
+      await supabase.from('rooms').update({
+        selected_areas: updatedRoom.selectedAreas as any
+      }).eq('room_id', roomId).eq('project_id', projectId!);
+    }
     setRooms(updatedRooms);
-    localStorage.setItem(`rooms_${projectId}`, JSON.stringify(updatedRooms));
   };
 
   const getTotalSelectedArea = (rooms: Room[]) => {
@@ -495,7 +670,6 @@ export default function RoomMeasurementScreen() {
 
   const handleContinue = () => {
     if (rooms.length > 0) {
-      localStorage.setItem(`rooms_${projectId}`, JSON.stringify(rooms));
       navigate(`/paint-estimation/${projectId}`);
     }
   };

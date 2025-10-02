@@ -170,47 +170,74 @@ export default function PaintEstimationScreen() {
   };
 
   useEffect(() => {
-    // Load room data and extract selected areas
-    const storedRooms = localStorage.getItem(`rooms_${projectId}`);
-    if (storedRooms) {
-      const roomData = JSON.parse(storedRooms);
-      setRooms(roomData);
-      
-      // Extract selected area types from all rooms and calculate total area
-      const selectedAreaTypes = new Set<string>();
-      let wallArea = 0;
-      let ceilingArea = 0;
-      let enamelTotalArea = 0;
-      
-      roomData.forEach((room: any) => {
-        if (room.selectedAreas) {
-          if (room.selectedAreas.wall) {
-            selectedAreaTypes.add('Wall');
-            wallArea += room.adjustedWallArea || room.wallArea || 0;
-          }
-          if (room.selectedAreas.ceiling) {
-            selectedAreaTypes.add('Ceiling');
-            ceilingArea += room.ceilingArea || 0;
-          }
-          if (room.selectedAreas.floor) selectedAreaTypes.add('Floor');
+    const loadRooms = async () => {
+      try {
+        const { data: roomsData, error } = await supabase
+          .from('rooms')
+          .select('*')
+          .eq('project_id', projectId);
+        
+        if (error) {
+          console.error('Error loading rooms:', error);
+          return;
         }
-        // Calculate total enamel area from doorWindowGrills
-        if (room.doorWindowGrills && room.doorWindowGrills.length > 0) {
-          enamelTotalArea += room.totalDoorWindowGrillArea || 0;
+        
+        if (roomsData && roomsData.length > 0) {
+          const roomData = roomsData.map(room => ({
+            id: room.room_id,
+            name: room.name,
+            selectedAreas: (typeof room.selected_areas === 'object' && room.selected_areas !== null) ? 
+              room.selected_areas as any : { floor: true, wall: true, ceiling: false },
+            adjustedWallArea: Number(room.adjusted_wall_area),
+            wallArea: Number(room.wall_area),
+            ceilingArea: Number(room.ceiling_area),
+            doorWindowGrills: Array.isArray(room.door_window_grills) ? room.door_window_grills : [],
+            totalDoorWindowGrillArea: Number(room.total_door_window_grill_area)
+          }));
+          
+          setRooms(roomData);
+          
+          // Extract selected area types from all rooms and calculate total area
+          const selectedAreaTypes = new Set<string>();
+          let wallArea = 0;
+          let ceilingArea = 0;
+          let enamelTotalArea = 0;
+          
+          roomData.forEach((room: any) => {
+            if (room.selectedAreas) {
+              if (room.selectedAreas.wall) {
+                selectedAreaTypes.add('Wall');
+                wallArea += room.adjustedWallArea || room.wallArea || 0;
+              }
+              if (room.selectedAreas.ceiling) {
+                selectedAreaTypes.add('Ceiling');
+                ceilingArea += room.ceilingArea || 0;
+              }
+              if (room.selectedAreas.floor) selectedAreaTypes.add('Floor');
+            }
+            // Calculate total enamel area from doorWindowGrills
+            if (room.doorWindowGrills && room.doorWindowGrills.length > 0) {
+              enamelTotalArea += room.totalDoorWindowGrillArea || 0;
+            }
+          });
+          
+          setSelectedAreas(Array.from(selectedAreaTypes));
+          const total = wallArea + ceilingArea;
+          setTotalArea(total);
+          setEnamelArea(enamelTotalArea);
+          setEstimation(prev => ({
+            ...prev,
+            wallArea,
+            ceilingArea,
+            totalArea: total
+          }));
         }
-      });
-      
-      setSelectedAreas(Array.from(selectedAreaTypes));
-      const total = wallArea + ceilingArea;
-      setTotalArea(total);
-      setEnamelArea(enamelTotalArea);
-      setEstimation(prev => ({
-        ...prev,
-        wallArea,
-        ceilingArea,
-        totalArea: total
-      }));
-    }
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    };
+    
+    loadRooms();
   }, [projectId]);
 
   // Update quantity calculation when product, coats, or area changes
@@ -1570,6 +1597,157 @@ export default function PaintEstimationScreen() {
                   )}
                 </div>
               </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Enamel for Door & Window */}
+        {enamellArea > 0 && (
+          <Card className="eca-shadow border-amber-200">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center">
+                <Settings className="mr-2 h-5 w-5 text-amber-600" />
+                Door & Window Enamel
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Dialog open={enamelDialogOpen} onOpenChange={setEnamelDialogOpen}>
+                <DialogTrigger asChild>
+                  <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-4 cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors border-2 border-dashed border-amber-300 hover:border-amber-400">
+                    <div className="text-center">
+                      <p className="text-sm font-medium text-amber-700 dark:text-amber-400 mb-1">
+                        {enamelPrimer && enamelType ? 'Configured' : 'Configure Enamel System'}
+                      </p>
+                      <p className="text-2xl font-bold text-amber-900 dark:text-amber-100">{enamellArea.toFixed(1)}</p>
+                      <p className="text-xs text-amber-700 dark:text-amber-400">sq.ft (Enamel Area)</p>
+                      {enamelPrimer && enamelType && (
+                        <div className="mt-2 text-xs text-amber-700 dark:text-amber-400">
+                          {enamelPrimerCoats > 0 && `${enamelPrimerCoats} coat${enamelPrimerCoats > 1 ? 's' : ''} ${enamelPrimer}`}
+                          {enamelPrimerCoats > 0 && enamelCoats > 0 && ' + '}
+                          {enamelCoats > 0 && `${enamelCoats} coat${enamelCoats > 1 ? 's' : ''} ${enamelType}`}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-lg">
+                  <DialogHeader>
+                    <DialogTitle>Configure Enamel System</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    {/* Primer Section */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm font-medium">Primer Type</Label>
+                      </div>
+                      <Select value={enamelPrimer} onValueChange={setEnamelPrimer}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select primer type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Metal Primer">Metal Primer</SelectItem>
+                          <SelectItem value="Wood Primer">Wood Primer</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <div className="flex items-center justify-between mt-2">
+                        <Label className="text-sm">Primer Coats</Label>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => setEnamelPrimerCoats(Math.max(0, enamelPrimerCoats - 1))}
+                          >
+                            <Minus className="h-3 w-3" />
+                          </Button>
+                          <span className="w-8 text-center font-medium">{enamelPrimerCoats}</span>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => setEnamelPrimerCoats(Math.min(5, enamelPrimerCoats + 1))}
+                          >
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Enamel Section */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm font-medium">Enamel Type</Label>
+                      </div>
+                      <Select value={enamelType} onValueChange={setEnamelType}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select enamel type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Satin Enamel">Satin Enamel</SelectItem>
+                          <SelectItem value="Glossy Enamel">Glossy Enamel</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <div className="flex items-center justify-between mt-2">
+                        <Label className="text-sm">Enamel Coats</Label>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => setEnamelCoats(Math.max(0, enamelCoats - 1))}
+                          >
+                            <Minus className="h-3 w-3" />
+                          </Button>
+                          <span className="w-8 text-center font-medium">{enamelCoats}</span>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => setEnamelCoats(Math.min(5, enamelCoats + 1))}
+                          >
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Configuration Summary */}
+                    {(enamelPrimerCoats > 0 || enamelCoats > 0) && (
+                      <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3 space-y-1">
+                        <p className="text-sm font-medium text-amber-900 dark:text-amber-100">Configuration:</p>
+                        {enamelPrimerCoats > 0 && enamelPrimer && (
+                          <p className="text-xs text-amber-700 dark:text-amber-400">
+                            • {enamelPrimerCoats} coat{enamelPrimerCoats > 1 ? 's' : ''} of {enamelPrimer}
+                          </p>
+                        )}
+                        {enamelCoats > 0 && enamelType && (
+                          <p className="text-xs text-amber-700 dark:text-amber-400">
+                            • {enamelCoats} coat{enamelCoats > 1 ? 's' : ''} of {enamelType}
+                          </p>
+                        )}
+                        {enamelCoats > 2 && (
+                          <p className="text-xs text-amber-700 dark:text-amber-400">
+                            • {enamelCoats - 2} extra coat{enamelCoats - 2 > 1 ? 's' : ''} of enamel
+                          </p>
+                        )}
+                        <div className="pt-2 mt-2 border-t border-amber-200 dark:border-amber-800">
+                          <p className="text-xs font-medium text-amber-900 dark:text-amber-100">
+                            Total: {enamelPrimerCoats + enamelCoats} coats
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    <Button 
+                      onClick={() => setEnamelDialogOpen(false)}
+                      className="w-full"
+                      disabled={!enamelPrimer || !enamelType}
+                    >
+                      Apply Configuration
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </CardContent>
           </Card>
         )}
