@@ -50,6 +50,81 @@ export type Database = {
         }
         Relationships: []
       }
+      rooms: {
+        Row: {
+          adjusted_wall_area: number
+          ceiling_area: number
+          created_at: string | null
+          door_window_grills: Json | null
+          extra_surfaces: Json | null
+          floor_area: number
+          height: number | null
+          id: string
+          length: number
+          name: string
+          opening_areas: Json | null
+          pictures: Json | null
+          project_id: string
+          project_type: string
+          room_id: string
+          selected_areas: Json | null
+          total_door_window_grill_area: number | null
+          total_extra_surface: number | null
+          total_opening_area: number | null
+          updated_at: string | null
+          wall_area: number
+          width: number
+        }
+        Insert: {
+          adjusted_wall_area: number
+          ceiling_area: number
+          created_at?: string | null
+          door_window_grills?: Json | null
+          extra_surfaces?: Json | null
+          floor_area: number
+          height?: number | null
+          id?: string
+          length: number
+          name: string
+          opening_areas?: Json | null
+          pictures?: Json | null
+          project_id: string
+          project_type: string
+          room_id: string
+          selected_areas?: Json | null
+          total_door_window_grill_area?: number | null
+          total_extra_surface?: number | null
+          total_opening_area?: number | null
+          updated_at?: string | null
+          wall_area: number
+          width: number
+        }
+        Update: {
+          adjusted_wall_area?: number
+          ceiling_area?: number
+          created_at?: string | null
+          door_window_grills?: Json | null
+          extra_surfaces?: Json | null
+          floor_area?: number
+          height?: number | null
+          id?: string
+          length?: number
+          name?: string
+          opening_areas?: Json | null
+          pictures?: Json | null
+          project_id?: string
+          project_type?: string
+          room_id?: string
+          selected_areas?: Json | null
+          total_door_window_grill_area?: number | null
+          total_extra_surface?: number | null
+          total_opening_area?: number | null
+          updated_at?: string | null
+          wall_area?: number
+          width?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
