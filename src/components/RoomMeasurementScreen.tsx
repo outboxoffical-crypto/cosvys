@@ -325,8 +325,20 @@ export default function RoomMeasurementScreen() {
   };
 
   const addRoom = async () => {
+    // Validate room name
+    if (!newRoom.name.trim() || newRoom.name.trim().length > 50) {
+      toast.error('Room name must be between 1 and 50 characters');
+      return;
+    }
+
     // Height is now optional - only require name, length, width, and pictures
     if (newRoom.name && newRoom.length && newRoom.width && newRoom.pictures.length >= 2) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Please log in to save room data');
+        return;
+      }
+
       const length = parseFloat(newRoom.length);
       const width = parseFloat(newRoom.width);
       const height = newRoom.height ? parseFloat(newRoom.height) : 0;
@@ -337,7 +349,7 @@ export default function RoomMeasurementScreen() {
       const roomId = Date.now().toString();
       const room: Room = {
         id: roomId,
-        name: newRoom.name,
+        name: newRoom.name.trim(),
         length,
         width,
         height,
@@ -379,11 +391,12 @@ export default function RoomMeasurementScreen() {
         room.adjustedWallArea = baseArea - totalOpeningArea + totalExtraSurface;
       }
       
-      // Save to Supabase
+      // Save to Supabase with user_id
       try {
         const { error } = await supabase
           .from('rooms')
           .insert({
+            user_id: session.user.id,
             project_id: projectId!,
             room_id: roomId,
             name: room.name,

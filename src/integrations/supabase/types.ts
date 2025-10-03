@@ -50,6 +50,102 @@ export type Database = {
         }
         Relationships: []
       }
+      dealer_info: {
+        Row: {
+          address: string
+          created_at: string | null
+          dealer_name: string
+          email: string | null
+          employee_id: string | null
+          id: string
+          margin: number
+          phone: string
+          shop_name: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          address: string
+          created_at?: string | null
+          dealer_name: string
+          email?: string | null
+          employee_id?: string | null
+          id?: string
+          margin?: number
+          phone: string
+          shop_name: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          address?: string
+          created_at?: string | null
+          dealer_name?: string
+          email?: string | null
+          employee_id?: string | null
+          id?: string
+          margin?: number
+          phone?: string
+          shop_name?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      product_pricing: {
+        Row: {
+          created_at: string | null
+          id: string
+          margin: number | null
+          product_name: string
+          sizes: Json
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          margin?: number | null
+          product_name: string
+          sizes?: Json
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          margin?: number | null
+          product_name?: string
+          sizes?: Json
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          full_name: string | null
+          id: string
+          phone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          full_name?: string | null
+          id: string
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       rooms: {
         Row: {
           adjusted_wall_area: number
@@ -72,6 +168,7 @@ export type Database = {
           total_extra_surface: number | null
           total_opening_area: number | null
           updated_at: string | null
+          user_id: string | null
           wall_area: number
           width: number
         }
@@ -96,6 +193,7 @@ export type Database = {
           total_extra_surface?: number | null
           total_opening_area?: number | null
           updated_at?: string | null
+          user_id?: string | null
           wall_area: number
           width: number
         }
@@ -120,6 +218,7 @@ export type Database = {
           total_extra_surface?: number | null
           total_opening_area?: number | null
           updated_at?: string | null
+          user_id?: string | null
           wall_area?: number
           width?: number
         }

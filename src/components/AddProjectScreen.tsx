@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,9 +7,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, User, Phone, MapPin, Home } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { projectSchema } from "@/lib/validations";
 
 export default function AddProjectScreen() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     customerName: "",
     mobile: "",
@@ -17,19 +21,50 @@ export default function AddProjectScreen() {
     projectTypes: [] as string[]
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    // Check if user is logged in
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate("/");
+      }
+    };
+    checkAuth();
+  }, [navigate]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.customerName && formData.mobile && formData.address) {
-      // Store project data in localStorage for demo
+
+    try {
+      // Validate form data
+      const validated = projectSchema.parse(formData);
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error("You must be logged in");
+      }
+
+      // Store project data in localStorage for now (legacy support)
       const projectId = Date.now().toString();
       localStorage.setItem(`project_${projectId}`, JSON.stringify({
-        ...formData,
+        ...validated,
         id: projectId,
         createdAt: new Date().toISOString(),
         status: "In Progress"
       }));
       
+      toast({
+        title: "Success",
+        description: "Project created successfully!",
+      });
+
       navigate(`/room-measurement/${projectId}`);
+    } catch (error: any) {
+      toast({
+        title: "Validation Error",
+        description: error.message || "Please check your inputs and try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -86,6 +121,7 @@ export default function AddProjectScreen() {
                   onChange={(e) => setFormData(prev => ({ ...prev, customerName: e.target.value }))}
                   className="h-12"
                   required
+                  maxLength={100}
                 />
               </div>
 
@@ -124,6 +160,7 @@ export default function AddProjectScreen() {
                     onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
                     className="pl-10 min-h-[80px]"
                     required
+                    maxLength={500}
                   />
                 </div>
               </div>

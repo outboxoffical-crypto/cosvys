@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,9 +7,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Store, User, Phone, MapPin, Mail, Percent } from "lucide-react";
 import asianPaintsLogo from "@/assets/asian-paints-logo.png";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { dealerInfoSchema } from "@/lib/validations";
 
 export default function DealerInfoScreen() {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     dealerName: "",
     shopName: "",
@@ -20,12 +25,75 @@ export default function DealerInfoScreen() {
     margin: ""
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    // Check if user is logged in
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate("/");
+        return;
+      }
+
+      // Check if dealer info already exists
+      const { data: dealerInfo } = await supabase
+        .from('dealer_info')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
+      
+      if (dealerInfo) {
+        navigate("/dashboard");
+      }
+    };
+    checkAuth();
+  }, [navigate]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.dealerName && formData.shopName && formData.employeeId && formData.phone) {
-      // Store dealer data
-      localStorage.setItem('dealerInfo', JSON.stringify(formData));
+    setLoading(true);
+
+    try {
+      // Validate form data
+      const validated = dealerInfoSchema.parse({
+        ...formData,
+        margin: parseFloat(formData.margin)
+      });
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error("You must be logged in");
+      }
+
+      // Insert dealer info
+      const { error } = await supabase
+        .from('dealer_info')
+        .insert({
+          user_id: session.user.id,
+          dealer_name: validated.dealerName,
+          shop_name: validated.shopName,
+          employee_id: validated.employeeId,
+          phone: validated.phone,
+          address: validated.address,
+          email: validated.email || null,
+          margin: validated.margin
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Dealer information saved successfully!",
+      });
+
       navigate("/dealer-pricing");
+    } catch (error: any) {
+      toast({
+        title: "Validation Error",
+        description: error.message || "Please check your inputs and try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -189,9 +257,9 @@ export default function DealerInfoScreen() {
             <Button 
               type="submit"
               className="w-full h-12 text-base font-medium"
-              disabled={!isFormValid}
+              disabled={!isFormValid || loading}
             >
-              Continue to Product Pricing
+              {loading ? "Saving..." : "Continue to Product Pricing"}
             </Button>
           </div>
         </form>

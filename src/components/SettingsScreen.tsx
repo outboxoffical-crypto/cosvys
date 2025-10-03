@@ -16,11 +16,15 @@ import {
   Edit,
   User,
   Phone,
-  MapPin
+  MapPin,
+  LogOut
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 export default function SettingsScreen() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [settings, setSettings] = useState({
     cloudBackup: false,
     notifications: true,
@@ -30,17 +34,36 @@ export default function SettingsScreen() {
   const [productCount, setProductCount] = useState(0);
 
   useEffect(() => {
-    const stored = localStorage.getItem('dealerInfo');
-    if (stored) {
-      setDealerInfo(JSON.parse(stored));
-    }
+    const loadData = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate("/");
+        return;
+      }
 
-    const storedPrices = localStorage.getItem('productPrices');
-    if (storedPrices) {
-      const prices = JSON.parse(storedPrices);
-      setProductCount(Object.keys(prices).length);
-    }
-  }, []);
+      // Load dealer info from database
+      const { data: dealer } = await supabase
+        .from('dealer_info')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
+      
+      if (dealer) {
+        setDealerInfo(dealer);
+      }
+
+      // Load product pricing count from database
+      const { data: products } = await supabase
+        .from('product_pricing')
+        .select('id', { count: 'exact' })
+        .eq('user_id', session.user.id);
+      
+      if (products) {
+        setProductCount(products.length);
+      }
+    };
+    loadData();
+  }, [navigate]);
 
   const handleToggle = (setting: string) => {
     setSettings(prev => ({
@@ -49,13 +72,55 @@ export default function SettingsScreen() {
     }));
   };
 
-  const handleResetData = () => {
-    if (confirm('Are you sure? This will delete all dealer information and product pricing.')) {
-      localStorage.removeItem('dealerInfo');
-      localStorage.removeItem('productPrices');
-      localStorage.removeItem('setupComplete');
-      navigate('/dealer-info');
+  const handleResetData = async () => {
+    if (!confirm('Are you sure? This will delete all your dealer information and product pricing.')) {
+      return;
     }
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      // Delete dealer info
+      await supabase
+        .from('dealer_info')
+        .delete()
+        .eq('user_id', session.user.id);
+
+      // Delete product pricing
+      await supabase
+        .from('product_pricing')
+        .delete()
+        .eq('user_id', session.user.id);
+
+      // Delete rooms
+      await supabase
+        .from('rooms')
+        .delete()
+        .eq('user_id', session.user.id);
+
+      toast({
+        title: "Success",
+        description: "All data has been reset.",
+      });
+
+      navigate('/dealer-info');
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to reset data",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    toast({
+      title: "Logged out",
+      description: "You have been logged out successfully.",
+    });
+    navigate("/");
   };
 
   return (
@@ -102,8 +167,8 @@ export default function SettingsScreen() {
               <div className="flex items-center space-x-3">
                 <User className="h-4 w-4 text-muted-foreground" />
                 <div>
-                  <p className="font-medium">{dealerInfo.dealerName}</p>
-                  <p className="text-sm text-muted-foreground">{dealerInfo.shopName}</p>
+                  <p className="font-medium">{dealerInfo.dealer_name}</p>
+                  <p className="text-sm text-muted-foreground">{dealerInfo.shop_name}</p>
                 </div>
               </div>
               <div className="flex items-center space-x-3">
@@ -227,6 +292,17 @@ export default function SettingsScreen() {
             <p className="text-xs text-muted-foreground text-center">
               This will delete all dealer information, product pricing, and project data. This action cannot be undone.
             </p>
+            
+            <Separator />
+            
+            <Button 
+              variant="outline"
+              onClick={handleLogout}
+              className="w-full"
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Logout
+            </Button>
           </CardContent>
         </Card>
       </div>
