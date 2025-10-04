@@ -269,13 +269,41 @@ export default function PaintEstimationScreen() {
   };
 
   const handleContinue = () => {
-    if (selectedProduct && quantityCalculation) {
+    if (paintingSystem && perSqFtRate) {
+      const totalCost = estimation.wallArea * parseFloat(perSqFtRate);
+      
+      // Build coats description
+      let coatsDescription = '';
+      if (paintingSystem === "Fresh Painting") {
+        const coatParts = [];
+        if (coatConfiguration.putty > 0 && selectedMaterials.putty) {
+          coatParts.push(`${coatConfiguration.putty} coats of ${selectedMaterials.putty}`);
+        }
+        if (coatConfiguration.primer > 0 && selectedMaterials.primer) {
+          coatParts.push(`${coatConfiguration.primer} coats of ${selectedMaterials.primer}`);
+        }
+        if (coatConfiguration.emulsion > 0 && selectedMaterials.emulsion) {
+          coatParts.push(`${coatConfiguration.emulsion} coats of ${selectedMaterials.emulsion}`);
+        }
+        coatsDescription = coatParts.join(' + ');
+      } else {
+        const coatParts = [];
+        if (repaintingConfiguration.primer > 0 && selectedMaterials.primer) {
+          coatParts.push(`${repaintingConfiguration.primer} coats of ${selectedMaterials.primer}`);
+        }
+        if (repaintingConfiguration.emulsion > 0 && selectedMaterials.emulsion) {
+          coatParts.push(`${repaintingConfiguration.emulsion} coats of ${selectedMaterials.emulsion}`);
+        }
+        coatsDescription = coatParts.join(' + ');
+      }
+      
       const estimationData = {
-        paintType: selectedPaintType,
-        product: selectedProduct,
-        coats: selectedCoats,
-        totalArea,
-        quantityCalculation
+        paintType: selectedMaterials.emulsion,
+        paintingSystem: paintingSystem,
+        coatsDescription: coatsDescription,
+        wallAreaSqFt: estimation.wallArea,
+        perSqFtRate: parseFloat(perSqFtRate),
+        totalCost: totalCost
       };
       localStorage.setItem(`estimation_${projectId}`, JSON.stringify(estimationData));
       navigate(`/project-summary/${projectId}`);
@@ -350,90 +378,80 @@ export default function PaintEstimationScreen() {
           </CardContent>
         </Card>
 
-        {/* Product Selection */}
-        <Card className="eca-shadow">
-          <CardHeader>
-            <CardTitle className="text-lg">Select Paint Product</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Select value={selectedProduct} onValueChange={setSelectedProduct}>
-              <SelectTrigger className="h-12">
-                <SelectValue placeholder={`Search & select ${selectedPaintType.toLowerCase()} paint product...`} />
-              </SelectTrigger>
-              <SelectContent>
-                <div className="p-2">
-                  <input
-                    type="text"
-                    placeholder={`Search ${selectedPaintType.toLowerCase()} products...`}
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    onClick={(e) => e.stopPropagation()}
-                    onKeyDown={(e) => e.stopPropagation()}
-                    autoFocus
-                    className="w-full h-8 px-2 border border-input rounded-md bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                  />
-                </div>
-                {getUniqueProducts().map((productName) => (
-                  <SelectItem key={productName} value={productName}>
-                    <div className="flex items-center justify-between w-full">
-                      <span>{productName}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {/* Coat Selection */}
-            {selectedProduct && getAvailableCoats(selectedProduct).length > 0 && (
-              <div className="space-y-2">
-                <Label>Number of Coats</Label>
-                <Select value={selectedCoats} onValueChange={setSelectedCoats}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select number of coats" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {getAvailableCoats(selectedProduct).map((coatOption) => (
-                      <SelectItem key={coatOption} value={coatOption}>
-                        {coatOption}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+        {/* Paint Configuration Display - Shows after Wall Area configuration */}
+        {paintingSystem && (
+          <Card className="eca-shadow border-2 border-primary/30">
+            <CardHeader>
+              <CardTitle className="text-lg">Paint Configuration Summary</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Paint Type */}
+              <div className="bg-muted rounded-lg p-3">
+                <p className="text-xs text-muted-foreground mb-1">Paint Type</p>
+                <p className="font-medium">{selectedMaterials.emulsion || "Not selected"}</p>
               </div>
-            )}
 
-            {/* Coverage Information */}
-            {selectedProduct && selectedCoats && (
-              <div className="bg-muted rounded-lg p-4 space-y-2">
-                {(() => {
-                  const productData = coverageData.find(
-                    item => item.product_name === selectedProduct && item.coats === selectedCoats
-                  );
-                  return productData ? (
+              {/* Painting System */}
+              <div className="bg-muted rounded-lg p-3">
+                <p className="text-xs text-muted-foreground mb-1">Painting System</p>
+                <p className="font-medium">{paintingSystem}</p>
+              </div>
+
+              {/* Coats Configuration */}
+              <div className="bg-muted rounded-lg p-3">
+                <p className="text-xs text-muted-foreground mb-1">Coats</p>
+                <p className="font-medium text-sm">
+                  {paintingSystem === "Fresh Painting" ? (
                     <>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-muted-foreground">Coverage Range:</span>
-                        <span className="text-sm font-medium">{productData.coverage_range}</span>
-                      </div>
-                      {productData.surface_type && (
-                        <div className="flex justify-between">
-                          <span className="text-sm text-muted-foreground">Surface Type:</span>
-                          <span className="text-sm font-medium">{productData.surface_type}</span>
-                        </div>
-                      )}
-                      {productData.notes && (
-                        <div className="mt-2">
-                          <span className="text-sm text-muted-foreground">Notes:</span>
-                          <p className="text-xs text-muted-foreground mt-1">{productData.notes}</p>
-                        </div>
-                      )}
+                      {coatConfiguration.putty > 0 && `${coatConfiguration.putty} coats of ${selectedMaterials.putty || 'putty'}`}
+                      {coatConfiguration.putty > 0 && coatConfiguration.primer > 0 && ' + '}
+                      {coatConfiguration.primer > 0 && `${coatConfiguration.primer} coats of ${selectedMaterials.primer || 'primer'}`}
+                      {coatConfiguration.primer > 0 && coatConfiguration.emulsion > 0 && ' + '}
+                      {coatConfiguration.emulsion > 0 && `${coatConfiguration.emulsion} coats of ${selectedMaterials.emulsion || 'emulsion'}`}
                     </>
-                  ) : null;
-                })()}
+                  ) : (
+                    <>
+                      {repaintingConfiguration.primer > 0 && `${repaintingConfiguration.primer} coats of ${selectedMaterials.primer || 'primer'}`}
+                      {repaintingConfiguration.primer > 0 && repaintingConfiguration.emulsion > 0 && ' + '}
+                      {repaintingConfiguration.emulsion > 0 && `${repaintingConfiguration.emulsion} coats of ${selectedMaterials.emulsion || 'emulsion'}`}
+                    </>
+                  )}
+                </p>
               </div>
-            )}
-          </CardContent>
-        </Card>
+
+              {/* Wall Area Sq.ft */}
+              <div className="bg-muted rounded-lg p-3">
+                <p className="text-xs text-muted-foreground mb-1">Wall Area Sq.ft</p>
+                <p className="font-medium text-xl">{estimation.wallArea.toFixed(2)}</p>
+              </div>
+
+              {/* Per Sq.ft Rate */}
+              <div className="space-y-2">
+                <Label>Per Sq.ft Rate (₹)</Label>
+                <Input
+                  type="number"
+                  placeholder="Enter rate per sq.ft"
+                  value={perSqFtRate}
+                  onChange={(e) => setPerSqFtRate(e.target.value)}
+                  className="h-12 text-lg"
+                />
+              </div>
+
+              {/* Total Amount */}
+              {perSqFtRate && (
+                <div className="bg-primary/10 rounded-lg p-4 border-2 border-primary">
+                  <p className="text-xs text-muted-foreground mb-1">Total Amount of Site</p>
+                  <p className="font-bold text-2xl text-primary">
+                    ₹ {(estimation.wallArea * parseFloat(perSqFtRate)).toFixed(2)}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {estimation.wallArea.toFixed(2)} sq.ft × ₹{perSqFtRate}
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Area Summary */}
         {rooms.length > 0 && (
@@ -1582,7 +1600,7 @@ export default function PaintEstimationScreen() {
                 </div>
               )}
               <div className="mt-4 bg-primary/10 rounded-lg p-3 border-l-4 border-primary">
-                <div className="text-center">
+                 <div className="text-center">
                   <p className="text-sm text-primary font-medium">Total Area</p>
                   <p className="text-xl font-bold text-foreground">{estimation.totalArea.toFixed(1)} sq.ft</p>
                   {paintingSystem && (
@@ -1596,6 +1614,18 @@ export default function PaintEstimationScreen() {
                     </p>
                   )}
                 </div>
+              </div>
+              
+              {/* Add Additional Square Footage Button */}
+              <div className="mt-4 pt-4 border-t border-border">
+                <Button
+                  variant="outline"
+                  className="w-full h-12 border-dashed border-2"
+                  onClick={() => navigate(`/room-measurement/${projectId}?addExtra=true`)}
+                >
+                  <Plus className="h-5 w-5 mr-2" />
+                  Add Additional Square Footage
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -1752,51 +1782,9 @@ export default function PaintEstimationScreen() {
           </Card>
         )}
 
-        {/* Quantity Calculation Results */}
-        {selectedProduct && quantityCalculation && (
-          <Card className="eca-gradient text-white eca-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-center text-lg">
-                <Calculator className="mr-2 h-5 w-5" />
-                Quantity Estimation
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center">
-                    <p className="text-white/80 text-sm">Recommended Quantity</p>
-                    <p className="text-2xl font-bold">{quantityCalculation.recommendedQuantity}</p>
-                    <p className="text-white/80 text-xs">{quantityCalculation.unit}</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-white/80 text-sm">Quantity Range</p>
-                    <p className="text-lg font-bold">{quantityCalculation.minQuantity} - {quantityCalculation.maxQuantity}</p>
-                    <p className="text-white/80 text-xs">{quantityCalculation.unit}</p>
-                  </div>
-                </div>
-
-                <div className="bg-white/20 rounded-lg p-3">
-                  <div className="flex justify-between items-center text-sm">
-                    <span>Product:</span>
-                    <span>{selectedProduct}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm mt-1">
-                    <span>Area covered:</span>
-                    <span>{totalArea.toFixed(1)} sq.ft</span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm mt-1">
-                    <span>Coats:</span>
-                    <span>{selectedCoats}</span>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Continue Button */}
-        {selectedProduct && quantityCalculation && (
+        {paintingSystem && perSqFtRate && (
           <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border">
             <Button 
               onClick={handleContinue}
