@@ -4,12 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Palette, Calculator, DollarSign, Settings, Plus, Minus } from "lucide-react";
+import { ArrowLeft, Palette, Calculator, DollarSign, Settings, Plus, Minus, Edit3, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 
 interface CoverageData {
   id: string;
@@ -95,6 +95,11 @@ export default function PaintEstimationScreen() {
   
   // Per Sq.ft Rate
   const [perSqFtRate, setPerSqFtRate] = useState<string>("");
+  const [perSqFtRateCeiling, setPerSqFtRateCeiling] = useState<string>("");
+  const [perSqFtRateEnamel, setPerSqFtRateEnamel] = useState<string>("");
+
+  type ExtraArea = { id: string; type: 'Wall' | 'Ceiling' | 'Enamel'; area: number; label?: string };
+  const [additionalAreas, setAdditionalAreas] = useState<ExtraArea[]>([]);
 
   // Fetch coverage data from database
   useEffect(() => {
