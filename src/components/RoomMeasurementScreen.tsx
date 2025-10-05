@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { ArrowLeft, Plus, Ruler, Home, Trash2, Calculator, X, Edit3, Camera, Image } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -100,6 +102,16 @@ export default function RoomMeasurementScreen() {
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  
+  // Edit room state
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingRoom, setEditingRoom] = useState<Room | null>(null);
+  const [editFormData, setEditFormData] = useState({
+    name: "",
+    length: "",
+    width: "",
+    height: ""
+  });
 
   useEffect(() => {
     const loadData = async () => {
@@ -687,6 +699,88 @@ export default function RoomMeasurementScreen() {
     }
   };
 
+  // Handle edit room
+  const handleEditRoom = (room: Room) => {
+    setEditingRoom(room);
+    setEditFormData({
+      name: room.name,
+      length: room.length.toString(),
+      width: room.width.toString(),
+      height: room.height.toString()
+    });
+    setEditDialogOpen(true);
+  };
+
+  // Handle update room
+  const handleUpdateRoom = async () => {
+    if (!editingRoom || !editFormData.name || !editFormData.length || !editFormData.width) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    const length = parseFloat(editFormData.length);
+    const width = parseFloat(editFormData.width);
+    const height = editFormData.height ? parseFloat(editFormData.height) : 0;
+
+    // Recalculate areas
+    const baseArea = length * width;
+    const updatedAreas = height > 0 
+      ? calculateAreas(length, width, height, editingRoom.openingAreas, editingRoom.extraSurfaces, editingRoom.doorWindowGrills)
+      : {
+          floorArea: baseArea,
+          wallArea: baseArea,
+          ceilingArea: baseArea,
+          adjustedWallArea: baseArea - editingRoom.totalOpeningArea + editingRoom.totalExtraSurface,
+          totalOpeningArea: editingRoom.totalOpeningArea,
+          totalExtraSurface: editingRoom.totalExtraSurface,
+          totalDoorWindowGrillArea: editingRoom.totalDoorWindowGrillArea
+        };
+
+    try {
+      const { error } = await supabase
+        .from('rooms')
+        .update({
+          name: editFormData.name.trim(),
+          length,
+          width,
+          height,
+          floor_area: updatedAreas.floorArea,
+          wall_area: updatedAreas.wallArea,
+          ceiling_area: updatedAreas.ceilingArea,
+          adjusted_wall_area: updatedAreas.adjustedWallArea
+        })
+        .eq('room_id', editingRoom.id)
+        .eq('project_id', projectId!);
+
+      if (error) {
+        console.error('Error updating room:', error);
+        toast.error('Failed to update room');
+        return;
+      }
+
+      // Update local state
+      setRooms(prev => prev.map(room => 
+        room.id === editingRoom.id 
+          ? {
+              ...room,
+              name: editFormData.name.trim(),
+              length,
+              width,
+              height,
+              ...updatedAreas
+            }
+          : room
+      ));
+
+      setEditDialogOpen(false);
+      setEditingRoom(null);
+      toast.success('Room updated successfully');
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Failed to update room');
+    }
+  };
+
   if (!projectData) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -1194,14 +1288,24 @@ export default function RoomMeasurementScreen() {
                               {room.length}' × {room.width}' × {room.height}' 
                             </p>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-destructive"
-                            onClick={() => removeRoom(room.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => handleEditRoom(room)}
+                            >
+                              <Edit3 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive"
+                              onClick={() => removeRoom(room.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
 
                         {/* Open Areas - Editable after room completion */}
@@ -1530,6 +1634,86 @@ export default function RoomMeasurementScreen() {
           </div>
         )}
       </div>
+
+      {/* Edit Room Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Room Measurements</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">Room Name</Label>
+              <Input
+                id="edit-name"
+                placeholder="e.g., Living Room, Bedroom"
+                value={editFormData.name}
+                onChange={(e) => setEditFormData(prev => ({ ...prev, name: e.target.value }))}
+                className="h-12"
+              />
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="edit-length">Length (ft)</Label>
+                <Input
+                  id="edit-length"
+                  type="number"
+                  placeholder="0"
+                  value={editFormData.length}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, length: e.target.value }))}
+                  className="h-12"
+                  step="0.1"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-width">Width (ft)</Label>
+                <Input
+                  id="edit-width"
+                  type="number"
+                  placeholder="0"
+                  value={editFormData.width}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, width: e.target.value }))}
+                  className="h-12"
+                  step="0.1"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-height">Height (ft)</Label>
+                <Input
+                  id="edit-height"
+                  type="number"
+                  placeholder="0"
+                  value={editFormData.height}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, height: e.target.value }))}
+                  className="h-12"
+                  step="0.1"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  setEditDialogOpen(false);
+                  setEditingRoom(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={handleUpdateRoom}
+                disabled={!editFormData.name || !editFormData.length || !editFormData.width}
+              >
+                Save Changes
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
