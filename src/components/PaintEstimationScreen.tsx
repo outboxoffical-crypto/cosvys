@@ -1,15 +1,14 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Palette, Plus, Minus, Edit3, Trash2, Settings } from "lucide-react";
+import { ArrowLeft, Palette, Plus, Minus, Settings, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface CoverageData {
   id: string;
@@ -42,13 +41,12 @@ interface AreaConfiguration {
   area: number;
   perSqFtRate: string;
   label?: string;
+  isAdditional?: boolean;
 }
 
 export default function PaintEstimationScreen() {
   const navigate = useNavigate();
   const { projectId } = useParams();
-  const [searchParams] = useSearchParams();
-  const addExtraParam = searchParams.get('addExtra');
   
   const [selectedPaintType, setSelectedPaintType] = useState<"Interior" | "Exterior" | "Waterproofing">("Interior");
   const [rooms, setRooms] = useState<any[]>([]);
@@ -56,6 +54,11 @@ export default function PaintEstimationScreen() {
   const [areaConfigurations, setAreaConfigurations] = useState<AreaConfiguration[]>([]);
   const [selectedConfigId, setSelectedConfigId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [additionalAreaDialog, setAdditionalAreaDialog] = useState(false);
+  const [newAreaType, setNewAreaType] = useState<'Wall' | 'Ceiling' | 'Enamel' | null>(null);
+  const [newAreaAmount, setNewAreaAmount] = useState('');
+  const [newAreaLabel, setNewAreaLabel] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
   // Fetch coverage data
   useEffect(() => {
@@ -71,20 +74,19 @@ export default function PaintEstimationScreen() {
       
       if (error) {
         console.error('Error fetching coverage data:', error);
-        toast.error('Failed to load coverage data');
         return;
       }
       
       setCoverageData(data || []);
     } catch (error) {
       console.error('Error:', error);
-      toast.error('Failed to load coverage data');
     }
   };
 
   // Load rooms and filter by project type
   useEffect(() => {
     const loadRooms = async () => {
+      setIsLoading(true);
       try {
         const { data: roomsData, error } = await supabase
           .from('rooms')
@@ -93,15 +95,21 @@ export default function PaintEstimationScreen() {
         
         if (error) {
           console.error('Error loading rooms:', error);
+          setIsLoading(false);
           return;
         }
         
-        if (roomsData && roomsData.length > 0) {
+        if (roomsData) {
           setRooms(roomsData);
-          initializeConfigurations(roomsData);
+          // Small delay to ensure smooth loading
+          setTimeout(() => {
+            initializeConfigurations(roomsData);
+            setIsLoading(false);
+          }, 100);
         }
       } catch (error) {
         console.error('Error:', error);
+        setIsLoading(false);
       }
     };
     
@@ -152,7 +160,8 @@ export default function PaintEstimationScreen() {
         selectedMaterials: { putty: '', primer: '', emulsion: '' },
         area: wallAreaTotal,
         perSqFtRate: '',
-        label: 'Wall Area'
+        label: 'Wall Area',
+        isAdditional: false
       });
     }
 
@@ -166,7 +175,8 @@ export default function PaintEstimationScreen() {
         selectedMaterials: { putty: '', primer: '', emulsion: '' },
         area: ceilingAreaTotal,
         perSqFtRate: '',
-        label: 'Ceiling Area'
+        label: 'Ceiling Area',
+        isAdditional: false
       });
     }
 
@@ -180,7 +190,8 @@ export default function PaintEstimationScreen() {
         selectedMaterials: { putty: '', primer: '', emulsion: '' },
         area: enamelAreaTotal,
         perSqFtRate: '',
-        label: 'Door & Window Enamel'
+        label: 'Enamel Area',
+        isAdditional: false
       });
     }
 
@@ -190,13 +201,44 @@ export default function PaintEstimationScreen() {
   // Re-initialize when paint type changes
   useEffect(() => {
     if (rooms.length > 0) {
-      initializeConfigurations(rooms);
+      setIsLoading(true);
+      setTimeout(() => {
+        initializeConfigurations(rooms);
+        setIsLoading(false);
+      }, 100);
     }
-  }, [selectedPaintType, rooms]);
+  }, [selectedPaintType]);
 
   // Handle add additional area
-  const handleAddAdditionalArea = (areaType: 'Wall' | 'Ceiling' | 'Enamel') => {
-    navigate(`/room-measurement/${projectId}?addExtra=${areaType.toLowerCase()}`);
+  const handleOpenAddAdditionalDialog = (areaType: 'Wall' | 'Ceiling' | 'Enamel') => {
+    setNewAreaType(areaType);
+    setNewAreaAmount('');
+    setNewAreaLabel('');
+    setAdditionalAreaDialog(true);
+  };
+
+  const handleAddAdditionalArea = () => {
+    if (!newAreaType || !newAreaAmount || parseFloat(newAreaAmount) <= 0) {
+      toast.error('Please enter a valid area amount');
+      return;
+    }
+
+    const newConfig: AreaConfiguration = {
+      id: `${newAreaType.toLowerCase()}-additional-${Date.now()}`,
+      areaType: newAreaType,
+      paintingSystem: null,
+      coatConfiguration: { putty: 0, primer: 0, emulsion: 0 },
+      repaintingConfiguration: { primer: 0, emulsion: 0 },
+      selectedMaterials: { putty: '', primer: '', emulsion: '' },
+      area: parseFloat(newAreaAmount),
+      perSqFtRate: '',
+      label: newAreaLabel || `Additional ${newAreaType} Area`,
+      isAdditional: true
+    };
+
+    setAreaConfigurations(prev => [...prev, newConfig]);
+    setAdditionalAreaDialog(false);
+    toast.success('Additional area added successfully');
   };
 
   // Handle edit configuration
@@ -233,6 +275,13 @@ export default function PaintEstimationScreen() {
     }, 0);
   };
 
+  // Calculate total area for Wall and Ceiling
+  const getTotalPaintArea = () => {
+    return areaConfigurations
+      .filter(c => c.areaType === 'Wall' || c.areaType === 'Ceiling')
+      .reduce((total, config) => total + config.area, 0);
+  };
+
   const handleContinue = () => {
     // Validate at least one configuration is complete
     const hasValidConfig = areaConfigurations.some(
@@ -254,24 +303,10 @@ export default function PaintEstimationScreen() {
     navigate(`/project-summary/${projectId}`);
   };
 
-  // Get color for area type
-  const getAreaColor = (areaType: string) => {
-    switch (areaType) {
-      case 'Wall': return 'border-blue-500 bg-blue-50 dark:bg-blue-950/20';
-      case 'Ceiling': return 'border-green-500 bg-green-50 dark:bg-green-950/20';
-      case 'Enamel': return 'border-orange-500 bg-orange-50 dark:bg-orange-950/20';
-      default: return 'border-primary';
-    }
-  };
-
-  const getHeaderColor = (areaType: string) => {
-    switch (areaType) {
-      case 'Wall': return 'text-blue-700 dark:text-blue-300';
-      case 'Ceiling': return 'text-green-700 dark:text-green-300';
-      case 'Enamel': return 'text-orange-700 dark:text-orange-300';
-      default: return 'text-foreground';
-    }
-  };
+  // Separate configurations by type
+  const wallConfigs = areaConfigurations.filter(c => c.areaType === 'Wall');
+  const ceilingConfigs = areaConfigurations.filter(c => c.areaType === 'Ceiling');
+  const enamelConfigs = areaConfigurations.filter(c => c.areaType === 'Enamel');
 
   return (
     <div className="min-h-screen bg-background">
@@ -329,173 +364,273 @@ export default function PaintEstimationScreen() {
           </CardContent>
         </Card>
 
-        {/* Area Configuration Cards */}
-        {areaConfigurations.length === 0 ? (
+        {isLoading ? (
           <Card className="eca-shadow">
             <CardContent className="p-6 text-center">
-              <p className="text-muted-foreground">
-                No {selectedPaintType.toLowerCase()} areas found. Please add rooms for {selectedPaintType.toLowerCase()} in the Room Measurements section.
-              </p>
+              <p className="text-muted-foreground">Loading areas...</p>
             </CardContent>
           </Card>
         ) : (
-          areaConfigurations.map((config) => (
-            <Card key={config.id} className={`eca-shadow border-2 ${getAreaColor(config.areaType)}`}>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className={`text-lg ${getHeaderColor(config.areaType)}`}>
-                    {config.label}
-                  </CardTitle>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => handleEditConfig(config.id)}
-                    >
-                      <Edit3 className="h-4 w-4" />
-                    </Button>
-                    {!config.id.includes('main') && (
+          <>
+            {/* Area to be Painted Section */}
+            {(wallConfigs.length > 0 || ceilingConfigs.length > 0) && (
+              <div className="space-y-4">
+                <h2 className="text-lg font-semibold">Area to be Painted</h2>
+                
+                {/* Main Wall and Ceiling Areas */}
+                <div className="grid grid-cols-2 gap-4">
+                  {wallConfigs.filter(c => !c.isAdditional).map(config => (
+                    <div key={config.id} className="border-2 border-dashed border-border rounded-lg p-4 text-center space-y-3">
                       <Button
                         variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-destructive"
-                        onClick={() => handleDeleteConfig(config.id)}
+                        size="sm"
+                        className="text-primary hover:text-primary/80"
+                        onClick={() => handleEditConfig(config.id)}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Settings className="mr-1 h-4 w-4" />
+                        Select System
                       </Button>
-                    )}
+                      <div>
+                        <p className="text-3xl font-bold">{config.area.toFixed(1)}</p>
+                        <p className="text-sm text-muted-foreground">{config.label}</p>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {ceilingConfigs.filter(c => !c.isAdditional).map(config => (
+                    <div key={config.id} className="border-2 border-dashed border-border rounded-lg p-4 text-center space-y-3">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-primary hover:text-primary/80"
+                        onClick={() => handleEditConfig(config.id)}
+                      >
+                        <Settings className="mr-1 h-4 w-4" />
+                        Select System
+                      </Button>
+                      <div>
+                        <p className="text-3xl font-bold">{config.area.toFixed(1)}</p>
+                        <p className="text-sm text-muted-foreground">{config.label}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Additional Wall and Ceiling Areas */}
+                {[...wallConfigs, ...ceilingConfigs].filter(c => c.isAdditional).map(config => (
+                  <Card key={config.id} className="border-2 border-dashed">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="font-medium">{config.label}</h3>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive"
+                          onClick={() => handleDeleteConfig(config.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="text-center space-y-3">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-primary"
+                          onClick={() => handleEditConfig(config.id)}
+                        >
+                          <Settings className="mr-1 h-4 w-4" />
+                          Configure System
+                        </Button>
+                        <div>
+                          <p className="text-2xl font-bold">{config.area.toFixed(1)}</p>
+                          <p className="text-sm text-muted-foreground">sq.ft</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+
+                {/* Total Area Summary */}
+                <div className="bg-destructive/10 border-l-4 border-destructive rounded-lg p-4 text-center">
+                  <p className="text-destructive font-medium mb-1">Total Area</p>
+                  <p className="text-2xl font-bold">{getTotalPaintArea().toFixed(1)} sq.ft</p>
+                </div>
+
+                {/* Add Additional Square Footage */}
+                <Button
+                  variant="outline"
+                  className="w-full border-dashed"
+                  onClick={() => {
+                    // Determine which type to add based on existing configs
+                    if (wallConfigs.length > 0) {
+                      handleOpenAddAdditionalDialog('Wall');
+                    } else if (ceilingConfigs.length > 0) {
+                      handleOpenAddAdditionalDialog('Ceiling');
+                    }
+                  }}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Additional Square Footage
+                </Button>
+              </div>
+            )}
+
+            {/* Door & Window Enamel Section */}
+            {enamelConfigs.length > 0 && (
+              <div className="space-y-4">
+                <h2 className="text-lg font-semibold flex items-center">
+                  <Settings className="mr-2 h-5 w-5 text-primary" />
+                  Door & Window Enamel
+                </h2>
+                
+                {enamelConfigs.map(config => (
+                  <div key={config.id} className="border-2 border-dashed border-orange-300 rounded-lg p-4 bg-orange-50/50 dark:bg-orange-950/20">
+                    <div className="flex items-center justify-between mb-3">
+                      {config.isAdditional && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive"
+                          onClick={() => handleDeleteConfig(config.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                    <div className="text-center space-y-3">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-orange-700 dark:text-orange-300"
+                        onClick={() => handleEditConfig(config.id)}
+                      >
+                        Configure Enamel System
+                      </Button>
+                      <div>
+                        <p className="text-2xl font-bold text-orange-700 dark:text-orange-300">{config.area.toFixed(1)}</p>
+                        <p className="text-sm text-orange-600 dark:text-orange-400">sq.ft (Enamel Area)</p>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Area Display */}
-                <div className="bg-muted rounded-lg p-4 text-center">
-                  <p className="text-3xl font-bold">{config.area.toFixed(2)}</p>
-                  <p className="text-sm text-muted-foreground">Square Feet</p>
-                </div>
+                ))}
 
-                {/* Paint Configuration Summary */}
-                {config.paintingSystem ? (
-                  <div className="space-y-3">
-                    <div className="bg-muted rounded-lg p-3">
-                      <p className="text-xs text-muted-foreground mb-1">Paint Type</p>
-                      <p className="font-medium">{config.selectedMaterials.emulsion || "Not selected"}</p>
-                    </div>
+                {/* Add Additional Enamel */}
+                <Button
+                  variant="outline"
+                  className="w-full border-dashed border-orange-300 text-orange-700"
+                  onClick={() => handleOpenAddAdditionalDialog('Enamel')}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Additional Enamel Area
+                </Button>
+              </div>
+            )}
 
-                    <div className="bg-muted rounded-lg p-3">
-                      <p className="text-xs text-muted-foreground mb-1">Painting System</p>
-                      <p className="font-medium">{config.paintingSystem}</p>
-                    </div>
+            {/* No areas message */}
+            {areaConfigurations.length === 0 && (
+              <Card className="eca-shadow">
+                <CardContent className="p-6 text-center">
+                  <p className="text-muted-foreground">
+                    No {selectedPaintType.toLowerCase()} areas found. Please add rooms for {selectedPaintType.toLowerCase()} in the Room Measurements section.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
 
-                    <div className="bg-muted rounded-lg p-3">
-                      <p className="text-xs text-muted-foreground mb-1">Coats</p>
-                      <p className="font-medium text-sm">
-                        {config.paintingSystem === "Fresh Painting" ? (
-                          <>
-                            {config.coatConfiguration.putty > 0 && `${config.coatConfiguration.putty} coats of ${config.selectedMaterials.putty || 'putty'}`}
-                            {config.coatConfiguration.putty > 0 && config.coatConfiguration.primer > 0 && ' + '}
-                            {config.coatConfiguration.primer > 0 && `${config.coatConfiguration.primer} coats of ${config.selectedMaterials.primer || 'primer'}`}
-                            {config.coatConfiguration.primer > 0 && config.coatConfiguration.emulsion > 0 && ' + '}
-                            {config.coatConfiguration.emulsion > 0 && `${config.coatConfiguration.emulsion} coats of ${config.selectedMaterials.emulsion || 'emulsion'}`}
-                          </>
-                        ) : (
-                          <>
-                            {config.repaintingConfiguration.primer > 0 && `${config.repaintingConfiguration.primer} coats of ${config.selectedMaterials.primer || 'primer'}`}
-                            {config.repaintingConfiguration.primer > 0 && config.repaintingConfiguration.emulsion > 0 && ' + '}
-                            {config.repaintingConfiguration.emulsion > 0 && `${config.repaintingConfiguration.emulsion} coats of ${config.selectedMaterials.emulsion || 'emulsion'}`}
-                          </>
-                        )}
-                      </p>
-                    </div>
+            {/* Configuration Summary Cards */}
+            {areaConfigurations.some(c => c.paintingSystem) && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Paint Configuration Summary</h3>
+                {areaConfigurations.filter(c => c.paintingSystem).map(config => (
+                  <Card key={config.id} className="border-2 border-primary/20">
+                    <CardContent className="p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-medium">{config.label}</h4>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => handleEditConfig(config.id)}
+                        >
+                          <Settings className="h-4 w-4" />
+                        </Button>
+                      </div>
 
-                    <div className="space-y-2">
-                      <Label>Per Sq.ft Rate (₹)</Label>
-                      <Input
-                        type="number"
-                        placeholder="Enter rate per sq.ft"
-                        value={config.perSqFtRate}
-                        onChange={(e) => {
-                          setAreaConfigurations(prev => prev.map(c => 
-                            c.id === config.id ? { ...c, perSqFtRate: e.target.value } : c
-                          ));
-                        }}
-                        className="h-12 text-lg"
-                      />
-                    </div>
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div className="bg-muted rounded p-2">
+                          <p className="text-xs text-muted-foreground">Area</p>
+                          <p className="font-medium">{config.area.toFixed(1)} sq.ft</p>
+                        </div>
+                        <div className="bg-muted rounded p-2">
+                          <p className="text-xs text-muted-foreground">System</p>
+                          <p className="font-medium text-xs">{config.paintingSystem}</p>
+                        </div>
+                      </div>
 
-                    {config.perSqFtRate && (
-                      <div className="bg-primary/10 rounded-lg p-4 border-2 border-primary">
-                        <p className="text-xs text-muted-foreground mb-1">Total Amount</p>
-                        <p className="font-bold text-2xl text-primary">
-                          ₹ {(config.area * parseFloat(config.perSqFtRate)).toFixed(2)}
+                      <div className="bg-muted rounded p-3 text-sm">
+                        <p className="text-xs text-muted-foreground mb-1">Configuration</p>
+                        <p className="font-medium">
+                          {config.paintingSystem === "Fresh Painting" ? (
+                            <>
+                              {config.coatConfiguration.putty > 0 && `${config.coatConfiguration.putty} Putty`}
+                              {config.coatConfiguration.putty > 0 && config.coatConfiguration.primer > 0 && ' + '}
+                              {config.coatConfiguration.primer > 0 && `${config.coatConfiguration.primer} Primer`}
+                              {config.coatConfiguration.primer > 0 && config.coatConfiguration.emulsion > 0 && ' + '}
+                              {config.coatConfiguration.emulsion > 0 && `${config.coatConfiguration.emulsion} Emulsion`}
+                            </>
+                          ) : (
+                            <>
+                              {config.repaintingConfiguration.primer > 0 && `${config.repaintingConfiguration.primer} Primer`}
+                              {config.repaintingConfiguration.primer > 0 && config.repaintingConfiguration.emulsion > 0 && ' + '}
+                              {config.repaintingConfiguration.emulsion > 0 && `${config.repaintingConfiguration.emulsion} Emulsion`}
+                            </>
+                          )}
                         </p>
                       </div>
-                    )}
-                  </div>
-                ) : (
-                  <Button
-                    variant="outline"
-                    className="w-full h-12 border-2 border-dashed"
-                    onClick={() => handleEditConfig(config.id)}
-                  >
-                    <Settings className="mr-2 h-4 w-4" />
-                    Configure Painting System
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-          ))
-        )}
 
-        {/* Add Additional Square Footage Buttons */}
-        {areaConfigurations.length > 0 && (
-          <div className="space-y-3">
-            {areaConfigurations.some(c => c.areaType === 'Wall') && (
-              <Button
-                variant="outline"
-                className="w-full h-12 border-2 border-dashed border-blue-500 text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/20"
-                onClick={() => handleAddAdditionalArea('Wall')}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Add Additional Wall Area
-              </Button>
-            )}
-            {areaConfigurations.some(c => c.areaType === 'Ceiling') && (
-              <Button
-                variant="outline"
-                className="w-full h-12 border-2 border-dashed border-green-500 text-green-700 hover:bg-green-50 dark:hover:bg-green-950/20"
-                onClick={() => handleAddAdditionalArea('Ceiling')}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Add Additional Ceiling Area
-              </Button>
-            )}
-            {areaConfigurations.some(c => c.areaType === 'Enamel') && (
-              <Button
-                variant="outline"
-                className="w-full h-12 border-2 border-dashed border-orange-500 text-orange-700 hover:bg-orange-50 dark:hover:bg-orange-950/20"
-                onClick={() => handleAddAdditionalArea('Enamel')}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Add Additional Enamel Area
-              </Button>
-            )}
-          </div>
-        )}
+                      <div className="space-y-2">
+                        <Label className="text-sm">Per Sq.ft Rate (₹)</Label>
+                        <Input
+                          type="number"
+                          placeholder="Enter rate"
+                          value={config.perSqFtRate}
+                          onChange={(e) => {
+                            setAreaConfigurations(prev => prev.map(c => 
+                              c.id === config.id ? { ...c, perSqFtRate: e.target.value } : c
+                            ));
+                          }}
+                          className="h-10"
+                        />
+                      </div>
 
-        {/* Total Cost Summary */}
-        {areaConfigurations.some(c => c.perSqFtRate) && (
-          <Card className="eca-shadow border-2 border-primary">
-            <CardContent className="p-6">
-              <div className="text-center">
-                <p className="text-sm text-muted-foreground mb-2">Total Project Cost</p>
-                <p className="text-4xl font-bold text-primary">
-                  ₹ {calculateTotalCost().toFixed(2)}
-                </p>
+                      {config.perSqFtRate && (
+                        <div className="bg-primary/10 rounded p-3 border border-primary/20">
+                          <p className="text-xs text-muted-foreground">Total Cost</p>
+                          <p className="text-xl font-bold text-primary">
+                            ₹ {(config.area * parseFloat(config.perSqFtRate)).toFixed(2)}
+                          </p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
-            </CardContent>
-          </Card>
+            )}
+
+            {/* Total Cost Summary */}
+            {areaConfigurations.some(c => c.perSqFtRate) && (
+              <Card className="eca-shadow border-2 border-primary">
+                <CardContent className="p-6">
+                  <div className="text-center">
+                    <p className="text-sm text-muted-foreground mb-2">Total Project Cost</p>
+                    <p className="text-4xl font-bold text-primary">
+                      ₹ {calculateTotalCost().toFixed(2)}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </>
         )}
       </div>
 
@@ -844,6 +979,51 @@ export default function PaintEstimationScreen() {
               </Button>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Additional Area Dialog */}
+      <Dialog open={additionalAreaDialog} onOpenChange={setAdditionalAreaDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Additional {newAreaType} Area</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Area Type</Label>
+              <Select value={newAreaType || ''} onValueChange={(value: any) => setNewAreaType(value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select area type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Wall">Wall Area</SelectItem>
+                  <SelectItem value="Ceiling">Ceiling Area</SelectItem>
+                  <SelectItem value="Enamel">Enamel Area</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Area Amount (sq.ft)</Label>
+              <Input
+                type="number"
+                placeholder="Enter area in square feet"
+                value={newAreaAmount}
+                onChange={(e) => setNewAreaAmount(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Label (Optional)</Label>
+              <Input
+                type="text"
+                placeholder="e.g., Extra Wall Section"
+                value={newAreaLabel}
+                onChange={(e) => setNewAreaLabel(e.target.value)}
+              />
+            </div>
+            <Button className="w-full" onClick={handleAddAdditionalArea}>
+              Add Area
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 
