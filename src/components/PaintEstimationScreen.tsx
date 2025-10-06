@@ -832,7 +832,12 @@ export default function PaintEstimationScreen() {
                       </SelectTrigger>
                       <SelectContent>
                         {coverageData
-                          .filter(item => item.category === selectedPaintType)
+                          .filter(item => {
+                            const category = selectedPaintType === "Interior" ? "Interior Paint" :
+                                           selectedPaintType === "Exterior" ? "Exterior Paint" : 
+                                           selectedPaintType;
+                            return item.category === category;
+                          })
                           .map(item => item.product_name)
                           .filter((value, index, self) => self.indexOf(value) === index)
                           .map((emulsionName) => (
@@ -956,7 +961,12 @@ export default function PaintEstimationScreen() {
                       </SelectTrigger>
                       <SelectContent>
                         {coverageData
-                          .filter(item => item.category === selectedPaintType)
+                          .filter(item => {
+                            const category = selectedPaintType === "Interior" ? "Interior Paint" :
+                                           selectedPaintType === "Exterior" ? "Exterior Paint" : 
+                                           selectedPaintType;
+                            return item.category === category;
+                          })
                           .map(item => item.product_name)
                           .filter((value, index, self) => self.indexOf(value) === index)
                           .map((emulsionName) => (
