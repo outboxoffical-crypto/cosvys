@@ -904,7 +904,7 @@ export default function RoomMeasurementScreen() {
                   <Button 
                     onClick={handleAddRoomClick}
                     className="w-full h-12"
-                    disabled={!newRoom.name || !newRoom.length || !newRoom.width || !newRoom.height}
+                    disabled={!newRoom.name || !newRoom.length || !newRoom.width}
                   >
                     <Plus className="mr-2 h-4 w-4" />
                     Add Room to {activeProjectType}
@@ -1259,7 +1259,7 @@ export default function RoomMeasurementScreen() {
                     <Button 
                       onClick={addRoom}
                       className="w-full h-12"
-                      disabled={!newRoom.name || !newRoom.length || !newRoom.width || !newRoom.height || newRoom.pictures.length < 2}
+                      disabled={!newRoom.name || !newRoom.length || !newRoom.width || newRoom.pictures.length < 2}
                     >
                       <Plus className="mr-2 h-4 w-4" />
                       Complete Room Addition

@@ -516,13 +516,13 @@ export default function PaintEstimationScreen() {
         ) : (
           <>
             {/* Paint Configuration Summary - MOVED TO TOP */}
-            {areaConfigurations.some(c => c.paintingSystem) && (
+            {areaConfigurations.some(c => c.paintingSystem || c.areaType === 'Enamel') && (
               <Card className="eca-shadow border-2 border-primary/30">
                 <CardHeader>
                   <CardTitle className="text-lg">Paint Configuration Summary</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {areaConfigurations.filter(c => c.paintingSystem).map((config, idx) => (
+                  {areaConfigurations.filter(c => c.paintingSystem || c.areaType === 'Enamel').map((config, idx) => (
                     <div key={config.id}>
                       {idx > 0 && <div className="border-t my-4" />}
                       <div className="space-y-3">
@@ -802,24 +802,199 @@ export default function PaintEstimationScreen() {
           </DialogHeader>
           {selectedConfig && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <Button
-                  variant={selectedConfig.paintingSystem === "Fresh Painting" ? "default" : "outline"}
-                  onClick={() => handleUpdateConfig({ paintingSystem: "Fresh Painting" })}
-                  className="h-20 flex flex-col items-center justify-center"
-                >
-                  <p className="font-medium">Fresh Painting</p>
-                  <p className="text-xs opacity-80">Complete system</p>
-                </Button>
-                <Button
-                  variant={selectedConfig.paintingSystem === "Repainting" ? "default" : "outline"}
-                  onClick={() => handleUpdateConfig({ paintingSystem: "Repainting" })}
-                  className="h-20 flex flex-col items-center justify-center"
-                >
-                  <p className="font-medium">Repainting</p>
-                  <p className="text-xs opacity-80">Refresh system</p>
-                </Button>
-              </div>
+              {selectedConfig.areaType !== 'Enamel' && (
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    variant={selectedConfig.paintingSystem === "Fresh Painting" ? "default" : "outline"}
+                    onClick={() => handleUpdateConfig({ paintingSystem: "Fresh Painting" })}
+                    className="h-20 flex flex-col items-center justify-center"
+                  >
+                    <p className="font-medium">Fresh Painting</p>
+                    <p className="text-xs opacity-80">Complete system</p>
+                  </Button>
+                  <Button
+                    variant={selectedConfig.paintingSystem === "Repainting" ? "default" : "outline"}
+                    onClick={() => handleUpdateConfig({ paintingSystem: "Repainting" })}
+                    className="h-20 flex flex-col items-center justify-center"
+                  >
+                    <p className="font-medium">Repainting</p>
+                    <p className="text-xs opacity-80">Refresh system</p>
+                  </Button>
+                </div>
+              )}
+
+              {selectedConfig.areaType === 'Enamel' && (
+                <div className="bg-muted rounded-lg p-4 space-y-4">
+                  <h4 className="font-medium text-sm">Enamel Configuration</h4>
+
+                  {/* Primer Type and Coats */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Primer</Label>
+                    <Select 
+                      value={selectedConfig.enamelConfig?.primerType || ''}
+                      onValueChange={(value) => handleUpdateConfig({
+                        enamelConfig: {
+                          primerType: value,
+                          primerCoats: selectedConfig.enamelConfig?.primerCoats ?? 0,
+                          enamelType: selectedConfig.enamelConfig?.enamelType || '',
+                          enamelCoats: selectedConfig.enamelConfig?.enamelCoats ?? 0,
+                        }
+                      })}
+                    >
+                      <SelectTrigger className="h-9">
+                        <SelectValue placeholder="Select Metal or Wood Primer" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Metal">Metal Primer</SelectItem>
+                        <SelectItem value="Wood">Wood Primer</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Coats</span>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => handleUpdateConfig({
+                            enamelConfig: {
+                              primerType: selectedConfig.enamelConfig?.primerType || '',
+                              primerCoats: Math.max(0, (selectedConfig.enamelConfig?.primerCoats ?? 0) - 1),
+                              enamelType: selectedConfig.enamelConfig?.enamelType || '',
+                              enamelCoats: selectedConfig.enamelConfig?.enamelCoats ?? 0,
+                            }
+                          })}
+                        >
+                          <Minus className="h-3 w-3" />
+                        </Button>
+                        <span className="w-8 text-center font-medium">
+                          {selectedConfig.enamelConfig?.primerCoats ?? 0}
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => handleUpdateConfig({
+                            enamelConfig: {
+                              primerType: selectedConfig.enamelConfig?.primerType || '',
+                              primerCoats: Math.min(5, (selectedConfig.enamelConfig?.primerCoats ?? 0) + 1),
+                              enamelType: selectedConfig.enamelConfig?.enamelType || '',
+                              enamelCoats: selectedConfig.enamelConfig?.enamelCoats ?? 0,
+                            }
+                          })}
+                        >
+                          <Plus className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Enamel Type and Coats */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Enamel</Label>
+                    <Select 
+                      value={selectedConfig.enamelConfig?.enamelType || ''}
+                      onValueChange={(value) => handleUpdateConfig({
+                        enamelConfig: {
+                          primerType: selectedConfig.enamelConfig?.primerType || '',
+                          primerCoats: selectedConfig.enamelConfig?.primerCoats ?? 0,
+                          enamelType: value,
+                          enamelCoats: selectedConfig.enamelConfig?.enamelCoats ?? 0,
+                        }
+                      })}
+                    >
+                      <SelectTrigger className="h-9">
+                        <SelectValue placeholder="Select Satin or Glossy" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Satin">Satin</SelectItem>
+                        <SelectItem value="Glossy">Glossy</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Coats</span>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => handleUpdateConfig({
+                            enamelConfig: {
+                              primerType: selectedConfig.enamelConfig?.primerType || '',
+                              primerCoats: selectedConfig.enamelConfig?.primerCoats ?? 0,
+                              enamelType: selectedConfig.enamelConfig?.enamelType || '',
+                              enamelCoats: Math.max(0, (selectedConfig.enamelConfig?.enamelCoats ?? 0) - 1),
+                            }
+                          })}
+                        >
+                          <Minus className="h-3 w-3" />
+                        </Button>
+                        <span className="w-8 text-center font-medium">
+                          {selectedConfig.enamelConfig?.enamelCoats ?? 0}
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => handleUpdateConfig({
+                            enamelConfig: {
+                              primerType: selectedConfig.enamelConfig?.primerType || '',
+                              primerCoats: selectedConfig.enamelConfig?.primerCoats ?? 0,
+                              enamelType: selectedConfig.enamelConfig?.enamelType || '',
+                              enamelCoats: Math.min(5, (selectedConfig.enamelConfig?.enamelCoats ?? 0) + 1),
+                            }
+                          })}
+                        >
+                          <Plus className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Quick presets */}
+                  <div className="grid grid-cols-3 gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => handleUpdateConfig({
+                        enamelConfig: {
+                          primerType: selectedConfig.enamelConfig?.primerType || '',
+                          primerCoats: 1,
+                          enamelType: selectedConfig.enamelConfig?.enamelType || '',
+                          enamelCoats: 2,
+                        }
+                      })}
+                    >
+                      1 Primer + 2 Enamel
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => handleUpdateConfig({
+                        enamelConfig: {
+                          primerType: selectedConfig.enamelConfig?.primerType || '',
+                          primerCoats: selectedConfig.enamelConfig?.primerCoats ?? 0,
+                          enamelType: selectedConfig.enamelConfig?.enamelType || '',
+                          enamelCoats: Math.min(5, (selectedConfig.enamelConfig?.enamelCoats ?? 0) + 1),
+                        }
+                      })}
+                    >
+                      +1 Enamel Coat
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => handleUpdateConfig({
+                        enamelConfig: {
+                          primerType: selectedConfig.enamelConfig?.primerType || '',
+                          primerCoats: selectedConfig.enamelConfig?.primerCoats ?? 0,
+                          enamelType: selectedConfig.enamelConfig?.enamelType || '',
+                          enamelCoats: Math.min(5, (selectedConfig.enamelConfig?.enamelCoats ?? 0) + 2),
+                        }
+                      })}
+                    >
+                      +2 Enamel Coats
+                    </Button>
+                  </div>
+                </div>
+              )}
 
               {selectedConfig.paintingSystem === "Fresh Painting" && (
                 <div className="bg-muted rounded-lg p-4 space-y-4">
@@ -1141,7 +1316,7 @@ export default function PaintEstimationScreen() {
               <Button
                 className="w-full"
                 onClick={() => setDialogOpen(false)}
-                disabled={!selectedConfig.paintingSystem}
+                disabled={selectedConfig.areaType !== 'Enamel' && !selectedConfig.paintingSystem}
               >
                 Save Configuration
               </Button>
