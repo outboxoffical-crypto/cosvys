@@ -187,6 +187,18 @@ export default function PaintEstimationScreen() {
     // Collect additional configs (new separate boxes)
     const additional: AreaConfiguration[] = [];
 
+    // If NOT in additional mode, split totals into main + stored additionals
+    if (!isAdditionalMode && storedAdditional.length > 0) {
+      const sumStoredWall = storedAdditional
+        .filter(a => a.areaType === 'Wall')
+        .reduce((sum, a) => sum + (Number(a.area) || 0), 0);
+      const sumStoredCeiling = storedAdditional
+        .filter(a => a.areaType === 'Ceiling')
+        .reduce((sum, a) => sum + (Number(a.area) || 0), 0);
+      wallMain = Math.max(0, wallAreaTotal - sumStoredWall);
+      ceilingMain = Math.max(0, ceilingAreaTotal - sumStoredCeiling);
+    }
+
     if (isAdditionalMode && baseline) {
       const addWall = Math.max(0, wallAreaTotal - (baseline.wall || 0));
       const addCeiling = Math.max(0, ceilingAreaTotal - (baseline.ceiling || 0));
@@ -288,8 +300,8 @@ export default function PaintEstimationScreen() {
       });
     }
 
-    // Append any additional configs detected
-    configs.push(...additional);
+    // Append any additional configs detected (persisted + new)
+    configs.push(...storedAdditional, ...additional);
 
     setAreaConfigurations(configs);
   };
@@ -314,6 +326,13 @@ export default function PaintEstimationScreen() {
   // Handle delete configuration
   const handleDeleteConfig = (configId: string) => {
     setAreaConfigurations(prev => prev.filter(config => config.id !== configId));
+    try {
+      const storedKey = `additional_entries_${projectId}_${selectedPaintType}`;
+      const raw = localStorage.getItem(storedKey);
+      const list = raw ? JSON.parse(raw) : [];
+      const updated = Array.isArray(list) ? list.filter((item: any) => item.id !== configId) : [];
+      localStorage.setItem(storedKey, JSON.stringify(updated));
+    } catch {}
     toast.success('Configuration deleted');
   };
 
@@ -397,8 +416,19 @@ export default function PaintEstimationScreen() {
 
   // Get configuration description
   const getConfigDescription = (config: AreaConfiguration) => {
+    // Enamel summary
+    if (config.areaType === 'Enamel' && config.enamelConfig) {
+      const parts: string[] = [];
+      if (config.enamelConfig.primerCoats > 0 && config.enamelConfig.primerType) {
+        parts.push(`${config.enamelConfig.primerCoats} coat${config.enamelConfig.primerCoats > 1 ? 's' : ''} of ${config.enamelConfig.primerType} Primer`);
+      }
+      if (config.enamelConfig.enamelCoats > 0 && config.enamelConfig.enamelType) {
+        parts.push(`${config.enamelConfig.enamelCoats} coat${config.enamelConfig.enamelCoats > 1 ? 's' : ''} of ${config.enamelConfig.enamelType} Enamel`);
+      }
+      return parts.join(' + ');
+    }
+
     if (!config.paintingSystem) return '';
-    
     const parts: string[] = [];
     if (config.paintingSystem === "Fresh Painting") {
       if (config.coatConfiguration.putty > 0 && config.selectedMaterials.putty) {
@@ -655,9 +685,10 @@ export default function PaintEstimationScreen() {
                   className="w-full border-dashed"
                   onClick={() => {
                     try {
-                      const wallBase = wallConfigs.filter(c => !c.isAdditional).reduce((sum, c) => sum + c.area, 0);
-                      const ceilingBase = ceilingConfigs.filter(c => !c.isAdditional).reduce((sum, c) => sum + c.area, 0);
-                      const enamelBase = enamelConfigs.filter(c => !c.isAdditional).reduce((sum, c) => sum + c.area, 0);
+                      // Baseline must include ALL existing areas (main + previous additionals)
+                      const wallBase = wallConfigs.reduce((sum, c) => sum + c.area, 0);
+                      const ceilingBase = ceilingConfigs.reduce((sum, c) => sum + c.area, 0);
+                      const enamelBase = enamelConfigs.reduce((sum, c) => sum + c.area, 0);
                       localStorage.setItem(`additional_baseline_${projectId}_${selectedPaintType}`, JSON.stringify({ wall: wallBase, ceiling: ceilingBase, enamel: enamelBase }));
                       localStorage.setItem(`additional_mode_${projectId}_${selectedPaintType}`, '1');
                     } catch {}
