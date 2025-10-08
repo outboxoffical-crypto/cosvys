@@ -145,8 +145,67 @@ export default function PaintEstimationScreen() {
       }
     });
 
+    // Check if we're in "additional area" mode to create new separate boxes
+    const modeKey = `additional_mode_${projectId}_${selectedPaintType}`;
+    const baselineKey = `additional_baseline_${projectId}_${selectedPaintType}`;
+    const isAdditionalMode = typeof window !== 'undefined' && localStorage.getItem(modeKey) === '1';
+    const baselineRaw = typeof window !== 'undefined' ? localStorage.getItem(baselineKey) : null;
+    const baseline = baselineRaw ? JSON.parse(baselineRaw) as { wall?: number; ceiling?: number; enamel?: number } : null;
+
+    // Main areas default to current totals
+    let wallMain = wallAreaTotal;
+    let ceilingMain = ceilingAreaTotal;
+
+    // Collect additional configs (new separate boxes)
+    const additional: AreaConfiguration[] = [];
+
+    if (isAdditionalMode && baseline) {
+      const addWall = Math.max(0, wallAreaTotal - (baseline.wall || 0));
+      const addCeiling = Math.max(0, ceilingAreaTotal - (baseline.ceiling || 0));
+
+      // Keep main as baseline so the new difference becomes a new box
+      wallMain = baseline.wall || 0;
+      ceilingMain = baseline.ceiling || 0;
+
+      if (addWall > 0) {
+        additional.push({
+          id: `wall-additional-${Date.now()}`,
+          areaType: 'Wall',
+          paintingSystem: null,
+          coatConfiguration: { putty: 0, primer: 0, emulsion: 0 },
+          repaintingConfiguration: { primer: 0, emulsion: 0 },
+          selectedMaterials: { putty: '', primer: '', emulsion: '' },
+          area: addWall,
+          perSqFtRate: '',
+          label: 'Additional Wall Area',
+          isAdditional: true,
+        });
+      }
+
+      if (addCeiling > 0) {
+        additional.push({
+          id: `ceiling-additional-${Date.now()}`,
+          areaType: 'Ceiling',
+          paintingSystem: null,
+          coatConfiguration: { putty: 0, primer: 0, emulsion: 0 },
+          repaintingConfiguration: { primer: 0, emulsion: 0 },
+          selectedMaterials: { putty: '', primer: '', emulsion: '' },
+          area: addCeiling,
+          perSqFtRate: '',
+          label: 'Additional Ceiling Area',
+          isAdditional: true,
+        });
+      }
+
+      // Update baseline to new totals and clear mode
+      try {
+        localStorage.setItem(baselineKey, JSON.stringify({ wall: wallAreaTotal, ceiling: ceilingAreaTotal, enamel: enamelAreaTotal }));
+        localStorage.removeItem(modeKey);
+      } catch {}
+    }
+
     // Create initial configurations only for areas with actual sq.ft
-    if (wallAreaTotal > 0) {
+    if (wallMain > 0) {
       configs.push({
         id: 'wall-main',
         areaType: 'Wall',
@@ -154,14 +213,14 @@ export default function PaintEstimationScreen() {
         coatConfiguration: { putty: 0, primer: 0, emulsion: 0 },
         repaintingConfiguration: { primer: 0, emulsion: 0 },
         selectedMaterials: { putty: '', primer: '', emulsion: '' },
-        area: wallAreaTotal,
+        area: wallMain,
         perSqFtRate: '',
         label: 'Wall Area',
         isAdditional: false
       });
     }
 
-    if (ceilingAreaTotal > 0) {
+    if (ceilingMain > 0) {
       configs.push({
         id: 'ceiling-main',
         areaType: 'Ceiling',
@@ -169,7 +228,7 @@ export default function PaintEstimationScreen() {
         coatConfiguration: { putty: 0, primer: 0, emulsion: 0 },
         repaintingConfiguration: { primer: 0, emulsion: 0 },
         selectedMaterials: { putty: '', primer: '', emulsion: '' },
-        area: ceilingAreaTotal,
+        area: ceilingMain,
         perSqFtRate: '',
         label: 'Ceiling Area',
         isAdditional: false
@@ -190,6 +249,9 @@ export default function PaintEstimationScreen() {
         isAdditional: false
       });
     }
+
+    // Append any additional configs detected
+    configs.push(...additional);
 
     setAreaConfigurations(configs);
   };
@@ -553,7 +615,16 @@ export default function PaintEstimationScreen() {
                 <Button
                   variant="outline"
                   className="w-full border-dashed"
-                  onClick={() => navigate(`/room-measurement/${projectId}`)}
+                  onClick={() => {
+                    try {
+                      const wallBase = wallConfigs.filter(c => !c.isAdditional).reduce((sum, c) => sum + c.area, 0);
+                      const ceilingBase = ceilingConfigs.filter(c => !c.isAdditional).reduce((sum, c) => sum + c.area, 0);
+                      const enamelBase = enamelConfigs.filter(c => !c.isAdditional).reduce((sum, c) => sum + c.area, 0);
+                      localStorage.setItem(`additional_baseline_${projectId}_${selectedPaintType}`, JSON.stringify({ wall: wallBase, ceiling: ceilingBase, enamel: enamelBase }));
+                      localStorage.setItem(`additional_mode_${projectId}_${selectedPaintType}`, '1');
+                    } catch {}
+                    navigate(`/room-measurement/${projectId}`);
+                  }}
                 >
                   <Plus className="mr-2 h-4 w-4" />
                   Add Additional Square Footage
