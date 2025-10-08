@@ -42,6 +42,12 @@ interface AreaConfiguration {
   perSqFtRate: string;
   label?: string;
   isAdditional?: boolean;
+  enamelConfig?: {
+    primerType: string;
+    primerCoats: number;
+    enamelType: string;
+    enamelCoats: number;
+  };
 }
 
 export default function PaintEstimationScreen() {
@@ -148,9 +154,31 @@ export default function PaintEstimationScreen() {
     // Check if we're in "additional area" mode to create new separate boxes
     const modeKey = `additional_mode_${projectId}_${selectedPaintType}`;
     const baselineKey = `additional_baseline_${projectId}_${selectedPaintType}`;
+    const storedKey = `additional_entries_${projectId}_${selectedPaintType}`;
     const isAdditionalMode = typeof window !== 'undefined' && localStorage.getItem(modeKey) === '1';
     const baselineRaw = typeof window !== 'undefined' ? localStorage.getItem(baselineKey) : null;
     const baseline = baselineRaw ? JSON.parse(baselineRaw) as { wall?: number; ceiling?: number; enamel?: number } : null;
+
+    // Load previously stored additional entries so we keep them across sessions
+    let storedAdditional: AreaConfiguration[] = [];
+    let storedList: any[] = [];
+    try {
+      const storedRaw = typeof window !== 'undefined' ? localStorage.getItem(storedKey) : null;
+      storedList = storedRaw ? JSON.parse(storedRaw) : [];
+      storedAdditional = (storedList || []).map((item: any) => ({
+        id: item.id,
+        areaType: item.areaType,
+        paintingSystem: item.paintingSystem ?? null,
+        coatConfiguration: item.coatConfiguration ?? { putty: 0, primer: 0, emulsion: 0 },
+        repaintingConfiguration: item.repaintingConfiguration ?? { primer: 0, emulsion: 0 },
+        selectedMaterials: item.selectedMaterials ?? { putty: '', primer: '', emulsion: '' },
+        area: Number(item.area) || 0,
+        perSqFtRate: item.perSqFtRate ?? '',
+        label: item.label,
+        isAdditional: true,
+        enamelConfig: item.enamelConfig,
+      }));
+    } catch {}
 
     // Main areas default to current totals
     let wallMain = wallAreaTotal;
@@ -168,7 +196,7 @@ export default function PaintEstimationScreen() {
       ceilingMain = baseline.ceiling || 0;
 
       if (addWall > 0) {
-        additional.push({
+        const newConfig: AreaConfiguration = {
           id: `wall-additional-${Date.now()}`,
           areaType: 'Wall',
           paintingSystem: null,
@@ -179,11 +207,16 @@ export default function PaintEstimationScreen() {
           perSqFtRate: '',
           label: 'Additional Wall Area',
           isAdditional: true,
-        });
+        };
+        additional.push(newConfig);
+        try {
+          storedList.push({ ...newConfig });
+          localStorage.setItem(storedKey, JSON.stringify(storedList));
+        } catch {}
       }
 
       if (addCeiling > 0) {
-        additional.push({
+        const newConfig: AreaConfiguration = {
           id: `ceiling-additional-${Date.now()}`,
           areaType: 'Ceiling',
           paintingSystem: null,
@@ -194,7 +227,12 @@ export default function PaintEstimationScreen() {
           perSqFtRate: '',
           label: 'Additional Ceiling Area',
           isAdditional: true,
-        });
+        };
+        additional.push(newConfig);
+        try {
+          storedList.push({ ...newConfig });
+          localStorage.setItem(storedKey, JSON.stringify(storedList));
+        } catch {}
       }
 
       // Update baseline to new totals and clear mode
