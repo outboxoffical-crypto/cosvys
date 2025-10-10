@@ -208,6 +208,16 @@ export default function PaintEstimationScreen() {
       ceilingMain = baseline.ceiling || 0;
 
       if (addWall > 0) {
+        // Find the newly added room name
+        const newRoomName = filteredRooms
+          .filter(room => {
+            const selectedAreas = (typeof room.selected_areas === 'object' && room.selected_areas !== null) ? 
+              room.selected_areas as any : { floor: true, wall: true, ceiling: false };
+            return selectedAreas.wall;
+          })
+          .map(room => room.name)
+          .pop() || 'Additional Wall Area';
+
         const newConfig: AreaConfiguration = {
           id: `wall-additional-${Date.now()}`,
           areaType: 'Wall',
@@ -217,7 +227,7 @@ export default function PaintEstimationScreen() {
           selectedMaterials: { putty: '', primer: '', emulsion: '' },
           area: addWall,
           perSqFtRate: '',
-          label: 'Additional Wall Area',
+          label: newRoomName,
           isAdditional: true,
         };
         additional.push(newConfig);
@@ -228,6 +238,16 @@ export default function PaintEstimationScreen() {
       }
 
       if (addCeiling > 0) {
+        // Find the newly added room name
+        const newRoomName = filteredRooms
+          .filter(room => {
+            const selectedAreas = (typeof room.selected_areas === 'object' && room.selected_areas !== null) ? 
+              room.selected_areas as any : { floor: true, wall: true, ceiling: false };
+            return selectedAreas.ceiling;
+          })
+          .map(room => room.name)
+          .pop() || 'Additional Ceiling Area';
+
         const newConfig: AreaConfiguration = {
           id: `ceiling-additional-${Date.now()}`,
           areaType: 'Ceiling',
@@ -237,7 +257,7 @@ export default function PaintEstimationScreen() {
           selectedMaterials: { putty: '', primer: '', emulsion: '' },
           area: addCeiling,
           perSqFtRate: '',
-          label: 'Additional Ceiling Area',
+          label: newRoomName,
           isAdditional: true,
         };
         additional.push(newConfig);
@@ -515,63 +535,78 @@ export default function PaintEstimationScreen() {
           </Card>
         ) : (
           <>
-            {/* Paint Configuration Summary - MOVED TO TOP */}
-            {areaConfigurations.some(c => c.paintingSystem || c.areaType === 'Enamel') && (
+            {/* Paint Configuration Summary - MOVED TO TOP (only non-enamel) */}
+            {areaConfigurations.some(c => (c.paintingSystem || c.areaType === 'Enamel') && c.areaType !== 'Enamel') && (
               <Card className="eca-shadow border-2 border-primary/30">
                 <CardHeader>
                   <CardTitle className="text-lg">Paint Configuration Summary</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  {areaConfigurations.filter(c => c.paintingSystem || c.areaType === 'Enamel').map((config, idx) => (
-                    <div key={config.id}>
-                      {idx > 0 && <div className="border-t my-4" />}
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <p className="text-sm text-muted-foreground">Paint Type</p>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => handleEditConfig(config.id)}
-                          >
-                            <Settings className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        <p className="font-medium">{config.selectedMaterials.emulsion || 'Not Selected'}</p>
-                        
-                        <div className="space-y-1">
-                          <p className="text-sm text-muted-foreground">Painting System</p>
-                          <p className="font-medium">{config.paintingSystem}</p>
-                        </div>
+                <CardContent className="space-y-3">
+                  {areaConfigurations.filter(c => (c.paintingSystem || c.areaType === 'Enamel') && c.areaType !== 'Enamel').map((config) => (
+                    <Card key={config.id} className="border-2 border-primary/20 bg-primary/5">
+                      <CardContent className="p-4">
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <h3 className="font-semibold text-base">{config.label}</h3>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20"
+                                onClick={() => handleDeleteConfig(config.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => handleEditConfig(config.id)}
+                              >
+                                <Settings className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
 
-                        <div className="space-y-1">
-                          <p className="text-sm text-muted-foreground">Coats</p>
-                          <p className="font-medium text-sm leading-relaxed">
-                            {getConfigDescription(config) || 'Not configured'}
-                          </p>
-                        </div>
+                          <div className="space-y-1">
+                            <p className="text-sm text-muted-foreground">Paint Type</p>
+                            <p className="font-medium">{config.selectedMaterials.emulsion || 'Not Selected'}</p>
+                          </div>
+                          
+                          <div className="space-y-1">
+                            <p className="text-sm text-muted-foreground">Painting System</p>
+                            <p className="font-medium">{config.paintingSystem}</p>
+                          </div>
 
-                        <div className="space-y-1">
-                          <p className="text-sm text-muted-foreground">{config.label} Sq.ft</p>
-                          <p className="font-medium">{config.area.toFixed(2)}</p>
-                        </div>
+                          <div className="space-y-1">
+                            <p className="text-sm text-muted-foreground">Coats</p>
+                            <p className="font-medium text-sm leading-relaxed">
+                              {getConfigDescription(config) || 'Not configured'}
+                            </p>
+                          </div>
 
-                        <div className="space-y-2">
-                          <Label className="text-sm">Per Sq.ft Rate (₹)</Label>
-                          <Input
-                            type="number"
-                            placeholder="Enter rate per sq.ft"
-                            value={config.perSqFtRate}
-                            onChange={(e) => {
-                              setAreaConfigurations(prev => prev.map(c => 
-                                c.id === config.id ? { ...c, perSqFtRate: e.target.value } : c
-                              ));
-                            }}
-                            className="h-10"
-                          />
+                          <div className="space-y-1">
+                            <p className="text-sm text-muted-foreground">Area Sq.ft</p>
+                            <p className="font-medium">{config.area.toFixed(2)}</p>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label className="text-sm">Per Sq.ft Rate (₹)</Label>
+                            <Input
+                              type="number"
+                              placeholder="Enter rate per sq.ft"
+                              value={config.perSqFtRate}
+                              onChange={(e) => {
+                                setAreaConfigurations(prev => prev.map(c => 
+                                  c.id === config.id ? { ...c, perSqFtRate: e.target.value } : c
+                                ));
+                              }}
+                              className="h-10"
+                            />
+                          </div>
                         </div>
-                      </div>
-                    </div>
+                      </CardContent>
+                    </Card>
                   ))}
                 </CardContent>
               </Card>
@@ -751,15 +786,89 @@ export default function PaintEstimationScreen() {
                   ))}
                 </div>
 
-                {/* Add Additional Enamel */}
+                {/* Add Additional Enamel - Navigate to Room Measurement */}
                 <Button
                   variant="outline"
                   className="w-full border-dashed border-orange-300 text-orange-700"
-                  onClick={() => handleOpenAddAdditionalDialog('Enamel')}
+                  onClick={() => {
+                    try {
+                      const enamelBase = enamelConfigs.reduce((sum, c) => sum + c.area, 0);
+                      localStorage.setItem(`additional_enamel_baseline_${projectId}_${selectedPaintType}`, JSON.stringify({ enamel: enamelBase }));
+                      localStorage.setItem(`additional_enamel_mode_${projectId}_${selectedPaintType}`, '1');
+                    } catch {}
+                    navigate(`/room-measurement/${projectId}`);
+                  }}
                 >
                   <Plus className="mr-2 h-4 w-4" />
                   Add Additional Enamel Area
                 </Button>
+
+                {/* Enamel Paint Configuration Summary */}
+                {areaConfigurations.some(c => c.areaType === 'Enamel' && (c.paintingSystem || c.enamelConfig)) && (
+                  <Card className="eca-shadow border-2 border-orange-500/30">
+                    <CardHeader>
+                      <CardTitle className="text-lg text-orange-700 dark:text-orange-300">Enamel Paint Configuration Summary</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {areaConfigurations.filter(c => c.areaType === 'Enamel' && (c.paintingSystem || c.enamelConfig)).map((config) => (
+                        <Card key={config.id} className="border-2 border-orange-500/20 bg-orange-50/50 dark:bg-orange-950/20">
+                          <CardContent className="p-4">
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between">
+                                <h3 className="font-semibold text-base text-orange-700 dark:text-orange-300">{config.label}</h3>
+                                <div className="flex gap-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20"
+                                    onClick={() => handleDeleteConfig(config.id)}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                    onClick={() => handleEditConfig(config.id)}
+                                  >
+                                    <Settings className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+
+                              <div className="space-y-1">
+                                <p className="text-sm text-muted-foreground">Coats</p>
+                                <p className="font-medium text-sm leading-relaxed">
+                                  {getConfigDescription(config) || 'Not configured'}
+                                </p>
+                              </div>
+
+                              <div className="space-y-1">
+                                <p className="text-sm text-muted-foreground">Area Sq.ft</p>
+                                <p className="font-medium">{config.area.toFixed(2)}</p>
+                              </div>
+
+                              <div className="space-y-2">
+                                <Label className="text-sm">Per Sq.ft Rate (₹)</Label>
+                                <Input
+                                  type="number"
+                                  placeholder="Enter rate per sq.ft"
+                                  value={config.perSqFtRate}
+                                  onChange={(e) => {
+                                    setAreaConfigurations(prev => prev.map(c => 
+                                      c.id === config.id ? { ...c, perSqFtRate: e.target.value } : c
+                                    ));
+                                  }}
+                                  className="h-10"
+                                />
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             )}
 
@@ -842,11 +951,12 @@ export default function PaintEstimationScreen() {
                       })}
                     >
                       <SelectTrigger className="h-9">
-                        <SelectValue placeholder="Select Metal or Wood Primer" />
+                        <SelectValue placeholder="Select Primer Type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Metal">Metal Primer</SelectItem>
-                        <SelectItem value="Wood">Wood Primer</SelectItem>
+                        <SelectItem value="Trucare Wood Primer">Trucare Wood Primer</SelectItem>
+                        <SelectItem value="Trucare Yellow Metal Primer">Trucare Yellow Metal Primer</SelectItem>
+                        <SelectItem value="Trucare Red Oxide Metal Primer">Trucare Red Oxide Metal Primer</SelectItem>
                       </SelectContent>
                     </Select>
                     <div className="flex items-center justify-between">
@@ -904,11 +1014,12 @@ export default function PaintEstimationScreen() {
                       })}
                     >
                       <SelectTrigger className="h-9">
-                        <SelectValue placeholder="Select Satin or Glossy" />
+                        <SelectValue placeholder="Select Enamel Type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Satin">Satin</SelectItem>
-                        <SelectItem value="Glossy">Glossy</SelectItem>
+                        <SelectItem value="Apcolite Premium Enamel Gloss">Apcolite Premium Enamel Gloss</SelectItem>
+                        <SelectItem value="Apcolite Premium Enamel Satin">Apcolite Premium Enamel Satin</SelectItem>
+                        <SelectItem value="Apcolite Premium Enamel Matt">Apcolite Premium Enamel Matt</SelectItem>
                       </SelectContent>
                     </Select>
                     <div className="flex items-center justify-between">
