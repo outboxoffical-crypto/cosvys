@@ -113,6 +113,10 @@ export default function RoomMeasurementScreen() {
     height: ""
   });
 
+  // Add Door/Window Dialog state
+  const [doorWindowDialogOpen, setDoorWindowDialogOpen] = useState(false);
+  const [doorWindowRoomName, setDoorWindowRoomName] = useState("");
+
   useEffect(() => {
     const loadData = async () => {
       // Load project data to get project types
@@ -576,6 +580,143 @@ export default function RoomMeasurementScreen() {
         }
       }
     }
+  };
+
+  // Handle adding door/window from dialog
+  const handleAddDoorWindowFromDialog = async () => {
+    if (!doorWindowRoomName.trim()) {
+      toast.error('Please enter a room name');
+      return;
+    }
+
+    const doorWindowGrill = addDoorWindowGrill();
+    if (!doorWindowGrill) {
+      toast.error('Please fill in all door/window measurements');
+      return;
+    }
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast.error('Please log in to save door/window data');
+      return;
+    }
+
+    // Check if room with this name already exists
+    let targetRoom = rooms.find(r => r.name.toLowerCase() === doorWindowRoomName.trim().toLowerCase());
+
+    if (targetRoom) {
+      // Add to existing room
+      const updatedDoorWindowGrills = [...targetRoom.doorWindowGrills, doorWindowGrill];
+      const areas = calculateAreas(targetRoom.length, targetRoom.width, targetRoom.height, targetRoom.openingAreas, targetRoom.extraSurfaces, updatedDoorWindowGrills);
+      
+      try {
+        const { error } = await supabase
+          .from('rooms')
+          .update({
+            door_window_grills: updatedDoorWindowGrills as any,
+            total_door_window_grill_area: areas.totalDoorWindowGrillArea,
+            adjusted_wall_area: areas.adjustedWallArea
+          })
+          .eq('room_id', targetRoom.id)
+          .eq('project_id', projectId!);
+        
+        if (error) {
+          console.error('Error updating room:', error);
+          toast.error('Failed to add door/window');
+          return;
+        }
+        
+        setRooms(prev => prev.map(room => 
+          room.id === targetRoom.id 
+            ? { ...room, doorWindowGrills: updatedDoorWindowGrills, ...areas }
+            : room
+        ));
+        
+        toast.success(`Door/Window added to ${targetRoom.name}`);
+      } catch (error) {
+        console.error('Error:', error);
+        toast.error('Failed to add door/window');
+        return;
+      }
+    } else {
+      // Create new room with just door/window data
+      const roomId = Date.now().toString();
+      const newRoom: Room = {
+        id: roomId,
+        name: doorWindowRoomName.trim(),
+        length: 0,
+        width: 0,
+        height: 0,
+        projectType: activeProjectType || projectData?.projectTypes[0] || "",
+        pictures: [],
+        openingAreas: [],
+        extraSurfaces: [],
+        doorWindowGrills: [doorWindowGrill],
+        floorArea: 0,
+        wallArea: 0,
+        ceilingArea: 0,
+        adjustedWallArea: 0,
+        totalOpeningArea: 0,
+        totalExtraSurface: 0,
+        totalDoorWindowGrillArea: doorWindowGrill.area,
+        selectedAreas: {
+          floor: false,
+          wall: false,
+          ceiling: false
+        }
+      };
+
+      try {
+        const { error } = await supabase
+          .from('rooms')
+          .insert({
+            user_id: session.user.id,
+            project_id: projectId!,
+            room_id: roomId,
+            name: newRoom.name,
+            length: newRoom.length,
+            width: newRoom.width,
+            height: newRoom.height,
+            project_type: newRoom.projectType,
+            pictures: newRoom.pictures as any,
+            opening_areas: newRoom.openingAreas as any,
+            extra_surfaces: newRoom.extraSurfaces as any,
+            door_window_grills: newRoom.doorWindowGrills as any,
+            floor_area: newRoom.floorArea,
+            wall_area: newRoom.wallArea,
+            ceiling_area: newRoom.ceilingArea,
+            adjusted_wall_area: newRoom.adjustedWallArea,
+            total_opening_area: newRoom.totalOpeningArea,
+            total_extra_surface: newRoom.totalExtraSurface,
+            total_door_window_grill_area: newRoom.totalDoorWindowGrillArea,
+            selected_areas: newRoom.selectedAreas as any
+          });
+        
+        if (error) {
+          console.error('Error saving room:', error);
+          toast.error('Failed to save door/window');
+          return;
+        }
+        
+        setRooms(prev => [...prev, newRoom]);
+        toast.success(`Door/Window added to new room: ${newRoom.name}`);
+      } catch (error) {
+        console.error('Error:', error);
+        toast.error('Failed to save door/window');
+        return;
+      }
+    }
+
+    // Reset and close dialog
+    setNewDoorWindowGrill({
+      name: "Door/Window",
+      height: "",
+      width: "",
+      sides: "",
+      grillMultiplier: "1"
+    });
+    setDoorWindowRoomName("");
+    setDoorWindowDialogOpen(false);
   };
 
   const removeOpeningArea = async (roomId: string, openingId: string) => {
@@ -1518,13 +1659,25 @@ export default function RoomMeasurementScreen() {
           <TabsContent value="doorwindow" className="space-y-6">
             <Card className="eca-shadow">
               <CardHeader>
-                <CardTitle className="flex items-center text-lg">
-                  <Plus className="mr-2 h-5 w-5 text-amber-600" />
-                  Add Door & Window Measurements
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Only add if customer requests enamel/oil paint work
-                </p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center text-lg">
+                      <Plus className="mr-2 h-5 w-5 text-amber-600" />
+                      Add Door & Window Measurements
+                    </CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      Only add if customer requests enamel/oil paint work
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-10 w-10"
+                    onClick={() => setDoorWindowDialogOpen(true)}
+                  >
+                    <Plus className="h-5 w-5" />
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 {rooms.length > 0 && (
@@ -1709,6 +1862,114 @@ export default function RoomMeasurementScreen() {
                 disabled={!editFormData.name || !editFormData.length || !editFormData.width}
               >
                 Save Changes
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Door/Window Dialog */}
+      <Dialog open={doorWindowDialogOpen} onOpenChange={setDoorWindowDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Door/Window</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="room-name">Name of Room</Label>
+              <Input
+                id="room-name"
+                placeholder="e.g., Bedroom, Living Room"
+                value={doorWindowRoomName}
+                onChange={(e) => setDoorWindowRoomName(e.target.value)}
+                className="h-12"
+              />
+              <p className="text-xs text-muted-foreground">
+                Enter an existing room name to add to it, or a new name to create a room
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Door/Window</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <Input
+                  placeholder="Name (e.g., Door, Window)"
+                  value={newDoorWindowGrill.name}
+                  onChange={(e) => setNewDoorWindowGrill(prev => ({ ...prev, name: e.target.value }))}
+                  className="h-10"
+                />
+                <Input
+                  type="number"
+                  placeholder="Sides"
+                  value={newDoorWindowGrill.sides}
+                  onChange={(e) => setNewDoorWindowGrill(prev => ({ ...prev, sides: e.target.value }))}
+                  className="h-10"
+                  step="1"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="dwg-height">Height</Label>
+                  <Input
+                    id="dwg-height"
+                    type="number"
+                    placeholder="Height"
+                    value={newDoorWindowGrill.height}
+                    onChange={(e) => setNewDoorWindowGrill(prev => ({ ...prev, height: e.target.value }))}
+                    className="h-10"
+                    step="0.1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="dwg-width">Width</Label>
+                  <Input
+                    id="dwg-width"
+                    type="number"
+                    placeholder="Width"
+                    value={newDoorWindowGrill.width}
+                    onChange={(e) => setNewDoorWindowGrill(prev => ({ ...prev, width: e.target.value }))}
+                    className="h-10"
+                    step="0.1"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {newDoorWindowGrill.height && newDoorWindowGrill.width && newDoorWindowGrill.sides && (
+              <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                <p className="text-sm text-amber-700 dark:text-amber-400 text-center">
+                  {newDoorWindowGrill.height}' × {newDoorWindowGrill.width}' × {newDoorWindowGrill.sides} sides × {newDoorWindowGrill.grillMultiplier} = {(parseFloat(newDoorWindowGrill.height) * parseFloat(newDoorWindowGrill.width) * parseFloat(newDoorWindowGrill.sides) * parseFloat(newDoorWindowGrill.grillMultiplier)).toFixed(1)} sq.ft
+                </p>
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  setDoorWindowDialogOpen(false);
+                  setDoorWindowRoomName("");
+                  setNewDoorWindowGrill({
+                    name: "Door/Window",
+                    height: "",
+                    width: "",
+                    sides: "",
+                    grillMultiplier: "1"
+                  });
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={handleAddDoorWindowFromDialog}
+                disabled={!doorWindowRoomName.trim() || !newDoorWindowGrill.height || !newDoorWindowGrill.width || !newDoorWindowGrill.sides}
+              >
+                Add Door/Window
               </Button>
             </div>
           </div>
