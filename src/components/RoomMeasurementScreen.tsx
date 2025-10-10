@@ -1301,124 +1301,120 @@ export default function RoomMeasurementScreen() {
                           )}
 
                           {/* Opening Areas */}
-                          {room.openingAreas.length > 0 && (
-                            <div className="space-y-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
-                              <h4 className="font-semibold text-sm text-red-700 dark:text-red-400">Opening Areas</h4>
-                              {room.openingAreas.map((opening) => (
-                                <div key={opening.id} className="flex items-center justify-between text-sm">
-                                  <span className="text-foreground">
-                                    {opening.height} × {opening.width} × {opening.quantity} = {opening.area.toFixed(1)} sq.ft
-                                  </span>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-6 w-6 text-red-700 dark:text-red-400"
-                                    onClick={() => removeOpeningArea(room.id, opening.id)}
-                                  >
-                                    <X className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                              ))}
-                              
-                              {/* Add new opening area */}
-                              <div className="grid grid-cols-3 gap-2 mt-2">
-                                <Input
-                                  type="number"
-                                  placeholder="H"
-                                  value={newOpeningArea.height}
-                                  onChange={(e) => setNewOpeningArea(prev => ({ ...prev, height: e.target.value }))}
-                                  className="h-9"
-                                  step="0.1"
-                                />
-                                <Input
-                                  type="number"
-                                  placeholder="W"
-                                  value={newOpeningArea.width}
-                                  onChange={(e) => setNewOpeningArea(prev => ({ ...prev, width: e.target.value }))}
-                                  className="h-9"
-                                  step="0.1"
-                                />
-                                <Input
-                                  type="number"
-                                  placeholder="Qty"
-                                  value={newOpeningArea.quantity}
-                                  onChange={(e) => setNewOpeningArea(prev => ({ ...prev, quantity: e.target.value }))}
-                                  className="h-9"
-                                  step="1"
-                                />
+                          <div className="space-y-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                            <h4 className="font-semibold text-sm text-red-700 dark:text-red-400">Opening Areas</h4>
+                            {room.openingAreas.map((opening) => (
+                              <div key={opening.id} className="flex items-center justify-between text-sm">
+                                <span className="text-foreground">
+                                  {opening.height} × {opening.width} × {opening.quantity} = {opening.area.toFixed(1)} sq.ft
+                                </span>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 text-red-700 dark:text-red-400"
+                                  onClick={() => removeOpeningArea(room.id, opening.id)}
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
                               </div>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => addOpeningAreaToRoom(room.id)}
-                                disabled={!newOpeningArea.height || !newOpeningArea.width}
-                                className="w-full"
-                              >
-                                <Plus className="mr-1 h-3 w-3" />
-                                Add Opening
-                              </Button>
+                            ))}
+                            
+                            {/* Add new opening area */}
+                            <div className="grid grid-cols-3 gap-2 mt-2">
+                              <Input
+                                type="number"
+                                placeholder="H"
+                                value={newOpeningArea.height}
+                                onChange={(e) => setNewOpeningArea(prev => ({ ...prev, height: e.target.value }))}
+                                className="h-9"
+                                step="0.1"
+                              />
+                              <Input
+                                type="number"
+                                placeholder="W"
+                                value={newOpeningArea.width}
+                                onChange={(e) => setNewOpeningArea(prev => ({ ...prev, width: e.target.value }))}
+                                className="h-9"
+                                step="0.1"
+                              />
+                              <Input
+                                type="number"
+                                placeholder="Qty"
+                                value={newOpeningArea.quantity}
+                                onChange={(e) => setNewOpeningArea(prev => ({ ...prev, quantity: e.target.value }))}
+                                className="h-9"
+                                step="1"
+                              />
                             </div>
-                          )}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => addOpeningAreaToRoom(room.id)}
+                              disabled={!newOpeningArea.height || !newOpeningArea.width}
+                              className="w-full"
+                            >
+                              <Plus className="mr-1 h-3 w-3" />
+                              Add Opening
+                            </Button>
+                          </div>
 
                           {/* Extra Surfaces */}
-                          {room.extraSurfaces.length > 0 && (
-                            <div className="space-y-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-                              <h4 className="font-semibold text-sm text-green-700 dark:text-green-400">Extra Surfaces</h4>
-                              {room.extraSurfaces.map((extra) => (
-                                <div key={extra.id} className="flex items-center justify-between text-sm">
-                                  <span className="text-foreground">
-                                    {extra.height} × {extra.width} × {extra.quantity} = {extra.area.toFixed(1)} sq.ft
-                                  </span>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-6 w-6 text-green-700 dark:text-green-400"
-                                    onClick={() => removeExtraSurface(room.id, extra.id)}
-                                  >
-                                    <X className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                              ))}
-                              
-                              {/* Add new extra surface */}
-                              <div className="grid grid-cols-3 gap-2 mt-2">
-                                <Input
-                                  type="number"
-                                  placeholder="H"
-                                  value={newExtraSurface.height}
-                                  onChange={(e) => setNewExtraSurface(prev => ({ ...prev, height: e.target.value }))}
-                                  className="h-9"
-                                  step="0.1"
-                                />
-                                <Input
-                                  type="number"
-                                  placeholder="W"
-                                  value={newExtraSurface.width}
-                                  onChange={(e) => setNewExtraSurface(prev => ({ ...prev, width: e.target.value }))}
-                                  className="h-9"
-                                  step="0.1"
-                                />
-                                <Input
-                                  type="number"
-                                  placeholder="Qty"
-                                  value={newExtraSurface.quantity}
-                                  onChange={(e) => setNewExtraSurface(prev => ({ ...prev, quantity: e.target.value }))}
-                                  className="h-9"
-                                  step="1"
-                                />
+                          <div className="space-y-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                            <h4 className="font-semibold text-sm text-green-700 dark:text-green-400">Extra Surfaces</h4>
+                            {room.extraSurfaces.map((extra) => (
+                              <div key={extra.id} className="flex items-center justify-between text-sm">
+                                <span className="text-foreground">
+                                  {extra.height} × {extra.width} × {extra.quantity} = {extra.area.toFixed(1)} sq.ft
+                                </span>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 text-green-700 dark:text-green-400"
+                                  onClick={() => removeExtraSurface(room.id, extra.id)}
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
                               </div>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => addExtraSurfaceToRoom(room.id)}
-                                disabled={!newExtraSurface.height || !newExtraSurface.width}
-                                className="w-full"
-                              >
-                                <Plus className="mr-1 h-3 w-3" />
-                                Add Extra Surface
-                              </Button>
+                            ))}
+                            
+                            {/* Add new extra surface */}
+                            <div className="grid grid-cols-3 gap-2 mt-2">
+                              <Input
+                                type="number"
+                                placeholder="H"
+                                value={newExtraSurface.height}
+                                onChange={(e) => setNewExtraSurface(prev => ({ ...prev, height: e.target.value }))}
+                                className="h-9"
+                                step="0.1"
+                              />
+                              <Input
+                                type="number"
+                                placeholder="W"
+                                value={newExtraSurface.width}
+                                onChange={(e) => setNewExtraSurface(prev => ({ ...prev, width: e.target.value }))}
+                                className="h-9"
+                                step="0.1"
+                              />
+                              <Input
+                                type="number"
+                                placeholder="Qty"
+                                value={newExtraSurface.quantity}
+                                onChange={(e) => setNewExtraSurface(prev => ({ ...prev, quantity: e.target.value }))}
+                                className="h-9"
+                                step="1"
+                              />
                             </div>
-                          )}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => addExtraSurfaceToRoom(room.id)}
+                              disabled={!newExtraSurface.height || !newExtraSurface.width}
+                              className="w-full"
+                            >
+                              <Plus className="mr-1 h-3 w-3" />
+                              Add Extra Surface
+                            </Button>
+                          </div>
 
                           {/* Area Selection */}
                           <div className="grid grid-cols-3 gap-3">
