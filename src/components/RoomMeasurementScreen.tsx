@@ -1510,7 +1510,17 @@ export default function RoomMeasurementScreen() {
                     {rooms.map((room) => (
                       <Card key={`dwg-${room.id}`} className="border-amber-200 dark:border-amber-800">
                         <CardContent className="p-4">
-                          <h3 className="font-semibold text-foreground mb-3">{room.name}</h3>
+                          <div className="flex items-center justify-between mb-3">
+                            <h3 className="font-semibold text-foreground">{room.name}</h3>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20"
+                              onClick={() => removeRoom(room.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                           
                           {room.doorWindowGrills.map((dwg) => (
                             <div key={dwg.id} className="mb-3 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
