@@ -89,8 +89,8 @@ export default function RoomMeasurementScreen() {
     height: "",
     pictures: [] as string[]
   });
-  const [newOpeningArea, setNewOpeningArea] = useState({ height: "", width: "", quantity: "1" });
-  const [newExtraSurface, setNewExtraSurface] = useState({ height: "", width: "", quantity: "1" });
+  const [newOpeningArea, setNewOpeningArea] = useState({ height: "", width: "", quantity: "" });
+  const [newExtraSurface, setNewExtraSurface] = useState({ height: "", width: "", quantity: "" });
   const [tempOpeningAreas, setTempOpeningAreas] = useState<OpeningArea[]>([]);
   const [tempExtraSurfaces, setTempExtraSurfaces] = useState<ExtraSurface[]>([]);
   const [newDoorWindowGrill, setNewDoorWindowGrill] = useState({
@@ -230,7 +230,7 @@ export default function RoomMeasurementScreen() {
       };
       
       setTempOpeningAreas(prev => [...prev, openingArea]);
-      setNewOpeningArea({ height: "", width: "", quantity: "1" });
+      setNewOpeningArea({ height: "", width: "", quantity: "" });
     }
   };
 
@@ -250,7 +250,7 @@ export default function RoomMeasurementScreen() {
       };
       
       setTempExtraSurfaces(prev => [...prev, extraSurface]);
-      setNewExtraSurface({ height: "", width: "", quantity: "1" });
+      setNewExtraSurface({ height: "", width: "", quantity: "" });
     }
   };
 
@@ -982,7 +982,7 @@ export default function RoomMeasurementScreen() {
                       <Button
                         key={type}
                         variant={activeProjectType === type ? "default" : "outline"}
-                        onClick={() => setActiveProjectType(type)}
+                        onClick={() => { setActiveProjectType(type); try { localStorage.setItem(`selected_paint_type_${projectId}`, type); } catch {} }}
                         className="text-sm"
                       >
                         {type}
@@ -1144,7 +1144,7 @@ export default function RoomMeasurementScreen() {
                         <div className="grid grid-cols-3 gap-2">
                           <Input
                             type="number"
-                            placeholder="Height"
+                            placeholder="H"
                             value={newOpeningArea.height}
                             onChange={(e) => setNewOpeningArea(prev => ({ ...prev, height: e.target.value }))}
                             className="h-10"
@@ -1152,7 +1152,7 @@ export default function RoomMeasurementScreen() {
                           />
                           <Input
                             type="number"
-                            placeholder="Width"
+                            placeholder="W"
                             value={newOpeningArea.width}
                             onChange={(e) => setNewOpeningArea(prev => ({ ...prev, width: e.target.value }))}
                             className="h-10"
@@ -1200,7 +1200,7 @@ export default function RoomMeasurementScreen() {
                         <div className="grid grid-cols-3 gap-2">
                           <Input
                             type="number"
-                            placeholder="Height"
+                            placeholder="H"
                             value={newExtraSurface.height}
                             onChange={(e) => setNewExtraSurface(prev => ({ ...prev, height: e.target.value }))}
                             className="h-10"
@@ -1208,7 +1208,7 @@ export default function RoomMeasurementScreen() {
                           />
                           <Input
                             type="number"
-                            placeholder="Width"
+                            placeholder="W"
                             value={newExtraSurface.width}
                             onChange={(e) => setNewExtraSurface(prev => ({ ...prev, width: e.target.value }))}
                             className="h-10"

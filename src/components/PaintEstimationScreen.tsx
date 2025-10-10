@@ -62,6 +62,17 @@ export default function PaintEstimationScreen() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Sync initial paint type from Room Measurements selection
+  useEffect(() => {
+    try {
+      const key = `selected_paint_type_${projectId}`;
+      const t = localStorage.getItem(key);
+      if (t === 'Interior' || t === 'Exterior' || t === 'Waterproofing') {
+        setSelectedPaintType(t as any);
+      }
+    } catch {}
+  }, [projectId]);
+
   // Fetch coverage data
   useEffect(() => {
     fetchCoverageData();
@@ -403,7 +414,32 @@ export default function PaintEstimationScreen() {
     // Append any additional configs detected (persisted + new)
     configs.push(...storedAdditional, ...additional);
 
-    setAreaConfigurations(configs);
+    // Merge with any preserved configuration choices (painting system, materials, rates)
+    let preservedList: any[] = [];
+    try {
+      const preservedKey = `configs_preserved_${projectId}_${selectedPaintType}`;
+      const raw = typeof window !== 'undefined' ? localStorage.getItem(preservedKey) : null;
+      preservedList = raw ? JSON.parse(raw) : [];
+    } catch {}
+    const merged = configs.map(cfg => {
+      const match = preservedList.find((p: any) =>
+        p.id === cfg.id ||
+        (p.areaType === cfg.areaType && p.label === cfg.label && !!p.isAdditional === !!cfg.isAdditional)
+      );
+      return match
+        ? {
+            ...cfg,
+            paintingSystem: match.paintingSystem ?? cfg.paintingSystem,
+            coatConfiguration: match.coatConfiguration ?? cfg.coatConfiguration,
+            repaintingConfiguration: match.repaintingConfiguration ?? cfg.repaintingConfiguration,
+            selectedMaterials: match.selectedMaterials ?? cfg.selectedMaterials,
+            perSqFtRate: match.perSqFtRate ?? cfg.perSqFtRate,
+            enamelConfig: match.enamelConfig ?? cfg.enamelConfig,
+          }
+        : cfg;
+    });
+
+    setAreaConfigurations(merged);
   };
 
   // Re-initialize when paint type changes - preserve existing configurations
@@ -432,6 +468,26 @@ export default function PaintEstimationScreen() {
       }, 100);
     }
   }, [selectedPaintType]);
+
+  // Persist configurations so they survive navigation and reload
+  useEffect(() => {
+    try {
+      const preservedKey = `configs_preserved_${projectId}_${selectedPaintType}`;
+      const toStore = areaConfigurations.map(c => ({
+        id: c.id,
+        areaType: c.areaType,
+        paintingSystem: c.paintingSystem,
+        coatConfiguration: c.coatConfiguration,
+        repaintingConfiguration: c.repaintingConfiguration,
+        selectedMaterials: c.selectedMaterials,
+        perSqFtRate: c.perSqFtRate,
+        label: c.label,
+        isAdditional: c.isAdditional,
+        enamelConfig: c.enamelConfig,
+      }));
+      localStorage.setItem(preservedKey, JSON.stringify(toStore));
+    } catch {}
+  }, [areaConfigurations, selectedPaintType, projectId]);
 
   // Handle edit configuration
   const handleEditConfig = (configId: string) => {
@@ -842,7 +898,7 @@ export default function PaintEstimationScreen() {
                   }}
                 >
                   <Plus className="mr-2 h-4 w-4" />
-                  Add Additional Square Footage
+                  Add Additional Sq.ft Area
                 </Button>
               </div>
             )}
