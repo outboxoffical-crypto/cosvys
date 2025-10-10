@@ -1018,7 +1018,7 @@ export default function RoomMeasurementScreen() {
                       <Label className="text-base font-medium">Length (ft)</Label>
                       <Input
                         type="number"
-                        placeholder="10"
+                        placeholder=""
                         value={newRoom.length}
                         onChange={(e) => setNewRoom(prev => ({ ...prev, length: e.target.value }))}
                         className="h-12"
@@ -1029,7 +1029,7 @@ export default function RoomMeasurementScreen() {
                       <Label className="text-base font-medium">Width (ft)</Label>
                       <Input
                         type="number"
-                        placeholder="10"
+                        placeholder=""
                         value={newRoom.width}
                         onChange={(e) => setNewRoom(prev => ({ ...prev, width: e.target.value }))}
                         className="h-12"
@@ -1040,7 +1040,7 @@ export default function RoomMeasurementScreen() {
                       <Label className="text-base font-medium">Height (ft)</Label>
                       <Input
                         type="number"
-                        placeholder="9.5"
+                        placeholder=""
                         value={newRoom.height}
                         onChange={(e) => setNewRoom(prev => ({ ...prev, height: e.target.value }))}
                         className="h-12"
