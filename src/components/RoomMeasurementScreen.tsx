@@ -584,11 +584,6 @@ export default function RoomMeasurementScreen() {
 
   // Handle adding door/window from dialog
   const handleAddDoorWindowFromDialog = async () => {
-    if (!doorWindowRoomName.trim()) {
-      toast.error('Please enter a room name');
-      return;
-    }
-
     const doorWindowGrill = addDoorWindowGrill();
     if (!doorWindowGrill) {
       toast.error('Please fill in all door/window measurements');
@@ -601,8 +596,9 @@ export default function RoomMeasurementScreen() {
       return;
     }
 
-    // Check if room with this name already exists
-    let targetRoom = rooms.find(r => r.name.toLowerCase() === doorWindowRoomName.trim().toLowerCase());
+    // Use doorWindowRoomName from state or create new room
+    const roomName = doorWindowRoomName.trim() || "Untitled Room";
+    let targetRoom = rooms.find(r => r.name.toLowerCase() === roomName.toLowerCase());
 
     if (targetRoom) {
       // Add to existing room
@@ -643,7 +639,7 @@ export default function RoomMeasurementScreen() {
       const roomId = Date.now().toString();
       const newRoom: Room = {
         id: roomId,
-        name: doorWindowRoomName.trim(),
+        name: roomName,
         length: 0,
         width: 0,
         height: 0,
@@ -1699,132 +1695,68 @@ export default function RoomMeasurementScreen() {
 
       {/* Add Door/Window Dialog */}
       <Dialog open={doorWindowDialogOpen} onOpenChange={setDoorWindowDialogOpen}>
-        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Add Door/Window</DialogTitle>
+            <Input
+              placeholder="Room name (e.g., outside)"
+              value={doorWindowRoomName}
+              onChange={(e) => setDoorWindowRoomName(e.target.value)}
+              className="h-10 text-lg font-semibold border-none px-0 focus-visible:ring-0"
+            />
           </DialogHeader>
-          <div className="space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="room-name" className="text-base font-semibold">Name of Room</Label>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
               <Input
-                id="room-name"
-                placeholder="e.g., Bedroom, Living Room"
-                value={doorWindowRoomName}
-                onChange={(e) => setDoorWindowRoomName(e.target.value)}
+                placeholder="Door/Window"
+                value={newDoorWindowGrill.name}
+                onChange={(e) => setNewDoorWindowGrill(prev => ({ ...prev, name: e.target.value }))}
                 className="h-12"
               />
-              <p className="text-xs text-muted-foreground">
-                Enter an existing room name to add to it, or a new name to create a room
-              </p>
+              <Input
+                type="number"
+                placeholder="Sides"
+                value={newDoorWindowGrill.sides}
+                onChange={(e) => setNewDoorWindowGrill(prev => ({ ...prev, sides: e.target.value }))}
+                className="h-12"
+                step="1"
+              />
             </div>
 
-            <div className="space-y-3">
-              <Label className="text-base font-semibold">Door/Window Details</Label>
-              
-              <div className="space-y-2">
-                <Label htmlFor="dwg-name">Door/Window</Label>
-                <Input
-                  id="dwg-name"
-                  placeholder="Name (e.g., Door, Window)"
-                  value={newDoorWindowGrill.name}
-                  onChange={(e) => setNewDoorWindowGrill(prev => ({ ...prev, name: e.target.value }))}
-                  className="h-12"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="dwg-sides">Sides</Label>
-                <Input
-                  id="dwg-sides"
-                  type="number"
-                  placeholder="Number of sides"
-                  value={newDoorWindowGrill.sides}
-                  onChange={(e) => setNewDoorWindowGrill(prev => ({ ...prev, sides: e.target.value }))}
-                  className="h-12"
-                  step="1"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label htmlFor="dwg-height">Height</Label>
-                  <Input
-                    id="dwg-height"
-                    type="number"
-                    placeholder="Height in feet"
-                    value={newDoorWindowGrill.height}
-                    onChange={(e) => setNewDoorWindowGrill(prev => ({ ...prev, height: e.target.value }))}
-                    className="h-12"
-                    step="0.1"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="dwg-width">Width</Label>
-                  <Input
-                    id="dwg-width"
-                    type="number"
-                    placeholder="Width in feet"
-                    value={newDoorWindowGrill.width}
-                    onChange={(e) => setNewDoorWindowGrill(prev => ({ ...prev, width: e.target.value }))}
-                    className="h-12"
-                    step="0.1"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="dwg-grill">Size of Grill</Label>
-                <div className="grid grid-cols-3 gap-2">
-                  {['1', '1.5', '2'].map((value) => (
-                    <Button
-                      key={value}
-                      type="button"
-                      variant={newDoorWindowGrill.grillMultiplier === value ? 'default' : 'outline'}
-                      onClick={() => setNewDoorWindowGrill(prev => ({ ...prev, grillMultiplier: value }))}
-                      className="h-12 font-semibold"
-                    >
-                      {value}
-                    </Button>
-                  ))}
-                </div>
-              </div>
+            <div className="grid grid-cols-3 gap-3">
+              <Input
+                type="number"
+                placeholder="Height"
+                value={newDoorWindowGrill.height}
+                onChange={(e) => setNewDoorWindowGrill(prev => ({ ...prev, height: e.target.value }))}
+                className="h-12"
+                step="0.1"
+              />
+              <Input
+                type="number"
+                placeholder="Width"
+                value={newDoorWindowGrill.width}
+                onChange={(e) => setNewDoorWindowGrill(prev => ({ ...prev, width: e.target.value }))}
+                className="h-12"
+                step="0.1"
+              />
+              <Input
+                type="number"
+                placeholder="2"
+                value={newDoorWindowGrill.grillMultiplier}
+                onChange={(e) => setNewDoorWindowGrill(prev => ({ ...prev, grillMultiplier: e.target.value }))}
+                className="h-12"
+                step="0.5"
+              />
             </div>
 
-            {newDoorWindowGrill.height && newDoorWindowGrill.width && newDoorWindowGrill.sides && (
-              <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border-2 border-amber-300 dark:border-amber-700">
-                <p className="text-sm font-medium text-amber-900 dark:text-amber-100 mb-1">Total Area Calculation:</p>
-                <p className="text-base text-amber-700 dark:text-amber-400 text-center font-semibold">
-                  {newDoorWindowGrill.height}' × {newDoorWindowGrill.width}' × {newDoorWindowGrill.sides} sides × {newDoorWindowGrill.grillMultiplier} = {(parseFloat(newDoorWindowGrill.height) * parseFloat(newDoorWindowGrill.width) * parseFloat(newDoorWindowGrill.sides) * parseFloat(newDoorWindowGrill.grillMultiplier)).toFixed(1)} sq.ft
-                </p>
-              </div>
-            )}
-
-            <div className="flex gap-3 pt-2">
-              <Button
-                variant="outline"
-                className="flex-1 h-12"
-                onClick={() => {
-                  setDoorWindowDialogOpen(false);
-                  setDoorWindowRoomName("");
-                  setNewDoorWindowGrill({
-                    name: "Door/Window",
-                    height: "",
-                    width: "",
-                    sides: "",
-                    grillMultiplier: "1"
-                  });
-                }}
-              >
-                Cancel
-              </Button>
-              <Button
-                className="flex-1 h-12"
-                onClick={handleAddDoorWindowFromDialog}
-                disabled={!doorWindowRoomName.trim() || !newDoorWindowGrill.height || !newDoorWindowGrill.width || !newDoorWindowGrill.sides}
-              >
-                Add Door/Window
-              </Button>
-            </div>
+            <Button
+              className="w-full h-12"
+              onClick={handleAddDoorWindowFromDialog}
+              disabled={!doorWindowRoomName.trim() || !newDoorWindowGrill.height || !newDoorWindowGrill.width || !newDoorWindowGrill.sides}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add to {doorWindowRoomName || "Room"}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
