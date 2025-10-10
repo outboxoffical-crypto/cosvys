@@ -157,7 +157,7 @@ export default function PaintEstimationScreen() {
     const storedKey = `additional_entries_${projectId}_${selectedPaintType}`;
     const isAdditionalMode = typeof window !== 'undefined' && localStorage.getItem(modeKey) === '1';
     const baselineRaw = typeof window !== 'undefined' ? localStorage.getItem(baselineKey) : null;
-    const baseline = baselineRaw ? JSON.parse(baselineRaw) as { wall?: number; ceiling?: number; enamel?: number } : null;
+    const baseline = baselineRaw ? JSON.parse(baselineRaw) as { wall?: number; ceiling?: number; enamel?: number; roomIds?: string[] } : null;
 
     // Load previously stored additional entries so we keep them across sessions
     let storedAdditional: AreaConfiguration[] = [];
@@ -183,6 +183,7 @@ export default function PaintEstimationScreen() {
     // Main areas default to current totals
     let wallMain = wallAreaTotal;
     let ceilingMain = ceilingAreaTotal;
+    let enamelMain = enamelAreaTotal;
 
     // Collect additional configs (new separate boxes)
     const additional: AreaConfiguration[] = [];
@@ -195,8 +196,12 @@ export default function PaintEstimationScreen() {
       const sumStoredCeiling = storedAdditional
         .filter(a => a.areaType === 'Ceiling')
         .reduce((sum, a) => sum + (Number(a.area) || 0), 0);
+      const sumStoredEnamel = storedAdditional
+        .filter(a => a.areaType === 'Enamel')
+        .reduce((sum, a) => sum + (Number(a.area) || 0), 0);
       wallMain = Math.max(0, wallAreaTotal - sumStoredWall);
       ceilingMain = Math.max(0, ceilingAreaTotal - sumStoredCeiling);
+      enamelMain = Math.max(0, enamelAreaTotal - sumStoredEnamel);
     }
 
     if (isAdditionalMode && baseline) {
@@ -207,16 +212,25 @@ export default function PaintEstimationScreen() {
       wallMain = baseline.wall || 0;
       ceilingMain = baseline.ceiling || 0;
 
+      // Get the baseline room IDs to detect new rooms
+      const baselineRoomIds = baseline.roomIds || [];
+      const currentRoomIds = filteredRooms.map(r => r.id);
+      const newRoomIds = currentRoomIds.filter(id => !baselineRoomIds.includes(id));
+      
+      // Find the newly added room(s)
+      const newRooms = filteredRooms.filter(r => newRoomIds.includes(r.id));
+
       if (addWall > 0) {
-        // Find the newly added room name
-        const newRoomName = filteredRooms
-          .filter(room => {
-            const selectedAreas = (typeof room.selected_areas === 'object' && room.selected_areas !== null) ? 
-              room.selected_areas as any : { floor: true, wall: true, ceiling: false };
-            return selectedAreas.wall;
-          })
-          .map(room => room.name)
-          .pop() || 'Additional Wall Area';
+        // Get the room name from the newly added room with wall area
+        let newRoomName = 'Additional Wall Area';
+        const newWallRoom = newRooms.find(room => {
+          const selectedAreas = (typeof room.selected_areas === 'object' && room.selected_areas !== null) ? 
+            room.selected_areas as any : { floor: true, wall: true, ceiling: false };
+          return selectedAreas.wall;
+        });
+        if (newWallRoom) {
+          newRoomName = `${newWallRoom.name} (Wall Area)`;
+        }
 
         const newConfig: AreaConfiguration = {
           id: `wall-additional-${Date.now()}`,
@@ -238,15 +252,16 @@ export default function PaintEstimationScreen() {
       }
 
       if (addCeiling > 0) {
-        // Find the newly added room name
-        const newRoomName = filteredRooms
-          .filter(room => {
-            const selectedAreas = (typeof room.selected_areas === 'object' && room.selected_areas !== null) ? 
-              room.selected_areas as any : { floor: true, wall: true, ceiling: false };
-            return selectedAreas.ceiling;
-          })
-          .map(room => room.name)
-          .pop() || 'Additional Ceiling Area';
+        // Get the room name from the newly added room with ceiling area
+        let newRoomName = 'Additional Ceiling Area';
+        const newCeilingRoom = newRooms.find(room => {
+          const selectedAreas = (typeof room.selected_areas === 'object' && room.selected_areas !== null) ? 
+            room.selected_areas as any : { floor: true, wall: true, ceiling: false };
+          return selectedAreas.ceiling;
+        });
+        if (newCeilingRoom) {
+          newRoomName = `${newCeilingRoom.name} (Ceiling Area)`;
+        }
 
         const newConfig: AreaConfiguration = {
           id: `ceiling-additional-${Date.now()}`,
@@ -267,10 +282,75 @@ export default function PaintEstimationScreen() {
         } catch {}
       }
 
-      // Update baseline to new totals and clear mode
+      // Update baseline to new totals with room IDs and clear mode
       try {
-        localStorage.setItem(baselineKey, JSON.stringify({ wall: wallAreaTotal, ceiling: ceilingAreaTotal, enamel: enamelAreaTotal }));
+        localStorage.setItem(baselineKey, JSON.stringify({ 
+          wall: wallAreaTotal, 
+          ceiling: ceilingAreaTotal, 
+          enamel: enamelAreaTotal,
+          roomIds: currentRoomIds
+        }));
         localStorage.removeItem(modeKey);
+      } catch {}
+    }
+
+    // Check if we're in "additional enamel area" mode
+    const enamelModeKey = `additional_enamel_mode_${projectId}_${selectedPaintType}`;
+    const enamelBaselineKey = `additional_enamel_baseline_${projectId}_${selectedPaintType}`;
+    const isAdditionalEnamelMode = typeof window !== 'undefined' && localStorage.getItem(enamelModeKey) === '1';
+    const enamelBaselineRaw = typeof window !== 'undefined' ? localStorage.getItem(enamelBaselineKey) : null;
+    const enamelBaseline = enamelBaselineRaw ? JSON.parse(enamelBaselineRaw) as { enamel?: number; roomIds?: string[] } : null;
+
+    if (isAdditionalEnamelMode && enamelBaseline) {
+      const addEnamel = Math.max(0, enamelAreaTotal - (enamelBaseline.enamel || 0));
+
+      // Keep main enamel as baseline
+      enamelMain = enamelBaseline.enamel || 0;
+
+      // Get the baseline room IDs to detect new rooms
+      const baselineRoomIds = enamelBaseline.roomIds || [];
+      const currentRoomIds = filteredRooms.map(r => r.id);
+      const newRoomIds = currentRoomIds.filter(id => !baselineRoomIds.includes(id));
+      
+      // Find the newly added room(s)
+      const newRooms = filteredRooms.filter(r => newRoomIds.includes(r.id));
+
+      if (addEnamel > 0) {
+        // Get the room name from the newly added room with enamel area
+        let newRoomName = 'Additional Enamel Area';
+        const newEnamelRoom = newRooms.find(room => {
+          return room.door_window_grills && Array.isArray(room.door_window_grills) && room.door_window_grills.length > 0;
+        });
+        if (newEnamelRoom) {
+          newRoomName = `${newEnamelRoom.name} (Enamel Area)`;
+        }
+
+        const newConfig: AreaConfiguration = {
+          id: `enamel-additional-${Date.now()}`,
+          areaType: 'Enamel',
+          paintingSystem: null,
+          coatConfiguration: { putty: 0, primer: 0, emulsion: 0 },
+          repaintingConfiguration: { primer: 0, emulsion: 0 },
+          selectedMaterials: { putty: '', primer: '', emulsion: '' },
+          area: addEnamel,
+          perSqFtRate: '',
+          label: newRoomName,
+          isAdditional: true,
+        };
+        additional.push(newConfig);
+        try {
+          storedList.push({ ...newConfig });
+          localStorage.setItem(storedKey, JSON.stringify(storedList));
+        } catch {}
+      }
+
+      // Update baseline to new totals with room IDs and clear mode
+      try {
+        localStorage.setItem(enamelBaselineKey, JSON.stringify({ 
+          enamel: enamelAreaTotal,
+          roomIds: currentRoomIds
+        }));
+        localStorage.removeItem(enamelModeKey);
       } catch {}
     }
 
@@ -305,7 +385,7 @@ export default function PaintEstimationScreen() {
       });
     }
 
-    if (enamelAreaTotal > 0) {
+    if (enamelMain > 0) {
       configs.push({
         id: 'enamel-main',
         areaType: 'Enamel',
@@ -313,7 +393,7 @@ export default function PaintEstimationScreen() {
         coatConfiguration: { putty: 0, primer: 0, emulsion: 0 },
         repaintingConfiguration: { primer: 0, emulsion: 0 },
         selectedMaterials: { putty: '', primer: '', emulsion: '' },
-        area: enamelAreaTotal,
+        area: enamelMain,
         perSqFtRate: '',
         label: 'Enamel Area',
         isAdditional: false
@@ -724,7 +804,22 @@ export default function PaintEstimationScreen() {
                       const wallBase = wallConfigs.reduce((sum, c) => sum + c.area, 0);
                       const ceilingBase = ceilingConfigs.reduce((sum, c) => sum + c.area, 0);
                       const enamelBase = enamelConfigs.reduce((sum, c) => sum + c.area, 0);
-                      localStorage.setItem(`additional_baseline_${projectId}_${selectedPaintType}`, JSON.stringify({ wall: wallBase, ceiling: ceilingBase, enamel: enamelBase }));
+                      // Store current room IDs to detect new rooms later
+                      const currentRoomIds = rooms
+                        .filter(room => {
+                          const projectType = room.project_type;
+                          if (selectedPaintType === "Interior") return projectType === "Interior";
+                          if (selectedPaintType === "Exterior") return projectType === "Exterior";
+                          if (selectedPaintType === "Waterproofing") return projectType === "Waterproofing";
+                          return false;
+                        })
+                        .map(r => r.id);
+                      localStorage.setItem(`additional_baseline_${projectId}_${selectedPaintType}`, JSON.stringify({ 
+                        wall: wallBase, 
+                        ceiling: ceilingBase, 
+                        enamel: enamelBase,
+                        roomIds: currentRoomIds
+                      }));
                       localStorage.setItem(`additional_mode_${projectId}_${selectedPaintType}`, '1');
                     } catch {}
                     navigate(`/room-measurement/${projectId}`);
@@ -734,6 +829,73 @@ export default function PaintEstimationScreen() {
                   Add Additional Square Footage
                 </Button>
               </div>
+            )}
+
+            {/* Enamel Paint Configuration Summary - Moved above Door & Window Enamel */}
+            {areaConfigurations.some(c => c.areaType === 'Enamel' && (c.paintingSystem || c.enamelConfig)) && (
+              <Card className="eca-shadow border-2 border-orange-500/30">
+                <CardHeader>
+                  <CardTitle className="text-lg text-orange-700 dark:text-orange-300">Enamel Paint Configuration Summary</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {areaConfigurations.filter(c => c.areaType === 'Enamel' && (c.paintingSystem || c.enamelConfig)).map((config) => (
+                    <Card key={config.id} className="border-2 border-orange-500/20 bg-orange-50/50 dark:bg-orange-950/20">
+                      <CardContent className="p-4">
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <h3 className="font-semibold text-base text-orange-700 dark:text-orange-300">{config.label}</h3>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20"
+                                onClick={() => handleDeleteConfig(config.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => handleEditConfig(config.id)}
+                              >
+                                <Settings className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+
+                          <div className="space-y-1">
+                            <p className="text-sm text-muted-foreground">Coats</p>
+                            <p className="font-medium text-sm leading-relaxed">
+                              {getConfigDescription(config) || 'Not configured'}
+                            </p>
+                          </div>
+
+                          <div className="space-y-1">
+                            <p className="text-sm text-muted-foreground">Area Sq.ft</p>
+                            <p className="font-medium">{config.area.toFixed(2)}</p>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label className="text-sm">Per Sq.ft Rate (₹)</Label>
+                            <Input
+                              type="number"
+                              placeholder="Enter rate per sq.ft"
+                              value={config.perSqFtRate}
+                              onChange={(e) => {
+                                setAreaConfigurations(prev => prev.map(c => 
+                                  c.id === config.id ? { ...c, perSqFtRate: e.target.value } : c
+                                ));
+                              }}
+                              className="h-10"
+                            />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </CardContent>
+              </Card>
             )}
 
             {/* Door & Window Enamel Section */}
@@ -786,15 +948,29 @@ export default function PaintEstimationScreen() {
                   ))}
                 </div>
 
-                {/* Add Additional Enamel - Navigate to Room Measurement */}
+                {/* Add Additional Enamel - Navigate to Door & Window tab */}
                 <Button
                   variant="outline"
                   className="w-full border-dashed border-orange-300 text-orange-700"
                   onClick={() => {
                     try {
                       const enamelBase = enamelConfigs.reduce((sum, c) => sum + c.area, 0);
-                      localStorage.setItem(`additional_enamel_baseline_${projectId}_${selectedPaintType}`, JSON.stringify({ enamel: enamelBase }));
+                      const currentRoomIds = rooms
+                        .filter(room => {
+                          const projectType = room.project_type;
+                          if (selectedPaintType === "Interior") return projectType === "Interior";
+                          if (selectedPaintType === "Exterior") return projectType === "Exterior";
+                          if (selectedPaintType === "Waterproofing") return projectType === "Waterproofing";
+                          return false;
+                        })
+                        .map(r => r.id);
+                      localStorage.setItem(`additional_enamel_baseline_${projectId}_${selectedPaintType}`, JSON.stringify({ 
+                        enamel: enamelBase,
+                        roomIds: currentRoomIds
+                      }));
                       localStorage.setItem(`additional_enamel_mode_${projectId}_${selectedPaintType}`, '1');
+                      // Set the tab to open "doorwindow" tab
+                      localStorage.setItem(`open_tab_${projectId}`, 'doorwindow');
                     } catch {}
                     navigate(`/room-measurement/${projectId}`);
                   }}
@@ -802,73 +978,6 @@ export default function PaintEstimationScreen() {
                   <Plus className="mr-2 h-4 w-4" />
                   Add Additional Enamel Area
                 </Button>
-
-                {/* Enamel Paint Configuration Summary */}
-                {areaConfigurations.some(c => c.areaType === 'Enamel' && (c.paintingSystem || c.enamelConfig)) && (
-                  <Card className="eca-shadow border-2 border-orange-500/30">
-                    <CardHeader>
-                      <CardTitle className="text-lg text-orange-700 dark:text-orange-300">Enamel Paint Configuration Summary</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      {areaConfigurations.filter(c => c.areaType === 'Enamel' && (c.paintingSystem || c.enamelConfig)).map((config) => (
-                        <Card key={config.id} className="border-2 border-orange-500/20 bg-orange-50/50 dark:bg-orange-950/20">
-                          <CardContent className="p-4">
-                            <div className="space-y-3">
-                              <div className="flex items-center justify-between">
-                                <h3 className="font-semibold text-base text-orange-700 dark:text-orange-300">{config.label}</h3>
-                                <div className="flex gap-2">
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20"
-                                    onClick={() => handleDeleteConfig(config.id)}
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8"
-                                    onClick={() => handleEditConfig(config.id)}
-                                  >
-                                    <Settings className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              </div>
-
-                              <div className="space-y-1">
-                                <p className="text-sm text-muted-foreground">Coats</p>
-                                <p className="font-medium text-sm leading-relaxed">
-                                  {getConfigDescription(config) || 'Not configured'}
-                                </p>
-                              </div>
-
-                              <div className="space-y-1">
-                                <p className="text-sm text-muted-foreground">Area Sq.ft</p>
-                                <p className="font-medium">{config.area.toFixed(2)}</p>
-                              </div>
-
-                              <div className="space-y-2">
-                                <Label className="text-sm">Per Sq.ft Rate (₹)</Label>
-                                <Input
-                                  type="number"
-                                  placeholder="Enter rate per sq.ft"
-                                  value={config.perSqFtRate}
-                                  onChange={(e) => {
-                                    setAreaConfigurations(prev => prev.map(c => 
-                                      c.id === config.id ? { ...c, perSqFtRate: e.target.value } : c
-                                    ));
-                                  }}
-                                  className="h-10"
-                                />
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </CardContent>
-                  </Card>
-                )}
               </div>
             )}
 

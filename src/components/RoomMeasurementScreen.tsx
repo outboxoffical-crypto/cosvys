@@ -174,6 +174,17 @@ export default function RoomMeasurementScreen() {
     loadData();
   }, [projectId]);
 
+  // Check for localStorage flag to open specific tab (e.g., from Paint Estimation)
+  useEffect(() => {
+    const tabKey = `open_tab_${projectId}`;
+    const targetTab = localStorage.getItem(tabKey);
+    if (targetTab) {
+      setActiveTab(targetTab);
+      // Clear the flag after using it
+      localStorage.removeItem(tabKey);
+    }
+  }, [projectId]);
+
   const calculateAreas = (
     length: number, 
     width: number, 
