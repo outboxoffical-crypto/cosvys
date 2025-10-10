@@ -406,12 +406,28 @@ export default function PaintEstimationScreen() {
     setAreaConfigurations(configs);
   };
 
-  // Re-initialize when paint type changes
+  // Re-initialize when paint type changes - preserve existing configurations
   useEffect(() => {
     if (rooms.length > 0) {
       setIsLoading(true);
       setTimeout(() => {
+        // Save current configurations before re-initializing
+        const configsToPreserve = areaConfigurations.filter(c => c.paintingSystem || c.enamelConfig);
         initializeConfigurations(rooms);
+        
+        // Restore painting system and material selections after re-init
+        if (configsToPreserve.length > 0) {
+          setAreaConfigurations(prev => prev.map(config => {
+            const preserved = configsToPreserve.find(p => 
+              (p.id === config.id) || 
+              (p.areaType === config.areaType && p.label === config.label && !p.isAdditional && !config.isAdditional)
+            );
+            if (preserved) {
+              return { ...config, ...preserved, area: config.area }; // Keep updated area but preserve config
+            }
+            return config;
+          }));
+        }
         setIsLoading(false);
       }, 100);
     }
@@ -862,6 +878,16 @@ export default function PaintEstimationScreen() {
                                 <Settings className="h-4 w-4" />
                               </Button>
                             </div>
+                          </div>
+
+                          <div className="space-y-1">
+                            <p className="text-sm text-muted-foreground">Paint Type</p>
+                            <p className="font-medium">{config.enamelConfig?.enamelType || 'Not Selected'}</p>
+                          </div>
+
+                          <div className="space-y-1">
+                            <p className="text-sm text-muted-foreground">Painting System</p>
+                            <p className="font-medium">{config.paintingSystem || 'Not Selected'}</p>
                           </div>
 
                           <div className="space-y-1">
