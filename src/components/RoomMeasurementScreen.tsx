@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Plus, Ruler, Home, Trash2, Calculator, X, Edit3, Camera, Image } from "lucide-react";
+import { ArrowLeft, Plus, Ruler, Home, Trash2, Calculator, X, Edit3, Camera, Image, Minus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -996,240 +996,302 @@ export default function RoomMeasurementScreen() {
             {/* Add New Room */}
             {activeProjectType && (
               <Card className="eca-shadow">
-                <CardHeader>
-                  <CardTitle className="flex items-center text-lg">
-                    <Ruler className="mr-2 h-5 w-5 text-primary" />
-                    Add Room
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center text-base font-medium text-primary">
+                    <Plus className="mr-2 h-5 w-5" />
+                    Add Room ({activeProjectType})
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <Input
-                    placeholder="Room Name"
-                    value={newRoom.name}
-                    onChange={(e) => setNewRoom(prev => ({ ...prev, name: e.target.value }))}
-                    className="h-12"
-                  />
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Room Name</label>
+                    <Input
+                      placeholder="Living Room"
+                      value={newRoom.name}
+                      onChange={(e) => setNewRoom(prev => ({ ...prev, name: e.target.value }))}
+                      className="h-11"
+                    />
+                  </div>
 
                   <div className="grid grid-cols-3 gap-3">
-                    <Input
-                      type="number"
-                      placeholder="Length (ft)"
-                      value={newRoom.length}
-                      onChange={(e) => setNewRoom(prev => ({ ...prev, length: e.target.value }))}
-                      className="h-12"
-                      step="0.1"
-                    />
-                    <Input
-                      type="number"
-                      placeholder="Width (ft)"
-                      value={newRoom.width}
-                      onChange={(e) => setNewRoom(prev => ({ ...prev, width: e.target.value }))}
-                      className="h-12"
-                      step="0.1"
-                    />
-                    <Input
-                      type="number"
-                      placeholder="Height (ft)"
-                      value={newRoom.height}
-                      onChange={(e) => setNewRoom(prev => ({ ...prev, height: e.target.value }))}
-                      className="h-12"
-                      step="0.1"
-                    />
-                  </div>
-
-                  {/* Picture Upload */}
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium text-foreground">
-                      Upload Room Pictures ({newRoom.pictures.length}/5)
-                    </p>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="h-12"
-                        disabled={newRoom.pictures.length >= 5}
-                      >
-                        <Image className="mr-2 h-4 w-4" />
-                        Choose File
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => cameraInputRef.current?.click()}
-                        className="h-12"
-                        disabled={newRoom.pictures.length >= 5}
-                      >
-                        <Camera className="mr-2 h-4 w-4" />
-                        Take Photo
-                      </Button>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Length (ft)</label>
+                      <Input
+                        type="number"
+                        placeholder="10"
+                        value={newRoom.length}
+                        onChange={(e) => setNewRoom(prev => ({ ...prev, length: e.target.value }))}
+                        className="h-11"
+                        step="0.1"
+                      />
                     </div>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      className="hidden"
-                      onChange={(e) => handlePictureUpload(e.target.files, false)}
-                    />
-                    <input
-                      ref={cameraInputRef}
-                      type="file"
-                      accept="image/*"
-                      capture="environment"
-                      className="hidden"
-                      onChange={(e) => handlePictureUpload(e.target.files, true)}
-                    />
-                    
-                    {newRoom.pictures.length > 0 && (
-                      <div className="grid grid-cols-5 gap-2 mt-2">
-                        {newRoom.pictures.map((pic, index) => (
-                          <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-border">
-                            <img src={pic} alt={`Room ${index + 1}`} className="w-full h-full object-cover" />
-                            <Button
-                              variant="destructive"
-                              size="icon"
-                              className="absolute top-1 right-1 h-6 w-6"
-                              onClick={() => removePicture(index)}
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Width (ft)</label>
+                      <Input
+                        type="number"
+                        placeholder="10"
+                        value={newRoom.width}
+                        onChange={(e) => setNewRoom(prev => ({ ...prev, width: e.target.value }))}
+                        className="h-11"
+                        step="0.1"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Height (ft)</label>
+                      <Input
+                        type="number"
+                        placeholder="9.5"
+                        value={newRoom.height}
+                        onChange={(e) => setNewRoom(prev => ({ ...prev, height: e.target.value }))}
+                        className="h-11"
+                        step="0.1"
+                      />
+                    </div>
                   </div>
 
-                  {!showOpenAreaSection ? (
-                    <Button 
-                      onClick={handleAddRoomClick}
-                      disabled={!newRoom.name || !newRoom.length || !newRoom.width || newRoom.pictures.length < 2}
-                      className="w-full h-12"
+                  <Button 
+                    onClick={handleAddRoomClick}
+                    disabled={!newRoom.name || !newRoom.length || !newRoom.width || newRoom.pictures.length < 2}
+                    className="w-full h-12 bg-primary hover:bg-primary/90"
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Room to {activeProjectType}
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Open Area Section */}
+            {activeProjectType && (
+              <Card className="eca-shadow">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center text-base font-medium text-destructive">
+                    <Minus className="mr-2 h-5 w-5" />
+                    Open Area (Subtract from Wall)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {tempOpeningAreas.length > 0 && (
+                    <div className="space-y-2">
+                      {tempOpeningAreas.map((opening) => (
+                        <div key={opening.id} className="flex items-center justify-between p-2 bg-muted rounded">
+                          <span className="text-sm">{opening.height} × {opening.width} × {opening.quantity} = {opening.area.toFixed(1)} sq.ft</span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => removeTempOpeningArea(opening.id)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Height (ft)</label>
+                      <Input
+                        type="number"
+                        placeholder="0"
+                        value={newOpeningArea.height}
+                        onChange={(e) => setNewOpeningArea(prev => ({ ...prev, height: e.target.value }))}
+                        className="h-11"
+                        step="0.1"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Width (ft)</label>
+                      <Input
+                        type="number"
+                        placeholder="0"
+                        value={newOpeningArea.width}
+                        onChange={(e) => setNewOpeningArea(prev => ({ ...prev, width: e.target.value }))}
+                        className="h-11"
+                        step="0.1"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Qty (Optional)</label>
+                      <Input
+                        type="number"
+                        placeholder="1"
+                        value={newOpeningArea.quantity}
+                        onChange={(e) => setNewOpeningArea(prev => ({ ...prev, quantity: e.target.value }))}
+                        className="h-11"
+                        step="1"
+                      />
+                    </div>
+                  </div>
+                  
+                  <Button
+                    variant="outline"
+                    onClick={addTempOpeningArea}
+                    disabled={!newOpeningArea.height || !newOpeningArea.width}
+                    className="w-full h-11"
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Open Area
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Extra Surface Section */}
+            {activeProjectType && (
+              <Card className="eca-shadow">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center text-base font-medium text-green-600 dark:text-green-400">
+                    <Plus className="mr-2 h-5 w-5" />
+                    Extra Surface (Add to Wall)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {tempExtraSurfaces.length > 0 && (
+                    <div className="space-y-2">
+                      {tempExtraSurfaces.map((extra) => (
+                        <div key={extra.id} className="flex items-center justify-between p-2 bg-muted rounded">
+                          <span className="text-sm">{extra.height} × {extra.width} × {extra.quantity} = {extra.area.toFixed(1)} sq.ft</span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => removeTempExtraSurface(extra.id)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Height (ft)</label>
+                      <Input
+                        type="number"
+                        placeholder="0"
+                        value={newExtraSurface.height}
+                        onChange={(e) => setNewExtraSurface(prev => ({ ...prev, height: e.target.value }))}
+                        className="h-11"
+                        step="0.1"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Width (ft)</label>
+                      <Input
+                        type="number"
+                        placeholder="0"
+                        value={newExtraSurface.width}
+                        onChange={(e) => setNewExtraSurface(prev => ({ ...prev, width: e.target.value }))}
+                        className="h-11"
+                        step="0.1"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Qty (Optional)</label>
+                      <Input
+                        type="number"
+                        placeholder="1"
+                        value={newExtraSurface.quantity}
+                        onChange={(e) => setNewExtraSurface(prev => ({ ...prev, quantity: e.target.value }))}
+                        className="h-11"
+                        step="1"
+                      />
+                    </div>
+                  </div>
+                  
+                  <Button
+                    variant="outline"
+                    onClick={addTempExtraSurface}
+                    disabled={!newExtraSurface.height || !newExtraSurface.width}
+                    className="w-full h-11"
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Extra Surface
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Add Pictures Section */}
+            {activeProjectType && (
+              <Card className="eca-shadow">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center text-base font-medium text-primary">
+                    <Camera className="mr-2 h-5 w-5" />
+                    Add Pictures (Required)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Room Pictures (Min: 2, Max: 5)</span>
+                    <span className="font-medium">{newRoom.pictures.length}/5</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => cameraInputRef.current?.click()}
+                      className="h-12 flex items-center justify-center"
+                      disabled={newRoom.pictures.length >= 5}
                     >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add Room
+                      <Camera className="mr-2 h-5 w-5" />
+                      Take Picture
                     </Button>
-                  ) : (
-                    <>
-                      {/* Opening Areas Section */}
-                      <div className="space-y-3 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
-                        <h4 className="font-semibold text-red-700 dark:text-red-400">Opening Areas (Doors/Windows to deduct)</h4>
-                        
-                        {tempOpeningAreas.map((opening) => (
-                          <div key={opening.id} className="flex items-center justify-between p-2 bg-background rounded">
-                            <span className="text-sm">{opening.height} × {opening.width} × {opening.quantity} = {opening.area.toFixed(1)} sq.ft</span>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6"
-                              onClick={() => removeTempOpeningArea(opening.id)}
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="h-12 flex items-center justify-center"
+                      disabled={newRoom.pictures.length >= 5}
+                    >
+                      <Image className="mr-2 h-5 w-5" />
+                      Choose Picture
+                    </Button>
+                  </div>
 
-                        <div className="grid grid-cols-3 gap-2">
-                          <Input
-                            type="number"
-                            placeholder="Height"
-                            value={newOpeningArea.height}
-                            onChange={(e) => setNewOpeningArea(prev => ({ ...prev, height: e.target.value }))}
-                            className="h-10"
-                            step="0.1"
-                          />
-                          <Input
-                            type="number"
-                            placeholder="Width"
-                            value={newOpeningArea.width}
-                            onChange={(e) => setNewOpeningArea(prev => ({ ...prev, width: e.target.value }))}
-                            className="h-10"
-                            step="0.1"
-                          />
-                          <Input
-                            type="number"
-                            placeholder="Qty"
-                            value={newOpeningArea.quantity}
-                            onChange={(e) => setNewOpeningArea(prev => ({ ...prev, quantity: e.target.value }))}
-                            className="h-10"
-                            step="1"
-                          />
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => handlePictureUpload(e.target.files, false)}
+                  />
+                  <input
+                    ref={cameraInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    onChange={(e) => handlePictureUpload(e.target.files, true)}
+                  />
+                  
+                  {newRoom.pictures.length > 0 && (
+                    <div className="grid grid-cols-5 gap-2">
+                      {newRoom.pictures.map((pic, index) => (
+                        <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-border">
+                          <img src={pic} alt={`Room ${index + 1}`} className="w-full h-full object-cover" />
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            className="absolute top-1 right-1 h-6 w-6"
+                            onClick={() => removePicture(index)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
                         </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={addTempOpeningArea}
-                          disabled={!newOpeningArea.height || !newOpeningArea.width}
-                          className="w-full"
-                        >
-                          <Plus className="mr-1 h-3 w-3" />
-                          Add Opening Area
-                        </Button>
-                      </div>
+                      ))}
+                    </div>
+                  )}
 
-                      {/* Extra Surfaces Section */}
-                      <div className="space-y-3 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-                        <h4 className="font-semibold text-green-700 dark:text-green-400">Extra Surfaces (Additional areas to add)</h4>
-                        
-                        {tempExtraSurfaces.map((extra) => (
-                          <div key={extra.id} className="flex items-center justify-between p-2 bg-background rounded">
-                            <span className="text-sm">{extra.height} × {extra.width} × {extra.quantity} = {extra.area.toFixed(1)} sq.ft</span>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6"
-                              onClick={() => removeTempExtraSurface(extra.id)}
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        ))}
-
-                        <div className="grid grid-cols-3 gap-2">
-                          <Input
-                            type="number"
-                            placeholder="Height"
-                            value={newExtraSurface.height}
-                            onChange={(e) => setNewExtraSurface(prev => ({ ...prev, height: e.target.value }))}
-                            className="h-10"
-                            step="0.1"
-                          />
-                          <Input
-                            type="number"
-                            placeholder="Width"
-                            value={newExtraSurface.width}
-                            onChange={(e) => setNewExtraSurface(prev => ({ ...prev, width: e.target.value }))}
-                            className="h-10"
-                            step="0.1"
-                          />
-                          <Input
-                            type="number"
-                            placeholder="Qty"
-                            value={newExtraSurface.quantity}
-                            onChange={(e) => setNewExtraSurface(prev => ({ ...prev, quantity: e.target.value }))}
-                            className="h-10"
-                            step="1"
-                          />
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={addTempExtraSurface}
-                          disabled={!newExtraSurface.height || !newExtraSurface.width}
-                          className="w-full"
-                        >
-                          <Plus className="mr-1 h-3 w-3" />
-                          Add Extra Surface
-                        </Button>
-                      </div>
-
-                      <Button 
-                        onClick={addRoom}
-                        className="w-full h-12"
-                      >
-                        Save Room
-                      </Button>
-                    </>
+                  {newRoom.pictures.length < 2 && (
+                    <p className="text-sm text-muted-foreground text-center">
+                      Please upload at least 2 pictures to continue with room addition
+                    </p>
                   )}
                 </CardContent>
               </Card>
