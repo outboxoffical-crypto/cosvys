@@ -1003,38 +1003,50 @@ export default function RoomMeasurementScreen() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <Input
-                    placeholder="Room Name"
-                    value={newRoom.name}
-                    onChange={(e) => setNewRoom(prev => ({ ...prev, name: e.target.value }))}
-                    className="h-12"
-                  />
+                  <div className="space-y-2">
+                    <Label className="text-base font-medium">Room Name</Label>
+                    <Input
+                      placeholder="Living Room"
+                      value={newRoom.name}
+                      onChange={(e) => setNewRoom(prev => ({ ...prev, name: e.target.value }))}
+                      className="h-12"
+                    />
+                  </div>
 
                   <div className="grid grid-cols-3 gap-3">
-                    <Input
-                      type="number"
-                      placeholder="Length (ft)"
-                      value={newRoom.length}
-                      onChange={(e) => setNewRoom(prev => ({ ...prev, length: e.target.value }))}
-                      className="h-12"
-                      step="0.1"
-                    />
-                    <Input
-                      type="number"
-                      placeholder="Width (ft)"
-                      value={newRoom.width}
-                      onChange={(e) => setNewRoom(prev => ({ ...prev, width: e.target.value }))}
-                      className="h-12"
-                      step="0.1"
-                    />
-                    <Input
-                      type="number"
-                      placeholder="Height (ft)"
-                      value={newRoom.height}
-                      onChange={(e) => setNewRoom(prev => ({ ...prev, height: e.target.value }))}
-                      className="h-12"
-                      step="0.1"
-                    />
+                    <div className="space-y-2">
+                      <Label className="text-base font-medium">Length (ft)</Label>
+                      <Input
+                        type="number"
+                        placeholder="10"
+                        value={newRoom.length}
+                        onChange={(e) => setNewRoom(prev => ({ ...prev, length: e.target.value }))}
+                        className="h-12"
+                        step="0.1"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-base font-medium">Width (ft)</Label>
+                      <Input
+                        type="number"
+                        placeholder="10"
+                        value={newRoom.width}
+                        onChange={(e) => setNewRoom(prev => ({ ...prev, width: e.target.value }))}
+                        className="h-12"
+                        step="0.1"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-base font-medium">Height (ft)</Label>
+                      <Input
+                        type="number"
+                        placeholder="9.5"
+                        value={newRoom.height}
+                        onChange={(e) => setNewRoom(prev => ({ ...prev, height: e.target.value }))}
+                        className="h-12"
+                        step="0.1"
+                      />
+                    </div>
                   </div>
 
                   {/* Picture Upload */}
