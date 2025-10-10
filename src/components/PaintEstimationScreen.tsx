@@ -1061,49 +1061,6 @@ export default function PaintEstimationScreen() {
                       </div>
                     </div>
                   </div>
-
-                  {/* Quick presets */}
-                  <div className="grid grid-cols-3 gap-2">
-                    <Button
-                      variant="outline"
-                      onClick={() => handleUpdateConfig({
-                        enamelConfig: {
-                          primerType: selectedConfig.enamelConfig?.primerType || '',
-                          primerCoats: 1,
-                          enamelType: selectedConfig.enamelConfig?.enamelType || '',
-                          enamelCoats: 2,
-                        }
-                      })}
-                    >
-                      1 Primer + 2 Enamel
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => handleUpdateConfig({
-                        enamelConfig: {
-                          primerType: selectedConfig.enamelConfig?.primerType || '',
-                          primerCoats: selectedConfig.enamelConfig?.primerCoats ?? 0,
-                          enamelType: selectedConfig.enamelConfig?.enamelType || '',
-                          enamelCoats: Math.min(5, (selectedConfig.enamelConfig?.enamelCoats ?? 0) + 1),
-                        }
-                      })}
-                    >
-                      +1 Enamel Coat
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => handleUpdateConfig({
-                        enamelConfig: {
-                          primerType: selectedConfig.enamelConfig?.primerType || '',
-                          primerCoats: selectedConfig.enamelConfig?.primerCoats ?? 0,
-                          enamelType: selectedConfig.enamelConfig?.enamelType || '',
-                          enamelCoats: Math.min(5, (selectedConfig.enamelConfig?.enamelCoats ?? 0) + 2),
-                        }
-                      })}
-                    >
-                      +2 Enamel Coats
-                    </Button>
-                  </div>
                 </div>
               )}
 
