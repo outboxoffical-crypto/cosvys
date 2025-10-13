@@ -128,19 +128,6 @@ export default function PaintEstimationScreen() {
 
   // Initialize configurations based on rooms
   const initializeConfigurations = (roomsData: any[]) => {
-    // Try to load saved configurations first
-    const savedConfigKey = `paint_configs_${projectId}_${selectedPaintType}`;
-    try {
-      const savedConfigs = localStorage.getItem(savedConfigKey);
-      if (savedConfigs) {
-        const parsed = JSON.parse(savedConfigs);
-        setAreaConfigurations(parsed);
-        return;
-      }
-    } catch (e) {
-      console.error('Error loading saved configs:', e);
-    }
-
     const configs: AreaConfiguration[] = [];
     
     // Filter rooms by selected paint type
