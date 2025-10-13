@@ -383,9 +383,9 @@ export default function PaintEstimationScreen() {
           coatConfiguration: { putty: 0, primer: 0, emulsion: 0 },
           repaintingConfiguration: { primer: 0, emulsion: 0 },
           selectedMaterials: { putty: '', primer: '', emulsion: '' },
+          label: newRoomName,
           area: addEnamel,
           perSqFtRate: '',
-          label: newRoomName,
           isAdditional: true,
         };
         additional.push(newConfig);
