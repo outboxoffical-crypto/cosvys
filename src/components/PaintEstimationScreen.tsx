@@ -114,11 +114,8 @@ export default function PaintEstimationScreen() {
         
         if (roomsData) {
           setRooms(roomsData);
-          // Small delay to ensure smooth loading
-          setTimeout(() => {
-            initializeConfigurations(roomsData);
-            setIsLoading(false);
-          }, 100);
+          initializeConfigurations(roomsData);
+          setIsLoading(false);
         }
       } catch (error) {
         console.error('Error:', error);
@@ -127,10 +124,23 @@ export default function PaintEstimationScreen() {
     };
     
     loadRooms();
-  }, [projectId]);
+  }, [projectId, selectedPaintType]);
 
   // Initialize configurations based on rooms
   const initializeConfigurations = (roomsData: any[]) => {
+    // Try to load saved configurations first
+    const savedConfigKey = `paint_configs_${projectId}_${selectedPaintType}`;
+    try {
+      const savedConfigs = localStorage.getItem(savedConfigKey);
+      if (savedConfigs) {
+        const parsed = JSON.parse(savedConfigs);
+        setAreaConfigurations(parsed);
+        return;
+      }
+    } catch (e) {
+      console.error('Error loading saved configs:', e);
+    }
+
     const configs: AreaConfiguration[] = [];
     
     // Filter rooms by selected paint type
@@ -570,9 +580,19 @@ export default function PaintEstimationScreen() {
   const handleUpdateConfig = (updates: Partial<AreaConfiguration>) => {
     if (!selectedConfigId) return;
     
-    setAreaConfigurations(prev => prev.map(config => 
-      config.id === selectedConfigId ? { ...config, ...updates } : config
-    ));
+    setAreaConfigurations(prev => {
+      const updated = prev.map(config => 
+        config.id === selectedConfigId ? { ...config, ...updates } : config
+      );
+      // Save to localStorage
+      const savedConfigKey = `paint_configs_${projectId}_${selectedPaintType}`;
+      try {
+        localStorage.setItem(savedConfigKey, JSON.stringify(updated));
+      } catch (e) {
+        console.error('Error saving configs:', e);
+      }
+      return updated;
+    });
   };
 
   // Handle add additional area (for enamel from dialog)
@@ -808,9 +828,19 @@ export default function PaintEstimationScreen() {
                               placeholder="Enter rate per sq.ft"
                               value={config.perSqFtRate}
                               onChange={(e) => {
-                                setAreaConfigurations(prev => prev.map(c => 
-                                  c.id === config.id ? { ...c, perSqFtRate: e.target.value } : c
-                                ));
+                setAreaConfigurations(prev => {
+                  const updated = prev.map(c => 
+                    c.id === config.id ? { ...c, perSqFtRate: e.target.value } : c
+                  );
+                  // Save to localStorage
+                  const savedConfigKey = `paint_configs_${projectId}_${selectedPaintType}`;
+                  try {
+                    localStorage.setItem(savedConfigKey, JSON.stringify(updated));
+                  } catch (e) {
+                    console.error('Error saving configs:', e);
+                  }
+                  return updated;
+                });
                               }}
                               className="h-10"
                             />
@@ -1050,9 +1080,19 @@ export default function PaintEstimationScreen() {
                               placeholder="Enter rate per sq.ft"
                               value={config.perSqFtRate}
                               onChange={(e) => {
-                                setAreaConfigurations(prev => prev.map(c => 
-                                  c.id === config.id ? { ...c, perSqFtRate: e.target.value } : c
-                                ));
+                setAreaConfigurations(prev => {
+                  const updated = prev.map(c => 
+                    c.id === config.id ? { ...c, perSqFtRate: e.target.value } : c
+                  );
+                  // Save to localStorage
+                  const savedConfigKey = `paint_configs_${projectId}_${selectedPaintType}`;
+                  try {
+                    localStorage.setItem(savedConfigKey, JSON.stringify(updated));
+                  } catch (e) {
+                    console.error('Error saving configs:', e);
+                  }
+                  return updated;
+                });
                               }}
                               className="h-10"
                             />
@@ -1209,10 +1249,31 @@ export default function PaintEstimationScreen() {
               )}
 
               {selectedConfig.areaType === 'Enamel' && (
-                <div className="bg-muted rounded-lg p-4 space-y-4">
-                  <h4 className="font-medium text-sm">Enamel Configuration</h4>
+                <>
+                  {/* Fresh Painting / Repainting Selection for Enamel */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button
+                      variant={selectedConfig.paintingSystem === "Fresh Painting" ? "default" : "outline"}
+                      onClick={() => handleUpdateConfig({ paintingSystem: "Fresh Painting" })}
+                      className="h-20 flex flex-col items-center justify-center"
+                    >
+                      <p className="font-medium">Fresh Painting</p>
+                      <p className="text-xs opacity-80">Complete system</p>
+                    </Button>
+                    <Button
+                      variant={selectedConfig.paintingSystem === "Repainting" ? "default" : "outline"}
+                      onClick={() => handleUpdateConfig({ paintingSystem: "Repainting" })}
+                      className="h-20 flex flex-col items-center justify-center"
+                    >
+                      <p className="font-medium">Repainting</p>
+                      <p className="text-xs opacity-80">Refresh system</p>
+                    </Button>
+                  </div>
 
-                  {/* Primer Type and Coats */}
+                  <div className="bg-muted rounded-lg p-4 space-y-4">
+                    <h4 className="font-medium text-sm">Enamel Configuration</h4>
+
+                    {/* Primer Type and Coats */}
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">Primer</Label>
                     <Select 
@@ -1337,7 +1398,8 @@ export default function PaintEstimationScreen() {
                       </div>
                     </div>
                   </div>
-                </div>
+                  </div>
+                </>
               )}
 
               {selectedConfig.paintingSystem === "Fresh Painting" && (
