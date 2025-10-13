@@ -1250,7 +1250,12 @@ export default function RoomMeasurementScreen() {
             {/* Show Rooms for Active Project Type - Filter out rooms that only have door/window data */}
             {activeProjectType && getRoomsByProjectType(activeProjectType).filter(room => room.length > 0 || room.width > 0 || room.height > 0).length > 0 && (
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-foreground">{activeProjectType} - Rooms</h3>
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">{activeProjectType} - Rooms</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Total: {getRoomsByProjectType(activeProjectType).filter(room => room.length > 0 || room.width > 0 || room.height > 0).length} room(s)
+                  </p>
+                </div>
                 <div className="space-y-4">
                   {getRoomsByProjectType(activeProjectType).filter(room => room.length > 0 || room.width > 0 || room.height > 0).map((room) => (
                     <Card key={room.id} className="eca-shadow overflow-hidden">
