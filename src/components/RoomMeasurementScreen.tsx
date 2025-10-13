@@ -1144,7 +1144,7 @@ export default function RoomMeasurementScreen() {
                         <div className="grid grid-cols-3 gap-2">
                           <Input
                             type="number"
-                            placeholder="H"
+                            placeholder="H - Height"
                             value={newOpeningArea.height}
                             onChange={(e) => setNewOpeningArea(prev => ({ ...prev, height: e.target.value }))}
                             className="h-10"
@@ -1152,7 +1152,7 @@ export default function RoomMeasurementScreen() {
                           />
                           <Input
                             type="number"
-                            placeholder="W"
+                            placeholder="W - Width"
                             value={newOpeningArea.width}
                             onChange={(e) => setNewOpeningArea(prev => ({ ...prev, width: e.target.value }))}
                             className="h-10"
@@ -1200,7 +1200,7 @@ export default function RoomMeasurementScreen() {
                         <div className="grid grid-cols-3 gap-2">
                           <Input
                             type="number"
-                            placeholder="H"
+                            placeholder="H - Height"
                             value={newExtraSurface.height}
                             onChange={(e) => setNewExtraSurface(prev => ({ ...prev, height: e.target.value }))}
                             className="h-10"
@@ -1208,7 +1208,7 @@ export default function RoomMeasurementScreen() {
                           />
                           <Input
                             type="number"
-                            placeholder="W"
+                            placeholder="W - Width"
                             value={newExtraSurface.width}
                             onChange={(e) => setNewExtraSurface(prev => ({ ...prev, width: e.target.value }))}
                             className="h-10"
@@ -1328,7 +1328,7 @@ export default function RoomMeasurementScreen() {
                             <div className="grid grid-cols-3 gap-2 mt-2">
                               <Input
                                 type="number"
-                                placeholder="H"
+                                placeholder="H - Height"
                                 value={newOpeningArea.height}
                                 onChange={(e) => setNewOpeningArea(prev => ({ ...prev, height: e.target.value }))}
                                 className="h-9"
@@ -1336,7 +1336,7 @@ export default function RoomMeasurementScreen() {
                               />
                               <Input
                                 type="number"
-                                placeholder="W"
+                                placeholder="W - Width"
                                 value={newOpeningArea.width}
                                 onChange={(e) => setNewOpeningArea(prev => ({ ...prev, width: e.target.value }))}
                                 className="h-9"
@@ -1386,7 +1386,7 @@ export default function RoomMeasurementScreen() {
                             <div className="grid grid-cols-3 gap-2 mt-2">
                               <Input
                                 type="number"
-                                placeholder="H"
+                                placeholder="H - Height"
                                 value={newExtraSurface.height}
                                 onChange={(e) => setNewExtraSurface(prev => ({ ...prev, height: e.target.value }))}
                                 className="h-9"
@@ -1394,7 +1394,7 @@ export default function RoomMeasurementScreen() {
                               />
                               <Input
                                 type="number"
-                                placeholder="W"
+                                placeholder="W - Width"
                                 value={newExtraSurface.width}
                                 onChange={(e) => setNewExtraSurface(prev => ({ ...prev, width: e.target.value }))}
                                 className="h-9"
