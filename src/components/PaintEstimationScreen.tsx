@@ -1281,9 +1281,24 @@ export default function PaintEstimationScreen() {
                           variant="ghost"
                           size="sm"
                           onClick={() => {
-                            const updatedConfig = { ...selectedConfig };
-                            updatedConfig.paintingSystem = '' as any;
-                            setSelectedConfig(updatedConfig);
+                            setAreaConfigurations(prev => {
+                              const updated = prev.map(c => 
+                                c.id === selectedConfig.id 
+                                  ? { ...c, paintingSystem: '' as "Fresh Painting" | "Repainting" } 
+                                  : c
+                              );
+                              const savedConfigKey = `paint_configs_${projectId}_${selectedPaintType}`;
+                              try {
+                                localStorage.setItem(savedConfigKey, JSON.stringify(updated));
+                              } catch (e) {
+                                console.error('Error saving configs:', e);
+                              }
+                              return updated;
+                            });
+                            const updatedConfig = areaConfigurations.find(c => c.id === selectedConfig.id);
+                            if (updatedConfig) {
+                              setSelectedConfigId(selectedConfig.id);
+                            }
                           }}
                         >
                           Change System
