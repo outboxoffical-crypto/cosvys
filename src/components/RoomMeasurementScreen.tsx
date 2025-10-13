@@ -1006,7 +1006,7 @@ export default function RoomMeasurementScreen() {
                   <div className="space-y-2">
                     <Label className="text-base font-medium">Room Name</Label>
                     <Input
-                      placeholder="Enter Name of the Area"
+                      placeholder="Name of the Area"
                       value={newRoom.name}
                       onChange={(e) => setNewRoom(prev => ({ ...prev, name: e.target.value }))}
                       className="h-12"
