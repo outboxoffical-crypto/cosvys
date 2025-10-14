@@ -12,6 +12,7 @@ import AddProjectScreen from "./components/AddProjectScreen";
 import RoomMeasurementScreen from "./components/RoomMeasurementScreen";
 import PaintEstimationScreen from "./components/PaintEstimationScreen";
 import ProjectSummaryScreen from "./components/ProjectSummaryScreen";
+import GenerateSummaryScreen from "./components/GenerateSummaryScreen";
 import SavedProjectsScreen from "./components/SavedProjectsScreen";
 import SettingsScreen from "./components/SettingsScreen";
 import NotFound from "./pages/NotFound";
@@ -34,6 +35,7 @@ const App = () => (
           <Route path="/room-measurement/:projectId" element={<RoomMeasurementScreen />} />
           <Route path="/paint-estimation/:projectId" element={<PaintEstimationScreen />} />
           <Route path="/project-summary/:projectId" element={<ProjectSummaryScreen />} />
+          <Route path="/generate-summary/:projectId" element={<GenerateSummaryScreen />} />
           <Route path="/saved-projects" element={<SavedProjectsScreen />} />
           <Route path="/settings" element={<SettingsScreen />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
