@@ -159,6 +159,7 @@ export type Database = {
           length: number
           name: string
           opening_areas: Json | null
+          paint_calculations: Json | null
           pictures: Json | null
           project_id: string
           project_type: string
@@ -184,6 +185,7 @@ export type Database = {
           length: number
           name: string
           opening_areas?: Json | null
+          paint_calculations?: Json | null
           pictures?: Json | null
           project_id: string
           project_type: string
@@ -209,6 +211,7 @@ export type Database = {
           length?: number
           name?: string
           opening_areas?: Json | null
+          paint_calculations?: Json | null
           pictures?: Json | null
           project_id?: string
           project_type?: string

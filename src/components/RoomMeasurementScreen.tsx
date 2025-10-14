@@ -971,6 +971,60 @@ export default function RoomMeasurementScreen() {
     setEditDialogOpen(true);
   }, []);
 
+  // Complete Room - pre-calculate and cache paint data for instant Paint Estimation access
+  const completeRoom = useCallback(async (roomId: string) => {
+    const room = rooms.find(r => r.id === roomId);
+    if (!room) return;
+
+    // Check if already cached (< 5 minutes old)
+    const cacheKey = `paint_calc_${projectId}_${roomId}`;
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      const parsedCache = JSON.parse(cached);
+      if (Date.now() - parsedCache.timestamp < 300000) {
+        toast.success('Room calculations already up to date');
+        return;
+      }
+    }
+
+    // Show instant feedback
+    toast.success('Calculating paint requirements...');
+    const startTime = Date.now();
+
+    try {
+      // Call optimized edge function for paint calculations
+      const { data, error } = await supabase.functions.invoke('calculate-paint-requirements', {
+        body: {
+          room_id: roomId,
+          floor_area: room.floorArea,
+          wall_area: room.wallArea,
+          ceiling_area: room.ceilingArea,
+          adjusted_wall_area: room.adjustedWallArea,
+          selected_areas: room.selectedAreas,
+          project_type: room.projectType,
+        },
+      });
+
+      if (error) throw error;
+
+      // Cache results locally for instant retrieval
+      localStorage.setItem(cacheKey, JSON.stringify(data));
+
+      // Update database with paint calculations (async, don't wait)
+      supabase.from('rooms').update({
+        paint_calculations: data
+      }).eq('room_id', roomId).eq('project_id', projectId!).then(() => {
+        const elapsedTime = Date.now() - startTime;
+        console.log(`Paint calculation completed in ${elapsedTime}ms`);
+        toast.success(`Room completed! (${elapsedTime}ms)`, { duration: 2000 });
+      });
+
+    } catch (error) {
+      console.error('Error completing room:', error);
+      toast.error('Failed to complete room calculations');
+    }
+  }, [rooms, projectId]);
+
   // Handle update room
   const handleUpdateRoom = async () => {
     if (!editingRoom || !editFormData.name || !editFormData.length || !editFormData.width) {
@@ -1407,6 +1461,15 @@ export default function RoomMeasurementScreen() {
                               </div>
                             </div>
                             <div className="flex items-center space-x-2">
+                              <Button
+                                variant="default"
+                                size="sm"
+                                className="h-9"
+                                onClick={() => completeRoom(room.id)}
+                              >
+                                <Calculator className="h-4 w-4 mr-1" />
+                                Complete
+                              </Button>
                               <Button
                                 variant="ghost"
                                 size="icon"

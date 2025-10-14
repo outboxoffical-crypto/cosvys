@@ -101,6 +101,24 @@ export default function PaintEstimationScreen() {
     const loadRooms = async () => {
       setIsLoading(true);
       try {
+        // Try to load from cache first for instant display
+        const cacheKey = `paint_rooms_${projectId}_${selectedPaintType}`;
+        const cached = localStorage.getItem(cacheKey);
+        
+        if (cached) {
+          const { data: cachedRooms, timestamp } = JSON.parse(cached);
+          // Use cache if less than 30 seconds old
+          if (Date.now() - timestamp < 30000) {
+            setRooms(cachedRooms);
+            initializeConfigurations(cachedRooms);
+            setIsLoading(false);
+            // Fetch fresh data in background
+            fetchRoomsInBackground();
+            return;
+          }
+        }
+
+        // Otherwise fetch normally
         const { data: roomsData, error } = await supabase
           .from('rooms')
           .select('*')
@@ -113,6 +131,12 @@ export default function PaintEstimationScreen() {
         }
         
         if (roomsData) {
+          // Cache the results
+          localStorage.setItem(cacheKey, JSON.stringify({
+            data: roomsData,
+            timestamp: Date.now()
+          }));
+          
           setRooms(roomsData);
           initializeConfigurations(roomsData);
           setIsLoading(false);
@@ -120,6 +144,27 @@ export default function PaintEstimationScreen() {
       } catch (error) {
         console.error('Error:', error);
         setIsLoading(false);
+      }
+    };
+
+    const fetchRoomsInBackground = async () => {
+      try {
+        const { data: roomsData } = await supabase
+          .from('rooms')
+          .select('*')
+          .eq('project_id', projectId);
+        
+        if (roomsData) {
+          const cacheKey = `paint_rooms_${projectId}_${selectedPaintType}`;
+          localStorage.setItem(cacheKey, JSON.stringify({
+            data: roomsData,
+            timestamp: Date.now()
+          }));
+          setRooms(roomsData);
+          initializeConfigurations(roomsData);
+        }
+      } catch (error) {
+        console.error('Background fetch error:', error);
       }
     };
     
