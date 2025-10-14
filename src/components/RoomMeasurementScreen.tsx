@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft, Plus, Ruler, Home, Trash2, Calculator, X, Edit3, Camera, Image } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { RoomCard } from "./RoomCard";
 
 interface OpeningArea {
   id: string;
@@ -185,7 +186,7 @@ export default function RoomMeasurementScreen() {
     }
   }, [projectId]);
 
-  const calculateAreas = (
+  const calculateAreas = useCallback((
     length: number, 
     width: number, 
     height: number, 
@@ -212,7 +213,7 @@ export default function RoomMeasurementScreen() {
       totalExtraSurface,
       totalDoorWindowGrillArea
     };
-  };
+  }, []);
 
   const addTempOpeningArea = () => {
     if (newOpeningArea.height && newOpeningArea.width) {
@@ -319,12 +320,13 @@ export default function RoomMeasurementScreen() {
     return null;
   };
 
-  const handlePictureUpload = (files: FileList | null, isCamera: boolean = false) => {
+  const handlePictureUpload = useCallback((files: FileList | null, isCamera: boolean = false) => {
     if (!files) return;
     
     const currentPictureCount = newRoom.pictures.length;
     const maxPictures = 5;
     
+    // Process images asynchronously in the background
     Array.from(files).forEach((file, index) => {
       if (currentPictureCount + index >= maxPictures) return;
       
@@ -338,14 +340,14 @@ export default function RoomMeasurementScreen() {
       };
       reader.readAsDataURL(file);
     });
-  };
+  }, [newRoom.pictures.length]);
 
-  const removePicture = (index: number) => {
+  const removePicture = useCallback((index: number) => {
     setNewRoom(prev => ({
       ...prev,
       pictures: prev.pictures.filter((_, i) => i !== index)
     }));
-  };
+  }, []);
 
   const handleAddRoomClick = () => {
     setShowOpenAreaSection(true);
@@ -464,7 +466,7 @@ export default function RoomMeasurementScreen() {
     }
   };
 
-  const removeRoom = async (roomId: string) => {
+  const removeRoom = useCallback(async (roomId: string) => {
     try {
       const { error } = await supabase
         .from('rooms')
@@ -478,72 +480,89 @@ export default function RoomMeasurementScreen() {
         return;
       }
       
-      const updatedRooms = rooms.filter(room => room.id !== roomId);
-      setRooms(updatedRooms);
+      setRooms(prev => prev.filter(room => room.id !== roomId));
       toast.success('Room deleted');
     } catch (error) {
       console.error('Error:', error);
       toast.error('Failed to delete room');
     }
-  };
+  }, [projectId]);
 
-  const addOpeningAreaToRoom = async (roomId: string) => {
+  const addOpeningAreaToRoom = useCallback(async (roomId: string) => {
     const openingArea = addOpeningArea();
     if (openingArea) {
-      const updatedRooms = rooms.map(room => {
-        if (room.id === roomId) {
-          const updatedOpeningAreas = [...room.openingAreas, openingArea];
-          const areas = calculateAreas(room.length, room.width, room.height, updatedOpeningAreas, room.extraSurfaces, room.doorWindowGrills);
-          return { ...room, openingAreas: updatedOpeningAreas, ...areas };
-        }
-        return room;
-      });
-      
-      const updatedRoom = updatedRooms.find(r => r.id === roomId);
-      if (updatedRoom) {
-        try {
-          await supabase.from('rooms').update({
-            opening_areas: updatedRoom.openingAreas as any,
-            total_opening_area: updatedRoom.totalOpeningArea,
-            adjusted_wall_area: updatedRoom.adjustedWallArea
-          }).eq('room_id', roomId).eq('project_id', projectId!);
-          setRooms(updatedRooms);
-          setNewOpeningArea({ height: "", width: "", quantity: "1" });
-        } catch (error) {
-          console.error('Error:', error);
-        }
+      const targetRoom = rooms.find(r => r.id === roomId);
+      if (!targetRoom) return;
+
+      const updatedOpeningAreas = [...targetRoom.openingAreas, openingArea];
+      const areas = calculateAreas(
+        targetRoom.length, 
+        targetRoom.width, 
+        targetRoom.height, 
+        updatedOpeningAreas, 
+        targetRoom.extraSurfaces, 
+        targetRoom.doorWindowGrills
+      );
+
+      // Update state immediately for instant UI response
+      setRooms(prev => prev.map(room => 
+        room.id === roomId 
+          ? { ...room, openingAreas: updatedOpeningAreas, ...areas }
+          : room
+      ));
+      setNewOpeningArea({ height: "", width: "", quantity: "1" });
+
+      // Save to database in background
+      try {
+        await supabase.from('rooms').update({
+          opening_areas: updatedOpeningAreas as any,
+          total_opening_area: areas.totalOpeningArea,
+          adjusted_wall_area: areas.adjustedWallArea
+        }).eq('room_id', roomId).eq('project_id', projectId!);
+      } catch (error) {
+        console.error('Error:', error);
+        toast.error('Failed to save changes');
       }
     }
-  };
+  }, [rooms, projectId, calculateAreas]);
 
-  const addExtraSurfaceToRoom = async (roomId: string) => {
+  const addExtraSurfaceToRoom = useCallback(async (roomId: string) => {
     const extraSurface = addExtraSurface();
     if (extraSurface) {
-      const updatedRooms = rooms.map(room => {
-        if (room.id === roomId) {
-          const updatedExtraSurfaces = [...room.extraSurfaces, extraSurface];
-          const areas = calculateAreas(room.length, room.width, room.height, room.openingAreas, updatedExtraSurfaces, room.doorWindowGrills);
-          return { ...room, extraSurfaces: updatedExtraSurfaces, ...areas };
-        }
-        return room;
-      });
-      
-      const updatedRoom = updatedRooms.find(r => r.id === roomId);
-      if (updatedRoom) {
-        try {
-          await supabase.from('rooms').update({
-            extra_surfaces: updatedRoom.extraSurfaces as any,
-            total_extra_surface: updatedRoom.totalExtraSurface,
-            adjusted_wall_area: updatedRoom.adjustedWallArea
-          }).eq('room_id', roomId).eq('project_id', projectId!);
-          setRooms(updatedRooms);
-          setNewExtraSurface({ height: "", width: "", quantity: "1" });
-        } catch (error) {
-          console.error('Error:', error);
-        }
+      const targetRoom = rooms.find(r => r.id === roomId);
+      if (!targetRoom) return;
+
+      const updatedExtraSurfaces = [...targetRoom.extraSurfaces, extraSurface];
+      const areas = calculateAreas(
+        targetRoom.length, 
+        targetRoom.width, 
+        targetRoom.height, 
+        targetRoom.openingAreas, 
+        updatedExtraSurfaces, 
+        targetRoom.doorWindowGrills
+      );
+
+      // Update state immediately
+      setRooms(prev => prev.map(room => 
+        room.id === roomId 
+          ? { ...room, extraSurfaces: updatedExtraSurfaces, ...areas }
+          : room
+      ));
+      setNewExtraSurface({ height: "", width: "", quantity: "1" });
+
+      // Save in background
+      try {
+        await supabase.from('rooms').update({
+          extra_surfaces: updatedExtraSurfaces as any,
+          total_extra_surface: areas.totalExtraSurface,
+          adjusted_wall_area: areas.adjustedWallArea
+        }).eq('room_id', roomId).eq('project_id', projectId!);
+      } catch (error) {
+        console.error('Error:', error);
+        toast.error('Failed to save changes');
       }
     }
-  };
+  }, [rooms, projectId, calculateAreas]);
 
   const addDoorWindowGrillToRoom = async (roomId: string) => {
     const doorWindowGrill = addDoorWindowGrill();
@@ -726,112 +745,161 @@ export default function RoomMeasurementScreen() {
     setDoorWindowDialogOpen(false);
   };
 
-  const removeOpeningArea = async (roomId: string, openingId: string) => {
-    const updatedRooms = rooms.map(room => {
-      if (room.id === roomId) {
-        const updatedOpeningAreas = room.openingAreas.filter(o => o.id !== openingId);
-        const areas = calculateAreas(room.length, room.width, room.height, updatedOpeningAreas, room.extraSurfaces, room.doorWindowGrills);
-        return { ...room, openingAreas: updatedOpeningAreas, ...areas };
-      }
-      return room;
-    });
-    const updatedRoom = updatedRooms.find(r => r.id === roomId);
-    if (updatedRoom) {
-      await supabase.from('rooms').update({
-        opening_areas: updatedRoom.openingAreas as any,
-        total_opening_area: updatedRoom.totalOpeningArea,
-        adjusted_wall_area: updatedRoom.adjustedWallArea
-      }).eq('room_id', roomId).eq('project_id', projectId!);
-    }
-    setRooms(updatedRooms);
-  };
+  const removeOpeningArea = useCallback(async (roomId: string, openingId: string) => {
+    const targetRoom = rooms.find(r => r.id === roomId);
+    if (!targetRoom) return;
 
-  const removeExtraSurface = async (roomId: string, extraId: string) => {
-    const updatedRooms = rooms.map(room => {
-      if (room.id === roomId) {
-        const updatedExtraSurfaces = room.extraSurfaces.filter(e => e.id !== extraId);
-        const areas = calculateAreas(room.length, room.width, room.height, room.openingAreas, updatedExtraSurfaces, room.doorWindowGrills);
-        return { ...room, extraSurfaces: updatedExtraSurfaces, ...areas };
-      }
-      return room;
-    });
-    const updatedRoom = updatedRooms.find(r => r.id === roomId);
-    if (updatedRoom) {
-      await supabase.from('rooms').update({
-        extra_surfaces: updatedRoom.extraSurfaces as any,
-        total_extra_surface: updatedRoom.totalExtraSurface,
-        adjusted_wall_area: updatedRoom.adjustedWallArea
-      }).eq('room_id', roomId).eq('project_id', projectId!);
-    }
-    setRooms(updatedRooms);
-  };
+    const updatedOpeningAreas = targetRoom.openingAreas.filter(o => o.id !== openingId);
+    const areas = calculateAreas(
+      targetRoom.length, 
+      targetRoom.width, 
+      targetRoom.height, 
+      updatedOpeningAreas, 
+      targetRoom.extraSurfaces, 
+      targetRoom.doorWindowGrills
+    );
 
-  const removeDoorWindowGrill = async (roomId: string, dwgId: string) => {
-    const updatedRooms = rooms.map(room => {
-      if (room.id === roomId) {
-        const updatedDoorWindowGrills = room.doorWindowGrills.filter(d => d.id !== dwgId);
-        const areas = calculateAreas(room.length, room.width, room.height, room.openingAreas, room.extraSurfaces, updatedDoorWindowGrills);
-        return { ...room, doorWindowGrills: updatedDoorWindowGrills, ...areas };
-      }
-      return room;
-    });
-    const updatedRoom = updatedRooms.find(r => r.id === roomId);
-    if (updatedRoom) {
-      await supabase.from('rooms').update({
-        door_window_grills: updatedRoom.doorWindowGrills as any,
-        total_door_window_grill_area: updatedRoom.totalDoorWindowGrillArea,
-        adjusted_wall_area: updatedRoom.adjustedWallArea
-      }).eq('room_id', roomId).eq('project_id', projectId!);
-    }
-    setRooms(updatedRooms);
-  };
+    // Update state immediately
+    setRooms(prev => prev.map(room => 
+      room.id === roomId 
+        ? { ...room, openingAreas: updatedOpeningAreas, ...areas }
+        : room
+    ));
 
-  const updateDoorWindowGrillName = async (roomId: string, dwgId: string, newName: string) => {
-    const updatedRooms = rooms.map(room => {
-      if (room.id === roomId) {
-        const updatedDoorWindowGrills = room.doorWindowGrills.map(dwg => 
-          dwg.id === dwgId ? { ...dwg, name: newName } : dwg
-        );
-        return { ...room, doorWindowGrills: updatedDoorWindowGrills };
-      }
-      return room;
-    });
-    const updatedRoom = updatedRooms.find(r => r.id === roomId);
-    if (updatedRoom) {
+    // Save in background
+    try {
       await supabase.from('rooms').update({
-        door_window_grills: updatedRoom.doorWindowGrills as any
+        opening_areas: updatedOpeningAreas as any,
+        total_opening_area: areas.totalOpeningArea,
+        adjusted_wall_area: areas.adjustedWallArea
       }).eq('room_id', roomId).eq('project_id', projectId!);
+    } catch (error) {
+      console.error('Error:', error);
     }
-    setRooms(updatedRooms);
-  };
+  }, [rooms, projectId, calculateAreas]);
 
-  const getRoomsByProjectType = (projectType: string) => {
+  const removeExtraSurface = useCallback(async (roomId: string, extraId: string) => {
+    const targetRoom = rooms.find(r => r.id === roomId);
+    if (!targetRoom) return;
+
+    const updatedExtraSurfaces = targetRoom.extraSurfaces.filter(e => e.id !== extraId);
+    const areas = calculateAreas(
+      targetRoom.length, 
+      targetRoom.width, 
+      targetRoom.height, 
+      targetRoom.openingAreas, 
+      updatedExtraSurfaces, 
+      targetRoom.doorWindowGrills
+    );
+
+    // Update state immediately
+    setRooms(prev => prev.map(room => 
+      room.id === roomId 
+        ? { ...room, extraSurfaces: updatedExtraSurfaces, ...areas }
+        : room
+    ));
+
+    // Save in background
+    try {
+      await supabase.from('rooms').update({
+        extra_surfaces: updatedExtraSurfaces as any,
+        total_extra_surface: areas.totalExtraSurface,
+        adjusted_wall_area: areas.adjustedWallArea
+      }).eq('room_id', roomId).eq('project_id', projectId!);
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  }, [rooms, projectId, calculateAreas]);
+
+  const removeDoorWindowGrill = useCallback(async (roomId: string, dwgId: string) => {
+    const targetRoom = rooms.find(r => r.id === roomId);
+    if (!targetRoom) return;
+
+    const updatedDoorWindowGrills = targetRoom.doorWindowGrills.filter(d => d.id !== dwgId);
+    const areas = calculateAreas(
+      targetRoom.length, 
+      targetRoom.width, 
+      targetRoom.height, 
+      targetRoom.openingAreas, 
+      targetRoom.extraSurfaces, 
+      updatedDoorWindowGrills
+    );
+
+    // Update state immediately
+    setRooms(prev => prev.map(room => 
+      room.id === roomId 
+        ? { ...room, doorWindowGrills: updatedDoorWindowGrills, ...areas }
+        : room
+    ));
+
+    // Save in background
+    try {
+      await supabase.from('rooms').update({
+        door_window_grills: updatedDoorWindowGrills as any,
+        total_door_window_grill_area: areas.totalDoorWindowGrillArea,
+        adjusted_wall_area: areas.adjustedWallArea
+      }).eq('room_id', roomId).eq('project_id', projectId!);
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  }, [rooms, projectId, calculateAreas]);
+
+  const updateDoorWindowGrillName = useCallback(async (roomId: string, dwgId: string, newName: string) => {
+    const targetRoom = rooms.find(r => r.id === roomId);
+    if (!targetRoom) return;
+
+    const updatedDoorWindowGrills = targetRoom.doorWindowGrills.map(dwg => 
+      dwg.id === dwgId ? { ...dwg, name: newName } : dwg
+    );
+
+    // Update state immediately
+    setRooms(prev => prev.map(room => 
+      room.id === roomId 
+        ? { ...room, doorWindowGrills: updatedDoorWindowGrills }
+        : room
+    ));
+
+    // Save in background
+    try {
+      await supabase.from('rooms').update({
+        door_window_grills: updatedDoorWindowGrills as any
+      }).eq('room_id', roomId).eq('project_id', projectId!);
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  }, [rooms, projectId]);
+
+  const getRoomsByProjectType = useCallback((projectType: string) => {
     return rooms.filter(room => room.projectType === projectType);
-  };
+  }, [rooms]);
 
-  const toggleAreaSelection = async (roomId: string, areaType: 'floor' | 'wall' | 'ceiling') => {
-    const updatedRooms = rooms.map(room => {
-      if (room.id === roomId) {
-        return {
-          ...room,
-          selectedAreas: {
-            ...room.selectedAreas,
-            [areaType]: !room.selectedAreas[areaType]
-          }
-        };
-      }
-      return room;
-    });
-    const updatedRoom = updatedRooms.find(r => r.id === roomId);
-    if (updatedRoom) {
+  const toggleAreaSelection = useCallback(async (roomId: string, areaType: 'floor' | 'wall' | 'ceiling') => {
+    const targetRoom = rooms.find(r => r.id === roomId);
+    if (!targetRoom) return;
+
+    const updatedSelectedAreas = {
+      ...targetRoom.selectedAreas,
+      [areaType]: !targetRoom.selectedAreas[areaType]
+    };
+
+    // Update state immediately for instant UI response
+    setRooms(prev => prev.map(room => 
+      room.id === roomId 
+        ? { ...room, selectedAreas: updatedSelectedAreas }
+        : room
+    ));
+
+    // Save in background
+    try {
       await supabase.from('rooms').update({
-        selected_areas: updatedRoom.selectedAreas as any
+        selected_areas: updatedSelectedAreas as any
       }).eq('room_id', roomId).eq('project_id', projectId!);
+    } catch (error) {
+      console.error('Error:', error);
     }
-    setRooms(updatedRooms);
-  };
+  }, [rooms, projectId]);
 
-  const getTotalSelectedArea = (rooms: Room[]) => {
+  const getTotalSelectedArea = useCallback((rooms: Room[]) => {
     return rooms.reduce((totals, room) => {
       return {
         floor: totals.floor + (room.selectedAreas.floor ? room.floorArea : 0),
@@ -839,7 +907,7 @@ export default function RoomMeasurementScreen() {
         ceiling: totals.ceiling + (room.selectedAreas.ceiling ? room.ceilingArea : 0)
       };
     }, { floor: 0, wall: 0, ceiling: 0 });
-  };
+  }, []);
 
   const handleContinue = () => {
     if (rooms.length > 0) {
@@ -848,7 +916,7 @@ export default function RoomMeasurementScreen() {
   };
 
   // Handle edit room
-  const handleEditRoom = (room: Room) => {
+  const handleEditRoom = useCallback((room: Room) => {
     setEditingRoom(room);
     setEditFormData({
       name: room.name,
@@ -857,7 +925,7 @@ export default function RoomMeasurementScreen() {
       height: room.height.toString()
     });
     setEditDialogOpen(true);
-  };
+  }, []);
 
   // Handle update room
   const handleUpdateRoom = async () => {
