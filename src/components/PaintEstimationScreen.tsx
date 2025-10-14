@@ -643,7 +643,7 @@ export default function PaintEstimationScreen() {
       totalCost: calculateTotalCost()
     };
     localStorage.setItem(`estimation_${projectId}`, JSON.stringify(estimationData));
-    navigate(`/project-summary/${projectId}`);
+    navigate(`/generate-summary/${projectId}`);
   };
 
   // Separate configurations by type
