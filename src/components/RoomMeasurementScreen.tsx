@@ -186,6 +186,35 @@ export default function RoomMeasurementScreen() {
     }
   }, [projectId]);
 
+  // Backend calculation function
+  const calculateAreasInBackground = useCallback(async (
+    length: number,
+    width: number,
+    height: number,
+    openingAreas: OpeningArea[],
+    extraSurfaces: ExtraSurface[],
+    doorWindowGrills: DoorWindowGrill[]
+  ) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('calculate-room-areas', {
+        body: {
+          length,
+          width,
+          height,
+          opening_areas: openingAreas,
+          extra_surfaces: extraSurfaces,
+          door_window_grills: doorWindowGrills,
+        },
+      });
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error calculating areas:', error);
+      return null;
+    }
+  }, []);
+
   const calculateAreas = useCallback((
     length: number, 
     width: number, 
@@ -372,10 +401,9 @@ export default function RoomMeasurementScreen() {
       const width = parseFloat(newRoom.width);
       const height = newRoom.height ? parseFloat(newRoom.height) : 0;
       
-      // When height is 0 or not provided, use L*W for all three areas
-      const baseArea = length * width;
-      
       const roomId = Date.now().toString();
+      
+      // Create room with placeholder areas for INSTANT UI update
       const room: Room = {
         id: roomId,
         name: newRoom.name.trim(),
@@ -387,10 +415,10 @@ export default function RoomMeasurementScreen() {
         openingAreas: [...tempOpeningAreas],
         extraSurfaces: [...tempExtraSurfaces],
         doorWindowGrills: [],
-        floorArea: baseArea,
-        wallArea: height > 0 ? 2 * (length + width) * height : baseArea,
-        ceilingArea: baseArea,
-        adjustedWallArea: height > 0 ? 2 * (length + width) * height : baseArea,
+        floorArea: 0,
+        wallArea: 0,
+        ceilingArea: 0,
+        adjustedWallArea: 0,
         totalOpeningArea: 0,
         totalExtraSurface: 0,
         totalDoorWindowGrillArea: 0,
@@ -400,27 +428,8 @@ export default function RoomMeasurementScreen() {
           ceiling: false
         }
       };
-
-      // Calculate areas with the temporary measurements
-      if (height > 0) {
-        const areas = calculateAreas(length, width, height, tempOpeningAreas, tempExtraSurfaces, []);
-        room.floorArea = areas.floorArea;
-        room.wallArea = areas.wallArea;
-        room.ceilingArea = areas.ceilingArea;
-        room.adjustedWallArea = areas.adjustedWallArea;
-        room.totalOpeningArea = areas.totalOpeningArea;
-        room.totalExtraSurface = areas.totalExtraSurface;
-        room.totalDoorWindowGrillArea = areas.totalDoorWindowGrillArea;
-      } else {
-        // When height is not provided, opening areas reduce from base area
-        const totalOpeningArea = tempOpeningAreas.reduce((sum, opening) => sum + opening.area, 0);
-        const totalExtraSurface = tempExtraSurfaces.reduce((sum, extra) => sum + extra.area, 0);
-        room.totalOpeningArea = totalOpeningArea;
-        room.totalExtraSurface = totalExtraSurface;
-        room.adjustedWallArea = baseArea - totalOpeningArea + totalExtraSurface;
-      }
       
-      // INSTANT UI UPDATE - Add room to state immediately
+      // INSTANT UI UPDATE - Add room to state immediately with placeholder values
       setRooms(prev => [...prev, room]);
       setNewRoom({ name: "", length: "", width: "", height: "", pictures: [] });
       setShowOpenAreaSection(false);
@@ -430,42 +439,71 @@ export default function RoomMeasurementScreen() {
       // Show instant visual confirmation
       toast.success('Room added successfully');
       
-      // Save to database in background (async, non-blocking)
+      // Calculate areas in background using edge function
       (async () => {
-        try {
-          const { error } = await supabase
-            .from('rooms')
-            .insert({
-              user_id: session.user.id,
-              project_id: projectId!,
-              room_id: roomId,
-              name: room.name,
-              length: room.length,
-              width: room.width,
-              height: room.height,
-              project_type: room.projectType,
-              pictures: room.pictures as any,
-              opening_areas: room.openingAreas as any,
-              extra_surfaces: room.extraSurfaces as any,
-              door_window_grills: room.doorWindowGrills as any,
-              floor_area: room.floorArea,
-              wall_area: room.wallArea,
-              ceiling_area: room.ceilingArea,
-              adjusted_wall_area: room.adjustedWallArea,
-              total_opening_area: room.totalOpeningArea,
-              total_extra_surface: room.totalExtraSurface,
-              total_door_window_grill_area: room.totalDoorWindowGrillArea,
-              selected_areas: room.selectedAreas as any
-            });
-          
-          if (error) {
+        const calculatedAreas = await calculateAreasInBackground(
+          length,
+          width,
+          height || 0,
+          [...tempOpeningAreas],
+          [...tempExtraSurfaces],
+          []
+        );
+
+        if (calculatedAreas) {
+          // Update room with calculated areas
+          const updatedRoom = {
+            ...room,
+            floorArea: calculatedAreas.floor_area,
+            wallArea: calculatedAreas.wall_area,
+            ceilingArea: calculatedAreas.ceiling_area,
+            adjustedWallArea: calculatedAreas.adjusted_wall_area,
+            totalOpeningArea: calculatedAreas.total_opening_area,
+            totalExtraSurface: calculatedAreas.total_extra_surface,
+            totalDoorWindowGrillArea: calculatedAreas.total_door_window_grill_area,
+          };
+
+          setRooms(prev => prev.map(r => r.id === roomId ? updatedRoom : r));
+
+          // Save to database in background
+          try {
+            const { error } = await supabase
+              .from('rooms')
+              .insert({
+                user_id: session.user.id,
+                project_id: projectId!,
+                room_id: roomId,
+                name: updatedRoom.name,
+                length: updatedRoom.length,
+                width: updatedRoom.width,
+                height: updatedRoom.height,
+                project_type: updatedRoom.projectType,
+                pictures: updatedRoom.pictures as any,
+                opening_areas: updatedRoom.openingAreas as any,
+                extra_surfaces: updatedRoom.extraSurfaces as any,
+                door_window_grills: updatedRoom.doorWindowGrills as any,
+                floor_area: updatedRoom.floorArea,
+                wall_area: updatedRoom.wallArea,
+                ceiling_area: updatedRoom.ceilingArea,
+                adjusted_wall_area: updatedRoom.adjustedWallArea,
+                total_opening_area: updatedRoom.totalOpeningArea,
+                total_extra_surface: updatedRoom.totalExtraSurface,
+                total_door_window_grill_area: updatedRoom.totalDoorWindowGrillArea,
+                selected_areas: updatedRoom.selectedAreas as any
+              });
+            
+            if (error) {
+              console.error('Background save error:', error);
+              toast.error('Failed to sync room to server', { duration: 2000 });
+              setRooms(prev => prev.filter(r => r.id !== roomId));
+            }
+          } catch (error) {
             console.error('Background save error:', error);
             toast.error('Failed to sync room to server', { duration: 2000 });
             setRooms(prev => prev.filter(r => r.id !== roomId));
           }
-        } catch (error) {
-          console.error('Background save error:', error);
-          toast.error('Failed to sync room to server', { duration: 2000 });
+        } else {
+          toast.error('Failed to calculate room areas');
           setRooms(prev => prev.filter(r => r.id !== roomId));
         }
       })();
@@ -944,21 +982,7 @@ export default function RoomMeasurementScreen() {
     const width = parseFloat(editFormData.width);
     const height = editFormData.height ? parseFloat(editFormData.height) : 0;
 
-    // Recalculate areas only for this room
-    const baseArea = length * width;
-    const updatedAreas = height > 0 
-      ? calculateAreas(length, width, height, editingRoom.openingAreas, editingRoom.extraSurfaces, editingRoom.doorWindowGrills)
-      : {
-          floorArea: baseArea,
-          wallArea: baseArea,
-          ceilingArea: baseArea,
-          adjustedWallArea: baseArea - editingRoom.totalOpeningArea + editingRoom.totalExtraSurface,
-          totalOpeningArea: editingRoom.totalOpeningArea,
-          totalExtraSurface: editingRoom.totalExtraSurface,
-          totalDoorWindowGrillArea: editingRoom.totalDoorWindowGrillArea
-        };
-
-    // INSTANT UI UPDATE - Update state immediately
+    // INSTANT UI UPDATE - Update state immediately with current dimensions
     setRooms(prev => prev.map(room => 
       room.id === editingRoom.id 
         ? {
@@ -966,8 +990,7 @@ export default function RoomMeasurementScreen() {
             name: editFormData.name.trim(),
             length,
             width,
-            height,
-            ...updatedAreas
+            height
           }
         : room
     ));
@@ -978,31 +1001,62 @@ export default function RoomMeasurementScreen() {
     // Show instant visual confirmation
     toast.success('Room updated');
 
-    // Save to database in background (async, non-blocking)
+    // Calculate areas in background using edge function
     (async () => {
-      try {
-        const { error } = await supabase
-          .from('rooms')
-          .update({
-            name: editFormData.name.trim(),
-            length,
-            width,
-            height,
-            floor_area: updatedAreas.floorArea,
-            wall_area: updatedAreas.wallArea,
-            ceiling_area: updatedAreas.ceilingArea,
-            adjusted_wall_area: updatedAreas.adjustedWallArea
-          })
-          .eq('room_id', editingRoom.id)
-          .eq('project_id', projectId!);
-        
-        if (error) {
+      const calculatedAreas = await calculateAreasInBackground(
+        length,
+        width,
+        height || 0,
+        editingRoom.openingAreas,
+        editingRoom.extraSurfaces,
+        editingRoom.doorWindowGrills
+      );
+
+      if (calculatedAreas) {
+        // Update room with calculated areas
+        setRooms(prev => prev.map(room => 
+          room.id === editingRoom.id 
+            ? {
+                ...room,
+                floorArea: calculatedAreas.floor_area,
+                wallArea: calculatedAreas.wall_area,
+                ceilingArea: calculatedAreas.ceiling_area,
+                adjustedWallArea: calculatedAreas.adjusted_wall_area,
+                totalOpeningArea: calculatedAreas.total_opening_area,
+                totalExtraSurface: calculatedAreas.total_extra_surface,
+                totalDoorWindowGrillArea: calculatedAreas.total_door_window_grill_area
+              }
+            : room
+        ));
+
+        // Save to database in background
+        try {
+          const { error } = await supabase
+            .from('rooms')
+            .update({
+              name: editFormData.name.trim(),
+              length,
+              width,
+              height,
+              floor_area: calculatedAreas.floor_area,
+              wall_area: calculatedAreas.wall_area,
+              ceiling_area: calculatedAreas.ceiling_area,
+              adjusted_wall_area: calculatedAreas.adjusted_wall_area,
+              total_opening_area: calculatedAreas.total_opening_area,
+              total_extra_surface: calculatedAreas.total_extra_surface,
+              total_door_window_grill_area: calculatedAreas.total_door_window_grill_area
+            })
+            .eq('room_id', editingRoom.id)
+            .eq('project_id', projectId!);
+          
+          if (error) {
+            console.error('Background save error:', error);
+            toast.error('Failed to sync changes to server', { duration: 2000 });
+          }
+        } catch (error) {
           console.error('Background save error:', error);
           toast.error('Failed to sync changes to server', { duration: 2000 });
         }
-      } catch (error) {
-        console.error('Background save error:', error);
-        toast.error('Failed to sync changes to server', { duration: 2000 });
       }
     })();
   };
