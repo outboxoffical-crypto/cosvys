@@ -3,8 +3,10 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, FileText, Share2, Download, Phone, MapPin, Home, Palette } from "lucide-react";
+import { ArrowLeft, FileText, Share2, Download, Phone, MapPin, Home, Palette, Users, Calendar, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function ProjectSummaryScreen() {
   const navigate = useNavigate();
@@ -13,26 +15,127 @@ export default function ProjectSummaryScreen() {
   const [projectData, setProjectData] = useState<any>(null);
   const [rooms, setRooms] = useState<any[]>([]);
   const [estimation, setEstimation] = useState<any>(null);
+  const [dealerInfo, setDealerInfo] = useState<any>(null);
+  const [areaConfigurations, setAreaConfigurations] = useState<any[]>([]);
 
   useEffect(() => {
-    // Load all project data
-    const project = localStorage.getItem(`project_${projectId}`);
-    const roomData = localStorage.getItem(`rooms_${projectId}`);
-    const estimationData = localStorage.getItem(`estimation_${projectId}`);
+    const loadData = async () => {
+      // Load project data
+      const project = localStorage.getItem(`project_${projectId}`);
+      const estimationData = localStorage.getItem(`estimation_${projectId}`);
+      const areaConfigsData = localStorage.getItem(`areaConfigurations_${projectId}`);
 
-    if (project) setProjectData(JSON.parse(project));
-    if (roomData) setRooms(JSON.parse(roomData));
-    if (estimationData) setEstimation(JSON.parse(estimationData));
+      if (project) setProjectData(JSON.parse(project));
+      if (estimationData) setEstimation(JSON.parse(estimationData));
+      if (areaConfigsData) setAreaConfigurations(JSON.parse(areaConfigsData));
+
+      // Load rooms from database
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const { data: roomsData } = await supabase
+          .from('rooms')
+          .select('*')
+          .eq('project_id', projectId);
+        
+        if (roomsData) setRooms(roomsData);
+
+        // Load dealer info
+        const { data: dealerData } = await supabase
+          .from('dealer_info')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+        
+        if (dealerData) setDealerInfo(dealerData);
+      }
+    };
+
+    loadData();
   }, [projectId]);
 
   const totalAreas = rooms.reduce(
     (acc, room) => ({
-      floorArea: acc.floorArea + room.floorArea,
-      wallArea: acc.wallArea + room.wallArea,
-      ceilingArea: acc.ceilingArea + room.ceilingArea
+      floorArea: acc.floorArea + (room.floor_area || 0),
+      wallArea: acc.wallArea + (room.wall_area || 0),
+      ceilingArea: acc.ceilingArea + (room.ceiling_area || 0)
     }),
     { floorArea: 0, wallArea: 0, ceilingArea: 0 }
   );
+
+  // Calculate material requirements from area configurations
+  const calculateMaterialRequirements = () => {
+    const materials: Record<string, { liters: number, cost: number }> = {};
+    
+    areaConfigurations.forEach(config => {
+      const { puttyType, primerType, primerCoats, emulsionType, emulsionCoats, area, ratePerSqft } = config;
+      
+      // Putty calculation (coverage: 20-25 sq.ft per liter)
+      if (puttyType && puttyType !== 'None') {
+        const puttyKey = `Putty - ${puttyType}`;
+        const puttyLiters = area / 22.5;
+        if (!materials[puttyKey]) materials[puttyKey] = { liters: 0, cost: 0 };
+        materials[puttyKey].liters += puttyLiters;
+      }
+
+      // Primer calculation (coverage: 100-120 sq.ft per liter)
+      if (primerType && primerType !== 'None') {
+        const primerKey = `Primer - ${primerType}`;
+        const primerLiters = (area * (primerCoats || 1)) / 110;
+        if (!materials[primerKey]) materials[primerKey] = { liters: 0, cost: 0 };
+        materials[primerKey].liters += primerLiters;
+      }
+
+      // Emulsion calculation (coverage: 100-120 sq.ft per liter per coat)
+      if (emulsionType && emulsionType !== 'None') {
+        const emulsionKey = `Emulsion - ${emulsionType}`;
+        const emulsionLiters = (area * (emulsionCoats || 2)) / 110;
+        if (!materials[emulsionKey]) materials[emulsionKey] = { liters: 0, cost: 0 };
+        materials[emulsionKey].liters += emulsionLiters;
+      }
+
+      // Add cost for each material
+      Object.keys(materials).forEach(key => {
+        materials[key].cost += area * (ratePerSqft || 0);
+      });
+    });
+
+    return materials;
+  };
+
+  // Calculate labour requirements
+  const calculateLabour = () => {
+    const totalPaintArea = areaConfigurations.reduce((sum, config) => sum + (config.area || 0), 0);
+    const sqftPerLabourerPerDay = 150; // Average coverage per day
+    const totalLabourDays = Math.ceil(totalPaintArea / sqftPerLabourerPerDay);
+    const laboursPerDay = 2; // Standard 2 labourers
+    const totalLabours = laboursPerDay * totalLabourDays;
+    
+    return { laboursPerDay, totalDays: totalLabourDays, totalLabours };
+  };
+
+  // Calculate total costs
+  const calculateTotalCost = () => {
+    const materialCost = areaConfigurations.reduce((sum, config) => 
+      sum + ((config.area || 0) * (config.ratePerSqft || 0)), 0
+    );
+    
+    const labour = calculateLabour();
+    const labourCost = labour.totalLabours * 500; // ₹500 per labour per day
+    
+    const marginPercent = dealerInfo?.margin || 0;
+    const marginAmount = (materialCost + labourCost) * (marginPercent / 100);
+    
+    return {
+      materialCost,
+      labourCost,
+      marginAmount,
+      total: materialCost + labourCost + marginAmount
+    };
+  };
+
+  const materials = calculateMaterialRequirements();
+  const labour = calculateLabour();
+  const costs = calculateTotalCost();
 
   const handleExportPDF = () => {
     toast({
@@ -95,162 +198,314 @@ export default function ProjectSummaryScreen() {
       </div>
 
       <div className="p-4 space-y-6">
-        {/* Customer Information */}
-        <Card className="eca-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center text-lg">
-              <Home className="mr-2 h-5 w-5 text-primary" />
-              Customer Details
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center">
-              <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center mr-3">
-                <div className="w-2 h-2 bg-primary rounded-full"></div>
-              </div>
-              <div>
-                <p className="font-semibold text-foreground">{projectData.customerName}</p>
-                <p className="text-sm text-muted-foreground">Customer Name</p>
-              </div>
-            </div>
-            <div className="flex items-center">
-              <Phone className="h-4 w-4 text-muted-foreground mr-3 ml-1" />
-              <div>
-                <p className="font-medium text-foreground">{projectData.mobile}</p>
-                <p className="text-sm text-muted-foreground">Mobile Number</p>
-              </div>
-            </div>
-            <div className="flex items-start">
-              <MapPin className="h-4 w-4 text-muted-foreground mr-3 ml-1 mt-1" />
-              <div>
-                <p className="font-medium text-foreground">{projectData.address}</p>
-                <p className="text-sm text-muted-foreground">Address</p>
-              </div>
-            </div>
-            <div className="flex items-center">
-              <Badge variant="outline" className="bg-accent">
-                {projectData.projectType} Project
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
+        <Tabs defaultValue="details" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="details">Details</TabsTrigger>
+            <TabsTrigger value="materials">Materials</TabsTrigger>
+            <TabsTrigger value="costs">Costs</TabsTrigger>
+          </TabsList>
 
-        {/* Room Summary */}
-        <Card className="eca-shadow">
-          <CardHeader>
-            <CardTitle className="text-lg">Room Measurements</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {rooms.map((room, index) => (
-                <div key={room.id} className="flex justify-between items-center p-3 bg-muted rounded-lg">
+          {/* Tab 1: Paint & Room Details */}
+          <TabsContent value="details" className="space-y-6 mt-4">
+            {/* Section 1: Type of Interior & Wall Full Details */}
+            <Card className="eca-shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center text-lg">
+                  <Palette className="mr-2 h-5 w-5 text-primary" />
+                  Type of Interior & Wall Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {areaConfigurations.map((config, index) => (
+                  <div key={index} className="border border-border rounded-lg p-4 space-y-2">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <p className="font-semibold text-foreground">{config.areaType}</p>
+                        <Badge variant="outline" className="mt-1">{config.paintingSystem}</Badge>
+                      </div>
+                      <p className="text-lg font-bold text-primary">₹{(config.area * config.ratePerSqft).toFixed(2)}</p>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <p className="text-muted-foreground">Paint Type:</p>
+                        <p className="font-medium">{config.paintingSystem}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Area:</p>
+                        <p className="font-medium">{config.area.toFixed(2)} sq.ft</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Putty:</p>
+                        <p className="font-medium">{config.puttyType || 'None'}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Primer:</p>
+                        <p className="font-medium">{config.primerType || 'None'} ({config.primerCoats || 0} coats)</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Emulsion:</p>
+                        <p className="font-medium">{config.emulsionType || 'None'} ({config.emulsionCoats || 0} coats)</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Rate/sq.ft:</p>
+                        <p className="font-medium">₹{config.ratePerSqft}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            {/* Section 2: Total Room Details */}
+            <Card className="eca-shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center text-lg">
+                  <Home className="mr-2 h-5 w-5 text-secondary" />
+                  Total Room Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Individual Rooms */}
+                <div className="space-y-3">
+                  {rooms.map((room) => (
+                    <div key={room.id} className="border border-border rounded-lg p-3">
+                      <p className="font-semibold text-foreground mb-2">{room.name}</p>
+                      <div className="grid grid-cols-3 gap-2 text-sm">
+                        <div>
+                          <p className="text-muted-foreground">Floor</p>
+                          <p className="font-medium">{room.floor_area?.toFixed(2) || 0} sq.ft</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Wall</p>
+                          <p className="font-medium">{room.wall_area?.toFixed(2) || 0} sq.ft</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Ceiling</p>
+                          <p className="font-medium">{room.ceiling_area?.toFixed(2) || 0} sq.ft</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Totals */}
+                <div className="eca-gradient text-white rounded-lg p-4">
+                  <div className="grid grid-cols-3 gap-4 text-center">
+                    <div>
+                      <p className="text-white/80 text-sm">Total Floor</p>
+                      <p className="text-xl font-bold">{totalAreas.floorArea.toFixed(2)}</p>
+                      <p className="text-white/80 text-xs">sq.ft</p>
+                    </div>
+                    <div>
+                      <p className="text-white/80 text-sm">Total Wall</p>
+                      <p className="text-xl font-bold">{totalAreas.wallArea.toFixed(2)}</p>
+                      <p className="text-white/80 text-xs">sq.ft</p>
+                    </div>
+                    <div>
+                      <p className="text-white/80 text-sm">Total Ceiling</p>
+                      <p className="text-xl font-bold">{totalAreas.ceilingArea.toFixed(2)}</p>
+                      <p className="text-white/80 text-xs">sq.ft</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Customer Information */}
+            <Card className="eca-shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center text-lg">
+                  <Home className="mr-2 h-5 w-5 text-primary" />
+                  Customer Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center">
+                  <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center mr-3">
+                    <div className="w-2 h-2 bg-primary rounded-full"></div>
+                  </div>
                   <div>
-                    <p className="font-medium text-foreground">{room.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {room.length}' × {room.width}' × {room.height}'
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-foreground">{room.wallArea.toFixed(1)} sq.ft</p>
-                    <p className="text-xs text-muted-foreground">Wall Area</p>
+                    <p className="font-semibold text-foreground">{projectData?.customerName}</p>
+                    <p className="text-sm text-muted-foreground">Customer Name</p>
                   </div>
                 </div>
-              ))}
-            </div>
-
-            <div className="mt-4 p-4 eca-gradient text-white rounded-lg">
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div>
-                  <p className="text-white/80 text-sm">Total Floor</p>
-                  <p className="text-xl font-bold">{totalAreas.floorArea.toFixed(1)}</p>
-                  <p className="text-white/80 text-xs">sq.ft</p>
+                <div className="flex items-center">
+                  <Phone className="h-4 w-4 text-muted-foreground mr-3 ml-1" />
+                  <div>
+                    <p className="font-medium text-foreground">{projectData?.mobile}</p>
+                    <p className="text-sm text-muted-foreground">Mobile Number</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-white/80 text-sm">Total Wall</p>
-                  <p className="text-xl font-bold">{totalAreas.wallArea.toFixed(1)}</p>
-                  <p className="text-white/80 text-xs">sq.ft</p>
+                <div className="flex items-start">
+                  <MapPin className="h-4 w-4 text-muted-foreground mr-3 ml-1 mt-1" />
+                  <div>
+                    <p className="font-medium text-foreground">{projectData?.address}</p>
+                    <p className="text-sm text-muted-foreground">Address</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-white/80 text-sm">Total Ceiling</p>
-                  <p className="text-xl font-bold">{totalAreas.ceilingArea.toFixed(1)}</p>
-                  <p className="text-white/80 text-xs">sq.ft</p>
+                <div className="flex items-center">
+                  <Badge variant="outline" className="bg-accent">
+                    {projectData?.projectType} Project
+                  </Badge>
                 </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-        {/* Paint & Cost Summary */}
-        <Card className="eca-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center text-lg">
-              <Palette className="mr-2 h-5 w-5 text-secondary" />
-              Paint & Cost Details
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="bg-muted rounded-lg p-4">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-muted-foreground">Selected Product:</span>
-                <Badge variant="outline">{estimation?.product?.category || 'N/A'}</Badge>
-              </div>
-              <p className="font-semibold text-foreground text-lg">{estimation?.product?.name || 'No product selected'}</p>
-              <p className="text-sm text-muted-foreground">{estimation?.paintType || 'N/A'} Paint</p>
-            </div>
+          {/* Tab 2: Materials & Labour */}
+          <TabsContent value="materials" className="space-y-6 mt-4">
+            {/* Section 3: Labour Section */}
+            <Card className="eca-shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center text-lg">
+                  <Users className="mr-2 h-5 w-5 text-primary" />
+                  Labour Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="text-center p-4 border border-border rounded-lg">
+                    <p className="text-sm text-muted-foreground">Per Day Labour</p>
+                    <p className="text-2xl font-bold text-foreground">{labour.laboursPerDay}</p>
+                    <p className="text-xs text-muted-foreground">workers/day</p>
+                  </div>
+                  <div className="text-center p-4 border border-border rounded-lg">
+                    <p className="text-sm text-muted-foreground">No of Days</p>
+                    <p className="text-2xl font-bold text-foreground">{labour.totalDays}</p>
+                    <p className="text-xs text-muted-foreground">days</p>
+                  </div>
+                  <div className="text-center p-4 border border-border rounded-lg">
+                    <p className="text-sm text-muted-foreground">Total Labour</p>
+                    <p className="text-2xl font-bold text-foreground">{labour.totalLabours}</p>
+                    <p className="text-xs text-muted-foreground">labour-days</p>
+                  </div>
+                </div>
+                <div className="mt-4 p-4 bg-primary/10 border border-primary/20 rounded-lg text-center">
+                  <p className="text-sm text-primary font-medium">Total Labour Cost</p>
+                  <p className="text-3xl font-bold text-primary">₹{costs.labourCost.toLocaleString()}</p>
+                  <p className="text-xs text-primary/70">@ ₹500 per labour per day</p>
+                </div>
+              </CardContent>
+            </Card>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center p-4 border border-border rounded-lg">
-                <p className="text-sm text-muted-foreground">Paint Required</p>
-                <p className="text-2xl font-bold text-foreground">{estimationDetails?.litersRequired || 'N/A'}</p>
-                <p className="text-xs text-muted-foreground">Liters (2 coats)</p>
-              </div>
-              <div className="text-center p-4 border border-border rounded-lg">
-                <p className="text-sm text-muted-foreground">Area Coverage</p>
-                <p className="text-2xl font-bold text-foreground">{estimationDetails?.area ? estimationDetails.area.toFixed(1) : 'N/A'}</p>
-                <p className="text-xs text-muted-foreground">sq.ft</p>
-              </div>
-            </div>
+            {/* Section 4: Material Section */}
+            <Card className="eca-shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center text-lg">
+                  <Package className="mr-2 h-5 w-5 text-secondary" />
+                  Material Requirements
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {Object.entries(materials).map(([name, data]) => (
+                  <div key={name} className="flex justify-between items-center p-3 border border-border rounded-lg">
+                    <div>
+                      <p className="font-semibold text-foreground">{name}</p>
+                      <p className="text-sm text-muted-foreground">{data.liters.toFixed(2)} liters</p>
+                    </div>
+                    <p className="text-lg font-bold text-primary">₹{data.cost.toFixed(2)}</p>
+                  </div>
+                ))}
+                
+                <div className="mt-4 p-4 bg-secondary/10 border border-secondary/20 rounded-lg text-center">
+                  <p className="text-sm text-secondary font-medium">Total Material Cost</p>
+                  <p className="text-3xl font-bold text-secondary">₹{costs.materialCost.toLocaleString()}</p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-            <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 text-center">
-              <p className="text-sm text-primary font-medium">Estimated Total Cost</p>
-              <p className="text-3xl font-bold text-primary">₹{estimationDetails?.totalCost ? estimationDetails.totalCost.toLocaleString() : 'N/A'}</p>
-              <p className="text-xs text-primary/70">Including material cost</p>
-            </div>
-          </CardContent>
-        </Card>
+          {/* Tab 3: Final Costs */}
+          <TabsContent value="costs" className="space-y-6 mt-4">
+            {/* Section 5: Dealer Margin */}
+            <Card className="eca-shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center text-lg">
+                  <Palette className="mr-2 h-5 w-5 text-accent-foreground" />
+                  Dealer Margin
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                    <p className="text-sm text-muted-foreground">Margin Percentage</p>
+                    <p className="text-lg font-bold text-foreground">{dealerInfo?.margin || 0}%</p>
+                  </div>
+                  <div className="flex justify-between items-center p-4 bg-accent/10 border border-accent/20 rounded-lg">
+                    <p className="text-sm font-medium text-accent-foreground">Margin Amount</p>
+                    <p className="text-2xl font-bold text-accent-foreground">₹{costs.marginAmount.toLocaleString()}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-        {/* Export & Share Options */}
-        <Card className="eca-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center text-lg">
-              <Share2 className="mr-2 h-5 w-5 text-accent-foreground" />
-              Export & Share
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <Button variant="outline" onClick={handleExportPDF} className="h-12">
-                <FileText className="mr-2 h-4 w-4" />
-                Export PDF
-              </Button>
-              <Button variant="outline" onClick={handleExportExcel} className="h-12">
-                <Download className="mr-2 h-4 w-4" />
-                Export Excel
-              </Button>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <Button onClick={handleShareWhatsApp} className="h-12 bg-green-600 hover:bg-green-700">
-                Share WhatsApp
-              </Button>
-              <Button variant="secondary" onClick={handleShareEmail} className="h-12">
-                Share Email
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+            {/* Section 6: Estimated Total Cost */}
+            <Card className="eca-shadow border-2 border-primary">
+              <CardHeader>
+                <CardTitle className="flex items-center text-lg">
+                  <FileText className="mr-2 h-5 w-5 text-primary" />
+                  Cost Breakdown
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                    <p className="text-sm text-muted-foreground">Material Cost</p>
+                    <p className="font-bold text-foreground">₹{costs.materialCost.toLocaleString()}</p>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                    <p className="text-sm text-muted-foreground">Labour Cost</p>
+                    <p className="font-bold text-foreground">₹{costs.labourCost.toLocaleString()}</p>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                    <p className="text-sm text-muted-foreground">Dealer Margin</p>
+                    <p className="font-bold text-foreground">₹{costs.marginAmount.toLocaleString()}</p>
+                  </div>
+                </div>
+
+                <div className="mt-4 p-6 eca-gradient text-white rounded-lg text-center">
+                  <p className="text-white/80 text-sm mb-2">Estimated Total Cost</p>
+                  <p className="text-4xl font-bold">₹{costs.total.toLocaleString()}</p>
+                  <p className="text-white/80 text-xs mt-2">Labour + Material + Margin</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Export & Share Options */}
+            <Card className="eca-shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center text-lg">
+                  <Share2 className="mr-2 h-5 w-5 text-accent-foreground" />
+                  Export & Share
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <Button variant="outline" onClick={handleExportPDF} className="h-12">
+                    <FileText className="mr-2 h-4 w-4" />
+                    Export PDF
+                  </Button>
+                  <Button variant="outline" onClick={handleExportExcel} className="h-12">
+                    <Download className="mr-2 h-4 w-4" />
+                    Export Excel
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <Button onClick={handleShareWhatsApp} className="h-12 bg-green-600 hover:bg-green-700">
+                    Share WhatsApp
+                  </Button>
+                  <Button variant="secondary" onClick={handleShareEmail} className="h-12">
+                    Share Email
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
 
         {/* Action Buttons */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 mt-6">
           <Button 
             variant="outline" 
             onClick={() => navigate("/dashboard")}
