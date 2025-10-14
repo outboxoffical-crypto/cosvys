@@ -1,1 +1,7 @@
 project_id = "zowvdfoqarppwqvsvcjk"
+
+[functions.calculate-room-areas]
+verify_jwt = false
+
+[functions.calculate-paint-requirements]
+verify_jwt = false
