@@ -971,21 +971,10 @@ export default function RoomMeasurementScreen() {
     setEditDialogOpen(true);
   }, []);
 
-  // Complete Room - pre-calculate and cache paint data for instant Paint Estimation access
+  // Complete Room - calculate paint data for Paint Estimation
   const completeRoom = useCallback(async (roomId: string) => {
     const room = rooms.find(r => r.id === roomId);
     if (!room) return;
-
-    // Check if already cached (< 5 minutes old)
-    const cacheKey = `paint_calc_${projectId}_${roomId}`;
-    const cached = localStorage.getItem(cacheKey);
-    if (cached) {
-      const parsedCache = JSON.parse(cached);
-      if (Date.now() - parsedCache.timestamp < 300000) {
-        toast.success('Room calculations already up to date');
-        return;
-      }
-    }
 
     // Show instant feedback
     toast.success('Calculating paint requirements...');
@@ -1007,17 +996,14 @@ export default function RoomMeasurementScreen() {
 
       if (error) throw error;
 
-      // Cache results locally for instant retrieval
-      localStorage.setItem(cacheKey, JSON.stringify(data));
-
-      // Update database with paint calculations (async, don't wait)
-      supabase.from('rooms').update({
+      // Update database with paint calculations
+      await supabase.from('rooms').update({
         paint_calculations: data
-      }).eq('room_id', roomId).eq('project_id', projectId!).then(() => {
-        const elapsedTime = Date.now() - startTime;
-        console.log(`Paint calculation completed in ${elapsedTime}ms`);
-        toast.success(`Room completed! (${elapsedTime}ms)`, { duration: 2000 });
-      });
+      }).eq('room_id', roomId).eq('project_id', projectId!);
+
+      const elapsedTime = Date.now() - startTime;
+      console.log(`Paint calculation completed in ${elapsedTime}ms`);
+      toast.success(`Room completed! (${elapsedTime}ms)`, { duration: 2000 });
 
     } catch (error) {
       console.error('Error completing room:', error);
