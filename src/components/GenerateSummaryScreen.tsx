@@ -185,27 +185,39 @@ export default function GenerateSummaryScreen() {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            <div className="p-3 bg-muted rounded">
-              <p className="font-semibold">Totals</p>
-              <div className="grid grid-cols-3 gap-2 text-sm mt-2">
-                <p>Floor: {totalFloor.toFixed(2)} Sq. Ft</p>
-                <p>Wall: {totalWall.toFixed(2)} Sq. Ft</p>
-                <p>Ceiling: {totalCeiling.toFixed(2)} Sq. Ft</p>
-              </div>
-            </div>
-            
+            {/* Individual Rooms First */}
             <div className="space-y-2">
               <p className="font-semibold">Individual Rooms</p>
-              {rooms.map(room => (
-                <div key={room.id} className="p-2 border rounded text-sm">
-                  <p className="font-medium">{room.name}</p>
-                  <div className="grid grid-cols-3 gap-1 mt-1 text-xs">
-                    <p>Floor: {Number(room.floor_area || 0).toFixed(2)}</p>
-                    <p>Wall: {Number(room.adjusted_wall_area || room.wall_area || 0).toFixed(2)}</p>
-                    <p>Ceiling: {Number(room.ceiling_area || 0).toFixed(2)}</p>
+              {rooms.map(room => {
+                const selectedAreas = room.selected_areas || { floor: true, wall: true, ceiling: false };
+                return (
+                  <div key={room.id} className="p-2 border rounded text-sm">
+                    <p className="font-medium">{room.name}</p>
+                    <div className="flex flex-wrap gap-3 mt-1 text-xs">
+                      {selectedAreas.floor && (
+                        <p>Floor: {Number(room.floor_area || 0).toFixed(2)} Sq. Ft</p>
+                      )}
+                      {selectedAreas.wall && (
+                        <p>Wall: {Number(room.adjusted_wall_area || room.wall_area || 0).toFixed(2)} Sq. Ft</p>
+                      )}
+                      {selectedAreas.ceiling && (
+                        <p>Ceiling: {Number(room.ceiling_area || 0).toFixed(2)} Sq. Ft</p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
+            </div>
+
+            {/* Totals Second with Project Type */}
+            <div className="p-3 bg-muted rounded">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">{paintType}</p>
+              <p className="font-semibold">Totals</p>
+              <div className="flex flex-wrap gap-3 text-sm mt-2">
+                {totalFloor > 0 && <p>Floor: {totalFloor.toFixed(2)} Sq. Ft</p>}
+                {totalWall > 0 && <p>Wall: {totalWall.toFixed(2)} Sq. Ft</p>}
+                {totalCeiling > 0 && <p>Ceiling: {totalCeiling.toFixed(2)} Sq. Ft</p>}
+              </div>
             </div>
           </div>
         </CardContent>
