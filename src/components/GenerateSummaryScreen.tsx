@@ -35,6 +35,7 @@ export default function GenerateSummaryScreen() {
   const [areaConfigs, setAreaConfigs] = useState<AreaConfig[]>([]);
   const [rooms, setRooms] = useState<any[]>([]);
   const [dealerMargin, setDealerMargin] = useState(0);
+  const [paintType, setPaintType] = useState<string>('Interior');
 
   useEffect(() => {
     loadData();
@@ -43,8 +44,9 @@ export default function GenerateSummaryScreen() {
   const loadData = async () => {
     try {
       // Load area configurations from localStorage
-      const paintType = localStorage.getItem(`selected_paint_type_${projectId}`) || 'Interior';
-      const configsKey = `area_configurations_${projectId}_${paintType}`;
+      const selectedPaintType = localStorage.getItem(`selected_paint_type_${projectId}`) || 'Interior';
+      setPaintType(selectedPaintType);
+      const configsKey = `area_configurations_${projectId}_${selectedPaintType}`;
       const configsStr = localStorage.getItem(configsKey);
       if (configsStr) {
         setAreaConfigs(JSON.parse(configsStr));
@@ -81,30 +83,58 @@ export default function GenerateSummaryScreen() {
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="text-lg">1. Type of Interior & Wall Full Details</CardTitle>
+          <p className="text-sm text-muted-foreground mt-1">Paint configuration summary from {paintType} section</p>
         </CardHeader>
         <CardContent>
-          {areaConfigs.map((config, idx) => {
-            const area = Number(config.area) || 0;
-            const rate = parseFloat(config.perSqFtRate) || 0;
-            const cost = area * rate;
-            const coats = config.paintingSystem === 'Fresh Painting' 
-              ? `Putty: ${config.coatConfiguration.putty}, Primer: ${config.coatConfiguration.primer}, Emulsion: ${config.coatConfiguration.emulsion}`
-              : `Primer: ${config.repaintingConfiguration?.primer || 0}, Emulsion: ${config.repaintingConfiguration?.emulsion || 0}`;
+          <div className="overflow-x-auto">
+            <div className="flex gap-4 pb-2" style={{ minWidth: 'min-content' }}>
+              {areaConfigs.map((config) => {
+                const area = Number(config.area) || 0;
+                const rate = parseFloat(config.perSqFtRate) || 0;
+                const cost = area * rate;
+                const coats = config.paintingSystem === 'Fresh Painting' 
+                  ? `Putty: ${config.coatConfiguration.putty}, Primer: ${config.coatConfiguration.primer}, Emulsion: ${config.coatConfiguration.emulsion}`
+                  : `Primer: ${config.repaintingConfiguration?.primer || 0}, Emulsion: ${config.repaintingConfiguration?.emulsion || 0}`;
 
-            return (
-              <div key={config.id} className="mb-4 p-3 border rounded">
-                <p className="font-semibold">{config.label || config.areaType}</p>
-                <div className="grid grid-cols-2 gap-2 text-sm mt-2">
-                  <p>Paint Type: {config.areaType}</p>
-                  <p>Painting System: {config.paintingSystem || '-'}</p>
-                  <p>Coats: {coats}</p>
-                  <p>Area: {area.toFixed(2)} Sq. Ft</p>
-                  <p>Per Sq. Ft Rate: ₹{rate.toFixed(2)}</p>
-                  <p>Cost: ₹{cost.toFixed(2)}</p>
-                </div>
-              </div>
-            );
-          })}
+                return (
+                  <div key={config.id} className="flex-shrink-0 w-72 p-4 border rounded-lg bg-card shadow-sm">
+                    <div className="mb-3 pb-2 border-b">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">{paintType}</p>
+                      <p className="font-semibold text-base mt-1">{config.label || config.areaType}</p>
+                    </div>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Paint Type:</span>
+                        <span className="font-medium">{config.areaType}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Painting System:</span>
+                        <span className="font-medium">{config.paintingSystem || '-'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Coats:</span>
+                        <span className="font-medium text-xs">{coats}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Area Sq.Ft:</span>
+                        <span className="font-medium">{area.toFixed(2)}</span>
+                      </div>
+                      <div className="pt-2 mt-2 border-t space-y-1.5">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Per Sq.Ft Rate:</span>
+                          <span className="font-semibold">₹{rate.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Cost of Sq.Ft:</span>
+                          <span className="font-bold text-primary">₹{cost.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </CardContent>
       </Card>
     );
@@ -334,6 +364,9 @@ export default function GenerateSummaryScreen() {
       </div>
 
       <div className="p-4">
+        <p className="text-sm text-muted-foreground mb-4 px-1">
+          This section summarizes your project details including area type, paint configuration, material requirements, labour estimation, and complete cost overview.
+        </p>
         {renderTypeDetails()}
         {renderRoomDetails()}
         {renderLabourSection()}
