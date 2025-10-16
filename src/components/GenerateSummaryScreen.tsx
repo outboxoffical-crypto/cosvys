@@ -43,24 +43,35 @@ export default function GenerateSummaryScreen() {
 
   const loadData = async () => {
     try {
-      // Load area configurations from localStorage
-      const selectedPaintType = localStorage.getItem(`selected_paint_type_${projectId}`) || 'Interior';
-      setPaintType(selectedPaintType);
-      const configsKey = `area_configurations_${projectId}_${selectedPaintType}`;
-      const configsStr = localStorage.getItem(configsKey);
-      
-      console.log('Loading configs from:', configsKey);
-      console.log('Raw configs string:', configsStr);
-      
-      if (configsStr) {
-        const parsedConfigs = JSON.parse(configsStr);
-        console.log('Parsed configs:', parsedConfigs);
-        setAreaConfigs(parsedConfigs);
+      // Prefer snapshot saved when user clicked Continue in Estimation
+      const estimationKey = `estimation_${projectId}`;
+      const estimationStr = localStorage.getItem(estimationKey);
+      const storedPaintType = localStorage.getItem(`selected_paint_type_${projectId}`) || 'Interior';
+
+      if (estimationStr) {
+        const est = JSON.parse(estimationStr);
+        const pt = est.paintType || storedPaintType;
+        setPaintType(pt);
+        const configurations = Array.isArray(est.configurations) ? est.configurations : [];
+        console.log('Loaded configs from estimation:', configurations.length);
+        setAreaConfigs(configurations);
       } else {
-        console.log('No configs found in localStorage');
+        // Fallback to per-type saved configs while still on estimation screen
+        const pt = storedPaintType;
+        setPaintType(pt);
+        const paintConfigs = localStorage.getItem(`paint_configs_${projectId}_${pt}`);
+        const preservedConfigs = localStorage.getItem(`configs_preserved_${projectId}_${pt}`);
+        let configs: any[] = [];
+        if (paintConfigs) {
+          configs = JSON.parse(paintConfigs);
+        } else if (preservedConfigs) {
+          configs = JSON.parse(preservedConfigs);
+        }
+        console.log('Loaded fallback configs:', configs);
+        setAreaConfigs(Array.isArray(configs) ? configs : []);
       }
 
-      // Load rooms from Supabase
+      // Load rooms from backend
       const { data: roomsData } = await supabase
         .from('rooms')
         .select('*')
@@ -94,55 +105,61 @@ export default function GenerateSummaryScreen() {
           <p className="text-sm text-muted-foreground mt-1">Paint configuration summary from {paintType} section</p>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <div className="flex gap-4 pb-2" style={{ minWidth: 'min-content' }}>
-              {areaConfigs.map((config) => {
-                const area = Number(config.area) || 0;
-                const rate = parseFloat(config.perSqFtRate) || 0;
-                const cost = area * rate;
-                const coats = config.paintingSystem === 'Fresh Painting' 
-                  ? `Putty: ${config.coatConfiguration.putty}, Primer: ${config.coatConfiguration.primer}, Emulsion: ${config.coatConfiguration.emulsion}`
-                  : `Primer: ${config.repaintingConfiguration?.primer || 0}, Emulsion: ${config.repaintingConfiguration?.emulsion || 0}`;
-
-                return (
-                  <div key={config.id} className="flex-shrink-0 w-72 p-4 border rounded-lg bg-card shadow-sm">
-                    <div className="mb-3 pb-2 border-b">
-                      <p className="text-xs text-muted-foreground uppercase tracking-wide">{paintType}</p>
-                      <p className="font-semibold text-base mt-1">{config.label || config.areaType}</p>
-                    </div>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Paint Type:</span>
-                        <span className="font-medium">{config.areaType}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Painting System:</span>
-                        <span className="font-medium">{config.paintingSystem || '-'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Coats:</span>
-                        <span className="font-medium text-xs">{coats}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Area Sq.Ft:</span>
-                        <span className="font-medium">{area.toFixed(2)}</span>
-                      </div>
-                      <div className="pt-2 mt-2 border-t space-y-1.5">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Per Sq.Ft Rate:</span>
-                          <span className="font-semibold">₹{rate.toFixed(2)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Cost of Sq.Ft:</span>
-                          <span className="font-bold text-primary">₹{cost.toFixed(2)}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+          {areaConfigs.length === 0 ? (
+            <div className="text-sm text-muted-foreground p-4 border rounded-md bg-muted/30">
+              No paint configurations found. Please add them in Paint Estimation and click Generate Summary.
             </div>
-          </div>
+          ) : (
+            <div className="-mx-4 px-4 overflow-x-auto scroll-smooth touch-pan-x">
+              <div className="flex gap-4 pb-2 snap-x snap-mandatory" style={{ minWidth: 'min-content' }}>
+                {areaConfigs.map((config) => {
+                  const area = Number(config.area) || 0;
+                  const rate = parseFloat(config.perSqFtRate) || 0;
+                  const cost = area * rate;
+                  const coats = config.paintingSystem === 'Fresh Painting' 
+                    ? `Putty: ${config.coatConfiguration.putty}, Primer: ${config.coatConfiguration.primer}, Emulsion: ${config.coatConfiguration.emulsion}`
+                    : `Primer: ${config.repaintingConfiguration?.primer || 0}, Emulsion: ${config.repaintingConfiguration?.emulsion || 0}`;
+
+                  return (
+                    <div key={config.id} className="snap-start flex-shrink-0 w-72 p-4 border rounded-lg bg-card shadow-sm">
+                      <div className="mb-3 pb-2 border-b">
+                        <p className="text-xs text-muted-foreground uppercase tracking-wide">{paintType}</p>
+                        <p className="font-semibold text-base mt-1">{config.label || config.areaType}</p>
+                      </div>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Paint Type:</span>
+                          <span className="font-medium">{config.areaType}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Painting System:</span>
+                          <span className="font-medium">{config.paintingSystem || '-'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Coats:</span>
+                          <span className="font-medium text-xs">{coats}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Area Sq.Ft:</span>
+                          <span className="font-medium">{area.toFixed(2)}</span>
+                        </div>
+                        <div className="pt-2 mt-2 border-t space-y-1.5">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Per Sq.Ft Rate:</span>
+                            <span className="font-semibold">₹{rate.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Cost of Sq.Ft:</span>
+                            <span className="font-bold text-primary">₹{cost.toFixed(2)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     );
