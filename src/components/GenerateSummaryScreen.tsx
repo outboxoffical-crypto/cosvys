@@ -48,8 +48,16 @@ export default function GenerateSummaryScreen() {
       setPaintType(selectedPaintType);
       const configsKey = `area_configurations_${projectId}_${selectedPaintType}`;
       const configsStr = localStorage.getItem(configsKey);
+      
+      console.log('Loading configs from:', configsKey);
+      console.log('Raw configs string:', configsStr);
+      
       if (configsStr) {
-        setAreaConfigs(JSON.parse(configsStr));
+        const parsedConfigs = JSON.parse(configsStr);
+        console.log('Parsed configs:', parsedConfigs);
+        setAreaConfigs(parsedConfigs);
+      } else {
+        console.log('No configs found in localStorage');
       }
 
       // Load rooms from Supabase
