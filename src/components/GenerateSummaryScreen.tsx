@@ -227,22 +227,175 @@ export default function GenerateSummaryScreen() {
 
   // Section 3: Labour Section
   const renderLabourSection = () => {
-    const totalArea = areaConfigs.reduce((sum, config) => sum + Number(config.area || 0), 0);
-    const areaPerLabourPerDay = 200; // sq ft per labour per day
-    const perDayLabour = Math.ceil(totalArea / (areaPerLabourPerDay * 5));
-    const noOfDays = 5;
-    const labourTotal = perDayLabour * noOfDays;
+    const workingHours = 7;
+    const standardHours = 8;
+    const numberOfLabours = 1;
+
+    // Coverage rates per labour per day (8 hrs) - using average values
+    const coverageRates = {
+      waterBased: {
+        putty: 800,
+        primer: 1050,
+        emulsion: 1050,
+      },
+      oilBased: {
+        redOxide: 350,
+        enamelBase: 250,
+        enamelTop: 200,
+        full3Coat: 275,
+      }
+    };
+
+    const tasks: any[] = [];
+
+    areaConfigs.forEach(config => {
+      const area = Number(config.area) || 0;
+      const isFresh = config.paintingSystem === 'Fresh Painting';
+      
+      // Determine if water-based or oil-based
+      const isOilBased = config.selectedMaterials.emulsion?.toLowerCase().includes('enamel') || 
+                         config.selectedMaterials.primer?.toLowerCase().includes('oxide') ||
+                         config.selectedMaterials.emulsion?.toLowerCase().includes('oil');
+      
+      if (isFresh) {
+        // Putty
+        if (config.coatConfiguration.putty > 0) {
+          const totalWork = area * config.coatConfiguration.putty;
+          const adjustedCoverage = coverageRates.waterBased.putty * (workingHours / standardHours);
+          const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
+          tasks.push({
+            name: `Putty - ${config.label || config.areaType}`,
+            area,
+            coats: config.coatConfiguration.putty,
+            totalWork,
+            coverage: coverageRates.waterBased.putty,
+            daysRequired,
+          });
+        }
+        
+        // Primer
+        if (config.coatConfiguration.primer > 0) {
+          const totalWork = area * config.coatConfiguration.primer;
+          const coverage = isOilBased ? coverageRates.oilBased.redOxide : coverageRates.waterBased.primer;
+          const adjustedCoverage = coverage * (workingHours / standardHours);
+          const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
+          tasks.push({
+            name: `Primer - ${config.label || config.areaType}`,
+            area,
+            coats: config.coatConfiguration.primer,
+            totalWork,
+            coverage,
+            daysRequired,
+          });
+        }
+        
+        // Emulsion/Paint
+        if (config.coatConfiguration.emulsion > 0) {
+          const totalWork = area * config.coatConfiguration.emulsion;
+          const coverage = isOilBased ? coverageRates.oilBased.enamelTop : coverageRates.waterBased.emulsion;
+          const adjustedCoverage = coverage * (workingHours / standardHours);
+          const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
+          tasks.push({
+            name: `${isOilBased ? 'Enamel' : 'Emulsion'} - ${config.label || config.areaType}`,
+            area,
+            coats: config.coatConfiguration.emulsion,
+            totalWork,
+            coverage,
+            daysRequired,
+          });
+        }
+      } else {
+        // Repainting
+        if (config.repaintingConfiguration?.primer && config.repaintingConfiguration.primer > 0) {
+          const totalWork = area * config.repaintingConfiguration.primer;
+          const coverage = isOilBased ? coverageRates.oilBased.redOxide : coverageRates.waterBased.primer;
+          const adjustedCoverage = coverage * (workingHours / standardHours);
+          const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
+          tasks.push({
+            name: `Primer - ${config.label || config.areaType}`,
+            area,
+            coats: config.repaintingConfiguration.primer,
+            totalWork,
+            coverage,
+            daysRequired,
+          });
+        }
+        
+        if (config.repaintingConfiguration?.emulsion && config.repaintingConfiguration.emulsion > 0) {
+          const totalWork = area * config.repaintingConfiguration.emulsion;
+          const coverage = isOilBased ? coverageRates.oilBased.enamelTop : coverageRates.waterBased.emulsion;
+          const adjustedCoverage = coverage * (workingHours / standardHours);
+          const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
+          tasks.push({
+            name: `${isOilBased ? 'Enamel' : 'Emulsion'} - ${config.label || config.areaType}`,
+            area,
+            coats: config.repaintingConfiguration.emulsion,
+            totalWork,
+            coverage,
+            daysRequired,
+          });
+        }
+      }
+    });
+
+    const totalDays = tasks.reduce((sum, task) => sum + task.daysRequired, 0);
 
     return (
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="text-lg">3. Labour Section</CardTitle>
+          <p className="text-sm text-muted-foreground mt-1">Based on {workingHours} working hours per day</p>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2 text-sm">
-            <p>Per Day Labour: {perDayLabour} labourers</p>
-            <p>No of Days: {noOfDays} days</p>
-            <p>Labour Total: {labourTotal} labourers</p>
+          <div className="space-y-3">
+            {/* Task Breakdown */}
+            <div className="space-y-2">
+              <p className="font-semibold text-sm">Labour Calculation Breakdown</p>
+              {tasks.map((task, idx) => (
+                <div key={idx} className="p-3 border rounded text-sm bg-muted/30">
+                  <div className="flex justify-between items-start mb-2">
+                    <span className="font-medium">{task.name}</span>
+                    <span className="font-bold text-primary">{task.daysRequired} days</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                    <p>Area: {task.area.toFixed(2)} sq.ft</p>
+                    <p>Coats: {task.coats}</p>
+                    <p>Total Work: {task.totalWork.toFixed(2)} sq.ft</p>
+                    <p>Coverage: {task.coverage} sq.ft/day</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Summary */}
+            <div className="p-3 bg-primary/10 rounded border-2 border-primary/20">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Project Duration</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">With {numberOfLabours} labour(s)</p>
+                </div>
+                <p className="text-2xl font-bold text-primary">{totalDays} days</p>
+              </div>
+            </div>
+
+            {/* Coverage Reference */}
+            <div className="mt-4 pt-3 border-t">
+              <p className="text-xs font-semibold mb-2">Coverage Rates (per labour/day, 8 hrs)</p>
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div>
+                  <p className="font-medium mb-1">Water-Based:</p>
+                  <p className="text-muted-foreground">Putty: 700-900 sq.ft</p>
+                  <p className="text-muted-foreground">Primer: 800-1300 sq.ft</p>
+                  <p className="text-muted-foreground">Emulsion: 800-1300 sq.ft</p>
+                </div>
+                <div>
+                  <p className="font-medium mb-1">Oil-Based:</p>
+                  <p className="text-muted-foreground">Red Oxide: 300-400 sq.ft</p>
+                  <p className="text-muted-foreground">Enamel Base: 200-300 sq.ft</p>
+                  <p className="text-muted-foreground">Enamel Top: 150-250 sq.ft</p>
+                </div>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
