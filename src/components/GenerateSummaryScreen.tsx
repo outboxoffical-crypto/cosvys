@@ -38,6 +38,7 @@ export default function GenerateSummaryScreen() {
   const [paintType, setPaintType] = useState<string>('Interior');
   const [labourMode, setLabourMode] = useState<'auto' | 'manual'>('auto');
   const [manualDays, setManualDays] = useState<number>(5);
+  const [manualDaysInput, setManualDaysInput] = useState<string>('5');
   const [activeConfigIndex, setActiveConfigIndex] = useState(0);
   const paintConfigRef = useRef<HTMLDivElement>(null);
   const labourConfigRef = useRef<HTMLDivElement>(null);
@@ -430,16 +431,23 @@ export default function GenerateSummaryScreen() {
                 <input
                   type="number"
                   min="1"
-                  value={manualDays}
+                  value={manualDaysInput}
                   onChange={(e) => {
                     const value = e.target.value;
-                    if (value === '' || value === '0') {
+                    setManualDaysInput(value);
+                    const numValue = parseInt(value, 10);
+                    if (!isNaN(numValue) && numValue > 0) {
+                      setManualDays(numValue);
+                    }
+                  }}
+                  onBlur={() => {
+                    const numValue = parseInt(manualDaysInput, 10);
+                    if (isNaN(numValue) || numValue < 1) {
                       setManualDays(1);
+                      setManualDaysInput('1');
                     } else {
-                      const numValue = parseInt(value);
-                      if (!isNaN(numValue) && numValue > 0) {
-                        setManualDays(numValue);
-                      }
+                      setManualDays(numValue);
+                      setManualDaysInput(String(numValue));
                     }
                   }}
                   className="w-full px-3 py-2 border rounded text-sm bg-background"
