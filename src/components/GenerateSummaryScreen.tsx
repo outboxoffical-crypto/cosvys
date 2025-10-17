@@ -431,7 +431,17 @@ export default function GenerateSummaryScreen() {
                   type="number"
                   min="1"
                   value={manualDays}
-                  onChange={(e) => setManualDays(Math.max(1, parseInt(e.target.value) || 1))}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === '' || value === '0') {
+                      setManualDays(1);
+                    } else {
+                      const numValue = parseInt(value);
+                      if (!isNaN(numValue) && numValue > 0) {
+                        setManualDays(numValue);
+                      }
+                    }
+                  }}
                   className="w-full px-3 py-2 border rounded text-sm bg-background"
                 />
                 <p className="text-xs text-muted-foreground mt-2">
