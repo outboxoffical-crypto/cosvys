@@ -226,6 +226,9 @@ export default function GenerateSummaryScreen() {
   };
 
   // Section 3: Labour Section
+  const [labourMode, setLabourMode] = useState<'auto' | 'manual'>('auto');
+  const [manualDays, setManualDays] = useState<number>(5);
+
   const renderLabourSection = () => {
     const workingHours = 7;
     const standardHours = 8;
@@ -340,6 +343,19 @@ export default function GenerateSummaryScreen() {
 
     const totalDays = tasks.reduce((sum, task) => sum + task.daysRequired, 0);
 
+    // Calculate labourers needed for manual mode
+    const totalWorkAllTasks = tasks.reduce((sum, task) => sum + task.totalWork, 0);
+    const averageCoverage = tasks.length > 0 
+      ? tasks.reduce((sum, task) => sum + task.coverage, 0) / tasks.length 
+      : 1000;
+    const adjustedAverageCoverage = averageCoverage * (workingHours / standardHours);
+    const laboursNeeded = manualDays > 0 
+      ? Math.ceil(totalWorkAllTasks / (adjustedAverageCoverage * manualDays))
+      : 1;
+
+    const displayDays = labourMode === 'auto' ? totalDays : manualDays;
+    const displayLabours = labourMode === 'auto' ? numberOfLabours : laboursNeeded;
+
     return (
       <Card className="mb-6">
         <CardHeader>
@@ -348,33 +364,73 @@ export default function GenerateSummaryScreen() {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {/* Task Breakdown */}
-            <div className="space-y-2">
-              <p className="font-semibold text-sm">Labour Calculation Breakdown</p>
-              {tasks.map((task, idx) => (
-                <div key={idx} className="p-3 border rounded text-sm bg-muted/30">
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="font-medium">{task.name}</span>
-                    <span className="font-bold text-primary">{task.daysRequired} days</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                    <p>Area: {task.area.toFixed(2)} sq.ft</p>
-                    <p>Coats: {task.coats}</p>
-                    <p>Total Work: {task.totalWork.toFixed(2)} sq.ft</p>
-                    <p>Coverage: {task.coverage} sq.ft/day</p>
-                  </div>
-                </div>
-              ))}
+            {/* Mode Selector */}
+            <div className="flex gap-2 p-1 bg-muted rounded-lg w-fit">
+              <Button
+                variant={labourMode === 'auto' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setLabourMode('auto')}
+                className="text-xs"
+              >
+                Auto
+              </Button>
+              <Button
+                variant={labourMode === 'manual' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setLabourMode('manual')}
+                className="text-xs"
+              >
+                Manual
+              </Button>
             </div>
+
+            {/* Manual Days Input */}
+            {labourMode === 'manual' && (
+              <div className="p-3 border rounded bg-muted/30">
+                <label className="text-sm font-medium mb-2 block">Desired Completion Days</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={manualDays}
+                  onChange={(e) => setManualDays(Math.max(1, parseInt(e.target.value) || 1))}
+                  className="w-full px-3 py-2 border rounded text-sm bg-background"
+                />
+                <p className="text-xs text-muted-foreground mt-2">
+                  Labourers needed: <span className="font-semibold text-foreground">{laboursNeeded}</span> per day
+                </p>
+              </div>
+            )}
+            {/* Task Breakdown */}
+            {labourMode === 'auto' && (
+              <div className="space-y-2">
+                <p className="font-semibold text-sm">Labour Calculation Breakdown</p>
+                {tasks.map((task, idx) => (
+                  <div key={idx} className="p-3 border rounded text-sm bg-muted/30">
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="font-medium">{task.name}</span>
+                      <span className="font-bold text-primary">{task.daysRequired} days</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                      <p>Area: {task.area.toFixed(2)} sq.ft</p>
+                      <p>Coats: {task.coats}</p>
+                      <p>Total Work: {task.totalWork.toFixed(2)} sq.ft</p>
+                      <p>Coverage: {task.coverage} sq.ft/day</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* Summary */}
             <div className="p-3 bg-primary/10 rounded border-2 border-primary/20">
               <div className="flex justify-between items-center">
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Project Duration</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">With {numberOfLabours} labour(s)</p>
+                  <p className="text-sm text-muted-foreground">
+                    {labourMode === 'auto' ? 'Total Project Duration' : 'Custom Project Duration'}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">With {displayLabours} labour(s)</p>
                 </div>
-                <p className="text-2xl font-bold text-primary">{totalDays} days</p>
+                <p className="text-2xl font-bold text-primary">{displayDays} days</p>
               </div>
             </div>
 
