@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,6 +36,11 @@ export default function GenerateSummaryScreen() {
   const [rooms, setRooms] = useState<any[]>([]);
   const [dealerMargin, setDealerMargin] = useState(0);
   const [paintType, setPaintType] = useState<string>('Interior');
+  const [labourMode, setLabourMode] = useState<'auto' | 'manual'>('auto');
+  const [manualDays, setManualDays] = useState<number>(5);
+  const [activeConfigIndex, setActiveConfigIndex] = useState(0);
+  const paintConfigRef = useRef<HTMLDivElement>(null);
+  const labourConfigRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadData();
@@ -98,6 +103,19 @@ export default function GenerateSummaryScreen() {
 
   // Section 1: Type of Interior & Wall Full Details
   const renderTypeDetails = () => {
+    const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+      const container = e.currentTarget;
+      const scrollLeft = container.scrollLeft;
+      const cardWidth = 288 + 16; // 72 * 4 (w-72) + gap-4
+      const newIndex = Math.round(scrollLeft / cardWidth);
+      setActiveConfigIndex(newIndex);
+      
+      // Sync labour carousel scroll
+      if (labourConfigRef.current && container === paintConfigRef.current) {
+        labourConfigRef.current.scrollLeft = scrollLeft;
+      }
+    };
+
     return (
       <Card className="mb-6">
         <CardHeader>
@@ -110,9 +128,9 @@ export default function GenerateSummaryScreen() {
               No paint configurations found. Please add them in Paint Estimation and click Generate Summary.
             </div>
           ) : (
-            <div className="-mx-4 px-4 overflow-x-auto scroll-smooth touch-pan-x">
+            <div ref={paintConfigRef} className="-mx-4 px-4 overflow-x-auto scroll-smooth touch-pan-x" onScroll={handleScroll}>
               <div className="flex gap-4 pb-2 snap-x snap-mandatory" style={{ minWidth: 'min-content' }}>
-                {areaConfigs.map((config) => {
+                {areaConfigs.map((config, index) => {
                   const area = Number(config.area) || 0;
                   const rate = parseFloat(config.perSqFtRate) || 0;
                   const cost = area * rate;
@@ -226,13 +244,24 @@ export default function GenerateSummaryScreen() {
   };
 
   // Section 3: Labour Section
-  const [labourMode, setLabourMode] = useState<'auto' | 'manual'>('auto');
-  const [manualDays, setManualDays] = useState<number>(5);
-
   const renderLabourSection = () => {
     const workingHours = 7;
     const standardHours = 8;
     const numberOfLabours = 1;
+
+    // Handle labour carousel scroll - sync with paint config carousel
+    const handleLabourScroll = (e: React.UIEvent<HTMLDivElement>) => {
+      const container = e.currentTarget;
+      const scrollLeft = container.scrollLeft;
+      const cardWidth = 288 + 16; // 72 * 4 (w-72) + gap-4
+      const newIndex = Math.round(scrollLeft / cardWidth);
+      setActiveConfigIndex(newIndex);
+      
+      // Sync paint config carousel scroll
+      if (paintConfigRef.current && container === labourConfigRef.current) {
+        paintConfigRef.current.scrollLeft = scrollLeft;
+      }
+    };
 
     // Coverage rates per labour per day (8 hrs) - using average values
     const coverageRates = {
@@ -249,7 +278,8 @@ export default function GenerateSummaryScreen() {
       }
     };
 
-    const tasks: any[] = [];
+    // Group tasks by configuration
+    const configTasks: any[] = [];
 
     areaConfigs.forEach(config => {
       const area = Number(config.area) || 0;
@@ -260,6 +290,8 @@ export default function GenerateSummaryScreen() {
                          config.selectedMaterials.primer?.toLowerCase().includes('oxide') ||
                          config.selectedMaterials.emulsion?.toLowerCase().includes('oil');
       
+      const tasks: any[] = [];
+      
       if (isFresh) {
         // Putty
         if (config.coatConfiguration.putty > 0) {
@@ -267,7 +299,7 @@ export default function GenerateSummaryScreen() {
           const adjustedCoverage = coverageRates.waterBased.putty * (workingHours / standardHours);
           const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
           tasks.push({
-            name: `Putty - ${config.label || config.areaType}`,
+            name: 'Putty',
             area,
             coats: config.coatConfiguration.putty,
             totalWork,
@@ -283,7 +315,7 @@ export default function GenerateSummaryScreen() {
           const adjustedCoverage = coverage * (workingHours / standardHours);
           const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
           tasks.push({
-            name: `Primer - ${config.label || config.areaType}`,
+            name: 'Primer',
             area,
             coats: config.coatConfiguration.primer,
             totalWork,
@@ -299,7 +331,7 @@ export default function GenerateSummaryScreen() {
           const adjustedCoverage = coverage * (workingHours / standardHours);
           const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
           tasks.push({
-            name: `${isOilBased ? 'Enamel' : 'Emulsion'} - ${config.label || config.areaType}`,
+            name: isOilBased ? 'Enamel' : 'Emulsion',
             area,
             coats: config.coatConfiguration.emulsion,
             totalWork,
@@ -315,7 +347,7 @@ export default function GenerateSummaryScreen() {
           const adjustedCoverage = coverage * (workingHours / standardHours);
           const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
           tasks.push({
-            name: `Primer - ${config.label || config.areaType}`,
+            name: 'Primer',
             area,
             coats: config.repaintingConfiguration.primer,
             totalWork,
@@ -330,7 +362,7 @@ export default function GenerateSummaryScreen() {
           const adjustedCoverage = coverage * (workingHours / standardHours);
           const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
           tasks.push({
-            name: `${isOilBased ? 'Enamel' : 'Emulsion'} - ${config.label || config.areaType}`,
+            name: isOilBased ? 'Enamel' : 'Emulsion',
             area,
             coats: config.repaintingConfiguration.emulsion,
             totalWork,
@@ -339,14 +371,21 @@ export default function GenerateSummaryScreen() {
           });
         }
       }
+
+      configTasks.push({
+        configLabel: config.label || config.areaType,
+        tasks,
+        totalDays: tasks.reduce((sum, task) => sum + task.daysRequired, 0),
+      });
     });
 
-    const totalDays = tasks.reduce((sum, task) => sum + task.daysRequired, 0);
-
+    const totalDays = configTasks.reduce((sum, ct) => sum + ct.totalDays, 0);
+    const allTasks = configTasks.flatMap(ct => ct.tasks);
+    
     // Calculate labourers needed for manual mode
-    const totalWorkAllTasks = tasks.reduce((sum, task) => sum + task.totalWork, 0);
-    const averageCoverage = tasks.length > 0 
-      ? tasks.reduce((sum, task) => sum + task.coverage, 0) / tasks.length 
+    const totalWorkAllTasks = allTasks.reduce((sum, task) => sum + task.totalWork, 0);
+    const averageCoverage = allTasks.length > 0 
+      ? allTasks.reduce((sum, task) => sum + task.coverage, 0) / allTasks.length 
       : 1000;
     const adjustedAverageCoverage = averageCoverage * (workingHours / standardHours);
     const laboursNeeded = manualDays > 0 
@@ -400,24 +439,47 @@ export default function GenerateSummaryScreen() {
                 </p>
               </div>
             )}
-            {/* Task Breakdown */}
-            {labourMode === 'auto' && (
-              <div className="space-y-2">
-                <p className="font-semibold text-sm">Labour Calculation Breakdown</p>
-                {tasks.map((task, idx) => (
-                  <div key={idx} className="p-3 border rounded text-sm bg-muted/30">
-                    <div className="flex justify-between items-start mb-2">
-                      <span className="font-medium">{task.name}</span>
-                      <span className="font-bold text-primary">{task.daysRequired} days</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                      <p>Area: {task.area.toFixed(2)} sq.ft</p>
-                      <p>Coats: {task.coats}</p>
-                      <p>Total Work: {task.totalWork.toFixed(2)} sq.ft</p>
-                      <p>Coverage: {task.coverage} sq.ft/day</p>
-                    </div>
+            {/* Labour Calculation Breakdown - Carousel Style */}
+            {labourMode === 'auto' && configTasks.length > 0 && (
+              <div>
+                <p className="font-semibold text-sm mb-2">Labour Calculation Breakdown</p>
+                <div ref={labourConfigRef} className="-mx-4 px-4 overflow-x-auto scroll-smooth touch-pan-x" onScroll={handleLabourScroll}>
+                  <div className="flex gap-4 pb-2 snap-x snap-mandatory" style={{ minWidth: 'min-content' }}>
+                    {configTasks.map((configTask, index) => (
+                      <div 
+                        key={index} 
+                        className={`snap-start flex-shrink-0 w-72 p-4 border rounded-lg shadow-sm transition-all ${
+                          index === activeConfigIndex ? 'bg-primary/5 border-primary' : 'bg-card'
+                        }`}
+                      >
+                        <div className="mb-3 pb-2 border-b">
+                          <p className="text-xs text-muted-foreground uppercase tracking-wide">Labour Required</p>
+                          <p className="font-semibold text-base mt-1">{configTask.configLabel}</p>
+                        </div>
+                        <div className="space-y-2">
+                          {configTask.tasks.map((task: any, taskIdx: number) => (
+                            <div key={taskIdx} className="p-2 bg-muted/30 rounded text-xs">
+                              <div className="flex justify-between items-center mb-1">
+                                <span className="font-medium">{task.name}</span>
+                                <span className="font-bold text-primary">{task.daysRequired} days</span>
+                              </div>
+                              <div className="grid grid-cols-2 gap-1 text-[10px] text-muted-foreground">
+                                <p>Area: {task.area.toFixed(0)} sq.ft</p>
+                                <p>Coats: {task.coats}</p>
+                                <p>Work: {task.totalWork.toFixed(0)} sq.ft</p>
+                                <p>Coverage: {task.coverage} sq.ft/day</p>
+                              </div>
+                            </div>
+                          ))}
+                          <div className="pt-2 mt-2 border-t flex justify-between items-center">
+                            <span className="text-xs font-medium">Total Days:</span>
+                            <span className="text-lg font-bold text-primary">{configTask.totalDays} days</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                </div>
               </div>
             )}
 
