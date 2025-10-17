@@ -496,24 +496,6 @@ export default function GenerateSummaryScreen() {
               </div>
             </div>
 
-            {/* Coverage Reference */}
-            <div className="mt-4 pt-3 border-t">
-              <p className="text-xs font-semibold mb-2">Coverage Rates (per labour/day, 8 hrs)</p>
-              <div className="grid grid-cols-2 gap-3 text-xs">
-                <div>
-                  <p className="font-medium mb-1">Water-Based:</p>
-                  <p className="text-muted-foreground">Putty: 700-900 sq.ft</p>
-                  <p className="text-muted-foreground">Primer: 800-1300 sq.ft</p>
-                  <p className="text-muted-foreground">Emulsion: 800-1300 sq.ft</p>
-                </div>
-                <div>
-                  <p className="font-medium mb-1">Oil-Based:</p>
-                  <p className="text-muted-foreground">Red Oxide: 300-400 sq.ft</p>
-                  <p className="text-muted-foreground">Enamel Base: 200-300 sq.ft</p>
-                  <p className="text-muted-foreground">Enamel Top: 150-250 sq.ft</p>
-                </div>
-              </div>
-            </div>
           </div>
         </CardContent>
       </Card>
