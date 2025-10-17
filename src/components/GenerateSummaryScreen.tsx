@@ -496,6 +496,29 @@ export default function GenerateSummaryScreen() {
               </div>
             </div>
 
+            {/* Per Day Labour - Only in Manual Mode */}
+            {labourMode === 'manual' && (
+              <div className="p-3 bg-muted/50 rounded border">
+                <div className="flex justify-between items-center">
+                  <p className="text-sm font-medium">Per Day Labour</p>
+                  <p className="text-xl font-bold">{laboursNeeded}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Total Labour */}
+            <div className="p-3 bg-muted/50 rounded border">
+              <div className="flex justify-between items-center">
+                <p className="text-sm font-medium">Total Labour</p>
+                <p className="text-xl font-bold">
+                  {labourMode === 'auto' ? totalDays : (manualDays * laboursNeeded)}
+                </p>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Total man-days required for the project
+              </p>
+            </div>
+
           </div>
         </CardContent>
       </Card>
