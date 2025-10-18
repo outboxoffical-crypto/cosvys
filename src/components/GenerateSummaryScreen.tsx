@@ -620,14 +620,13 @@ export default function GenerateSummaryScreen() {
     };
 
     // Helper function to calculate material requirements and cost
-    const calculateMaterial = (material: string, liters: number, isKg: boolean = false) => {
+    const calculateMaterial = (material: string, quantity: number) => {
       let materialKey = 'Emulsion';
       if (material.toLowerCase().includes('putty')) materialKey = 'Putty';
       else if (material.toLowerCase().includes('primer')) materialKey = 'Primer';
       else if (material.toLowerCase().includes('enamel')) materialKey = 'Enamel';
 
       const pricing = materialPricing[materialKey];
-      const quantity = isKg ? liters * 1.5 : liters; // Putty: 1L = 1.5kg approx
       const packsNeeded = Math.ceil(quantity / pricing.packSize);
       const totalCost = packsNeeded * pricing.pricePerPack;
 
@@ -652,13 +651,12 @@ export default function GenerateSummaryScreen() {
       if (isFresh) {
         // Putty
         if (config.selectedMaterials.putty && config.coatConfiguration.putty > 0) {
-          const coverage = 20; // sq ft per liter
-          const liters = (area / coverage) * config.coatConfiguration.putty;
-          const calc = calculateMaterial(config.selectedMaterials.putty, liters, true);
+          const coverage = 20; // sq ft per kg
+          const kgNeeded = (area / coverage) * config.coatConfiguration.putty;
+          const calc = calculateMaterial(config.selectedMaterials.putty, kgNeeded);
           materials.push({
             name: config.selectedMaterials.putty,
             type: 'Putty',
-            liters: liters.toFixed(2),
             ...calc,
           });
         }
@@ -666,12 +664,11 @@ export default function GenerateSummaryScreen() {
         // Primer
         if (config.selectedMaterials.primer && config.coatConfiguration.primer > 0) {
           const coverage = 120; // sq ft per liter
-          const liters = (area / coverage) * config.coatConfiguration.primer;
-          const calc = calculateMaterial(config.selectedMaterials.primer, liters);
+          const litersNeeded = (area / coverage) * config.coatConfiguration.primer;
+          const calc = calculateMaterial(config.selectedMaterials.primer, litersNeeded);
           materials.push({
             name: config.selectedMaterials.primer,
             type: 'Primer',
-            liters: liters.toFixed(2),
             ...calc,
           });
         }
@@ -679,12 +676,11 @@ export default function GenerateSummaryScreen() {
         // Emulsion
         if (config.selectedMaterials.emulsion && config.coatConfiguration.emulsion > 0) {
           const coverage = 120; // sq ft per liter
-          const liters = (area / coverage) * config.coatConfiguration.emulsion;
-          const calc = calculateMaterial(config.selectedMaterials.emulsion, liters);
+          const litersNeeded = (area / coverage) * config.coatConfiguration.emulsion;
+          const calc = calculateMaterial(config.selectedMaterials.emulsion, litersNeeded);
           materials.push({
             name: config.selectedMaterials.emulsion,
             type: config.selectedMaterials.emulsion.toLowerCase().includes('enamel') ? 'Enamel' : 'Emulsion',
-            liters: liters.toFixed(2),
             ...calc,
           });
         }
@@ -692,24 +688,22 @@ export default function GenerateSummaryScreen() {
         // Repainting
         if (config.selectedMaterials.primer && config.repaintingConfiguration?.primer && config.repaintingConfiguration.primer > 0) {
           const coverage = 120;
-          const liters = (area / coverage) * config.repaintingConfiguration.primer;
-          const calc = calculateMaterial(config.selectedMaterials.primer, liters);
+          const litersNeeded = (area / coverage) * config.repaintingConfiguration.primer;
+          const calc = calculateMaterial(config.selectedMaterials.primer, litersNeeded);
           materials.push({
             name: config.selectedMaterials.primer,
             type: 'Primer',
-            liters: liters.toFixed(2),
             ...calc,
           });
         }
         
         if (config.selectedMaterials.emulsion && config.repaintingConfiguration?.emulsion && config.repaintingConfiguration.emulsion > 0) {
           const coverage = 120;
-          const liters = (area / coverage) * config.repaintingConfiguration.emulsion;
-          const calc = calculateMaterial(config.selectedMaterials.emulsion, liters);
+          const litersNeeded = (area / coverage) * config.repaintingConfiguration.emulsion;
+          const calc = calculateMaterial(config.selectedMaterials.emulsion, litersNeeded);
           materials.push({
             name: config.selectedMaterials.emulsion,
             type: config.selectedMaterials.emulsion.toLowerCase().includes('enamel') ? 'Enamel' : 'Emulsion',
-            liters: liters.toFixed(2),
             ...calc,
           });
         }
@@ -744,20 +738,20 @@ export default function GenerateSummaryScreen() {
                       <p className="font-semibold text-base mt-1">{configMat.configLabel}</p>
                     </div>
                     <div className="space-y-2">
-                      {configMat.materials.map((mat: any, matIdx: number) => (
-                        <div key={matIdx} className="p-2 bg-muted/30 rounded text-xs">
-                          <div className="flex justify-between items-center mb-1">
-                            <span className="font-medium">{mat.name}</span>
-                            <span className="font-bold text-primary">{mat.quantity} {mat.unit}</span>
+                        {configMat.materials.map((mat: any, matIdx: number) => (
+                          <div key={matIdx} className="p-2 bg-muted/30 rounded text-xs">
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="font-medium">{mat.name}</span>
+                              <span className="font-bold text-primary">{mat.quantity} {mat.unit}</span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-1 text-[10px] text-muted-foreground">
+                              <p>Quantity: {mat.quantity} {mat.unit}</p>
+                              <p>Pack: {mat.packSize}{mat.unit}</p>
+                              <p>Packs: {mat.packsNeeded}</p>
+                              <p>Cost: ₹{mat.totalCost}</p>
+                            </div>
                           </div>
-                          <div className="grid grid-cols-2 gap-1 text-[10px] text-muted-foreground">
-                            <p>Liters: {mat.liters}L</p>
-                            <p>Pack: {mat.packSize}{mat.unit}</p>
-                            <p>Packs: {mat.packsNeeded}</p>
-                            <p>Cost: ₹{mat.totalCost}</p>
-                          </div>
-                        </div>
-                      ))}
+                        ))}
                       <div className="pt-2 mt-2 border-t flex justify-between items-center">
                         <span className="text-xs font-medium">Total Cost:</span>
                         <span className="text-lg font-bold text-primary">₹{configMat.totalCost.toFixed(2)}</span>
