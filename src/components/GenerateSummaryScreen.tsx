@@ -577,7 +577,7 @@ export default function GenerateSummaryScreen() {
                   <div className="flex justify-between items-center">
                     <p className="text-sm font-medium">Total Labour (Man-Days)</p>
                     <p className="text-xl font-bold">
-                      {manualDays * laboursNeeded}
+                      {totalDays}
                     </p>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
