@@ -39,6 +39,8 @@ export default function GenerateSummaryScreen() {
   const [labourMode, setLabourMode] = useState<'auto' | 'manual'>('auto');
   const [manualDays, setManualDays] = useState<number>(5);
   const [manualDaysInput, setManualDaysInput] = useState<string>('5');
+  const [autoLabourPerDay, setAutoLabourPerDay] = useState<number>(1);
+  const [autoLabourPerDayInput, setAutoLabourPerDayInput] = useState<string>('1');
   const [activeConfigIndex, setActiveConfigIndex] = useState(0);
   const paintConfigRef = useRef<HTMLDivElement>(null);
   const labourConfigRef = useRef<HTMLDivElement>(null);
@@ -393,8 +395,8 @@ export default function GenerateSummaryScreen() {
       ? Math.ceil(totalWorkAllTasks / (adjustedAverageCoverage * manualDays))
       : 1;
 
-    const displayDays = labourMode === 'auto' ? totalDays : manualDays;
-    const displayLabours = labourMode === 'auto' ? numberOfLabours : laboursNeeded;
+    const displayDays = labourMode === 'auto' ? Math.ceil(totalDays / autoLabourPerDay) : manualDays;
+    const displayLabours = labourMode === 'auto' ? autoLabourPerDay : laboursNeeded;
 
     return (
       <Card className="mb-6">
@@ -423,6 +425,40 @@ export default function GenerateSummaryScreen() {
                 Manual
               </Button>
             </div>
+
+            {/* Auto Mode - Per Day Labour Input */}
+            {labourMode === 'auto' && (
+              <div className="p-3 border rounded bg-muted/30">
+                <label className="text-sm font-medium mb-2 block">Per Day Labour</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={autoLabourPerDayInput}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setAutoLabourPerDayInput(value);
+                    const numValue = parseInt(value, 10);
+                    if (!isNaN(numValue) && numValue > 0) {
+                      setAutoLabourPerDay(numValue);
+                    }
+                  }}
+                  onBlur={() => {
+                    const numValue = parseInt(autoLabourPerDayInput, 10);
+                    if (isNaN(numValue) || numValue < 1) {
+                      setAutoLabourPerDay(1);
+                      setAutoLabourPerDayInput('1');
+                    } else {
+                      setAutoLabourPerDay(numValue);
+                      setAutoLabourPerDayInput(String(numValue));
+                    }
+                  }}
+                  className="w-full px-3 py-2 border rounded text-sm bg-background"
+                />
+                <p className="text-xs text-muted-foreground mt-2">
+                  Number of labourers you can arrange per day
+                </p>
+              </div>
+            )}
 
             {/* Manual Days Input */}
             {labourMode === 'manual' && (
@@ -524,10 +560,10 @@ export default function GenerateSummaryScreen() {
               </div>
             )}
 
-            {/* Total Labour */}
+            {/* Total Labour (Man-Days) */}
             <div className="p-3 bg-muted/50 rounded border">
               <div className="flex justify-between items-center">
-                <p className="text-sm font-medium">Total Labour</p>
+                <p className="text-sm font-medium">Total Labour (Man-Days)</p>
                 <p className="text-xl font-bold">
                   {labourMode === 'auto' ? totalDays : (manualDays * laboursNeeded)}
                 </p>
