@@ -44,6 +44,7 @@ export default function GenerateSummaryScreen() {
   const [activeConfigIndex, setActiveConfigIndex] = useState(0);
   const paintConfigRef = useRef<HTMLDivElement>(null);
   const labourConfigRef = useRef<HTMLDivElement>(null);
+  const materialConfigRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadData();
@@ -116,6 +117,10 @@ export default function GenerateSummaryScreen() {
       // Sync labour carousel scroll
       if (labourConfigRef.current && container === paintConfigRef.current) {
         labourConfigRef.current.scrollLeft = scrollLeft;
+      }
+      // Sync material carousel scroll
+      if (materialConfigRef.current && container === paintConfigRef.current) {
+        materialConfigRef.current.scrollLeft = scrollLeft;
       }
     };
 
@@ -263,6 +268,10 @@ export default function GenerateSummaryScreen() {
       // Sync paint config carousel scroll
       if (paintConfigRef.current && container === labourConfigRef.current) {
         paintConfigRef.current.scrollLeft = scrollLeft;
+      }
+      // Sync material config carousel scroll
+      if (materialConfigRef.current && container === labourConfigRef.current) {
+        materialConfigRef.current.scrollLeft = scrollLeft;
       }
     };
 
@@ -584,40 +593,135 @@ export default function GenerateSummaryScreen() {
 
   // Section 4: Material Section
   const renderMaterialSection = () => {
-    const materials: any = {};
-    
+    // Handle material carousel scroll - sync with paint config carousel
+    const handleMaterialScroll = (e: React.UIEvent<HTMLDivElement>) => {
+      const container = e.currentTarget;
+      const scrollLeft = container.scrollLeft;
+      const cardWidth = 288 + 16; // 72 * 4 (w-72) + gap-4
+      const newIndex = Math.round(scrollLeft / cardWidth);
+      setActiveConfigIndex(newIndex);
+      
+      // Sync paint config carousel scroll
+      if (paintConfigRef.current && container === materialConfigRef.current) {
+        paintConfigRef.current.scrollLeft = scrollLeft;
+      }
+      // Sync labour config carousel scroll
+      if (labourConfigRef.current && container === materialConfigRef.current) {
+        labourConfigRef.current.scrollLeft = scrollLeft;
+      }
+    };
+
+    // Material pack sizes and prices (example prices - adjust as needed)
+    const materialPricing: any = {
+      'Putty': { packSize: 40, unit: 'kg', pricePerPack: 800 },
+      'Primer': { packSize: 20, unit: 'L', pricePerPack: 1200 },
+      'Emulsion': { packSize: 20, unit: 'L', pricePerPack: 2500 },
+      'Enamel': { packSize: 4, unit: 'L', pricePerPack: 600 },
+    };
+
+    // Helper function to calculate material requirements and cost
+    const calculateMaterial = (material: string, liters: number, isKg: boolean = false) => {
+      let materialKey = 'Emulsion';
+      if (material.toLowerCase().includes('putty')) materialKey = 'Putty';
+      else if (material.toLowerCase().includes('primer')) materialKey = 'Primer';
+      else if (material.toLowerCase().includes('enamel')) materialKey = 'Enamel';
+
+      const pricing = materialPricing[materialKey];
+      const quantity = isKg ? liters * 1.5 : liters; // Putty: 1L = 1.5kg approx
+      const packsNeeded = Math.ceil(quantity / pricing.packSize);
+      const totalCost = packsNeeded * pricing.pricePerPack;
+
+      return {
+        quantity: quantity.toFixed(2),
+        unit: pricing.unit,
+        packsNeeded,
+        packSize: pricing.packSize,
+        totalCost,
+      };
+    };
+
+    // Group materials by configuration
+    const configMaterials: any[] = [];
+
     areaConfigs.forEach(config => {
       const area = Number(config.area) || 0;
       const isFresh = config.paintingSystem === 'Fresh Painting';
       
+      const materials: any[] = [];
+      
       if (isFresh) {
-        if (config.selectedMaterials.putty) {
+        // Putty
+        if (config.selectedMaterials.putty && config.coatConfiguration.putty > 0) {
           const coverage = 20; // sq ft per liter
           const liters = (area / coverage) * config.coatConfiguration.putty;
-          materials[config.selectedMaterials.putty] = (materials[config.selectedMaterials.putty] || 0) + liters;
+          const calc = calculateMaterial(config.selectedMaterials.putty, liters, true);
+          materials.push({
+            name: config.selectedMaterials.putty,
+            type: 'Putty',
+            liters: liters.toFixed(2),
+            ...calc,
+          });
         }
-        if (config.selectedMaterials.primer) {
+        
+        // Primer
+        if (config.selectedMaterials.primer && config.coatConfiguration.primer > 0) {
           const coverage = 120; // sq ft per liter
           const liters = (area / coverage) * config.coatConfiguration.primer;
-          materials[config.selectedMaterials.primer] = (materials[config.selectedMaterials.primer] || 0) + liters;
+          const calc = calculateMaterial(config.selectedMaterials.primer, liters);
+          materials.push({
+            name: config.selectedMaterials.primer,
+            type: 'Primer',
+            liters: liters.toFixed(2),
+            ...calc,
+          });
         }
-        if (config.selectedMaterials.emulsion) {
+        
+        // Emulsion
+        if (config.selectedMaterials.emulsion && config.coatConfiguration.emulsion > 0) {
           const coverage = 120; // sq ft per liter
           const liters = (area / coverage) * config.coatConfiguration.emulsion;
-          materials[config.selectedMaterials.emulsion] = (materials[config.selectedMaterials.emulsion] || 0) + liters;
+          const calc = calculateMaterial(config.selectedMaterials.emulsion, liters);
+          materials.push({
+            name: config.selectedMaterials.emulsion,
+            type: config.selectedMaterials.emulsion.toLowerCase().includes('enamel') ? 'Enamel' : 'Emulsion',
+            liters: liters.toFixed(2),
+            ...calc,
+          });
         }
       } else {
-        if (config.selectedMaterials.primer) {
+        // Repainting
+        if (config.selectedMaterials.primer && config.repaintingConfiguration?.primer && config.repaintingConfiguration.primer > 0) {
           const coverage = 120;
-          const liters = (area / coverage) * (config.repaintingConfiguration?.primer || 0);
-          materials[config.selectedMaterials.primer] = (materials[config.selectedMaterials.primer] || 0) + liters;
+          const liters = (area / coverage) * config.repaintingConfiguration.primer;
+          const calc = calculateMaterial(config.selectedMaterials.primer, liters);
+          materials.push({
+            name: config.selectedMaterials.primer,
+            type: 'Primer',
+            liters: liters.toFixed(2),
+            ...calc,
+          });
         }
-        if (config.selectedMaterials.emulsion) {
+        
+        if (config.selectedMaterials.emulsion && config.repaintingConfiguration?.emulsion && config.repaintingConfiguration.emulsion > 0) {
           const coverage = 120;
-          const liters = (area / coverage) * (config.repaintingConfiguration?.emulsion || 0);
-          materials[config.selectedMaterials.emulsion] = (materials[config.selectedMaterials.emulsion] || 0) + liters;
+          const liters = (area / coverage) * config.repaintingConfiguration.emulsion;
+          const calc = calculateMaterial(config.selectedMaterials.emulsion, liters);
+          materials.push({
+            name: config.selectedMaterials.emulsion,
+            type: config.selectedMaterials.emulsion.toLowerCase().includes('enamel') ? 'Enamel' : 'Emulsion',
+            liters: liters.toFixed(2),
+            ...calc,
+          });
         }
       }
+
+      const totalCost = materials.reduce((sum, m) => sum + m.totalCost, 0);
+      
+      configMaterials.push({
+        configLabel: config.label || config.areaType,
+        materials,
+        totalCost,
+      });
     });
 
     return (
@@ -626,15 +730,44 @@ export default function GenerateSummaryScreen() {
           <CardTitle className="text-lg">4. Material Section</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
-            <p className="font-semibold">Material Required</p>
-            {Object.entries(materials).map(([material, liters]) => (
-              <div key={material} className="flex justify-between text-sm p-2 border rounded">
-                <span>{material}</span>
-                <span>{(liters as number).toFixed(2)} Liters</span>
+          {areaConfigs.length === 0 ? (
+            <div className="text-sm text-muted-foreground p-4 border rounded-md bg-muted/30">
+              No material configurations found.
+            </div>
+          ) : (
+            <div ref={materialConfigRef} className="-mx-4 px-4 overflow-x-auto scroll-smooth touch-pan-x" onScroll={handleMaterialScroll}>
+              <div className="flex gap-4 pb-2 snap-x snap-mandatory" style={{ minWidth: 'min-content' }}>
+                {configMaterials.map((configMat, index) => (
+                  <div key={index} className="snap-start flex-shrink-0 w-72 p-4 border rounded-lg bg-card shadow-sm">
+                    <div className="mb-3 pb-2 border-b">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Material Required</p>
+                      <p className="font-semibold text-base mt-1">{configMat.configLabel}</p>
+                    </div>
+                    <div className="space-y-2">
+                      {configMat.materials.map((mat: any, matIdx: number) => (
+                        <div key={matIdx} className="p-2 bg-muted/30 rounded text-xs">
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="font-medium">{mat.name}</span>
+                            <span className="font-bold text-primary">{mat.quantity} {mat.unit}</span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-1 text-[10px] text-muted-foreground">
+                            <p>Liters: {mat.liters}L</p>
+                            <p>Pack: {mat.packSize}{mat.unit}</p>
+                            <p>Packs: {mat.packsNeeded}</p>
+                            <p>Cost: ₹{mat.totalCost}</p>
+                          </div>
+                        </div>
+                      ))}
+                      <div className="pt-2 mt-2 border-t flex justify-between items-center">
+                        <span className="text-xs font-medium">Total Cost:</span>
+                        <span className="text-lg font-bold text-primary">₹{configMat.totalCost.toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     );
