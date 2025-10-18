@@ -768,6 +768,21 @@ export default function GenerateSummaryScreen() {
               </div>
             </div>
           )}
+
+          {/* Total Cost Material Summary */}
+          {configMaterials.length > 0 && (
+            <div className="p-3 bg-primary/10 rounded border-2 border-primary/20 mt-4">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Cost Material</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">All configurations combined</p>
+                </div>
+                <p className="text-2xl font-bold text-primary">
+                  ₹{configMaterials.reduce((sum, cm) => sum + cm.totalCost, 0).toFixed(2)}
+                </p>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     );
