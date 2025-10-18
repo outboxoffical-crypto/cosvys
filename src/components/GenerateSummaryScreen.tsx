@@ -564,26 +564,28 @@ export default function GenerateSummaryScreen() {
 
             {/* Per Day Labour - Only in Manual Mode */}
             {labourMode === 'manual' && (
-              <div className="p-3 bg-muted/50 rounded border">
-                <div className="flex justify-between items-center">
-                  <p className="text-sm font-medium">Per Day Labour</p>
-                  <p className="text-xl font-bold">{laboursNeeded}</p>
+              <>
+                <div className="p-3 bg-muted/50 rounded border">
+                  <div className="flex justify-between items-center">
+                    <p className="text-sm font-medium">Per Day Labour</p>
+                    <p className="text-xl font-bold">{laboursNeeded}</p>
+                  </div>
                 </div>
-              </div>
-            )}
 
-            {/* Total Labour (Man-Days) */}
-            <div className="p-3 bg-muted/50 rounded border">
-              <div className="flex justify-between items-center">
-                <p className="text-sm font-medium">Total Labour (Man-Days)</p>
-                <p className="text-xl font-bold">
-                  {labourMode === 'auto' ? totalDays : (manualDays * laboursNeeded)}
-                </p>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Total man-days required for the project
-              </p>
-            </div>
+                {/* Total Labour (Man-Days) */}
+                <div className="p-3 bg-muted/50 rounded border">
+                  <div className="flex justify-between items-center">
+                    <p className="text-sm font-medium">Total Labour (Man-Days)</p>
+                    <p className="text-xl font-bold">
+                      {manualDays * laboursNeeded}
+                    </p>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Total man-days required for the project
+                  </p>
+                </div>
+              </>
+            )}
 
           </div>
         </CardContent>
