@@ -510,24 +510,27 @@ export default function GenerateSummaryScreen() {
                           <p className="text-xs text-muted-foreground uppercase tracking-wide">Labour Required</p>
                           <p className="font-semibold text-base mt-1">{configTask.configLabel}</p>
                         </div>
-                        <div className="space-y-2">
-                          {configTask.tasks.map((task: any, taskIdx: number) => (
-                            <div key={taskIdx} className="p-2 bg-muted/30 rounded text-xs">
-                              <div className="flex justify-between items-center mb-1">
-                                <span className="font-medium">{task.name}</span>
-                                <span className="font-bold text-primary">{task.daysRequired} days</span>
+                         <div className="space-y-2">
+                          {configTask.tasks.map((task: any, taskIdx: number) => {
+                            const adjustedDays = Math.ceil(task.daysRequired / autoLabourPerDay);
+                            return (
+                              <div key={taskIdx} className="p-2 bg-muted/30 rounded text-xs">
+                                <div className="flex justify-between items-center mb-1">
+                                  <span className="font-medium">{task.name}</span>
+                                  <span className="font-bold text-primary">{adjustedDays} days</span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-1 text-[10px] text-muted-foreground">
+                                  <p>Area: {task.area.toFixed(0)} sq.ft</p>
+                                  <p>Coats: {task.coats}</p>
+                                  <p>Work: {task.totalWork.toFixed(0)} sq.ft</p>
+                                  <p>Coverage: {task.coverage} sq.ft/day</p>
+                                </div>
                               </div>
-                              <div className="grid grid-cols-2 gap-1 text-[10px] text-muted-foreground">
-                                <p>Area: {task.area.toFixed(0)} sq.ft</p>
-                                <p>Coats: {task.coats}</p>
-                                <p>Work: {task.totalWork.toFixed(0)} sq.ft</p>
-                                <p>Coverage: {task.coverage} sq.ft/day</p>
-                              </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                           <div className="pt-2 mt-2 border-t flex justify-between items-center">
                             <span className="text-xs font-medium">Total Days:</span>
-                            <span className="text-lg font-bold text-primary">{configTask.totalDays} days</span>
+                            <span className="text-lg font-bold text-primary">{Math.ceil(configTask.totalDays / autoLabourPerDay)} days</span>
                           </div>
                         </div>
                       </div>
