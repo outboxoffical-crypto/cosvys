@@ -45,6 +45,7 @@ export default function GenerateSummaryScreen() {
   const paintConfigRef = useRef<HTMLDivElement>(null);
   const labourConfigRef = useRef<HTMLDivElement>(null);
   const materialConfigRef = useRef<HTMLDivElement>(null);
+  const perDayLabourCost = 1100; // Fixed per day labour cost in rupees
 
   useEffect(() => {
     loadData();
@@ -842,8 +843,82 @@ export default function GenerateSummaryScreen() {
       return sum + (area * rate);
     }, 0);
 
+    // Calculate labour details
+    const workingHours = 8;
+    const standardHours = 8;
+    const puttyOnlyCoverage = 300 * (workingHours / standardHours);
+    const primerCoverage = 1100 * (workingHours / standardHours);
+    const emulsionCoverage = 1000 * (workingHours / standardHours);
+
+    const configTasks = areaConfigs.map((config) => {
+      const area = Number(config.area) || 0;
+      const puttyCoats = config.coatConfiguration?.putty || 0;
+      const primerCoats = config.coatConfiguration?.primer || 0;
+      const emulsionCoats = config.coatConfiguration?.emulsion || 0;
+
+      let tasks = [];
+      if (puttyCoats > 0) {
+        const totalWork = area * puttyCoats;
+        const daysRequired = totalWork / puttyOnlyCoverage;
+        tasks.push({
+          name: `Putty (${puttyCoats} coat${puttyCoats > 1 ? 's' : ''})`,
+          area,
+          coats: puttyCoats,
+          totalWork,
+          coverage: puttyOnlyCoverage,
+          daysRequired,
+        });
+      }
+      if (primerCoats > 0) {
+        const totalWork = area * primerCoats;
+        const daysRequired = totalWork / primerCoverage;
+        tasks.push({
+          name: `Primer (${primerCoats} coat${primerCoats > 1 ? 's' : ''})`,
+          area,
+          coats: primerCoats,
+          totalWork,
+          coverage: primerCoverage,
+          daysRequired,
+        });
+      }
+      if (emulsionCoats > 0) {
+        const totalWork = area * emulsionCoats;
+        const daysRequired = totalWork / emulsionCoverage;
+        tasks.push({
+          name: `Emulsion (${emulsionCoats} coat${emulsionCoats > 1 ? 's' : ''})`,
+          area,
+          coats: emulsionCoats,
+          totalWork,
+          coverage: emulsionCoverage,
+          daysRequired,
+        });
+      }
+
+      const totalDays = tasks.reduce((sum, task) => sum + task.daysRequired, 0);
+      return { tasks, totalDays, configLabel: config.label || config.areaType };
+    });
+
+    const totalDays = configTasks.reduce((sum, ct) => sum + ct.totalDays, 0);
+    const allTasks = configTasks.flatMap(ct => ct.tasks);
+    const totalWorkAllTasks = allTasks.reduce((sum, task) => sum + task.totalWork, 0);
+    const averageCoverage = allTasks.length > 0 
+      ? allTasks.reduce((sum, task) => sum + task.coverage, 0) / allTasks.length 
+      : 1000;
+    const adjustedAverageCoverage = averageCoverage * (workingHours / standardHours);
+    const laboursNeeded = manualDays > 0 
+      ? Math.ceil(totalWorkAllTasks / (adjustedAverageCoverage * manualDays))
+      : 1;
+
+    // Calculate labour cost based on mode
+    let labourCost = 0;
+    if (labourMode === 'auto') {
+      const displayDays = Math.ceil(totalDays / autoLabourPerDay);
+      labourCost = perDayLabourCost * autoLabourPerDay * displayDays;
+    } else {
+      labourCost = perDayLabourCost * laboursNeeded * manualDays;
+    }
+
     const marginCost = (materialCost * dealerMargin) / 100;
-    const labourCost = 500; // placeholder
     const totalCost = materialCost + marginCost + labourCost;
 
     return (
@@ -867,6 +942,9 @@ export default function GenerateSummaryScreen() {
                 <span className="text-sm text-muted-foreground">Labour Cost</span>
                 <span className="text-base font-semibold text-foreground">₹{labourCost.toFixed(2)}</span>
               </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Per Day Labour Cost: ₹{perDayLabourCost}
+              </p>
             </div>
             <div className="p-3 bg-muted/30 rounded-lg border border-border">
               <div className="flex justify-between items-center">
