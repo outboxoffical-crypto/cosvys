@@ -793,7 +793,7 @@ export default function GenerateSummaryScreen() {
 
           {/* Total Cost Material Summary */}
           {configMaterials.length > 0 && (
-            <div className="p-3 bg-primary/10 rounded border-2 border-primary/20 mt-4">
+            <div className="p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border-2 border-primary mt-4">
               <div className="flex justify-between items-center">
                 <div>
                   <p className="text-sm text-muted-foreground">Total Cost Material</p>
