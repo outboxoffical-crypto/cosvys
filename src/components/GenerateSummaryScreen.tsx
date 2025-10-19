@@ -1028,7 +1028,7 @@ export default function GenerateSummaryScreen() {
   );
 
   const calculateTotalEstimatedCost = () => {
-    // Calculate material cost
+    // Calculate material cost directly from area configs
     let materialCost = 0;
     
     const materialPricing: any = {
@@ -1043,17 +1043,17 @@ export default function GenerateSummaryScreen() {
       const isFresh = config.paintingSystem === 'Fresh Painting';
       
       if (isFresh) {
-        if (config.selectedMaterials.putty && config.coatConfiguration.putty > 0) {
+        if (config.selectedMaterials?.putty && config.coatConfiguration?.putty > 0) {
           const kgNeeded = (area / 20) * config.coatConfiguration.putty;
           const packsNeeded = Math.ceil(kgNeeded / materialPricing.Putty.packSize);
           materialCost += packsNeeded * materialPricing.Putty.pricePerPack;
         }
-        if (config.selectedMaterials.primer && config.coatConfiguration.primer > 0) {
+        if (config.selectedMaterials?.primer && config.coatConfiguration?.primer > 0) {
           const litersNeeded = (area / 120) * config.coatConfiguration.primer;
           const packsNeeded = Math.ceil(litersNeeded / materialPricing.Primer.packSize);
           materialCost += packsNeeded * materialPricing.Primer.pricePerPack;
         }
-        if (config.selectedMaterials.emulsion && config.coatConfiguration.emulsion > 0) {
+        if (config.selectedMaterials?.emulsion && config.coatConfiguration?.emulsion > 0) {
           const litersNeeded = (area / 120) * config.coatConfiguration.emulsion;
           const isEnamel = config.selectedMaterials.emulsion.toLowerCase().includes('enamel');
           const key = isEnamel ? 'Enamel' : 'Emulsion';
@@ -1061,12 +1061,12 @@ export default function GenerateSummaryScreen() {
           materialCost += packsNeeded * materialPricing[key].pricePerPack;
         }
       } else {
-        if (config.selectedMaterials.primer && config.repaintingConfiguration?.primer && config.repaintingConfiguration.primer > 0) {
+        if (config.selectedMaterials?.primer && config.repaintingConfiguration?.primer && config.repaintingConfiguration.primer > 0) {
           const litersNeeded = (area / 120) * config.repaintingConfiguration.primer;
           const packsNeeded = Math.ceil(litersNeeded / materialPricing.Primer.packSize);
           materialCost += packsNeeded * materialPricing.Primer.pricePerPack;
         }
-        if (config.selectedMaterials.emulsion && config.repaintingConfiguration?.emulsion && config.repaintingConfiguration.emulsion > 0) {
+        if (config.selectedMaterials?.emulsion && config.repaintingConfiguration?.emulsion && config.repaintingConfiguration.emulsion > 0) {
           const litersNeeded = (area / 120) * config.repaintingConfiguration.emulsion;
           const isEnamel = config.selectedMaterials.emulsion.toLowerCase().includes('enamel');
           const key = isEnamel ? 'Enamel' : 'Emulsion';
@@ -1076,14 +1076,50 @@ export default function GenerateSummaryScreen() {
       }
     });
 
-    // Calculate labour cost
+    // Calculate labour cost based on current mode
     let labourCost = 0;
+    const workingHours = 7;
+    const standardHours = 8;
+    
     if (labourMode === 'auto') {
-      const totalDays = Math.ceil(areaConfigs.reduce((sum, config) => sum + (config.area || 0), 0) / (150 * autoLabourPerDay));
-      labourCost = perDayLabourCost * autoLabourPerDay * totalDays;
+      // Calculate total days needed
+      let totalDays = 0;
+      areaConfigs.forEach(config => {
+        const area = Number(config.area) || 0;
+        const isFresh = config.paintingSystem === 'Fresh Painting';
+        const coveragePerDay = 150; // sq ft per labour per day
+        
+        if (isFresh) {
+          if (config.coatConfiguration?.putty > 0) totalDays += Math.ceil((area * config.coatConfiguration.putty) / coveragePerDay);
+          if (config.coatConfiguration?.primer > 0) totalDays += Math.ceil((area * config.coatConfiguration.primer) / coveragePerDay);
+          if (config.coatConfiguration?.emulsion > 0) totalDays += Math.ceil((area * config.coatConfiguration.emulsion) / coveragePerDay);
+        } else {
+          if (config.repaintingConfiguration?.primer > 0) totalDays += Math.ceil((area * config.repaintingConfiguration.primer) / coveragePerDay);
+          if (config.repaintingConfiguration?.emulsion > 0) totalDays += Math.ceil((area * config.repaintingConfiguration.emulsion) / coveragePerDay);
+        }
+      });
+      
+      const adjustedDays = Math.ceil(totalDays / autoLabourPerDay);
+      labourCost = perDayLabourCost * autoLabourPerDay * adjustedDays;
     } else {
-      const totalWork = areaConfigs.reduce((sum, config) => sum + (config.area || 0), 0);
-      const laboursNeeded = Math.ceil(totalWork / (150 * manualDays));
+      // Manual mode - calculate labourers needed
+      let totalWork = 0;
+      areaConfigs.forEach(config => {
+        const area = Number(config.area) || 0;
+        const isFresh = config.paintingSystem === 'Fresh Painting';
+        
+        if (isFresh) {
+          if (config.coatConfiguration?.putty > 0) totalWork += area * config.coatConfiguration.putty;
+          if (config.coatConfiguration?.primer > 0) totalWork += area * config.coatConfiguration.primer;
+          if (config.coatConfiguration?.emulsion > 0) totalWork += area * config.coatConfiguration.emulsion;
+        } else {
+          if (config.repaintingConfiguration?.primer > 0) totalWork += area * config.repaintingConfiguration.primer;
+          if (config.repaintingConfiguration?.emulsion > 0) totalWork += area * config.repaintingConfiguration.emulsion;
+        }
+      });
+      
+      const coveragePerDay = 150;
+      const laboursNeeded = Math.ceil(totalWork / (coveragePerDay * manualDays));
       labourCost = perDayLabourCost * laboursNeeded * manualDays;
     }
 
