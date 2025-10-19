@@ -573,7 +573,7 @@ export default function GenerateSummaryScreen() {
             </div>
 
             {/* Total Labour Cost */}
-            <div className="p-4 bg-background rounded-lg border border-border eca-shadow">
+            <div className="p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border-2 border-primary">
               <div className="flex justify-between items-center">
                 <div>
                   <p className="text-sm font-semibold text-foreground">Total Labour Cost</p>
