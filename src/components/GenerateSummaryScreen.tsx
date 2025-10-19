@@ -522,7 +522,7 @@ export default function GenerateSummaryScreen() {
                       <div 
                         key={index} 
                         className={`snap-start flex-shrink-0 w-72 p-4 border border-border rounded-lg eca-shadow transition-all ${
-                          index === activeConfigIndex ? 'bg-primary/5 border-primary' : 'bg-muted/30'
+                          index === activeConfigIndex ? 'bg-background border-primary' : 'bg-background'
                         }`}
                       >
                         <div className="mb-3 pb-2 border-b border-border">
@@ -596,7 +596,7 @@ export default function GenerateSummaryScreen() {
                 </div>
 
                 {/* Total Labour (Man-Days) */}
-                <div className="p-3 bg-primary/5 rounded-lg border border-primary/20">
+                <div className="p-3 bg-background rounded-lg border border-border">
                   <div className="flex justify-between items-center">
                     <p className="text-sm font-medium text-muted-foreground">Total Labour (Man-Days)</p>
                     <p className="text-xl font-bold text-primary">
