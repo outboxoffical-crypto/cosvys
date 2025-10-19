@@ -572,6 +572,19 @@ export default function GenerateSummaryScreen() {
               </div>
             </div>
 
+            {/* Total Labour Cost */}
+            <div className="p-4 bg-card rounded-lg border border-border eca-shadow">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Total Labour Cost</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Estimated total labour expense for the project</p>
+                </div>
+                <p className="text-2xl font-bold text-primary">
+                  ₹{(displayLabours * displayDays * perDayLabourCost).toLocaleString('en-IN')}
+                </p>
+              </div>
+            </div>
+
             {/* Per Day Labour - Only in Manual Mode */}
             {labourMode === 'manual' && (
               <>
