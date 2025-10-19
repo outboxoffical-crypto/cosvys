@@ -560,7 +560,7 @@ export default function GenerateSummaryScreen() {
             )}
 
             {/* Summary */}
-            <div className="p-4 bg-card rounded-lg border border-border eca-shadow">
+            <div className="p-4 bg-background rounded-lg border border-border eca-shadow">
               <div className="flex justify-between items-center">
                 <div>
                   <p className="text-sm text-muted-foreground font-medium">
@@ -573,7 +573,7 @@ export default function GenerateSummaryScreen() {
             </div>
 
             {/* Total Labour Cost */}
-            <div className="p-4 bg-card rounded-lg border border-border eca-shadow">
+            <div className="p-4 bg-background rounded-lg border border-border eca-shadow">
               <div className="flex justify-between items-center">
                 <div>
                   <p className="text-sm font-semibold text-foreground">Total Labour Cost</p>
