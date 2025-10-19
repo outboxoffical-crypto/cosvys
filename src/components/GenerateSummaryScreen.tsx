@@ -847,7 +847,7 @@ export default function GenerateSummaryScreen() {
     const totalCost = materialCost + marginCost + labourCost;
 
     return (
-      <Card className="eca-shadow bg-primary/5 border-primary/20">
+      <Card className="eca-shadow bg-card border-primary/20">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg font-semibold">
             <DollarSign className="h-5 w-5 text-primary" />
