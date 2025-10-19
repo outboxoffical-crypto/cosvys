@@ -2,8 +2,11 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, FileText, Palette, Home, Users, Package, TrendingUp, DollarSign } from "lucide-react";
+import { ArrowLeft, FileText, Palette, Home, Users, Package, TrendingUp, DollarSign, Phone, MapPin, Download, Share2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
 
 interface AreaConfig {
   id: string;
@@ -31,6 +34,7 @@ interface AreaConfig {
 export default function GenerateSummaryScreen() {
   const navigate = useNavigate();
   const { projectId } = useParams();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [areaConfigs, setAreaConfigs] = useState<AreaConfig[]>([]);
   const [rooms, setRooms] = useState<any[]>([]);
@@ -46,6 +50,7 @@ export default function GenerateSummaryScreen() {
   const labourConfigRef = useRef<HTMLDivElement>(null);
   const materialConfigRef = useRef<HTMLDivElement>(null);
   const perDayLabourCost = 1100; // Fixed per day labour cost in rupees
+  const [projectData, setProjectData] = useState<any>(null);
 
   useEffect(() => {
     loadData();
@@ -53,6 +58,10 @@ export default function GenerateSummaryScreen() {
 
   const loadData = async () => {
     try {
+      // Load project data
+      const project = localStorage.getItem(`project_${projectId}`);
+      if (project) setProjectData(JSON.parse(project));
+
       // Prefer snapshot saved when user clicked Continue in Estimation
       const estimationKey = `estimation_${projectId}`;
       const estimationStr = localStorage.getItem(estimationKey);
@@ -1009,6 +1018,106 @@ export default function GenerateSummaryScreen() {
     );
   }
 
+  const totalAreas = rooms.reduce(
+    (acc, room) => ({
+      floorArea: acc.floorArea + (room.floor_area || 0),
+      wallArea: acc.wallArea + (room.wall_area || 0),
+      ceilingArea: acc.ceilingArea + (room.ceiling_area || 0)
+    }),
+    { floorArea: 0, wallArea: 0, ceilingArea: 0 }
+  );
+
+  const calculateTotalEstimatedCost = () => {
+    // Calculate material cost
+    let materialCost = 0;
+    
+    const materialPricing: any = {
+      'Putty': { packSize: 40, unit: 'kg', pricePerPack: 800 },
+      'Primer': { packSize: 20, unit: 'L', pricePerPack: 1200 },
+      'Emulsion': { packSize: 20, unit: 'L', pricePerPack: 2500 },
+      'Enamel': { packSize: 4, unit: 'L', pricePerPack: 600 },
+    };
+
+    areaConfigs.forEach(config => {
+      const area = Number(config.area) || 0;
+      const isFresh = config.paintingSystem === 'Fresh Painting';
+      
+      if (isFresh) {
+        if (config.selectedMaterials.putty && config.coatConfiguration.putty > 0) {
+          const kgNeeded = (area / 20) * config.coatConfiguration.putty;
+          const packsNeeded = Math.ceil(kgNeeded / materialPricing.Putty.packSize);
+          materialCost += packsNeeded * materialPricing.Putty.pricePerPack;
+        }
+        if (config.selectedMaterials.primer && config.coatConfiguration.primer > 0) {
+          const litersNeeded = (area / 120) * config.coatConfiguration.primer;
+          const packsNeeded = Math.ceil(litersNeeded / materialPricing.Primer.packSize);
+          materialCost += packsNeeded * materialPricing.Primer.pricePerPack;
+        }
+        if (config.selectedMaterials.emulsion && config.coatConfiguration.emulsion > 0) {
+          const litersNeeded = (area / 120) * config.coatConfiguration.emulsion;
+          const isEnamel = config.selectedMaterials.emulsion.toLowerCase().includes('enamel');
+          const key = isEnamel ? 'Enamel' : 'Emulsion';
+          const packsNeeded = Math.ceil(litersNeeded / materialPricing[key].packSize);
+          materialCost += packsNeeded * materialPricing[key].pricePerPack;
+        }
+      } else {
+        if (config.selectedMaterials.primer && config.repaintingConfiguration?.primer && config.repaintingConfiguration.primer > 0) {
+          const litersNeeded = (area / 120) * config.repaintingConfiguration.primer;
+          const packsNeeded = Math.ceil(litersNeeded / materialPricing.Primer.packSize);
+          materialCost += packsNeeded * materialPricing.Primer.pricePerPack;
+        }
+        if (config.selectedMaterials.emulsion && config.repaintingConfiguration?.emulsion && config.repaintingConfiguration.emulsion > 0) {
+          const litersNeeded = (area / 120) * config.repaintingConfiguration.emulsion;
+          const isEnamel = config.selectedMaterials.emulsion.toLowerCase().includes('enamel');
+          const key = isEnamel ? 'Enamel' : 'Emulsion';
+          const packsNeeded = Math.ceil(litersNeeded / materialPricing[key].packSize);
+          materialCost += packsNeeded * materialPricing[key].pricePerPack;
+        }
+      }
+    });
+
+    // Calculate labour cost
+    let labourCost = 0;
+    if (labourMode === 'auto') {
+      const totalDays = Math.ceil(areaConfigs.reduce((sum, config) => sum + (config.area || 0), 0) / (150 * autoLabourPerDay));
+      labourCost = perDayLabourCost * autoLabourPerDay * totalDays;
+    } else {
+      const totalWork = areaConfigs.reduce((sum, config) => sum + (config.area || 0), 0);
+      const laboursNeeded = Math.ceil(totalWork / (150 * manualDays));
+      labourCost = perDayLabourCost * laboursNeeded * manualDays;
+    }
+
+    const marginCost = (materialCost * dealerMargin) / 100;
+    return materialCost + labourCost + marginCost;
+  };
+
+  const handleExportPDF = () => {
+    toast({
+      title: "Export PDF",
+      description: "Exporting project summary as PDF...",
+    });
+  };
+
+  const handleExportExcel = () => {
+    toast({
+      title: "Export Excel",
+      description: "Exporting project data to Excel...",
+    });
+  };
+
+  const handleShareWhatsApp = () => {
+    const message = `ECA Pro Project Summary\n\nCustomer: ${projectData?.customerName}\nTotal Area: ${totalAreas.wallArea.toFixed(1)} sq.ft\nEstimated Cost: ₹${calculateTotalEstimatedCost().toLocaleString()}\n\nGenerated by Asian Paints ECA Pro`;
+    const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
+  };
+
+  const handleShareEmail = () => {
+    const subject = `Project Summary - ${projectData?.customerName}`;
+    const body = `Please find the project summary for ${projectData?.customerName}.\n\nTotal Area: ${totalAreas.wallArea.toFixed(1)} sq.ft\nEstimated Cost: ₹${calculateTotalEstimatedCost().toLocaleString()}\n\nGenerated by Asian Paints ECA Pro`;
+    const url = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.open(url);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -1024,21 +1133,185 @@ export default function GenerateSummaryScreen() {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
-              <h1 className="text-xl font-semibold">Generate Summary</h1>
-              <p className="text-white/80 text-sm">Complete project cost breakdown</p>
+              <h1 className="text-xl font-semibold">Project Summary</h1>
+              <p className="text-white/80 text-sm">Complete project overview</p>
             </div>
           </div>
           <FileText className="h-6 w-6" />
         </div>
       </div>
 
-      <div className="p-4 space-y-4">
-        {renderTypeDetails()}
-        {renderRoomDetails()}
-        {renderLabourSection()}
-        {renderMaterialSection()}
-        {renderDealerMargin()}
-        {renderTotalCost()}
+      <div className="p-4">
+        <Tabs defaultValue="generate" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsTrigger value="generate">Generate Summary</TabsTrigger>
+            <TabsTrigger value="summary">Project Summary</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="generate" className="space-y-4">
+            {renderTypeDetails()}
+            {renderRoomDetails()}
+            {renderLabourSection()}
+            {renderMaterialSection()}
+            {renderDealerMargin()}
+            {renderTotalCost()}
+          </TabsContent>
+
+          <TabsContent value="summary" className="space-y-6">
+            {/* Customer Details */}
+            <Card className="eca-shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center text-lg">
+                  <Home className="mr-2 h-5 w-5 text-primary" />
+                  Customer Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center">
+                  <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center mr-3">
+                    <div className="w-2 h-2 bg-primary rounded-full"></div>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">{projectData?.customerName || 'N/A'}</p>
+                    <p className="text-sm text-muted-foreground">Customer Name</p>
+                  </div>
+                </div>
+                <div className="flex items-center">
+                  <Phone className="h-4 w-4 text-muted-foreground mr-3 ml-1" />
+                  <div>
+                    <p className="font-medium text-foreground">{projectData?.mobile || 'N/A'}</p>
+                    <p className="text-sm text-muted-foreground">Mobile Number</p>
+                  </div>
+                </div>
+                <div className="flex items-start">
+                  <MapPin className="h-4 w-4 text-muted-foreground mr-3 ml-1 mt-1" />
+                  <div>
+                    <p className="font-medium text-foreground">{projectData?.address || 'N/A'}</p>
+                    <p className="text-sm text-muted-foreground">Address</p>
+                  </div>
+                </div>
+                <div className="flex items-center">
+                  <Badge variant="outline" className="bg-accent">
+                    {projectData?.projectType || paintType} Project
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Room Measurements */}
+            <Card className="eca-shadow">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg">Room Measurements</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="eca-gradient text-white rounded-lg p-4">
+                  <div className="grid grid-cols-3 gap-4 text-center">
+                    <div>
+                      <p className="text-white/80 text-sm">Total Floor</p>
+                      <p className="text-xl font-bold">{totalAreas.floorArea.toFixed(1)}</p>
+                      <p className="text-white/80 text-xs">sq.ft</p>
+                    </div>
+                    <div>
+                      <p className="text-white/80 text-sm">Total Wall</p>
+                      <p className="text-xl font-bold">{totalAreas.wallArea.toFixed(1)}</p>
+                      <p className="text-white/80 text-xs">sq.ft</p>
+                    </div>
+                    <div>
+                      <p className="text-white/80 text-sm">Total Ceiling</p>
+                      <p className="text-xl font-bold">{totalAreas.ceilingArea.toFixed(1)}</p>
+                      <p className="text-white/80 text-xs">sq.ft</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Paint & Cost Details */}
+            <Card className="eca-shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center text-lg">
+                  <Palette className="mr-2 h-5 w-5 text-primary" />
+                  Paint & Cost Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Selected Product:</p>
+                    <p className="font-semibold text-foreground">
+                      {areaConfigs.length > 0 ? areaConfigs[0].paintingSystem : 'No product selected'}
+                    </p>
+                    <p className="text-sm text-muted-foreground">{paintType} Paint</p>
+                  </div>
+                  <span className="text-sm text-muted-foreground">N/A</span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-3 bg-muted/30 rounded-lg border border-border text-center">
+                    <p className="text-sm text-muted-foreground mb-1">Paint Required</p>
+                    <p className="text-2xl font-bold text-foreground">N/A</p>
+                    <p className="text-xs text-muted-foreground">Liters (2 coats)</p>
+                  </div>
+                  <div className="p-3 bg-muted/30 rounded-lg border border-border text-center">
+                    <p className="text-sm text-muted-foreground mb-1">Area Coverage</p>
+                    <p className="text-2xl font-bold text-foreground">N/A</p>
+                    <p className="text-xs text-muted-foreground">sq.ft</p>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 rounded-lg border border-red-200 dark:border-red-800">
+                  <p className="text-sm text-red-700 dark:text-red-300 mb-2 font-medium">Estimated Total Cost</p>
+                  <p className="text-3xl font-bold text-red-700 dark:text-red-300">
+                    ₹{calculateTotalEstimatedCost().toLocaleString()}
+                  </p>
+                  <p className="text-xs text-red-600 dark:text-red-400 mt-1">Including material cost</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Export & Share */}
+            <Card className="eca-shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center text-lg">
+                  <Share2 className="mr-2 h-5 w-5 text-primary" />
+                  Export & Share
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    variant="outline"
+                    className="flex items-center justify-center gap-2"
+                    onClick={handleExportPDF}
+                  >
+                    <FileText className="h-4 w-4" />
+                    Export PDF
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="flex items-center justify-center gap-2"
+                    onClick={handleExportExcel}
+                  >
+                    <Download className="h-4 w-4" />
+                    Export Excel
+                  </Button>
+                </div>
+                <Button
+                  className="w-full bg-green-600 hover:bg-green-700 text-white"
+                  onClick={handleShareWhatsApp}
+                >
+                  Share WhatsApp
+                </Button>
+                <Button
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+                  onClick={handleShareEmail}
+                >
+                  Share Email
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
