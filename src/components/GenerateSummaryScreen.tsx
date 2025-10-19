@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, FileText } from "lucide-react";
+import { ArrowLeft, FileText, Palette, Home, Users, Package, TrendingUp, DollarSign } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface AreaConfig {
@@ -125,10 +125,13 @@ export default function GenerateSummaryScreen() {
     };
 
     return (
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="text-lg">1. Type of Interior & Wall Full Details</CardTitle>
-          <p className="text-sm text-muted-foreground mt-1">Paint configuration summary from {paintType} section</p>
+      <Card className="eca-shadow">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+            <Palette className="h-5 w-5 text-primary" />
+            Paint Configuration Details
+          </CardTitle>
+          <p className="text-sm text-muted-foreground mt-1">Summary from {paintType} section</p>
         </CardHeader>
         <CardContent>
           {areaConfigs.length === 0 ? (
@@ -147,35 +150,35 @@ export default function GenerateSummaryScreen() {
                     : `Primer: ${config.repaintingConfiguration?.primer || 0}, Emulsion: ${config.repaintingConfiguration?.emulsion || 0}`;
 
                   return (
-                    <div key={config.id} className="snap-start flex-shrink-0 w-72 p-4 border rounded-lg bg-card shadow-sm">
-                      <div className="mb-3 pb-2 border-b">
-                        <p className="text-xs text-muted-foreground uppercase tracking-wide">{paintType}</p>
-                        <p className="font-semibold text-base mt-1">{config.label || config.areaType}</p>
+                    <div key={config.id} className="snap-start flex-shrink-0 w-72 p-4 border border-border rounded-lg bg-muted/30 eca-shadow">
+                      <div className="mb-3 pb-2 border-b border-border">
+                        <p className="text-xs text-primary uppercase tracking-wide font-medium">{paintType}</p>
+                        <p className="font-semibold text-base mt-1 text-foreground">{config.label || config.areaType}</p>
                       </div>
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Paint Type:</span>
-                          <span className="font-medium">{config.areaType}</span>
+                          <span className="font-medium text-foreground">{config.areaType}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Painting System:</span>
-                          <span className="font-medium">{config.paintingSystem || '-'}</span>
+                          <span className="font-medium text-foreground">{config.paintingSystem || '-'}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Coats:</span>
-                          <span className="font-medium text-xs">{coats}</span>
+                          <span className="font-medium text-foreground text-xs">{coats}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Area Sq.Ft:</span>
-                          <span className="font-medium">{area.toFixed(2)}</span>
+                          <span className="font-medium text-foreground">{area.toFixed(2)}</span>
                         </div>
-                        <div className="pt-2 mt-2 border-t space-y-1.5">
+                        <div className="pt-2 mt-2 border-t border-border space-y-1.5">
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Per Sq.Ft Rate:</span>
-                            <span className="font-semibold">₹{rate.toFixed(2)}</span>
+                            <span className="font-semibold text-foreground">₹{rate.toFixed(2)}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-muted-foreground">Cost of Sq.Ft:</span>
+                            <span className="text-foreground">Cost of Sq.Ft:</span>
                             <span className="font-bold text-primary">₹{cost.toFixed(2)}</span>
                           </div>
                         </div>
@@ -205,29 +208,32 @@ export default function GenerateSummaryScreen() {
     });
 
     return (
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="text-lg">2. Total Room Details</CardTitle>
+      <Card className="eca-shadow">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+            <Home className="h-5 w-5 text-primary" />
+            Total Room Details
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
             {/* Individual Rooms First */}
             <div className="space-y-2">
-              <p className="font-semibold">Individual Rooms</p>
+              <p className="font-semibold text-foreground">Individual Rooms</p>
               {rooms.map(room => {
                 const selectedAreas = room.selected_areas || { floor: true, wall: true, ceiling: false };
                 return (
-                  <div key={room.id} className="p-2 border rounded text-sm">
-                    <p className="font-medium">{room.name}</p>
-                    <div className="flex flex-wrap gap-3 mt-1 text-xs">
+                  <div key={room.id} className="p-3 border border-border rounded-lg text-sm bg-muted/30 eca-shadow">
+                    <p className="font-medium text-foreground">{room.name}</p>
+                    <div className="flex flex-wrap gap-3 mt-2 text-xs text-muted-foreground">
                       {selectedAreas.floor && (
-                        <p>Floor: {Number(room.floor_area || 0).toFixed(2)} Sq. Ft</p>
+                        <p>Floor: <span className="font-medium text-foreground">{Number(room.floor_area || 0).toFixed(2)} Sq. Ft</span></p>
                       )}
                       {selectedAreas.wall && (
-                        <p>Wall: {Number(room.adjusted_wall_area || room.wall_area || 0).toFixed(2)} Sq. Ft</p>
+                        <p>Wall: <span className="font-medium text-foreground">{Number(room.adjusted_wall_area || room.wall_area || 0).toFixed(2)} Sq. Ft</span></p>
                       )}
                       {selectedAreas.ceiling && (
-                        <p>Ceiling: {Number(room.ceiling_area || 0).toFixed(2)} Sq. Ft</p>
+                        <p>Ceiling: <span className="font-medium text-foreground">{Number(room.ceiling_area || 0).toFixed(2)} Sq. Ft</span></p>
                       )}
                     </div>
                   </div>
@@ -236,13 +242,13 @@ export default function GenerateSummaryScreen() {
             </div>
 
             {/* Totals Second with Project Type */}
-            <div className="p-3 bg-muted rounded">
-              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">{paintType}</p>
-              <p className="font-semibold">Totals</p>
-              <div className="flex flex-wrap gap-3 text-sm mt-2">
-                {totalFloor > 0 && <p>Floor: {totalFloor.toFixed(2)} Sq. Ft</p>}
-                {totalWall > 0 && <p>Wall: {totalWall.toFixed(2)} Sq. Ft</p>}
-                {totalCeiling > 0 && <p>Ceiling: {totalCeiling.toFixed(2)} Sq. Ft</p>}
+            <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
+              <p className="text-xs text-primary uppercase tracking-wide font-medium mb-2">{paintType}</p>
+              <p className="font-semibold text-foreground text-base">Project Totals</p>
+              <div className="flex flex-wrap gap-4 text-sm mt-3">
+                {totalFloor > 0 && <p className="text-muted-foreground">Floor: <span className="font-semibold text-foreground">{totalFloor.toFixed(2)} Sq. Ft</span></p>}
+                {totalWall > 0 && <p className="text-muted-foreground">Wall: <span className="font-semibold text-foreground">{totalWall.toFixed(2)} Sq. Ft</span></p>}
+                {totalCeiling > 0 && <p className="text-muted-foreground">Ceiling: <span className="font-semibold text-foreground">{totalCeiling.toFixed(2)} Sq. Ft</span></p>}
               </div>
             </div>
           </div>
@@ -408,9 +414,12 @@ export default function GenerateSummaryScreen() {
     const displayLabours = labourMode === 'auto' ? autoLabourPerDay : laboursNeeded;
 
     return (
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="text-lg">3. Labour Section</CardTitle>
+      <Card className="eca-shadow">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+            <Users className="h-5 w-5 text-primary" />
+            Labour Calculation
+          </CardTitle>
           <p className="text-sm text-muted-foreground mt-1">Based on {workingHours} working hours per day</p>
         </CardHeader>
         <CardContent>
@@ -437,8 +446,8 @@ export default function GenerateSummaryScreen() {
 
             {/* Auto Mode - Per Day Labour Input */}
             {labourMode === 'auto' && (
-              <div className="p-3 border rounded bg-muted/30">
-                <label className="text-sm font-medium mb-2 block">Per Day Labour</label>
+              <div className="p-3 border border-border rounded-lg bg-muted/30">
+                <label className="text-sm font-medium mb-2 block text-foreground">Per Day Labour</label>
                 <input
                   type="number"
                   min="1"
@@ -461,7 +470,7 @@ export default function GenerateSummaryScreen() {
                       setAutoLabourPerDayInput(String(numValue));
                     }
                   }}
-                  className="w-full px-3 py-2 border rounded text-sm bg-background"
+                  className="w-full px-3 py-2 border border-input-border rounded text-sm bg-background"
                 />
                 <p className="text-xs text-muted-foreground mt-2">
                   Number of labourers you can arrange per day
@@ -471,8 +480,8 @@ export default function GenerateSummaryScreen() {
 
             {/* Manual Days Input */}
             {labourMode === 'manual' && (
-              <div className="p-3 border rounded bg-muted/30">
-                <label className="text-sm font-medium mb-2 block">Desired Completion Days</label>
+              <div className="p-3 border border-border rounded-lg bg-muted/30">
+                <label className="text-sm font-medium mb-2 block text-foreground">Desired Completion Days</label>
                 <input
                   type="number"
                   min="1"
@@ -495,50 +504,50 @@ export default function GenerateSummaryScreen() {
                       setManualDaysInput(String(numValue));
                     }
                   }}
-                  className="w-full px-3 py-2 border rounded text-sm bg-background"
+                  className="w-full px-3 py-2 border border-input-border rounded text-sm bg-background"
                 />
                 <p className="text-xs text-muted-foreground mt-2">
-                  Labourers needed: <span className="font-semibold text-foreground">{laboursNeeded}</span> per day
+                  Labourers needed: <span className="font-semibold text-primary">{laboursNeeded}</span> per day
                 </p>
               </div>
             )}
             {/* Labour Calculation Breakdown - Carousel Style */}
             {labourMode === 'auto' && configTasks.length > 0 && (
               <div>
-                <p className="font-semibold text-sm mb-2">Labour Calculation Breakdown</p>
+                <p className="font-semibold text-sm mb-2 text-foreground">Labour Calculation Breakdown</p>
                 <div ref={labourConfigRef} className="-mx-4 px-4 overflow-x-auto scroll-smooth touch-pan-x" onScroll={handleLabourScroll}>
                   <div className="flex gap-4 pb-2 snap-x snap-mandatory" style={{ minWidth: 'min-content' }}>
                     {configTasks.map((configTask, index) => (
                       <div 
                         key={index} 
-                        className={`snap-start flex-shrink-0 w-72 p-4 border rounded-lg shadow-sm transition-all ${
-                          index === activeConfigIndex ? 'bg-primary/5 border-primary' : 'bg-card'
+                        className={`snap-start flex-shrink-0 w-72 p-4 border border-border rounded-lg eca-shadow transition-all ${
+                          index === activeConfigIndex ? 'bg-primary/5 border-primary' : 'bg-muted/30'
                         }`}
                       >
-                        <div className="mb-3 pb-2 border-b">
-                          <p className="text-xs text-muted-foreground uppercase tracking-wide">Labour Required</p>
-                          <p className="font-semibold text-base mt-1">{configTask.configLabel}</p>
+                        <div className="mb-3 pb-2 border-b border-border">
+                          <p className="text-xs text-primary uppercase tracking-wide font-medium">Labour Required</p>
+                          <p className="font-semibold text-base mt-1 text-foreground">{configTask.configLabel}</p>
                         </div>
                          <div className="space-y-2">
                           {configTask.tasks.map((task: any, taskIdx: number) => {
                             const adjustedDays = Math.ceil(task.daysRequired / autoLabourPerDay);
                             return (
-                              <div key={taskIdx} className="p-2 bg-muted/30 rounded text-xs">
-                                <div className="flex justify-between items-center mb-1">
-                                  <span className="font-medium">{task.name}</span>
+                              <div key={taskIdx} className="p-3 bg-card rounded-lg text-xs border border-border">
+                                <div className="flex justify-between items-center mb-2">
+                                  <span className="font-medium text-foreground">{task.name}</span>
                                   <span className="font-bold text-primary">{adjustedDays} days</span>
                                 </div>
-                                <div className="grid grid-cols-2 gap-1 text-[10px] text-muted-foreground">
-                                  <p>Area: {task.area.toFixed(0)} sq.ft</p>
-                                  <p>Coats: {task.coats}</p>
-                                  <p>Work: {task.totalWork.toFixed(0)} sq.ft</p>
-                                  <p>Coverage: {task.coverage} sq.ft/day</p>
+                                <div className="grid grid-cols-2 gap-2 text-[10px] text-muted-foreground">
+                                  <p>Area: <span className="font-medium text-foreground">{task.area.toFixed(0)} sq.ft</span></p>
+                                  <p>Coats: <span className="font-medium text-foreground">{task.coats}</span></p>
+                                  <p>Work: <span className="font-medium text-foreground">{task.totalWork.toFixed(0)} sq.ft</span></p>
+                                  <p>Coverage: <span className="font-medium text-foreground">{task.coverage} sq.ft/day</span></p>
                                 </div>
                               </div>
                             );
                           })}
-                          <div className="pt-2 mt-2 border-t flex justify-between items-center">
-                            <span className="text-xs font-medium">Total Days:</span>
+                          <div className="pt-2 mt-2 border-t border-border flex justify-between items-center">
+                            <span className="text-xs font-medium text-muted-foreground">Total Days:</span>
                             <span className="text-lg font-bold text-primary">{Math.ceil(configTask.totalDays / autoLabourPerDay)} days</span>
                           </div>
                         </div>
@@ -550,10 +559,10 @@ export default function GenerateSummaryScreen() {
             )}
 
             {/* Summary */}
-            <div className="p-3 bg-primary/10 rounded border-2 border-primary/20">
+            <div className="p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border-2 border-primary">
               <div className="flex justify-between items-center">
                 <div>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-muted-foreground font-medium">
                     {labourMode === 'auto' ? 'Total Project Duration' : 'Custom Project Duration'}
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">With {displayLabours} labour(s)</p>
@@ -565,18 +574,18 @@ export default function GenerateSummaryScreen() {
             {/* Per Day Labour - Only in Manual Mode */}
             {labourMode === 'manual' && (
               <>
-                <div className="p-3 bg-muted/50 rounded border">
+                <div className="p-3 bg-muted/30 rounded-lg border border-border">
                   <div className="flex justify-between items-center">
-                    <p className="text-sm font-medium">Per Day Labour</p>
-                    <p className="text-xl font-bold">{laboursNeeded}</p>
+                    <p className="text-sm font-medium text-muted-foreground">Per Day Labour</p>
+                    <p className="text-xl font-bold text-foreground">{laboursNeeded}</p>
                   </div>
                 </div>
 
                 {/* Total Labour (Man-Days) */}
-                <div className="p-3 bg-muted/50 rounded border">
+                <div className="p-3 bg-primary/5 rounded-lg border border-primary/20">
                   <div className="flex justify-between items-center">
-                    <p className="text-sm font-medium">Total Labour (Man-Days)</p>
-                    <p className="text-xl font-bold">
+                    <p className="text-sm font-medium text-muted-foreground">Total Labour (Man-Days)</p>
+                    <p className="text-xl font-bold text-primary">
                       {totalDays}
                     </p>
                   </div>
@@ -721,9 +730,12 @@ export default function GenerateSummaryScreen() {
     });
 
     return (
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="text-lg">4. Material Section</CardTitle>
+      <Card className="eca-shadow">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+            <Package className="h-5 w-5 text-primary" />
+            Material Requirements
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {areaConfigs.length === 0 ? (
@@ -734,20 +746,20 @@ export default function GenerateSummaryScreen() {
             <div ref={materialConfigRef} className="-mx-4 px-4 overflow-x-auto scroll-smooth touch-pan-x" onScroll={handleMaterialScroll}>
               <div className="flex gap-4 pb-2 snap-x snap-mandatory" style={{ minWidth: 'min-content' }}>
                 {configMaterials.map((configMat, index) => (
-                  <div key={index} className="snap-start flex-shrink-0 w-72 p-4 border rounded-lg bg-card shadow-sm">
-                    <div className="mb-3 pb-2 border-b">
-                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Material Required</p>
-                      <p className="font-semibold text-base mt-1">{configMat.configLabel}</p>
+                  <div key={index} className="snap-start flex-shrink-0 w-72 p-4 border border-border rounded-lg bg-muted/30 eca-shadow">
+                    <div className="mb-3 pb-2 border-b border-border">
+                      <p className="text-xs text-primary uppercase tracking-wide font-medium">Material Required</p>
+                      <p className="font-semibold text-base mt-1 text-foreground">{configMat.configLabel}</p>
                     </div>
                     <div className="space-y-2">
                         {configMat.materials.map((mat: any, matIdx: number) => (
-                          <div key={matIdx} className="p-2 bg-muted/30 rounded text-xs">
-                            <div className="flex justify-between items-center mb-1">
-                              <span className="font-medium">{mat.name}</span>
+                          <div key={matIdx} className="p-3 bg-card rounded-lg text-xs border border-border">
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="font-medium text-foreground">{mat.name}</span>
                               <span className="font-bold text-primary">{mat.quantity} {mat.unit}</span>
                             </div>
-                            <div className="grid grid-cols-2 gap-1 text-[10px] text-muted-foreground">
-                              <p>Quantity: {mat.quantity} {mat.unit}</p>
+                            <div className="grid grid-cols-2 gap-2 text-[10px] text-muted-foreground">
+                              <p>Quantity: <span className="font-medium text-foreground">{mat.quantity} {mat.unit}</span></p>
                               <p>Pack: {mat.packSize}{mat.unit}</p>
                               <p>Packs: {mat.packsNeeded}</p>
                               <p>Cost: ₹{mat.totalCost}</p>
@@ -795,14 +807,27 @@ export default function GenerateSummaryScreen() {
     const marginCost = (totalMaterialCost * dealerMargin) / 100;
 
     return (
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="text-lg">5. Dealer Margin</CardTitle>
+      <Card className="eca-shadow">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+            <TrendingUp className="h-5 w-5 text-primary" />
+            Dealer Margin
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2 text-sm">
-            <p>Margin: {dealerMargin}%</p>
-            <p className="font-semibold">Margin Cost: ₹{marginCost.toFixed(2)}</p>
+          <div className="space-y-3">
+            <div className="p-3 bg-muted/30 rounded-lg border border-border">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Dealer Margin</span>
+                <span className="text-lg font-semibold text-foreground">{dealerMargin}%</span>
+              </div>
+            </div>
+            <div className="p-3 bg-primary/5 rounded-lg border border-primary/20">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Margin Cost</span>
+                <span className="text-lg font-bold text-primary">₹{marginCost.toFixed(2)}</span>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -822,27 +847,38 @@ export default function GenerateSummaryScreen() {
     const totalCost = materialCost + marginCost + labourCost;
 
     return (
-      <Card className="mb-6 bg-primary/5">
-        <CardHeader>
-          <CardTitle className="text-lg">6. Estimated Total Cost</CardTitle>
+      <Card className="eca-shadow bg-primary/5 border-primary/20">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+            <DollarSign className="h-5 w-5 text-primary" />
+            Project Total Cost
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span>Material Cost:</span>
-              <span>₹{materialCost.toFixed(2)}</span>
+          <div className="space-y-3">
+            <div className="p-3 bg-muted/30 rounded-lg border border-border">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Material Cost</span>
+                <span className="text-base font-semibold text-foreground">₹{materialCost.toFixed(2)}</span>
+              </div>
             </div>
-            <div className="flex justify-between">
-              <span>Labour Cost:</span>
-              <span>₹{labourCost.toFixed(2)}</span>
+            <div className="p-3 bg-muted/30 rounded-lg border border-border">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Labour Cost</span>
+                <span className="text-base font-semibold text-foreground">₹{labourCost.toFixed(2)}</span>
+              </div>
             </div>
-            <div className="flex justify-between">
-              <span>Dealer Margin:</span>
-              <span>₹{marginCost.toFixed(2)}</span>
+            <div className="p-3 bg-muted/30 rounded-lg border border-border">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Dealer Margin</span>
+                <span className="text-base font-semibold text-foreground">₹{marginCost.toFixed(2)}</span>
+              </div>
             </div>
-            <div className="flex justify-between font-bold text-lg pt-2 border-t">
-              <span>Total:</span>
-              <span>₹{totalCost.toFixed(2)}</span>
+            <div className="p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border-2 border-primary">
+              <div className="flex justify-between items-center">
+                <span className="text-base font-semibold text-foreground">Project Total</span>
+                <span className="text-2xl font-bold text-primary">₹{totalCost.toFixed(2)}</span>
+              </div>
             </div>
           </div>
         </CardContent>
@@ -860,27 +896,28 @@ export default function GenerateSummaryScreen() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Header */}
       <div className="eca-gradient text-white p-4">
-        <div className="flex items-center space-x-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-white hover:bg-white/20"
-            onClick={() => navigate(`/paint-estimation/${projectId}`)}
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div className="flex items-center space-x-2">
-            <FileText className="h-6 w-6" />
-            <h1 className="text-xl font-semibold">Generate Summary</h1>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-white hover:bg-white/20"
+              onClick={() => navigate(`/paint-estimation/${projectId}`)}
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div>
+              <h1 className="text-xl font-semibold">Generate Summary</h1>
+              <p className="text-white/80 text-sm">Complete project cost breakdown</p>
+            </div>
           </div>
+          <FileText className="h-6 w-6" />
         </div>
       </div>
 
-      <div className="p-4">
-        <p className="text-sm text-muted-foreground mb-4 px-1">
-          This section summarizes your project details including area type, paint configuration, material requirements, labour estimation, and complete cost overview.
-        </p>
+      <div className="p-4 space-y-4">
         {renderTypeDetails()}
         {renderRoomDetails()}
         {renderLabourSection()}
