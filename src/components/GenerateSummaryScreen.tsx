@@ -843,9 +843,11 @@ export default function GenerateSummaryScreen() {
       return sum + (area * rate);
     }, 0);
 
-    // Use the same labour calculation as in Labour Section
-    const workingHours = 7; // Match Labour Section
+    // Use exact same labour calculation as Labour Section
+    const workingHours = 7;
     const standardHours = 8;
+    const numberOfLabours = 1;
+
     const coverageRates = {
       waterBased: {
         putty: 800,
@@ -874,21 +876,21 @@ export default function GenerateSummaryScreen() {
         if (config.coatConfiguration.putty > 0) {
           const totalWork = area * config.coatConfiguration.putty;
           const adjustedCoverage = coverageRates.waterBased.putty * (workingHours / standardHours);
-          const daysRequired = Math.ceil(totalWork / adjustedCoverage);
+          const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
           tasks.push({ daysRequired });
         }
         if (config.coatConfiguration.primer > 0) {
           const totalWork = area * config.coatConfiguration.primer;
           const coverage = isOilBased ? coverageRates.oilBased.redOxide : coverageRates.waterBased.primer;
           const adjustedCoverage = coverage * (workingHours / standardHours);
-          const daysRequired = Math.ceil(totalWork / adjustedCoverage);
+          const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
           tasks.push({ daysRequired });
         }
         if (config.coatConfiguration.emulsion > 0) {
           const totalWork = area * config.coatConfiguration.emulsion;
           const coverage = isOilBased ? coverageRates.oilBased.enamelTop : coverageRates.waterBased.emulsion;
           const adjustedCoverage = coverage * (workingHours / standardHours);
-          const daysRequired = Math.ceil(totalWork / adjustedCoverage);
+          const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
           tasks.push({ daysRequired });
         }
       } else {
@@ -896,26 +898,36 @@ export default function GenerateSummaryScreen() {
           const totalWork = area * config.repaintingConfiguration.primer;
           const coverage = isOilBased ? coverageRates.oilBased.redOxide : coverageRates.waterBased.primer;
           const adjustedCoverage = coverage * (workingHours / standardHours);
-          const daysRequired = Math.ceil(totalWork / adjustedCoverage);
+          const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
           tasks.push({ daysRequired });
         }
         if (config.repaintingConfiguration?.emulsion && config.repaintingConfiguration.emulsion > 0) {
           const totalWork = area * config.repaintingConfiguration.emulsion;
           const coverage = isOilBased ? coverageRates.oilBased.enamelTop : coverageRates.waterBased.emulsion;
           const adjustedCoverage = coverage * (workingHours / standardHours);
-          const daysRequired = Math.ceil(totalWork / adjustedCoverage);
+          const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
           tasks.push({ daysRequired });
         }
       }
       
       configTasks.push({
+        tasks,
         totalDays: tasks.reduce((sum, task) => sum + task.daysRequired, 0)
       });
     });
 
     const totalDays = configTasks.reduce((sum, ct) => sum + ct.totalDays, 0);
-    
-    // Calculate labour cost based on mode - using same logic as Labour Section
+    const allTasks = configTasks.flatMap(ct => ct.tasks);
+    const totalWorkAllTasks = allTasks.reduce((sum, task) => sum + task.daysRequired, 0);
+    const averageCoverage = allTasks.length > 0 
+      ? allTasks.reduce((sum, task) => sum + task.daysRequired, 0) / allTasks.length 
+      : 1000;
+    const adjustedAverageCoverage = averageCoverage * (workingHours / standardHours);
+    const laboursNeeded = manualDays > 0 
+      ? Math.ceil(totalWorkAllTasks / manualDays)
+      : 1;
+
+    // Calculate labour cost - Formula: Per Day Labour Cost * Number of Labour * Days
     let labourCost = 0;
     let displayDays = 0;
     let displayLabours = 0;
@@ -925,23 +937,6 @@ export default function GenerateSummaryScreen() {
       displayLabours = autoLabourPerDay;
       labourCost = perDayLabourCost * displayLabours * displayDays;
     } else {
-      const allTasks = configTasks.flatMap(ct => ct);
-      const totalWorkAllTasks = areaConfigs.reduce((sum, config) => {
-        const area = Number(config.area) || 0;
-        const isFresh = config.paintingSystem === 'Fresh Painting';
-        if (isFresh) {
-          return sum + (area * ((config.coatConfiguration?.putty || 0) + (config.coatConfiguration?.primer || 0) + (config.coatConfiguration?.emulsion || 0)));
-        } else {
-          return sum + (area * ((config.repaintingConfiguration?.primer || 0) + (config.repaintingConfiguration?.emulsion || 0)));
-        }
-      }, 0);
-      
-      const averageCoverage = 1000;
-      const adjustedAverageCoverage = averageCoverage * (workingHours / standardHours);
-      const laboursNeeded = manualDays > 0 
-        ? Math.ceil(totalWorkAllTasks / (adjustedAverageCoverage * manualDays))
-        : 1;
-      
       displayDays = manualDays;
       displayLabours = laboursNeeded;
       labourCost = perDayLabourCost * displayLabours * displayDays;
