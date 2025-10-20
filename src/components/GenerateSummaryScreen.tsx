@@ -679,8 +679,8 @@ export default function GenerateSummaryScreen() {
               </div>
             </div>
 
-            {/* Total Labour Cost - Only in Manual Mode */}
-            {labourMode === 'manual' && (
+            {/* Total Labour Cost - Only in Auto Mode */}
+            {labourMode === 'auto' && (
               <div className="p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border-2 border-primary">
                 <div className="flex justify-between items-center">
                   <div>
