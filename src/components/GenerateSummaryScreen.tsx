@@ -175,7 +175,7 @@ export default function GenerateSummaryScreen() {
                       if (config.coatConfiguration.emulsion > 0) {
                         parts.push(`${config.coatConfiguration.emulsion} coat${config.coatConfiguration.emulsion > 1 ? 's' : ''} of ${config.selectedMaterials.emulsion || 'Emulsion'}`);
                       }
-                      return parts.join(', ');
+                      return parts.join(' + ');
                     } else {
                       const parts = [];
                       if (config.repaintingConfiguration?.primer > 0) {
@@ -184,7 +184,7 @@ export default function GenerateSummaryScreen() {
                       if (config.repaintingConfiguration?.emulsion > 0) {
                         parts.push(`${config.repaintingConfiguration.emulsion} coat${config.repaintingConfiguration.emulsion > 1 ? 's' : ''} of ${config.selectedMaterials.emulsion || 'Emulsion'}`);
                       }
-                      return parts.join(', ');
+                      return parts.join(' + ');
                     }
                   };
 
