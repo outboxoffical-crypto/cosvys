@@ -149,73 +149,123 @@ export default function GenerateSummaryScreen() {
               No paint configurations found. Please add them in Paint Estimation and click Generate Summary.
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {areaConfigs.map((config) => {
-                const area = Number(config.area) || 0;
-                const rate = parseFloat(config.perSqFtRate) || 0;
-                
-                // Get coat details in proper format
-                const getCoatDetails = () => {
-                  if (config.paintingSystem === 'Fresh Painting') {
-                    const parts = [];
-                    if (config.coatConfiguration.putty > 0) {
-                      parts.push(`${config.coatConfiguration.putty} coat${config.coatConfiguration.putty > 1 ? 's' : ''} of ${config.selectedMaterials.putty || 'Putty'}`);
+            <>
+              {/* Horizontal scrolling container */}
+              <div 
+                ref={paintConfigRef}
+                onScroll={handleScroll}
+                className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide"
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              >
+                {areaConfigs.map((config) => {
+                  const area = Number(config.area) || 0;
+                  const rate = parseFloat(config.perSqFtRate) || 0;
+                  const totalCost = area * rate;
+                  
+                  // Get coat details in proper format
+                  const getCoatDetails = () => {
+                    if (config.paintingSystem === 'Fresh Painting') {
+                      const parts = [];
+                      if (config.coatConfiguration.putty > 0) {
+                        parts.push(`${config.coatConfiguration.putty} coat${config.coatConfiguration.putty > 1 ? 's' : ''} of ${config.selectedMaterials.putty || 'Putty'}`);
+                      }
+                      if (config.coatConfiguration.primer > 0) {
+                        parts.push(`${config.coatConfiguration.primer} coat${config.coatConfiguration.primer > 1 ? 's' : ''} of ${config.selectedMaterials.primer || 'Primer'}`);
+                      }
+                      if (config.coatConfiguration.emulsion > 0) {
+                        parts.push(`${config.coatConfiguration.emulsion} coat${config.coatConfiguration.emulsion > 1 ? 's' : ''} of ${config.selectedMaterials.emulsion || 'Emulsion'}`);
+                      }
+                      return parts.join(', ');
+                    } else {
+                      const parts = [];
+                      if (config.repaintingConfiguration?.primer > 0) {
+                        parts.push(`${config.repaintingConfiguration.primer} coat${config.repaintingConfiguration.primer > 1 ? 's' : ''} of ${config.selectedMaterials.primer || 'Primer'}`);
+                      }
+                      if (config.repaintingConfiguration?.emulsion > 0) {
+                        parts.push(`${config.repaintingConfiguration.emulsion} coat${config.repaintingConfiguration.emulsion > 1 ? 's' : ''} of ${config.selectedMaterials.emulsion || 'Emulsion'}`);
+                      }
+                      return parts.join(', ');
                     }
-                    if (config.coatConfiguration.primer > 0) {
-                      parts.push(`${config.coatConfiguration.primer} coat${config.coatConfiguration.primer > 1 ? 's' : ''} of ${config.selectedMaterials.primer || 'Primer'}`);
-                    }
-                    if (config.coatConfiguration.emulsion > 0) {
-                      parts.push(`${config.coatConfiguration.emulsion} coat${config.coatConfiguration.emulsion > 1 ? 's' : ''} of ${config.selectedMaterials.emulsion || 'Emulsion'}`);
-                    }
-                    return parts.join(', ');
-                  } else {
-                    const parts = [];
-                    if (config.repaintingConfiguration?.primer > 0) {
-                      parts.push(`${config.repaintingConfiguration.primer} coat${config.repaintingConfiguration.primer > 1 ? 's' : ''} of ${config.selectedMaterials.primer || 'Primer'}`);
-                    }
-                    if (config.repaintingConfiguration?.emulsion > 0) {
-                      parts.push(`${config.repaintingConfiguration.emulsion} coat${config.repaintingConfiguration.emulsion > 1 ? 's' : ''} of ${config.selectedMaterials.emulsion || 'Emulsion'}`);
-                    }
-                    return parts.join(', ');
-                  }
-                };
+                  };
 
-                return (
-                  <Card key={config.id} className="border-2 border-primary/20 bg-primary/5">
-                    <CardContent className="p-4">
-                      <div className="space-y-3">
-                        <h3 className="font-semibold text-base">{config.label || config.areaType}</h3>
-                        
-                        <div className="space-y-1">
-                          <p className="text-sm text-muted-foreground">Paint Type</p>
-                          <p className="font-medium">{config.selectedMaterials.emulsion || config.areaType}</p>
-                        </div>
-                        
-                        <div className="space-y-1">
-                          <p className="text-sm text-muted-foreground">Painting System</p>
-                          <p className="font-medium">{config.paintingSystem || '-'}</p>
-                        </div>
+                  return (
+                    <Card key={config.id} className="flex-none w-72 border-2 border-primary/20 bg-primary/5 snap-start">
+                      <CardContent className="p-4">
+                        <div className="space-y-3">
+                          {/* Header with Type Badge */}
+                          <div className="flex items-center justify-between">
+                            <h3 className="font-semibold text-base">{config.label || config.areaType}</h3>
+                            <Badge variant="secondary" className="text-xs">
+                              {paintType}
+                            </Badge>
+                          </div>
+                          
+                          <div className="space-y-1">
+                            <p className="text-sm text-muted-foreground">Paint Type</p>
+                            <p className="font-medium">{config.selectedMaterials.emulsion || config.areaType}</p>
+                          </div>
+                          
+                          <div className="space-y-1">
+                            <p className="text-sm text-muted-foreground">Painting System</p>
+                            <p className="font-medium">{config.paintingSystem || '-'}</p>
+                          </div>
 
-                        <div className="space-y-1">
-                          <p className="text-sm text-muted-foreground">Coats</p>
-                          <p className="font-medium text-sm leading-relaxed">{getCoatDetails() || 'Not configured'}</p>
-                        </div>
+                          <div className="space-y-1">
+                            <p className="text-sm text-muted-foreground">Coats</p>
+                            <p className="font-medium text-sm leading-relaxed">{getCoatDetails() || 'Not configured'}</p>
+                          </div>
 
-                        <div className="space-y-1">
-                          <p className="text-sm text-muted-foreground">Area Sq.ft</p>
-                          <p className="font-medium">{area.toFixed(2)}</p>
-                        </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                              <p className="text-sm text-muted-foreground">Area</p>
+                              <p className="font-medium">{area.toFixed(2)} Sq.ft</p>
+                            </div>
 
-                        <div className="space-y-1">
-                          <p className="text-sm text-muted-foreground">Per Sq.ft Rate (₹)</p>
-                          <p className="font-medium">{rate.toFixed(2)}</p>
+                            <div className="space-y-1">
+                              <p className="text-sm text-muted-foreground">Rate/Sq.ft</p>
+                              <p className="font-medium">₹{rate.toFixed(2)}</p>
+                            </div>
+                          </div>
+
+                          <div className="pt-2 border-t border-primary/20">
+                            <div className="space-y-1">
+                              <p className="text-sm text-muted-foreground">Total Cost</p>
+                              <p className="font-semibold text-lg text-primary">₹{totalCost.toFixed(2)}</p>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+              
+              {/* Scroll indicators */}
+              {areaConfigs.length > 1 && (
+                <div className="flex justify-center gap-2 mt-2">
+                  {areaConfigs.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        const container = paintConfigRef.current;
+                        if (container) {
+                          const cardWidth = 288 + 16;
+                          container.scrollTo({
+                            left: index * cardWidth,
+                            behavior: 'smooth'
+                          });
+                        }
+                      }}
+                      className={`h-2 rounded-full transition-all ${
+                        index === activeConfigIndex 
+                          ? 'w-8 bg-primary' 
+                          : 'w-2 bg-primary/30'
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
