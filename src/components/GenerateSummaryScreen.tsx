@@ -301,25 +301,51 @@ export default function GenerateSummaryScreen() {
               {rooms.map(room => {
                 const selectedAreas = room.selected_areas || { floor: true, wall: true, ceiling: false };
                 return (
-                  <div key={room.id} className="p-4 border border-border rounded-lg bg-card eca-shadow hover:shadow-md transition-shadow">
-                    <p className="font-bold text-foreground text-base mb-3 pb-2 border-b border-border/50">{room.name}</p>
-                    <div className="space-y-2">
+                  <div key={room.id} className="relative overflow-hidden rounded-xl border-2 border-primary/30 bg-gradient-to-br from-primary/5 via-background to-primary/10 p-4 eca-shadow hover:border-primary/50 transition-all">
+                    <div className="absolute top-0 right-0 w-20 h-20 bg-primary/10 rounded-bl-full"></div>
+                    <p className="font-bold text-foreground text-lg mb-4 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+                      {room.name}
+                    </p>
+                    <div className="grid grid-cols-1 gap-3">
                       {selectedAreas.floor && (
-                        <div className="flex items-center justify-between py-1.5 border-b border-dashed border-border/30">
-                          <span className="text-muted-foreground text-sm font-medium">Floor</span>
-                          <span className="text-foreground font-bold text-base">{Number(room.floor_area || 0).toFixed(2)} <span className="text-xs text-muted-foreground font-normal">Sq. Ft</span></span>
+                        <div className="flex items-center gap-3 bg-background/60 backdrop-blur-sm rounded-lg p-3 border border-border/50">
+                          <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <rect x="3" y="3" width="18" height="18" rx="2" strokeWidth="2"/>
+                            </svg>
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-xs text-muted-foreground font-medium">Floor Area</p>
+                            <p className="text-base font-bold text-foreground">{Number(room.floor_area || 0).toFixed(2)} Sq. Ft</p>
+                          </div>
                         </div>
                       )}
                       {selectedAreas.wall && (
-                        <div className="flex items-center justify-between py-1.5 border-b border-dashed border-border/30">
-                          <span className="text-muted-foreground text-sm font-medium">Wall</span>
-                          <span className="text-foreground font-bold text-base">{Number(room.adjusted_wall_area || room.wall_area || 0).toFixed(2)} <span className="text-xs text-muted-foreground font-normal">Sq. Ft</span></span>
+                        <div className="flex items-center gap-3 bg-background/60 backdrop-blur-sm rounded-lg p-3 border border-border/50">
+                          <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center flex-shrink-0">
+                            <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeWidth="2" d="M3 12h18M3 6h18M3 18h18"/>
+                            </svg>
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-xs text-muted-foreground font-medium">Wall Area</p>
+                            <p className="text-base font-bold text-foreground">{Number(room.adjusted_wall_area || room.wall_area || 0).toFixed(2)} Sq. Ft</p>
+                          </div>
                         </div>
                       )}
                       {selectedAreas.ceiling && (
-                        <div className="flex items-center justify-between py-1.5">
-                          <span className="text-muted-foreground text-sm font-medium">Ceiling</span>
-                          <span className="text-foreground font-bold text-base">{Number(room.ceiling_area || 0).toFixed(2)} <span className="text-xs text-muted-foreground font-normal">Sq. Ft</span></span>
+                        <div className="flex items-center gap-3 bg-background/60 backdrop-blur-sm rounded-lg p-3 border border-border/50">
+                          <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center flex-shrink-0">
+                            <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeWidth="2" d="M3 3h18v18H3z"/>
+                              <path strokeWidth="2" d="M3 3l18 18M21 3L3 21"/>
+                            </svg>
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-xs text-muted-foreground font-medium">Ceiling Area</p>
+                            <p className="text-base font-bold text-foreground">{Number(room.ceiling_area || 0).toFixed(2)} Sq. Ft</p>
+                          </div>
                         </div>
                       )}
                     </div>
