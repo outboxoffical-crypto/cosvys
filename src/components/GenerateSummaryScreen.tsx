@@ -297,13 +297,13 @@ export default function GenerateSummaryScreen() {
           <div className="space-y-3">
             {/* Individual Rooms First */}
             <div className="space-y-2">
-              <p className="font-semibold text-foreground">Individual Rooms</p>
+              <p className="font-semibold text-foreground text-sm mb-2">Individual Rooms</p>
               {rooms.map(room => {
                 const selectedAreas = room.selected_areas || { floor: true, wall: true, ceiling: false };
                 return (
-                  <div key={room.id} className="p-3 border border-border rounded-lg text-sm bg-muted/30 eca-shadow">
-                    <p className="font-medium text-foreground">{room.name}</p>
-                    <div className="flex flex-wrap gap-3 mt-2 text-xs text-muted-foreground">
+                  <div key={room.id} className="p-3 border-2 border-primary/20 rounded-lg bg-primary/5 eca-shadow">
+                    <p className="font-semibold text-foreground text-sm">{room.name}</p>
+                    <div className="flex flex-wrap gap-3 mt-2 text-sm text-muted-foreground">
                       {selectedAreas.floor && (
                         <p>Floor: <span className="font-medium text-foreground">{Number(room.floor_area || 0).toFixed(2)} Sq. Ft</span></p>
                       )}
@@ -320,26 +320,26 @@ export default function GenerateSummaryScreen() {
             </div>
 
             {/* Totals Second with Project Type */}
-            <div className="p-6 rounded-lg bg-gradient-to-r from-red-500 via-purple-500 to-blue-500">
-              <div className="flex items-center gap-2 mb-4">
-                <TrendingUp className="h-5 w-5 text-white" />
-                <p className="font-semibold text-white text-lg">Total Area Summary</p>
+            <div className="p-4 rounded-lg bg-gradient-to-r from-red-400/20 via-purple-400/20 to-blue-400/20 border border-primary/20">
+              <div className="flex items-center gap-2 mb-3">
+                <TrendingUp className="h-4 w-4 text-primary" />
+                <p className="font-semibold text-foreground text-base">Total Area Summary</p>
               </div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-3 gap-3">
                 <div className="text-center">
-                  <p className="text-white/80 text-sm mb-1">Total Floor</p>
-                  <p className="text-white font-bold text-3xl">{totalFloor.toFixed(1)}</p>
-                  <p className="text-white/80 text-xs">sq.ft</p>
+                  <p className="text-muted-foreground text-xs mb-1">Total Floor</p>
+                  <p className="text-foreground font-bold text-2xl">{totalFloor.toFixed(1)}</p>
+                  <p className="text-muted-foreground text-xs">sq.ft</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-white/80 text-sm mb-1">Total Wall</p>
-                  <p className="text-white font-bold text-3xl">{totalWall.toFixed(1)}</p>
-                  <p className="text-white/80 text-xs">sq.ft</p>
+                  <p className="text-muted-foreground text-xs mb-1">Total Wall</p>
+                  <p className="text-foreground font-bold text-2xl">{totalWall.toFixed(1)}</p>
+                  <p className="text-muted-foreground text-xs">sq.ft</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-white/80 text-sm mb-1">Total Ceiling</p>
-                  <p className="text-white font-bold text-3xl">{totalCeiling.toFixed(1)}</p>
-                  <p className="text-white/80 text-xs">sq.ft</p>
+                  <p className="text-muted-foreground text-xs mb-1">Total Ceiling</p>
+                  <p className="text-foreground font-bold text-2xl">{totalCeiling.toFixed(1)}</p>
+                  <p className="text-muted-foreground text-xs">sq.ft</p>
                 </div>
               </div>
             </div>
