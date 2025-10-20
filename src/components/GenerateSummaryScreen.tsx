@@ -320,13 +320,27 @@ export default function GenerateSummaryScreen() {
             </div>
 
             {/* Totals Second with Project Type */}
-            <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
-              <p className="text-xs text-primary uppercase tracking-wide font-medium mb-2">{paintType}</p>
-              <p className="font-semibold text-foreground text-base">Project Totals</p>
-              <div className="flex flex-wrap gap-4 text-sm mt-3">
-                {totalFloor > 0 && <p className="text-muted-foreground">Floor: <span className="font-semibold text-foreground">{totalFloor.toFixed(2)} Sq. Ft</span></p>}
-                {totalWall > 0 && <p className="text-muted-foreground">Wall: <span className="font-semibold text-foreground">{totalWall.toFixed(2)} Sq. Ft</span></p>}
-                {totalCeiling > 0 && <p className="text-muted-foreground">Ceiling: <span className="font-semibold text-foreground">{totalCeiling.toFixed(2)} Sq. Ft</span></p>}
+            <div className="p-6 rounded-lg bg-gradient-to-r from-red-500 via-purple-500 to-blue-500">
+              <div className="flex items-center gap-2 mb-4">
+                <TrendingUp className="h-5 w-5 text-white" />
+                <p className="font-semibold text-white text-lg">Total Area Summary</p>
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center">
+                  <p className="text-white/80 text-sm mb-1">Total Floor</p>
+                  <p className="text-white font-bold text-3xl">{totalFloor.toFixed(1)}</p>
+                  <p className="text-white/80 text-xs">sq.ft</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-white/80 text-sm mb-1">Total Wall</p>
+                  <p className="text-white font-bold text-3xl">{totalWall.toFixed(1)}</p>
+                  <p className="text-white/80 text-xs">sq.ft</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-white/80 text-sm mb-1">Total Ceiling</p>
+                  <p className="text-white font-bold text-3xl">{totalCeiling.toFixed(1)}</p>
+                  <p className="text-white/80 text-xs">sq.ft</p>
+                </div>
               </div>
             </div>
           </div>
