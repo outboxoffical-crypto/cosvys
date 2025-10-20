@@ -149,54 +149,72 @@ export default function GenerateSummaryScreen() {
               No paint configurations found. Please add them in Paint Estimation and click Generate Summary.
             </div>
           ) : (
-            <div ref={paintConfigRef} className="-mx-4 px-4 overflow-x-auto scroll-smooth touch-pan-x" onScroll={handleScroll}>
-              <div className="flex gap-4 pb-2 snap-x snap-mandatory" style={{ minWidth: 'min-content' }}>
-                {areaConfigs.map((config, index) => {
-                  const area = Number(config.area) || 0;
-                  const rate = parseFloat(config.perSqFtRate) || 0;
-                  const cost = area * rate;
-                  const coats = config.paintingSystem === 'Fresh Painting' 
-                    ? `Putty: ${config.coatConfiguration.putty}, Primer: ${config.coatConfiguration.primer}, Emulsion: ${config.coatConfiguration.emulsion}`
-                    : `Primer: ${config.repaintingConfiguration?.primer || 0}, Emulsion: ${config.repaintingConfiguration?.emulsion || 0}`;
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {areaConfigs.map((config) => {
+                const area = Number(config.area) || 0;
+                const rate = parseFloat(config.perSqFtRate) || 0;
+                
+                // Get coat details in proper format
+                const getCoatDetails = () => {
+                  if (config.paintingSystem === 'Fresh Painting') {
+                    const parts = [];
+                    if (config.coatConfiguration.putty > 0) {
+                      parts.push(`${config.coatConfiguration.putty} coat${config.coatConfiguration.putty > 1 ? 's' : ''} of ${config.selectedMaterials.putty || 'Putty'}`);
+                    }
+                    if (config.coatConfiguration.primer > 0) {
+                      parts.push(`${config.coatConfiguration.primer} coat${config.coatConfiguration.primer > 1 ? 's' : ''} of ${config.selectedMaterials.primer || 'Primer'}`);
+                    }
+                    if (config.coatConfiguration.emulsion > 0) {
+                      parts.push(`${config.coatConfiguration.emulsion} coat${config.coatConfiguration.emulsion > 1 ? 's' : ''} of ${config.selectedMaterials.emulsion || 'Emulsion'}`);
+                    }
+                    return parts.join(', ');
+                  } else {
+                    const parts = [];
+                    if (config.repaintingConfiguration?.primer > 0) {
+                      parts.push(`${config.repaintingConfiguration.primer} coat${config.repaintingConfiguration.primer > 1 ? 's' : ''} of ${config.selectedMaterials.primer || 'Primer'}`);
+                    }
+                    if (config.repaintingConfiguration?.emulsion > 0) {
+                      parts.push(`${config.repaintingConfiguration.emulsion} coat${config.repaintingConfiguration.emulsion > 1 ? 's' : ''} of ${config.selectedMaterials.emulsion || 'Emulsion'}`);
+                    }
+                    return parts.join(', ');
+                  }
+                };
 
-                  return (
-                    <div key={config.id} className="snap-start flex-shrink-0 w-72 p-4 border border-border rounded-lg bg-muted/30 eca-shadow">
-                      <div className="mb-3 pb-2 border-b border-border">
-                        <p className="text-xs text-primary uppercase tracking-wide font-medium">{paintType}</p>
-                        <p className="font-semibold text-base mt-1 text-foreground">{config.label || config.areaType}</p>
-                      </div>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Paint Type:</span>
-                          <span className="font-medium text-foreground">{config.areaType}</span>
+                return (
+                  <Card key={config.id} className="border-2 border-primary/20 bg-primary/5">
+                    <CardContent className="p-4">
+                      <div className="space-y-3">
+                        <h3 className="font-semibold text-base">{config.label || config.areaType}</h3>
+                        
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">Paint Type</p>
+                          <p className="font-medium">{config.selectedMaterials.emulsion || config.areaType}</p>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Painting System:</span>
-                          <span className="font-medium text-foreground">{config.paintingSystem || '-'}</span>
+                        
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">Painting System</p>
+                          <p className="font-medium">{config.paintingSystem || '-'}</p>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Coats:</span>
-                          <span className="font-medium text-foreground text-xs">{coats}</span>
+
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">Coats</p>
+                          <p className="font-medium text-sm leading-relaxed">{getCoatDetails() || 'Not configured'}</p>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Area Sq.Ft:</span>
-                          <span className="font-medium text-foreground">{area.toFixed(2)}</span>
+
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">Area Sq.ft</p>
+                          <p className="font-medium">{area.toFixed(2)}</p>
                         </div>
-                        <div className="pt-2 mt-2 border-t border-border space-y-1.5">
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Per Sq.Ft Rate:</span>
-                            <span className="font-semibold text-foreground">₹{rate.toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-foreground">Cost of Sq.Ft:</span>
-                            <span className="font-bold text-primary">₹{cost.toFixed(2)}</span>
-                          </div>
+
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">Per Sq.ft Rate (₹)</p>
+                          <p className="font-medium">{rate.toFixed(2)}</p>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </CardContent>
