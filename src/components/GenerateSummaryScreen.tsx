@@ -679,18 +679,20 @@ export default function GenerateSummaryScreen() {
               </div>
             </div>
 
-            {/* Total Labour Cost */}
-            <div className="p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border-2 border-primary">
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-sm font-semibold text-foreground">Total Labour Cost</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Estimated total labour expense for the project</p>
+            {/* Total Labour Cost - Only in Manual Mode */}
+            {labourMode === 'manual' && (
+              <div className="p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border-2 border-primary">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Total Labour Cost</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Estimated total labour expense for the project</p>
+                  </div>
+                  <p className="text-2xl font-bold text-primary">
+                    ₹{(displayLabours * displayDays * perDayLabourCost).toLocaleString('en-IN')}
+                  </p>
                 </div>
-                <p className="text-2xl font-bold text-primary">
-                  ₹{(displayLabours * displayDays * perDayLabourCost).toLocaleString('en-IN')}
-                </p>
               </div>
-            </div>
+            )}
 
             {/* Per Day Labour - Only in Manual Mode */}
             {labourMode === 'manual' && (
@@ -703,7 +705,7 @@ export default function GenerateSummaryScreen() {
                 </div>
 
                 {/* Total Labour (Man-Days) */}
-                <div className="p-3 bg-background rounded-lg border border-border">
+                <div className="p-3 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 rounded-lg border-2 border-red-500">
                   <div className="flex justify-between items-center">
                     <p className="text-sm font-medium text-muted-foreground">Total Labour (Man-Days)</p>
                     <p className="text-xl font-bold text-primary">
