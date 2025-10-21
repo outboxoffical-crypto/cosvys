@@ -308,7 +308,7 @@ export default function GenerateSummaryScreen() {
                   return (
                     <div 
                       key={room.id} 
-                      className="group relative bg-card rounded border-l-2 border-foreground/80 hover:border-l-4 eca-shadow hover:eca-shadow-medium eca-transition p-3 sm:p-4"
+                      className="group relative bg-card rounded border-l-2 border-primary hover:border-l-4 eca-shadow hover:eca-shadow-medium eca-transition p-3 sm:p-4"
                     >
                       {/* Mobile: Vertical Layout, Desktop: Horizontal Layout */}
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-6">
