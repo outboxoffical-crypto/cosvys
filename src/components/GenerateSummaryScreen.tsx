@@ -297,56 +297,56 @@ export default function GenerateSummaryScreen() {
           <div className="space-y-3">
             {/* Individual Rooms First */}
             <div className="space-y-2">
-              <p className="font-semibold text-foreground text-sm mb-3">Individual Rooms</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <p className="font-semibold text-foreground text-sm mb-4">Individual Rooms</p>
+              <div className="space-y-3">
                 {rooms.map(room => {
                   const selectedAreas = room.selected_areas || { floor: true, wall: true, ceiling: false };
+                  const wallArea = Number(room.adjusted_wall_area || room.wall_area || 0);
+                  const ceilingArea = Number(room.ceiling_area || 0);
+                  const totalArea = wallArea + ceilingArea;
+                  
                   return (
                     <div 
                       key={room.id} 
-                      className="p-3 bg-muted/30 rounded-lg border border-border shadow-sm hover:shadow-md transition-shadow"
+                      className="group relative bg-white rounded border-l-2 border-gray-800 hover:border-l-4 shadow-sm hover:shadow-md transition-all duration-200 p-4"
                     >
-                      <div className="space-y-2.5">
-                        {/* Room Name */}
-                        <h3 className="font-bold text-base text-foreground pb-2 border-b border-border/50">
-                          {room.name}
-                        </h3>
+                      <div className="flex items-center justify-between gap-8">
+                        {/* Room Name - Fixed Width */}
+                        <div className="w-28 flex-shrink-0">
+                          <h3 className="font-bold text-sm uppercase tracking-wider text-gray-900">
+                            {room.name}
+                          </h3>
+                        </div>
                         
-                        {/* Room Details */}
-                        <div className="space-y-2">
-                          {selectedAreas.floor && (
-                            <div className="flex items-center justify-between py-1.5 border-b border-border/30">
-                              <div className="flex items-center gap-2">
-                                <div className="w-1.5 h-1.5 rounded-full bg-primary/60" />
-                                <p className="text-xs text-muted-foreground">Floor Area</p>
-                              </div>
-                              <p className="font-semibold text-sm text-foreground">
-                                {Number(room.floor_area || 0).toFixed(2)} <span className="text-xs text-muted-foreground">sq.ft</span>
-                              </p>
-                            </div>
-                          )}
+                        {/* Measurements - Right Aligned with 32px gap */}
+                        <div className="flex items-center gap-8 ml-auto">
+                          {/* Wall Area */}
                           {selectedAreas.wall && (
-                            <div className="flex items-center justify-between py-1.5 border-b border-border/30">
-                              <div className="flex items-center gap-2">
-                                <div className="w-1.5 h-1.5 rounded-full bg-secondary/60" />
-                                <p className="text-xs text-muted-foreground">Wall Area</p>
-                              </div>
-                              <p className="font-semibold text-sm text-foreground">
-                                {Number(room.adjusted_wall_area || room.wall_area || 0).toFixed(2)} <span className="text-xs text-muted-foreground">sq.ft</span>
+                            <div className="text-right">
+                              <p className="text-[10px] uppercase tracking-widest text-gray-400 mb-1">WALL</p>
+                              <p className="text-2xl font-bold text-gray-900 leading-none">
+                                {wallArea.toFixed(2)}
                               </p>
                             </div>
                           )}
+                          
+                          {/* Ceiling Area */}
                           {selectedAreas.ceiling && (
-                            <div className="flex items-center justify-between py-1.5">
-                              <div className="flex items-center gap-2">
-                                <div className="w-1.5 h-1.5 rounded-full bg-accent/60" />
-                                <p className="text-xs text-muted-foreground">Ceiling Area</p>
-                              </div>
-                              <p className="font-semibold text-sm text-foreground">
-                                {Number(room.ceiling_area || 0).toFixed(2)} <span className="text-xs text-muted-foreground">sq.ft</span>
+                            <div className="text-right">
+                              <p className="text-[10px] uppercase tracking-widest text-gray-400 mb-1">CEILING</p>
+                              <p className="text-2xl font-bold text-gray-900 leading-none">
+                                {ceilingArea.toFixed(2)}
                               </p>
                             </div>
                           )}
+                          
+                          {/* Total Area - Black Background */}
+                          <div className="bg-gray-900 rounded px-4 py-2">
+                            <p className="text-[10px] uppercase tracking-widest text-gray-400 mb-1">TOTAL</p>
+                            <p className="text-2xl font-bold text-white leading-none">
+                              {totalArea.toFixed(2)}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </div>
