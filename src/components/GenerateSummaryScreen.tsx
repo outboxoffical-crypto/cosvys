@@ -803,6 +803,50 @@ export default function GenerateSummaryScreen() {
       'Enamel': { packSize: 4, unit: 'L', pricePerPack: 600 },
     };
 
+    // Available pack sizes for each material type
+    const availablePackSizes: any = {
+      'Putty': [40, 20, 5, 1], // Kg
+      'Primer': [20, 10, 4, 1], // Liters
+      'Emulsion': [20, 10, 4, 1], // Liters
+      'Enamel': [20, 10, 4, 1], // Liters
+    };
+
+    // Helper function to calculate optimal pack combination
+    const calculateOptimalPacks = (materialKey: string, quantity: number) => {
+      const packSizes = availablePackSizes[materialKey] || [20, 10, 4, 1];
+      let remaining = quantity;
+      const packCombination: { size: number; count: number }[] = [];
+
+      // Greedy algorithm: start with largest pack size
+      for (const packSize of packSizes) {
+        if (remaining >= packSize) {
+          const count = Math.floor(remaining / packSize);
+          if (count > 0) {
+            packCombination.push({ size: packSize, count });
+            remaining = remaining - (count * packSize);
+          }
+        }
+      }
+
+      // If there's still remaining quantity, add one pack of the smallest size
+      if (remaining > 0 && packSizes.length > 0) {
+        const smallestPack = packSizes[packSizes.length - 1];
+        const existingSmallest = packCombination.find(p => p.size === smallestPack);
+        if (existingSmallest) {
+          existingSmallest.count += 1;
+        } else {
+          packCombination.push({ size: smallestPack, count: 1 });
+        }
+      }
+
+      // Format as "Pack: (40/2, 1/4)"
+      const packString = packCombination
+        .map(p => `${p.size}/${p.count}`)
+        .join(', ');
+
+      return packString;
+    };
+
     // Helper function to calculate material requirements and cost
     const calculateMaterial = (material: string, quantity: number) => {
       let materialKey = 'Emulsion';
@@ -813,12 +857,14 @@ export default function GenerateSummaryScreen() {
       const pricing = materialPricing[materialKey];
       const packsNeeded = Math.ceil(quantity / pricing.packSize);
       const totalCost = packsNeeded * pricing.pricePerPack;
+      const packCombination = calculateOptimalPacks(materialKey, quantity);
 
       return {
         quantity: quantity.toFixed(2),
         unit: pricing.unit,
         packsNeeded,
         packSize: pricing.packSize,
+        packCombination,
         totalCost,
       };
     };
@@ -944,7 +990,7 @@ export default function GenerateSummaryScreen() {
                                     Quantity: <span className="font-medium text-foreground">{mat.quantity} {mat.unit}</span>
                                   </p>
                                   <p className="text-sm text-muted-foreground">
-                                    Packs: <span className="font-medium text-foreground">{mat.packsNeeded}</span>
+                                    Pack: <span className="font-medium text-foreground">({mat.packCombination})</span>
                                   </p>
                                 </div>
                                 <div className="text-right">
