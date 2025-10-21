@@ -301,9 +301,9 @@ export default function GenerateSummaryScreen() {
               <div className="space-y-3">
                 {rooms.map(room => {
                   const selectedAreas = room.selected_areas || { floor: true, wall: true, ceiling: false };
+                  const floorArea = Number(room.floor_area || 0);
                   const wallArea = Number(room.adjusted_wall_area || room.wall_area || 0);
                   const ceilingArea = Number(room.ceiling_area || 0);
-                  const totalArea = wallArea + ceilingArea;
                   
                   return (
                     <div 
@@ -321,6 +321,16 @@ export default function GenerateSummaryScreen() {
                         
                         {/* Measurements - Evenly distributed */}
                         <div className="flex items-center justify-between gap-2 sm:gap-4 flex-1 sm:ml-auto sm:max-w-md">
+                          {/* Floor Area */}
+                          {selectedAreas.floor && (
+                            <div className="text-center flex-1">
+                              <p className="text-[9px] sm:text-[10px] uppercase tracking-widest text-muted-foreground mb-0.5 sm:mb-1">FLOOR</p>
+                              <p className="text-base sm:text-xl md:text-2xl font-bold text-foreground leading-none">
+                                {floorArea.toFixed(2)}
+                              </p>
+                            </div>
+                          )}
+                          
                           {/* Wall Area */}
                           {selectedAreas.wall && (
                             <div className="text-center flex-1">
