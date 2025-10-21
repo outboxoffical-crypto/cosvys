@@ -340,14 +340,6 @@ export default function GenerateSummaryScreen() {
                               </p>
                             </div>
                           )}
-                          
-                          {/* Total Area - Primary Background */}
-                          <div className="bg-primary rounded px-3 py-1.5 sm:px-4 sm:py-2 flex-1 text-center">
-                            <p className="text-[9px] sm:text-[10px] uppercase tracking-widest text-primary-foreground/80 mb-0.5 sm:mb-1">TOTAL</p>
-                            <p className="text-base sm:text-xl md:text-2xl font-bold text-primary-foreground leading-none">
-                              {totalArea.toFixed(2)}
-                            </p>
-                          </div>
                         </div>
                       </div>
                     </div>
