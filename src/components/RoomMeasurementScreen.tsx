@@ -224,8 +224,8 @@ export default function RoomMeasurementScreen() {
     doorWindowGrills: DoorWindowGrill[]
   ) => {
     const floorArea = length * width;
-    const wallArea = 2 * (length + width) * height;
-    const ceilingArea = length * width;
+    const wallArea = height > 0 ? 2 * (length + width) * height : floorArea;
+    const ceilingArea = floorArea;
     
     const totalOpeningArea = openingAreas.reduce((sum, opening) => sum + opening.area, 0);
     const totalExtraSurface = extraSurfaces.reduce((sum, extra) => sum + extra.area, 0);

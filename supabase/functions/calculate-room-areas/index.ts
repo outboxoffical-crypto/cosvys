@@ -28,11 +28,11 @@ serve(async (req) => {
     // Calculate floor area
     const floor_area = length * width;
 
-    // Calculate wall area (perimeter * height)
-    const wall_area = 2 * (length + width) * height;
+    // Calculate wall area (perimeter * height) with fallback when height is 0
+    const wall_area = height > 0 ? 2 * (length + width) * height : floor_area;
 
-    // Calculate ceiling area
-    const ceiling_area = length * width;
+    // Calculate ceiling area (same as floor)
+    const ceiling_area = floor_area;
 
     // Calculate total opening area
     const total_opening_area = opening_areas.reduce((sum, opening) => sum + (opening.area || 0), 0);
