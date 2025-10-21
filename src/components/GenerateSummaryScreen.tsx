@@ -968,7 +968,7 @@ export default function GenerateSummaryScreen() {
                 <span className="text-lg font-semibold text-foreground">{dealerMargin}%</span>
               </div>
             </div>
-            <div className="p-3 bg-primary/5 rounded-lg border border-primary/20">
+            <div className="p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border-2 border-primary">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-muted-foreground">Margin Cost</span>
                 <span className="text-lg font-bold text-primary">₹{marginCost.toFixed(2)}</span>
