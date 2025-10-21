@@ -917,7 +917,7 @@ export default function GenerateSummaryScreen() {
             </div>
           ) : (
             <>
-              <div ref={materialConfigRef} className="-mx-4 px-4 overflow-x-auto scroll-smooth touch-pan-x" onScroll={handleMaterialScroll}>
+              <div ref={materialConfigRef} className="-mx-4 px-4 overflow-x-auto scroll-smooth touch-pan-x scrollbar-hide" onScroll={handleMaterialScroll}>
                 <div className="flex gap-4 pb-2 snap-x snap-mandatory" style={{ minWidth: 'min-content' }}>
                   {configMaterials.map((configMat, index) => (
                     <div key={index} className="snap-start flex-shrink-0 w-72 p-4 border border-border rounded-lg bg-muted/30 eca-shadow">
