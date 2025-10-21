@@ -839,10 +839,10 @@ export default function GenerateSummaryScreen() {
         }
       }
 
-      // Format as "Pack: (40/2, 1/4)"
+      // Format as "Pack: (40/2)(1/4)"
       const packString = packCombination
-        .map(p => `${p.size}/${p.count}`)
-        .join(', ');
+        .map(p => `(${p.size}/${p.count})`)
+        .join('');
 
       return packString;
     };
@@ -990,7 +990,7 @@ export default function GenerateSummaryScreen() {
                                     Quantity: <span className="font-medium text-foreground">{mat.quantity} {mat.unit}</span>
                                   </p>
                                   <p className="text-sm text-muted-foreground">
-                                    Pack: <span className="font-medium text-foreground">({mat.packCombination})</span>
+                                    Pack: <span className="font-medium text-foreground">{mat.packCombination}</span>
                                   </p>
                                 </div>
                                 <div className="text-right">
