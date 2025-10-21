@@ -308,23 +308,24 @@ export default function GenerateSummaryScreen() {
                   return (
                     <div 
                       key={room.id} 
-                      className="group relative bg-white rounded border-l-2 border-gray-800 hover:border-l-4 shadow-sm hover:shadow-md transition-all duration-200 p-4"
+                      className="group relative bg-card rounded border-l-2 border-foreground/80 hover:border-l-4 eca-shadow hover:eca-shadow-medium eca-transition p-3 sm:p-4"
                     >
-                      <div className="flex items-center justify-between gap-8">
-                        {/* Room Name - Fixed Width */}
-                        <div className="w-28 flex-shrink-0">
-                          <h3 className="font-bold text-sm uppercase tracking-wider text-gray-900">
+                      {/* Mobile: Vertical Layout, Desktop: Horizontal Layout */}
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-6">
+                        {/* Room Name */}
+                        <div className="flex-shrink-0">
+                          <h3 className="font-bold text-xs sm:text-sm uppercase tracking-wider text-foreground">
                             {room.name}
                           </h3>
                         </div>
                         
-                        {/* Measurements - Right Aligned with 32px gap */}
-                        <div className="flex items-center gap-8 ml-auto">
+                        {/* Measurements - Stacked on mobile, horizontal on desktop */}
+                        <div className="flex flex-wrap items-center gap-3 sm:gap-6 sm:ml-auto">
                           {/* Wall Area */}
                           {selectedAreas.wall && (
-                            <div className="text-right">
-                              <p className="text-[10px] uppercase tracking-widest text-gray-400 mb-1">WALL</p>
-                              <p className="text-2xl font-bold text-gray-900 leading-none">
+                            <div className="text-left sm:text-right">
+                              <p className="text-[9px] sm:text-[10px] uppercase tracking-widest text-muted-foreground mb-0.5 sm:mb-1">WALL</p>
+                              <p className="text-base sm:text-xl md:text-2xl font-bold text-foreground leading-none">
                                 {wallArea.toFixed(2)}
                               </p>
                             </div>
@@ -332,18 +333,18 @@ export default function GenerateSummaryScreen() {
                           
                           {/* Ceiling Area */}
                           {selectedAreas.ceiling && (
-                            <div className="text-right">
-                              <p className="text-[10px] uppercase tracking-widest text-gray-400 mb-1">CEILING</p>
-                              <p className="text-2xl font-bold text-gray-900 leading-none">
+                            <div className="text-left sm:text-right">
+                              <p className="text-[9px] sm:text-[10px] uppercase tracking-widest text-muted-foreground mb-0.5 sm:mb-1">CEILING</p>
+                              <p className="text-base sm:text-xl md:text-2xl font-bold text-foreground leading-none">
                                 {ceilingArea.toFixed(2)}
                               </p>
                             </div>
                           )}
                           
-                          {/* Total Area - Black Background */}
-                          <div className="bg-gray-900 rounded px-4 py-2">
-                            <p className="text-[10px] uppercase tracking-widest text-gray-400 mb-1">TOTAL</p>
-                            <p className="text-2xl font-bold text-white leading-none">
+                          {/* Total Area - Primary Background */}
+                          <div className="bg-primary rounded px-3 py-1.5 sm:px-4 sm:py-2">
+                            <p className="text-[9px] sm:text-[10px] uppercase tracking-widest text-primary-foreground/80 mb-0.5 sm:mb-1">TOTAL</p>
+                            <p className="text-base sm:text-xl md:text-2xl font-bold text-primary-foreground leading-none">
                               {totalArea.toFixed(2)}
                             </p>
                           </div>
