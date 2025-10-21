@@ -654,7 +654,12 @@ export default function GenerateSummaryScreen() {
                         className="snap-start flex-shrink-0 w-72 p-4 border border-border rounded-lg bg-muted/30 eca-shadow"
                       >
                         <div className="mb-3 pb-2 border-b border-border">
-                          <p className="text-xs text-primary uppercase tracking-wide font-medium">Labour Required</p>
+                          <div className="flex items-center justify-between mb-1">
+                            <p className="text-xs text-primary uppercase tracking-wide font-medium">Labour Required</p>
+                            <Badge variant="secondary" className="text-[10px] px-2 py-0.5">
+                              {paintType}
+                            </Badge>
+                          </div>
                           <p className="font-semibold text-base mt-1 text-foreground">{configTask.configLabel}</p>
                         </div>
                         <div className="space-y-2">
@@ -682,6 +687,32 @@ export default function GenerateSummaryScreen() {
                     ))}
                   </div>
                 </div>
+                
+                {/* Scroll indicators */}
+                {configTasks.length > 1 && (
+                  <div className="flex justify-center gap-2 mt-2">
+                    {configTasks.map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={() => {
+                          const container = labourConfigRef.current;
+                          if (container) {
+                            const cardWidth = 288 + 16;
+                            container.scrollTo({
+                              left: index * cardWidth,
+                              behavior: 'smooth'
+                            });
+                          }
+                        }}
+                        className={`h-2 rounded-full transition-all ${
+                          index === activeConfigIndex 
+                            ? 'w-8 bg-primary' 
+                            : 'w-2 bg-primary/30'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
@@ -885,38 +916,69 @@ export default function GenerateSummaryScreen() {
               No material configurations found.
             </div>
           ) : (
-            <div ref={materialConfigRef} className="-mx-4 px-4 overflow-x-auto scroll-smooth touch-pan-x" onScroll={handleMaterialScroll}>
-              <div className="flex gap-4 pb-2 snap-x snap-mandatory" style={{ minWidth: 'min-content' }}>
-                {configMaterials.map((configMat, index) => (
-                  <div key={index} className="snap-start flex-shrink-0 w-72 p-4 border border-border rounded-lg bg-muted/30 eca-shadow">
-                    <div className="mb-3 pb-2 border-b border-border">
-                      <p className="text-xs text-primary uppercase tracking-wide font-medium">Material Required</p>
-                      <p className="font-semibold text-base mt-1 text-foreground">{configMat.configLabel}</p>
-                    </div>
-                    <div className="space-y-2">
-                        {configMat.materials.map((mat: any, matIdx: number) => (
-                          <div key={matIdx} className="p-3 bg-card rounded-lg text-xs border border-border">
-                            <div className="flex justify-between items-center mb-2">
-                              <span className="font-medium text-foreground">{mat.name}</span>
-                              <span className="font-bold text-primary">{mat.quantity} {mat.unit}</span>
+            <>
+              <div ref={materialConfigRef} className="-mx-4 px-4 overflow-x-auto scroll-smooth touch-pan-x" onScroll={handleMaterialScroll}>
+                <div className="flex gap-4 pb-2 snap-x snap-mandatory" style={{ minWidth: 'min-content' }}>
+                  {configMaterials.map((configMat, index) => (
+                    <div key={index} className="snap-start flex-shrink-0 w-72 p-4 border border-border rounded-lg bg-muted/30 eca-shadow">
+                      <div className="mb-3 pb-2 border-b border-border">
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="text-xs text-primary uppercase tracking-wide font-medium">Material Required</p>
+                          <Badge variant="secondary" className="text-[10px] px-2 py-0.5">
+                            {paintType}
+                          </Badge>
+                        </div>
+                        <p className="font-semibold text-base mt-1 text-foreground">{configMat.configLabel}</p>
+                      </div>
+                      <div className="space-y-2">
+                          {configMat.materials.map((mat: any, matIdx: number) => (
+                            <div key={matIdx} className="p-3 bg-card rounded-lg text-xs border border-border">
+                              <div className="flex justify-between items-center mb-2">
+                                <span className="font-medium text-foreground">{mat.name}</span>
+                                <span className="font-bold text-primary">₹{mat.totalCost.toLocaleString('en-IN')}</span>
+                              </div>
+                              <div className="grid grid-cols-2 gap-2 text-[10px] text-muted-foreground">
+                                <p>Quantity: <span className="font-medium text-foreground">{mat.quantity} {mat.unit}</span></p>
+                                <p>Packs: <span className="font-medium text-foreground">{mat.packsNeeded} x {mat.packSize}{mat.unit}</span></p>
+                              </div>
                             </div>
-                            <div className="grid grid-cols-2 gap-2 text-[10px] text-muted-foreground">
-                              <p>Quantity: <span className="font-medium text-foreground">{mat.quantity} {mat.unit}</span></p>
-                              <p>Pack: {mat.packSize}{mat.unit}</p>
-                              <p>Packs: {mat.packsNeeded}</p>
-                              <p>Cost: ₹{mat.totalCost}</p>
-                            </div>
+                          ))}
+                          <div className="pt-2 mt-2 border-t border-border flex justify-between items-center">
+                            <span className="text-xs font-medium text-muted-foreground">Total Cost:</span>
+                            <span className="text-lg font-bold text-primary">₹{configMat.totalCost.toLocaleString('en-IN')}</span>
                           </div>
-                        ))}
-                      <div className="pt-2 mt-2 border-t flex justify-between items-center">
-                        <span className="text-xs font-medium">Total Cost:</span>
-                        <span className="text-lg font-bold text-primary">₹{configMat.totalCost.toFixed(2)}</span>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+              
+              {/* Scroll indicators */}
+              {configMaterials.length > 1 && (
+                <div className="flex justify-center gap-2 mt-2">
+                  {configMaterials.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        const container = materialConfigRef.current;
+                        if (container) {
+                          const cardWidth = 288 + 16;
+                          container.scrollTo({
+                            left: index * cardWidth,
+                            behavior: 'smooth'
+                          });
+                        }
+                      }}
+                      className={`h-2 rounded-full transition-all ${
+                        index === activeConfigIndex 
+                          ? 'w-8 bg-primary' 
+                          : 'w-2 bg-primary/30'
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
           )}
 
           {/* Total Cost Material Summary */}
