@@ -303,42 +303,41 @@ export default function GenerateSummaryScreen() {
                   const selectedAreas = room.selected_areas || { floor: true, wall: true, ceiling: false };
                   const wallArea = Number(room.adjusted_wall_area || room.wall_area || 0);
                   const ceilingArea = Number(room.ceiling_area || 0);
+                  const totalArea = wallArea + ceilingArea;
                   
                   return (
                     <div 
                       key={room.id} 
-                      className="group relative bg-primary/5 border-2 border-primary/20 rounded-lg eca-shadow hover:eca-shadow-medium eca-transition p-3 sm:p-4"
+                      className="group relative bg-card rounded border-l-2 border-foreground/80 hover:border-l-4 eca-shadow hover:eca-shadow-medium eca-transition p-3 sm:p-4"
                     >
                       {/* Mobile: Vertical Layout, Desktop: Horizontal Layout */}
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-6">
                         {/* Room Name */}
                         <div className="flex-shrink-0">
-                          <h3 className="font-semibold text-base text-foreground">
+                          <h3 className="font-bold text-xs sm:text-sm uppercase tracking-wider text-foreground">
                             {room.name}
                           </h3>
                         </div>
                         
                         {/* Measurements - Evenly distributed */}
-                        <div className="flex items-center justify-between gap-3 sm:gap-6 flex-1 sm:ml-auto sm:max-w-md">
+                        <div className="flex items-center justify-between gap-2 sm:gap-4 flex-1 sm:ml-auto sm:max-w-md">
                           {/* Wall Area */}
                           {selectedAreas.wall && (
                             <div className="text-center flex-1">
-                              <p className="text-xs text-muted-foreground mb-1">Wall Area</p>
-                              <p className="text-lg sm:text-xl font-bold text-foreground">
+                              <p className="text-[9px] sm:text-[10px] uppercase tracking-widest text-muted-foreground mb-0.5 sm:mb-1">WALL</p>
+                              <p className="text-base sm:text-xl md:text-2xl font-bold text-foreground leading-none">
                                 {wallArea.toFixed(2)}
                               </p>
-                              <p className="text-xs text-muted-foreground">sq.ft</p>
                             </div>
                           )}
                           
                           {/* Ceiling Area */}
                           {selectedAreas.ceiling && (
                             <div className="text-center flex-1">
-                              <p className="text-xs text-muted-foreground mb-1">Ceiling Area</p>
-                              <p className="text-lg sm:text-xl font-bold text-foreground">
+                              <p className="text-[9px] sm:text-[10px] uppercase tracking-widest text-muted-foreground mb-0.5 sm:mb-1">CEILING</p>
+                              <p className="text-base sm:text-xl md:text-2xl font-bold text-foreground leading-none">
                                 {ceilingArea.toFixed(2)}
                               </p>
-                              <p className="text-xs text-muted-foreground">sq.ft</p>
                             </div>
                           )}
                         </div>
