@@ -653,7 +653,7 @@ export default function GenerateSummaryScreen() {
                         key={index} 
                         className="snap-start flex-shrink-0 w-72 p-4 border border-border rounded-lg bg-muted/30 eca-shadow"
                       >
-                        <div className="mb-3 pb-2 border-b border-border">
+                        <div className="mb-3">
                           <div className="flex items-center justify-between mb-1">
                             <p className="text-xs text-primary uppercase tracking-wide font-medium">Labour Required</p>
                             <Badge variant="secondary" className="text-[10px] px-2 py-0.5">
@@ -921,7 +921,7 @@ export default function GenerateSummaryScreen() {
                 <div className="flex gap-4 pb-2 snap-x snap-mandatory" style={{ minWidth: 'min-content' }}>
                   {configMaterials.map((configMat, index) => (
                     <div key={index} className="snap-start flex-shrink-0 w-72 p-4 border border-border rounded-lg bg-muted/30 eca-shadow">
-                      <div className="mb-3 pb-2 border-b border-border">
+                      <div className="mb-3">
                         <div className="flex items-center justify-between mb-1">
                           <p className="text-xs text-primary uppercase tracking-wide font-medium">Material Required</p>
                           <Badge variant="secondary" className="text-[10px] px-2 py-0.5">
