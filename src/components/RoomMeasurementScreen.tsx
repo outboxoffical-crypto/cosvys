@@ -231,7 +231,7 @@ export default function RoomMeasurementScreen() {
     const totalExtraSurface = extraSurfaces.reduce((sum, extra) => sum + extra.area, 0);
     const totalDoorWindowGrillArea = doorWindowGrills.reduce((sum, dwg) => sum + dwg.area, 0);
     
-    const adjustedWallArea = wallArea - totalOpeningArea + totalExtraSurface;
+    const adjustedWallArea = wallArea - totalOpeningArea + totalExtraSurface + totalDoorWindowGrillArea;
     
     return { 
       floorArea, 
