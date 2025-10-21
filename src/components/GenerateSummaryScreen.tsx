@@ -302,34 +302,54 @@ export default function GenerateSummaryScreen() {
                 {rooms.map(room => {
                   const selectedAreas = room.selected_areas || { floor: true, wall: true, ceiling: false };
                   return (
-                    <Card key={room.id} className="border-2 border-primary/20 bg-primary/5">
-                      <CardContent className="p-4">
-                        <div className="space-y-3">
-                          <h3 className="font-semibold text-base text-foreground">{room.name}</h3>
-                          
-                          <div className="space-y-2">
-                            {selectedAreas.floor && (
-                              <div className="flex items-center justify-between py-2 border-b border-border/50">
-                                <p className="text-sm text-muted-foreground">Floor Area</p>
-                                <p className="font-medium text-foreground">{Number(room.floor_area || 0).toFixed(2)} Sq.ft</p>
+                    <div 
+                      key={room.id} 
+                      className="p-3 bg-muted/30 rounded-lg border border-border shadow-sm hover:shadow-md transition-shadow"
+                    >
+                      <div className="space-y-2.5">
+                        {/* Room Name */}
+                        <h3 className="font-bold text-base text-foreground pb-2 border-b border-border/50">
+                          {room.name}
+                        </h3>
+                        
+                        {/* Room Details */}
+                        <div className="space-y-2">
+                          {selectedAreas.floor && (
+                            <div className="flex items-center justify-between py-1.5 border-b border-border/30">
+                              <div className="flex items-center gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-primary/60" />
+                                <p className="text-xs text-muted-foreground">Floor Area</p>
                               </div>
-                            )}
-                            {selectedAreas.wall && (
-                              <div className="flex items-center justify-between py-2 border-b border-border/50">
-                                <p className="text-sm text-muted-foreground">Wall Area</p>
-                                <p className="font-medium text-foreground">{Number(room.adjusted_wall_area || room.wall_area || 0).toFixed(2)} Sq.ft</p>
+                              <p className="font-semibold text-sm text-foreground">
+                                {Number(room.floor_area || 0).toFixed(2)} <span className="text-xs text-muted-foreground">sq.ft</span>
+                              </p>
+                            </div>
+                          )}
+                          {selectedAreas.wall && (
+                            <div className="flex items-center justify-between py-1.5 border-b border-border/30">
+                              <div className="flex items-center gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-secondary/60" />
+                                <p className="text-xs text-muted-foreground">Wall Area</p>
                               </div>
-                            )}
-                            {selectedAreas.ceiling && (
-                              <div className="flex items-center justify-between py-2">
-                                <p className="text-sm text-muted-foreground">Ceiling Area</p>
-                                <p className="font-medium text-foreground">{Number(room.ceiling_area || 0).toFixed(2)} Sq.ft</p>
+                              <p className="font-semibold text-sm text-foreground">
+                                {Number(room.adjusted_wall_area || room.wall_area || 0).toFixed(2)} <span className="text-xs text-muted-foreground">sq.ft</span>
+                              </p>
+                            </div>
+                          )}
+                          {selectedAreas.ceiling && (
+                            <div className="flex items-center justify-between py-1.5">
+                              <div className="flex items-center gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-accent/60" />
+                                <p className="text-xs text-muted-foreground">Ceiling Area</p>
                               </div>
-                            )}
-                          </div>
+                              <p className="font-semibold text-sm text-foreground">
+                                {Number(room.ceiling_area || 0).toFixed(2)} <span className="text-xs text-muted-foreground">sq.ft</span>
+                              </p>
+                            </div>
+                          )}
                         </div>
-                      </CardContent>
-                    </Card>
+                      </div>
+                    </div>
                   );
                 })}
               </div>
