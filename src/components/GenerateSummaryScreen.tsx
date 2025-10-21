@@ -646,7 +646,7 @@ export default function GenerateSummaryScreen() {
             {labourMode === 'auto' && configTasks.length > 0 && (
               <div>
                 <p className="font-semibold text-sm mb-2 text-foreground">Labour Calculation Breakdown</p>
-                <div ref={labourConfigRef} className="-mx-4 px-4 overflow-x-auto scroll-smooth touch-pan-x" onScroll={handleLabourScroll}>
+                <div ref={labourConfigRef} className="-mx-4 px-4 overflow-x-auto scroll-smooth touch-pan-x scrollbar-hide" onScroll={handleLabourScroll}>
                   <div className="flex gap-4 pb-2 snap-x snap-mandatory" style={{ minWidth: 'min-content' }}>
                     {configTasks.map((configTask, index) => (
                       <div 
