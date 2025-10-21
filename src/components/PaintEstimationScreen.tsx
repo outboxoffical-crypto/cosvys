@@ -3,12 +3,15 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Palette, Plus, Minus, Settings, Trash2 } from "lucide-react";
+import { ArrowLeft, Palette, Plus, Minus, Settings, Trash2, ChevronsUpDown, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 interface CoverageData {
   id: string;
@@ -61,6 +64,7 @@ export default function PaintEstimationScreen() {
   const [selectedConfigId, setSelectedConfigId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [emulsionComboOpen, setEmulsionComboOpen] = useState(false);
 
   // Sync initial paint type from Room Measurements selection
   useEffect(() => {
@@ -1584,32 +1588,61 @@ export default function PaintEstimationScreen() {
                         </Button>
                       </div>
                     </div>
-                    <Select 
-                      value={selectedConfig.selectedMaterials.emulsion} 
-                      onValueChange={(value) => handleUpdateConfig({
-                        selectedMaterials: { ...selectedConfig.selectedMaterials, emulsion: value }
-                      })}
-                    >
-                      <SelectTrigger className="h-9">
-                        <SelectValue placeholder="Select emulsion type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {coverageData
-                          .filter(item => {
-                            const category = selectedPaintType === "Interior" ? "Interior Paint" :
-                                           selectedPaintType === "Exterior" ? "Exterior Paint" : 
-                                           selectedPaintType;
-                            return item.category === category;
-                          })
-                          .map(item => item.product_name)
-                          .filter((value, index, self) => self.indexOf(value) === index)
-                          .map((emulsionName) => (
-                            <SelectItem key={emulsionName} value={emulsionName}>
-                              {emulsionName}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
+                    <Popover open={emulsionComboOpen} onOpenChange={setEmulsionComboOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={emulsionComboOpen}
+                          className="h-9 w-full justify-between"
+                        >
+                          {selectedConfig.selectedMaterials.emulsion || "Select emulsion type"}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-full p-0 pointer-events-auto" align="start">
+                        <Command>
+                          <CommandInput placeholder="Search emulsion..." />
+                          <CommandList>
+                            <CommandEmpty>No emulsion found.</CommandEmpty>
+                            <CommandGroup>
+                              {coverageData
+                                .filter(item => {
+                                  const category = selectedPaintType === "Interior" ? "Interior Paint" :
+                                                 selectedPaintType === "Exterior" ? "Exterior Paint" : 
+                                                 selectedPaintType;
+                                  return item.category === category;
+                                })
+                                .map(item => item.product_name)
+                                .filter((value, index, self) => self.indexOf(value) === index)
+                                .map((emulsionName) => (
+                                  <CommandItem
+                                    key={emulsionName}
+                                    value={emulsionName}
+                                    onSelect={(currentValue) => {
+                                      handleUpdateConfig({
+                                        selectedMaterials: { 
+                                          ...selectedConfig.selectedMaterials, 
+                                          emulsion: currentValue === selectedConfig.selectedMaterials.emulsion ? "" : currentValue 
+                                        }
+                                      });
+                                      setEmulsionComboOpen(false);
+                                    }}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "mr-2 h-4 w-4",
+                                        selectedConfig.selectedMaterials.emulsion === emulsionName ? "opacity-100" : "opacity-0"
+                                      )}
+                                    />
+                                    {emulsionName}
+                                  </CommandItem>
+                                ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 </div>
               )}
