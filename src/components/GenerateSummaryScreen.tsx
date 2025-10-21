@@ -920,33 +920,50 @@ export default function GenerateSummaryScreen() {
               <div ref={materialConfigRef} className="-mx-4 px-4 overflow-x-auto scroll-smooth touch-pan-x scrollbar-hide" onScroll={handleMaterialScroll}>
                 <div className="flex gap-4 pb-2 snap-x snap-mandatory" style={{ minWidth: 'min-content' }}>
                   {configMaterials.map((configMat, index) => (
-                    <div key={index} className="snap-start flex-shrink-0 w-72 p-4 border border-border rounded-lg bg-muted/30 eca-shadow">
-                      <div className="mb-3">
-                        <div className="flex items-center justify-between mb-1">
-                          <p className="text-xs text-primary uppercase tracking-wide font-medium">Material Required</p>
-                          <Badge variant="secondary" className="text-[10px] px-2 py-0.5">
-                            {paintType}
-                          </Badge>
-                        </div>
-                        <p className="font-semibold text-base mt-1 text-foreground">{configMat.configLabel}</p>
-                      </div>
-                      <div className="space-y-2">
+                    <div key={index} className="snap-start flex-shrink-0 w-72 border-2 border-primary/20 bg-primary/5 rounded-lg eca-shadow">
+                      <div className="p-4">
+                        <div className="space-y-3">
+                          {/* Header with Type Badge */}
+                          <div className="flex items-center justify-between">
+                            <h3 className="font-semibold text-base">{configMat.configLabel}</h3>
+                            <Badge variant="secondary" className="text-xs">
+                              {paintType}
+                            </Badge>
+                          </div>
+                          
+                          {/* Materials List */}
                           {configMat.materials.map((mat: any, matIdx: number) => (
-                            <div key={matIdx} className="p-3 bg-card rounded-lg text-xs border border-border">
-                              <div className="flex justify-between items-center mb-2">
-                                <span className="font-medium text-foreground">{mat.name}</span>
-                                <span className="font-bold text-primary">₹{mat.totalCost.toLocaleString('en-IN')}</span>
+                            <div key={matIdx} className="space-y-2 pb-3 border-b border-primary/10 last:border-0 last:pb-0">
+                              <div className="space-y-1">
+                                <p className="text-sm text-muted-foreground">Material</p>
+                                <p className="font-medium">{mat.name}</p>
                               </div>
-                              <div className="grid grid-cols-2 gap-2 text-[10px] text-muted-foreground">
-                                <p>Quantity: <span className="font-medium text-foreground">{mat.quantity} {mat.unit}</span></p>
-                                <p>Packs: <span className="font-medium text-foreground">{mat.packsNeeded} x {mat.packSize}{mat.unit}</span></p>
+                              
+                              <div className="space-y-1">
+                                <p className="text-sm text-muted-foreground">Quantity Required</p>
+                                <p className="font-medium">{mat.quantity} {mat.unit}</p>
+                              </div>
+                              
+                              <div className="space-y-1">
+                                <p className="text-sm text-muted-foreground">Packs Needed</p>
+                                <p className="font-medium">{mat.packsNeeded} packs × {mat.packSize}{mat.unit}</p>
+                              </div>
+                              
+                              <div className="space-y-1">
+                                <p className="text-sm text-muted-foreground">Cost</p>
+                                <p className="font-semibold text-primary">₹{mat.totalCost.toLocaleString('en-IN')}</p>
                               </div>
                             </div>
                           ))}
-                          <div className="pt-2 mt-2 flex justify-between items-center">
-                            <span className="text-xs font-medium text-muted-foreground">Total Cost:</span>
-                            <span className="text-lg font-bold text-primary">₹{configMat.totalCost.toLocaleString('en-IN')}</span>
+                          
+                          {/* Total Cost */}
+                          <div className="pt-2 border-t border-primary/20">
+                            <div className="space-y-1">
+                              <p className="text-sm text-muted-foreground">Total Cost</p>
+                              <p className="font-semibold text-lg text-primary">₹{configMat.totalCost.toLocaleString('en-IN')}</p>
+                            </div>
                           </div>
+                        </div>
                       </div>
                     </div>
                   ))}
