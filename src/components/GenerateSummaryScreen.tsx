@@ -314,7 +314,7 @@ export default function GenerateSummaryScreen() {
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-6">
                         {/* Room Name */}
                         <div className="flex-shrink-0">
-                          <h3 className="font-bold text-xs sm:text-sm uppercase tracking-wider text-foreground">
+                          <h3 className="font-bold text-xs sm:text-sm tracking-wider text-foreground">
                             {room.name}
                           </h3>
                         </div>
