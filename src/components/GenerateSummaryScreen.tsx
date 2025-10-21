@@ -678,7 +678,7 @@ export default function GenerateSummaryScreen() {
                               </div>
                             );
                           })}
-                          <div className="pt-2 mt-2 border-t border-border flex justify-between items-center">
+                          <div className="pt-2 mt-2 flex justify-between items-center">
                             <span className="text-sm font-medium text-muted-foreground">Total Days:</span>
                             <span className="text-base font-bold text-primary">{Math.ceil(configTask.totalDays / autoLabourPerDay)} days</span>
                           </div>
@@ -943,7 +943,7 @@ export default function GenerateSummaryScreen() {
                               </div>
                             </div>
                           ))}
-                          <div className="pt-2 mt-2 border-t border-border flex justify-between items-center">
+                          <div className="pt-2 mt-2 flex justify-between items-center">
                             <span className="text-xs font-medium text-muted-foreground">Total Cost:</span>
                             <span className="text-lg font-bold text-primary">₹{configMat.totalCost.toLocaleString('en-IN')}</span>
                           </div>
