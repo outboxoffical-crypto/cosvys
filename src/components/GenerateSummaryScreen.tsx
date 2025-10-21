@@ -651,7 +651,7 @@ export default function GenerateSummaryScreen() {
                     {configTasks.map((configTask, index) => (
                       <div 
                         key={index} 
-                        className="snap-start flex-shrink-0 w-72 p-4 border border-border rounded-lg bg-muted/30 eca-shadow"
+                        className="snap-start flex-shrink-0 w-72 p-4 rounded-lg bg-muted/30 eca-shadow"
                       >
                         <div className="mb-3">
                           <div className="flex items-center justify-between mb-1">
@@ -666,7 +666,7 @@ export default function GenerateSummaryScreen() {
                           {configTask.tasks.map((task: any, taskIdx: number) => {
                             const adjustedDays = Math.ceil(task.daysRequired / autoLabourPerDay);
                             return (
-                              <div key={taskIdx} className="p-3 bg-card rounded-md border border-border">
+                              <div key={taskIdx} className="p-3 bg-card rounded-md">
                                 <div className="flex justify-between items-center mb-2">
                                   <span className="text-sm font-medium text-foreground">{task.name}</span>
                                   <span className="text-sm font-bold text-primary">{adjustedDays} days</span>
@@ -920,7 +920,7 @@ export default function GenerateSummaryScreen() {
               <div ref={materialConfigRef} className="-mx-4 px-4 overflow-x-auto scroll-smooth touch-pan-x" onScroll={handleMaterialScroll}>
                 <div className="flex gap-4 pb-2 snap-x snap-mandatory" style={{ minWidth: 'min-content' }}>
                   {configMaterials.map((configMat, index) => (
-                    <div key={index} className="snap-start flex-shrink-0 w-72 p-4 border border-border rounded-lg bg-muted/30 eca-shadow">
+                    <div key={index} className="snap-start flex-shrink-0 w-72 p-4 rounded-lg bg-muted/30 eca-shadow">
                       <div className="mb-3">
                         <div className="flex items-center justify-between mb-1">
                           <p className="text-xs text-primary uppercase tracking-wide font-medium">Material Required</p>
@@ -931,18 +931,18 @@ export default function GenerateSummaryScreen() {
                         <p className="font-semibold text-base mt-1 text-foreground">{configMat.configLabel}</p>
                       </div>
                       <div className="space-y-2">
-                          {configMat.materials.map((mat: any, matIdx: number) => (
-                            <div key={matIdx} className="p-3 bg-card rounded-lg text-xs border border-border">
-                              <div className="flex justify-between items-center mb-2">
-                                <span className="font-medium text-foreground">{mat.name}</span>
-                                <span className="font-bold text-primary">₹{mat.totalCost.toLocaleString('en-IN')}</span>
+                            {configMat.materials.map((mat: any, matIdx: number) => (
+                              <div key={matIdx} className="p-3 bg-card rounded-lg text-xs">
+                                <div className="flex justify-between items-center mb-2">
+                                  <span className="font-medium text-foreground">{mat.name}</span>
+                                  <span className="font-bold text-primary">₹{mat.totalCost.toLocaleString('en-IN')}</span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 text-[10px] text-muted-foreground">
+                                  <p>Quantity: <span className="font-medium text-foreground">{mat.quantity} {mat.unit}</span></p>
+                                  <p>Packs: <span className="font-medium text-foreground">{mat.packsNeeded} x {mat.packSize}{mat.unit}</span></p>
+                                </div>
                               </div>
-                              <div className="grid grid-cols-2 gap-2 text-[10px] text-muted-foreground">
-                                <p>Quantity: <span className="font-medium text-foreground">{mat.quantity} {mat.unit}</span></p>
-                                <p>Packs: <span className="font-medium text-foreground">{mat.packsNeeded} x {mat.packSize}{mat.unit}</span></p>
-                              </div>
-                            </div>
-                          ))}
+                            ))}
                           <div className="pt-2 mt-2 flex justify-between items-center">
                             <span className="text-xs font-medium text-muted-foreground">Total Cost:</span>
                             <span className="text-lg font-bold text-primary">₹{configMat.totalCost.toLocaleString('en-IN')}</span>
