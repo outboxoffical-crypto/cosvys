@@ -101,7 +101,14 @@ export default function RoomMeasurementScreen() {
   const [newExtraSurface, setNewExtraSurface] = useState({ height: "", width: "", quantity: "" });
   const [tempOpeningAreas, setTempOpeningAreas] = useState<OpeningArea[]>([]);
   const [tempExtraSurfaces, setTempExtraSurfaces] = useState<ExtraSurface[]>([]);
-  const [newDoorWindowGrill, setNewDoorWindowGrill] = useState({
+  const [newDoorWindowGrill, setNewDoorWindowGrill] = useState<Record<string, {
+    name: string;
+    height: string;
+    width: string;
+    sides: string;
+    grillMultiplier: string;
+  }>>({});
+  const [dialogDoorWindowGrill, setDialogDoorWindowGrill] = useState({
     name: "",
     height: "",
     width: "",
@@ -337,17 +344,20 @@ export default function RoomMeasurementScreen() {
     return null;
   };
 
-  const addDoorWindowGrill = () => {
-    if (newDoorWindowGrill.height && newDoorWindowGrill.width && newDoorWindowGrill.sides) {
-      const height = safeParseFloat(newDoorWindowGrill.height);
-      const width = safeParseFloat(newDoorWindowGrill.width);
-      const sides = safeParseFloat(newDoorWindowGrill.sides);
-      const grillMultiplier = safeParseFloat(newDoorWindowGrill.grillMultiplier, 1);
+  const addDoorWindowGrill = (roomId?: string) => {
+    const grillData = roomId ? newDoorWindowGrill[roomId] : dialogDoorWindowGrill;
+    if (!grillData) return null;
+    
+    if (grillData.height && grillData.width && grillData.sides) {
+      const height = safeParseFloat(grillData.height);
+      const width = safeParseFloat(grillData.width);
+      const sides = safeParseFloat(grillData.sides);
+      const grillMultiplier = safeParseFloat(grillData.grillMultiplier, 1);
       const area = height * width * sides * grillMultiplier;
       
       return {
         id: `dwg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        name: newDoorWindowGrill.name,
+        name: grillData.name,
         height,
         width,
         sides,
@@ -647,7 +657,7 @@ export default function RoomMeasurementScreen() {
   }, [rooms, projectId, calculateAreas]);
 
   const addDoorWindowGrillToRoom = async (roomId: string) => {
-    const doorWindowGrill = addDoorWindowGrill();
+    const doorWindowGrill = addDoorWindowGrill(roomId);
     if (doorWindowGrill) {
       const updatedRooms = rooms.map(room => {
         if (room.id === roomId) {
@@ -678,13 +688,16 @@ export default function RoomMeasurementScreen() {
           }
           
           setRooms(updatedRooms);
-          setNewDoorWindowGrill({
-            name: "",
-            height: "",
-            width: "",
-            sides: "",
-            grillMultiplier: "1"
-          });
+          setNewDoorWindowGrill(prev => ({
+            ...prev,
+            [roomId]: {
+              name: "",
+              height: "",
+              width: "",
+              sides: "",
+              grillMultiplier: "1"
+            }
+          }));
           toast.success('Door/Window added');
         } catch (error) {
           console.error('Error:', error);
@@ -735,7 +748,7 @@ export default function RoomMeasurementScreen() {
         }
         
         setRooms(prev => prev.map(room => 
-          room.id === targetRoom.id 
+          room.id === targetRoom!.id 
             ? { ...room, doorWindowGrills: updatedDoorWindowGrills, ...areas }
             : room
         ));
@@ -816,7 +829,7 @@ export default function RoomMeasurementScreen() {
     }
 
     // Reset and close dialog
-    setNewDoorWindowGrill({
+    setDialogDoorWindowGrill({
       name: "",
       height: "",
       width: "",
@@ -1807,15 +1820,21 @@ export default function RoomMeasurementScreen() {
                           <div className="grid grid-cols-2 gap-3 mb-3">
                             <Input
                               placeholder="e.g., Main Door, Window 1"
-                              value={newDoorWindowGrill.name}
-                              onChange={(e) => setNewDoorWindowGrill(prev => ({ ...prev, name: e.target.value }))}
+                              value={newDoorWindowGrill[room.id]?.name || ""}
+                              onChange={(e) => setNewDoorWindowGrill(prev => ({ 
+                                ...prev, 
+                                [room.id]: { ...(prev[room.id] || { name: "", height: "", width: "", sides: "", grillMultiplier: "1" }), name: e.target.value }
+                              }))}
                               className="h-10"
                             />
                             <Input
                               type="number"
                               placeholder="Sides"
-                              value={newDoorWindowGrill.sides}
-                              onChange={(e) => setNewDoorWindowGrill(prev => ({ ...prev, sides: e.target.value }))}
+                              value={newDoorWindowGrill[room.id]?.sides || ""}
+                              onChange={(e) => setNewDoorWindowGrill(prev => ({ 
+                                ...prev, 
+                                [room.id]: { ...(prev[room.id] || { name: "", height: "", width: "", sides: "", grillMultiplier: "1" }), sides: e.target.value }
+                              }))}
                               className="h-10"
                               step="1"
                             />
@@ -1825,24 +1844,33 @@ export default function RoomMeasurementScreen() {
                             <Input
                               type="number"
                               placeholder="Height"
-                              value={newDoorWindowGrill.height}
-                              onChange={(e) => setNewDoorWindowGrill(prev => ({ ...prev, height: e.target.value }))}
+                              value={newDoorWindowGrill[room.id]?.height || ""}
+                              onChange={(e) => setNewDoorWindowGrill(prev => ({ 
+                                ...prev, 
+                                [room.id]: { ...(prev[room.id] || { name: "", height: "", width: "", sides: "", grillMultiplier: "1" }), height: e.target.value }
+                              }))}
                               className="h-10"
                               step="0.1"
                             />
                             <Input
                               type="number"
                               placeholder="Width"
-                              value={newDoorWindowGrill.width}
-                              onChange={(e) => setNewDoorWindowGrill(prev => ({ ...prev, width: e.target.value }))}
+                              value={newDoorWindowGrill[room.id]?.width || ""}
+                              onChange={(e) => setNewDoorWindowGrill(prev => ({ 
+                                ...prev, 
+                                [room.id]: { ...(prev[room.id] || { name: "", height: "", width: "", sides: "", grillMultiplier: "1" }), width: e.target.value }
+                              }))}
                               className="h-10"
                               step="0.1"
                             />
                             <Input
                               type="number"
                               placeholder="Grill Multiplier"
-                              value={newDoorWindowGrill.grillMultiplier}
-                              onChange={(e) => setNewDoorWindowGrill(prev => ({ ...prev, grillMultiplier: e.target.value }))}
+                              value={newDoorWindowGrill[room.id]?.grillMultiplier || ""}
+                              onChange={(e) => setNewDoorWindowGrill(prev => ({ 
+                                ...prev, 
+                                [room.id]: { ...(prev[room.id] || { name: "", height: "", width: "", sides: "", grillMultiplier: "1" }), grillMultiplier: e.target.value }
+                              }))}
                               className="h-10"
                               step="0.1"
                             />
@@ -1974,15 +2002,15 @@ export default function RoomMeasurementScreen() {
             <div className="grid grid-cols-2 gap-3">
               <Input
                 placeholder="e.g., Main Door, Window 1"
-                value={newDoorWindowGrill.name}
-                onChange={(e) => setNewDoorWindowGrill(prev => ({ ...prev, name: e.target.value }))}
+                value={dialogDoorWindowGrill.name}
+                onChange={(e) => setDialogDoorWindowGrill(prev => ({ ...prev, name: e.target.value }))}
                 className="h-12"
               />
               <Input
                 type="number"
                 placeholder="Sides"
-                value={newDoorWindowGrill.sides}
-                onChange={(e) => setNewDoorWindowGrill(prev => ({ ...prev, sides: e.target.value }))}
+                value={dialogDoorWindowGrill.sides}
+                onChange={(e) => setDialogDoorWindowGrill(prev => ({ ...prev, sides: e.target.value }))}
                 className="h-12"
                 step="1"
               />
@@ -1992,33 +2020,33 @@ export default function RoomMeasurementScreen() {
               <Input
                 type="number"
                 placeholder="Height"
-                value={newDoorWindowGrill.height}
-                onChange={(e) => setNewDoorWindowGrill(prev => ({ ...prev, height: e.target.value }))}
+                value={dialogDoorWindowGrill.height}
+                onChange={(e) => setDialogDoorWindowGrill(prev => ({ ...prev, height: e.target.value }))}
                 className="h-12"
                 step="0.1"
               />
               <Input
                 type="number"
                 placeholder="Width"
-                value={newDoorWindowGrill.width}
-                onChange={(e) => setNewDoorWindowGrill(prev => ({ ...prev, width: e.target.value }))}
+                value={dialogDoorWindowGrill.width}
+                onChange={(e) => setDialogDoorWindowGrill(prev => ({ ...prev, width: e.target.value }))}
                 className="h-12"
                 step="0.1"
               />
               <Input
                 type="number"
-                placeholder="2"
-                value={newDoorWindowGrill.grillMultiplier}
-                onChange={(e) => setNewDoorWindowGrill(prev => ({ ...prev, grillMultiplier: e.target.value }))}
+                placeholder="Grill Multiplier"
+                value={dialogDoorWindowGrill.grillMultiplier}
+                onChange={(e) => setDialogDoorWindowGrill(prev => ({ ...prev, grillMultiplier: e.target.value }))}
                 className="h-12"
-                step="0.5"
+                step="0.1"
               />
             </div>
 
             <Button
               className="w-full h-12"
               onClick={handleAddDoorWindowFromDialog}
-              disabled={!doorWindowRoomName.trim() || !newDoorWindowGrill.height || !newDoorWindowGrill.width || !newDoorWindowGrill.sides}
+              disabled={!doorWindowRoomName.trim() || !dialogDoorWindowGrill.height || !dialogDoorWindowGrill.width || !dialogDoorWindowGrill.sides}
             >
               <Plus className="mr-2 h-4 w-4" />
               Add to {doorWindowRoomName || "Room"}
