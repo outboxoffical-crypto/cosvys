@@ -12,6 +12,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { RoomCard } from "./RoomCard";
 
+// Utility function for safe numeric parsing - always returns a valid number
+const safeParseFloat = (value: string | number | null | undefined, defaultValue: number = 0): number => {
+  if (value === null || value === undefined || value === '') return defaultValue;
+  const parsed = typeof value === 'string' ? parseFloat(value) : value;
+  return isNaN(parsed) || !isFinite(parsed) ? defaultValue : parsed;
+};
+
 interface OpeningArea {
   id: string;
   height: number;
@@ -247,13 +254,13 @@ export default function RoomMeasurementScreen() {
 
   const addTempOpeningArea = () => {
     if (newOpeningArea.height && newOpeningArea.width) {
-      const height = parseFloat(newOpeningArea.height);
-      const width = parseFloat(newOpeningArea.width);
-      const quantity = parseFloat(newOpeningArea.quantity) || 1;
+      const height = safeParseFloat(newOpeningArea.height);
+      const width = safeParseFloat(newOpeningArea.width);
+      const quantity = safeParseFloat(newOpeningArea.quantity, 1);
       const area = height * width * quantity;
       
       const openingArea = {
-        id: Date.now().toString(),
+        id: `opening-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         height,
         width,
         quantity,
@@ -267,13 +274,13 @@ export default function RoomMeasurementScreen() {
 
   const addTempExtraSurface = () => {
     if (newExtraSurface.height && newExtraSurface.width) {
-      const height = parseFloat(newExtraSurface.height);
-      const width = parseFloat(newExtraSurface.width);
-      const quantity = parseFloat(newExtraSurface.quantity) || 1;
+      const height = safeParseFloat(newExtraSurface.height);
+      const width = safeParseFloat(newExtraSurface.width);
+      const quantity = safeParseFloat(newExtraSurface.quantity, 1);
       const area = height * width * quantity;
       
       const extraSurface = {
-        id: Date.now().toString(),
+        id: `extra-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         height,
         width,
         quantity,
@@ -295,13 +302,13 @@ export default function RoomMeasurementScreen() {
 
   const addOpeningArea = () => {
     if (newOpeningArea.height && newOpeningArea.width) {
-      const height = parseFloat(newOpeningArea.height);
-      const width = parseFloat(newOpeningArea.width);
-      const quantity = parseFloat(newOpeningArea.quantity) || 1;
+      const height = safeParseFloat(newOpeningArea.height);
+      const width = safeParseFloat(newOpeningArea.width);
+      const quantity = safeParseFloat(newOpeningArea.quantity, 1);
       const area = height * width * quantity;
       
       return {
-        id: Date.now().toString(),
+        id: `opening-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         height,
         width,
         quantity,
@@ -313,13 +320,13 @@ export default function RoomMeasurementScreen() {
 
   const addExtraSurface = () => {
     if (newExtraSurface.height && newExtraSurface.width) {
-      const height = parseFloat(newExtraSurface.height);
-      const width = parseFloat(newExtraSurface.width);
-      const quantity = parseFloat(newExtraSurface.quantity) || 1;
+      const height = safeParseFloat(newExtraSurface.height);
+      const width = safeParseFloat(newExtraSurface.width);
+      const quantity = safeParseFloat(newExtraSurface.quantity, 1);
       const area = height * width * quantity;
       
       return {
-        id: Date.now().toString(),
+        id: `extra-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         height,
         width,
         quantity,
@@ -331,14 +338,14 @@ export default function RoomMeasurementScreen() {
 
   const addDoorWindowGrill = () => {
     if (newDoorWindowGrill.height && newDoorWindowGrill.width && newDoorWindowGrill.sides) {
-      const height = parseFloat(newDoorWindowGrill.height);
-      const width = parseFloat(newDoorWindowGrill.width);
-      const sides = parseFloat(newDoorWindowGrill.sides);
-      const grillMultiplier = parseFloat(newDoorWindowGrill.grillMultiplier) || 1;
+      const height = safeParseFloat(newDoorWindowGrill.height);
+      const width = safeParseFloat(newDoorWindowGrill.width);
+      const sides = safeParseFloat(newDoorWindowGrill.sides);
+      const grillMultiplier = safeParseFloat(newDoorWindowGrill.grillMultiplier, 1);
       const area = height * width * sides * grillMultiplier;
       
       return {
-        id: Date.now().toString(),
+        id: `dwg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         name: newDoorWindowGrill.name,
         height,
         width,
@@ -398,13 +405,21 @@ export default function RoomMeasurementScreen() {
         return;
       }
 
-      const length = parseFloat(newRoom.length);
-      const width = parseFloat(newRoom.width);
-      const height = newRoom.height ? parseFloat(newRoom.height) : 0;
+      // Use safe parsing with explicit validation
+      const length = safeParseFloat(newRoom.length);
+      const width = safeParseFloat(newRoom.width);
+      const height = safeParseFloat(newRoom.height, 0);
       
-      const roomId = Date.now().toString();
+      // Validate parsed values
+      if (length <= 0 || width <= 0) {
+        toast.error('Length and width must be greater than 0');
+        return;
+      }
       
-      // Create room with placeholder areas for INSTANT UI update
+      // Generate unique stable ID combining timestamp and random string
+      const roomId = `room-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Create room with placeholder areas for INSTANT UI update - immutable copy
       const room: Room = {
         id: roomId,
         name: newRoom.name.trim(),
@@ -412,9 +427,9 @@ export default function RoomMeasurementScreen() {
         width,
         height,
         projectType: activeProjectType,
-        pictures: newRoom.pictures,
-        openingAreas: [...tempOpeningAreas],
-        extraSurfaces: [...tempExtraSurfaces],
+        pictures: [...newRoom.pictures], // Immutable copy
+        openingAreas: [...tempOpeningAreas], // Immutable copy
+        extraSurfaces: [...tempExtraSurfaces], // Immutable copy
         doorWindowGrills: [],
         floorArea: 0,
         wallArea: 0,
@@ -430,7 +445,7 @@ export default function RoomMeasurementScreen() {
         }
       };
       
-      // INSTANT UI UPDATE - Add room to state immediately with placeholder values
+      // INSTANT UI UPDATE - Add room using functional update for immutability
       setRooms(prev => [...prev, room]);
       setNewRoom({ name: "", length: "", width: "", height: "", pictures: [] });
       setShowOpenAreaSection(false);
@@ -445,66 +460,86 @@ export default function RoomMeasurementScreen() {
         const calculatedAreas = await calculateAreasInBackground(
           length,
           width,
-          height || 0,
+          height,
           [...tempOpeningAreas],
           [...tempExtraSurfaces],
           []
         );
 
         if (calculatedAreas) {
-          // Update room with calculated areas
-          const updatedRoom = {
-            ...room,
-            floorArea: calculatedAreas.floor_area,
-            wallArea: calculatedAreas.wall_area,
-            ceilingArea: calculatedAreas.ceiling_area,
-            adjustedWallArea: calculatedAreas.adjusted_wall_area,
-            totalOpeningArea: calculatedAreas.total_opening_area,
-            totalExtraSurface: calculatedAreas.total_extra_surface,
-            totalDoorWindowGrillArea: calculatedAreas.total_door_window_grill_area,
-          };
+          // Update room with calculated areas - use functional update for immutability
+          setRooms(prev => prev.map(r => {
+            if (r.id === roomId) {
+              return {
+                ...r,
+                floorArea: safeParseFloat(calculatedAreas.floor_area),
+                wallArea: safeParseFloat(calculatedAreas.wall_area),
+                ceilingArea: safeParseFloat(calculatedAreas.ceiling_area),
+                adjustedWallArea: safeParseFloat(calculatedAreas.adjusted_wall_area),
+                totalOpeningArea: safeParseFloat(calculatedAreas.total_opening_area),
+                totalExtraSurface: safeParseFloat(calculatedAreas.total_extra_surface),
+                totalDoorWindowGrillArea: safeParseFloat(calculatedAreas.total_door_window_grill_area),
+              };
+            }
+            return r;
+          }));
 
-          setRooms(prev => prev.map(r => r.id === roomId ? updatedRoom : r));
-
-          // Save to database in background
+          // Save to database in background - use current room data from state
           try {
+            // Get the updated room from current state
+            const currentRoom = await new Promise<Room | undefined>((resolve) => {
+              setRooms(prev => {
+                const foundRoom = prev.find(r => r.id === roomId);
+                resolve(foundRoom);
+                return prev; // Return unchanged state
+              });
+            });
+
+            if (!currentRoom) {
+              console.error('Room not found in state');
+              return;
+            }
+
             const { error } = await supabase
               .from('rooms')
               .insert({
                 user_id: session.user.id,
                 project_id: projectId!,
                 room_id: roomId,
-                name: updatedRoom.name,
-                length: updatedRoom.length,
-                width: updatedRoom.width,
-                height: updatedRoom.height,
-                project_type: updatedRoom.projectType,
-                pictures: updatedRoom.pictures as any,
-                opening_areas: updatedRoom.openingAreas as any,
-                extra_surfaces: updatedRoom.extraSurfaces as any,
-                door_window_grills: updatedRoom.doorWindowGrills as any,
-                floor_area: updatedRoom.floorArea,
-                wall_area: updatedRoom.wallArea,
-                ceiling_area: updatedRoom.ceilingArea,
-                adjusted_wall_area: updatedRoom.adjustedWallArea,
-                total_opening_area: updatedRoom.totalOpeningArea,
-                total_extra_surface: updatedRoom.totalExtraSurface,
-                total_door_window_grill_area: updatedRoom.totalDoorWindowGrillArea,
-                selected_areas: updatedRoom.selectedAreas as any
+                name: currentRoom.name,
+                length: currentRoom.length,
+                width: currentRoom.width,
+                height: currentRoom.height,
+                project_type: currentRoom.projectType,
+                pictures: currentRoom.pictures as any,
+                opening_areas: currentRoom.openingAreas as any,
+                extra_surfaces: currentRoom.extraSurfaces as any,
+                door_window_grills: currentRoom.doorWindowGrills as any,
+                floor_area: currentRoom.floorArea,
+                wall_area: currentRoom.wallArea,
+                ceiling_area: currentRoom.ceilingArea,
+                adjusted_wall_area: currentRoom.adjustedWallArea,
+                total_opening_area: currentRoom.totalOpeningArea,
+                total_extra_surface: currentRoom.totalExtraSurface,
+                total_door_window_grill_area: currentRoom.totalDoorWindowGrillArea,
+                selected_areas: currentRoom.selectedAreas as any
               });
             
             if (error) {
               console.error('Background save error:', error);
               toast.error('Failed to sync room to server', { duration: 2000 });
+              // Remove room from state using functional update
               setRooms(prev => prev.filter(r => r.id !== roomId));
             }
           } catch (error) {
             console.error('Background save error:', error);
             toast.error('Failed to sync room to server', { duration: 2000 });
+            // Remove room using functional update
             setRooms(prev => prev.filter(r => r.id !== roomId));
           }
         } else {
           toast.error('Failed to calculate room areas');
+          // Remove room using functional update
           setRooms(prev => prev.filter(r => r.id !== roomId));
         }
       })();
@@ -525,6 +560,7 @@ export default function RoomMeasurementScreen() {
         return;
       }
       
+      // Functional update for immutability
       setRooms(prev => prev.filter(room => room.id !== roomId));
       toast.success('Room deleted');
     } catch (error) {
@@ -944,12 +980,18 @@ export default function RoomMeasurementScreen() {
     }
   }, [rooms, projectId]);
 
+  // Calculate totals from current rooms array - always recalculate, never increment
   const getTotalSelectedArea = useCallback((rooms: Room[]) => {
     return rooms.reduce((totals, room) => {
+      // Use safe parsing to handle any edge cases
+      const floorArea = safeParseFloat(room.floorArea);
+      const wallArea = safeParseFloat(room.adjustedWallArea);
+      const ceilingArea = safeParseFloat(room.ceilingArea);
+      
       return {
-        floor: totals.floor + (room.selectedAreas.floor ? room.floorArea : 0),
-        wall: totals.wall + (room.selectedAreas.wall ? room.adjustedWallArea : 0),
-        ceiling: totals.ceiling + (room.selectedAreas.ceiling ? room.ceilingArea : 0)
+        floor: totals.floor + (room.selectedAreas.floor ? floorArea : 0),
+        wall: totals.wall + (room.selectedAreas.wall ? wallArea : 0),
+        ceiling: totals.ceiling + (room.selectedAreas.ceiling ? ceilingArea : 0)
       };
     }, { floor: 0, wall: 0, ceiling: 0 });
   }, []);
@@ -1019,11 +1061,18 @@ export default function RoomMeasurementScreen() {
       return;
     }
 
-    const length = parseFloat(editFormData.length);
-    const width = parseFloat(editFormData.width);
-    const height = editFormData.height ? parseFloat(editFormData.height) : 0;
+    // Use safe parsing with validation
+    const length = safeParseFloat(editFormData.length);
+    const width = safeParseFloat(editFormData.width);
+    const height = safeParseFloat(editFormData.height, 0);
 
-    // INSTANT UI UPDATE - Update state immediately with current dimensions
+    // Validate parsed values
+    if (length <= 0 || width <= 0) {
+      toast.error('Length and width must be greater than 0');
+      return;
+    }
+
+    // INSTANT UI UPDATE - Functional update for immutability
     setRooms(prev => prev.map(room => 
       room.id === editingRoom.id 
         ? {
@@ -1047,25 +1096,25 @@ export default function RoomMeasurementScreen() {
       const calculatedAreas = await calculateAreasInBackground(
         length,
         width,
-        height || 0,
+        height,
         editingRoom.openingAreas,
         editingRoom.extraSurfaces,
         editingRoom.doorWindowGrills
       );
 
       if (calculatedAreas) {
-        // Update room with calculated areas
+        // Update room with calculated areas - functional update
         setRooms(prev => prev.map(room => 
           room.id === editingRoom.id 
             ? {
                 ...room,
-                floorArea: calculatedAreas.floor_area,
-                wallArea: calculatedAreas.wall_area,
-                ceilingArea: calculatedAreas.ceiling_area,
-                adjustedWallArea: calculatedAreas.adjusted_wall_area,
-                totalOpeningArea: calculatedAreas.total_opening_area,
-                totalExtraSurface: calculatedAreas.total_extra_surface,
-                totalDoorWindowGrillArea: calculatedAreas.total_door_window_grill_area
+                floorArea: safeParseFloat(calculatedAreas.floor_area),
+                wallArea: safeParseFloat(calculatedAreas.wall_area),
+                ceilingArea: safeParseFloat(calculatedAreas.ceiling_area),
+                adjustedWallArea: safeParseFloat(calculatedAreas.adjusted_wall_area),
+                totalOpeningArea: safeParseFloat(calculatedAreas.total_opening_area),
+                totalExtraSurface: safeParseFloat(calculatedAreas.total_extra_surface),
+                totalDoorWindowGrillArea: safeParseFloat(calculatedAreas.total_door_window_grill_area)
               }
             : room
         ));
