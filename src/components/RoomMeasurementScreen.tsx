@@ -102,7 +102,7 @@ export default function RoomMeasurementScreen() {
   const [tempOpeningAreas, setTempOpeningAreas] = useState<OpeningArea[]>([]);
   const [tempExtraSurfaces, setTempExtraSurfaces] = useState<ExtraSurface[]>([]);
   const [newDoorWindowGrill, setNewDoorWindowGrill] = useState({
-    name: "Door/Window",
+    name: "",
     height: "",
     width: "",
     sides: "",
@@ -679,7 +679,7 @@ export default function RoomMeasurementScreen() {
           
           setRooms(updatedRooms);
           setNewDoorWindowGrill({
-            name: "Door/Window",
+            name: "",
             height: "",
             width: "",
             sides: "",
@@ -817,7 +817,7 @@ export default function RoomMeasurementScreen() {
 
     // Reset and close dialog
     setNewDoorWindowGrill({
-      name: "Door/Window",
+      name: "",
       height: "",
       width: "",
       sides: "",
@@ -1806,7 +1806,7 @@ export default function RoomMeasurementScreen() {
 
                           <div className="grid grid-cols-2 gap-3 mb-3">
                             <Input
-                              placeholder="Name (e.g., Door, Window)"
+                              placeholder="e.g., Main Door, Window 1"
                               value={newDoorWindowGrill.name}
                               onChange={(e) => setNewDoorWindowGrill(prev => ({ ...prev, name: e.target.value }))}
                               className="h-10"
@@ -1973,7 +1973,7 @@ export default function RoomMeasurementScreen() {
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <Input
-                placeholder="Door/Window"
+                placeholder="e.g., Main Door, Window 1"
                 value={newDoorWindowGrill.name}
                 onChange={(e) => setNewDoorWindowGrill(prev => ({ ...prev, name: e.target.value }))}
                 className="h-12"
