@@ -133,7 +133,8 @@ export default function RoomMeasurementScreen() {
         const { data: roomsData, error } = await supabase
           .from('rooms')
           .select('*')
-          .eq('project_id', projectId);
+          .eq('project_id', projectId)
+          .order('created_at', { ascending: true });
         
         if (error) {
           console.error('Error loading rooms:', error);
