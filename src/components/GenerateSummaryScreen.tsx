@@ -123,15 +123,6 @@ export default function GenerateSummaryScreen() {
       const cardWidth = 288 + 16; // 72 * 4 (w-72) + gap-4
       const newIndex = Math.round(scrollLeft / cardWidth);
       setActiveConfigIndex(newIndex);
-      
-      // Sync labour carousel scroll
-      if (labourConfigRef.current && container === paintConfigRef.current) {
-        labourConfigRef.current.scrollLeft = scrollLeft;
-      }
-      // Sync material carousel scroll
-      if (materialConfigRef.current && container === paintConfigRef.current) {
-        materialConfigRef.current.scrollLeft = scrollLeft;
-      }
     };
 
     return (
@@ -394,22 +385,13 @@ export default function GenerateSummaryScreen() {
     const standardHours = 8;
     const numberOfLabours = 1;
 
-    // Handle labour carousel scroll - sync with paint config carousel
+    // Handle labour carousel scroll
     const handleLabourScroll = (e: React.UIEvent<HTMLDivElement>) => {
       const container = e.currentTarget;
       const scrollLeft = container.scrollLeft;
       const cardWidth = 288 + 16; // 72 * 4 (w-72) + gap-4
       const newIndex = Math.round(scrollLeft / cardWidth);
       setActiveConfigIndex(newIndex);
-      
-      // Sync paint config carousel scroll
-      if (paintConfigRef.current && container === labourConfigRef.current) {
-        paintConfigRef.current.scrollLeft = scrollLeft;
-      }
-      // Sync material config carousel scroll
-      if (materialConfigRef.current && container === labourConfigRef.current) {
-        materialConfigRef.current.scrollLeft = scrollLeft;
-      }
     };
 
     // Coverage rates per labour per day (8 hrs) - using average values
@@ -777,22 +759,13 @@ export default function GenerateSummaryScreen() {
 
   // Section 4: Material Section
   const renderMaterialSection = () => {
-    // Handle material carousel scroll - sync with paint config carousel
+    // Handle material carousel scroll
     const handleMaterialScroll = (e: React.UIEvent<HTMLDivElement>) => {
       const container = e.currentTarget;
       const scrollLeft = container.scrollLeft;
       const cardWidth = 288 + 16; // 72 * 4 (w-72) + gap-4
       const newIndex = Math.round(scrollLeft / cardWidth);
       setActiveConfigIndex(newIndex);
-      
-      // Sync paint config carousel scroll
-      if (paintConfigRef.current && container === materialConfigRef.current) {
-        paintConfigRef.current.scrollLeft = scrollLeft;
-      }
-      // Sync labour config carousel scroll
-      if (labourConfigRef.current && container === materialConfigRef.current) {
-        labourConfigRef.current.scrollLeft = scrollLeft;
-      }
     };
 
     // Material pack sizes and prices (example prices - adjust as needed)
