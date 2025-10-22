@@ -11,7 +11,6 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
 interface CoverageData {
@@ -65,8 +64,7 @@ export default function PaintEstimationScreen() {
   const [selectedConfigId, setSelectedConfigId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [emulsionSheetOpen, setEmulsionSheetOpen] = useState(false);
-  const [emulsionSearchQuery, setEmulsionSearchQuery] = useState("");
+  const [emulsionComboOpen, setEmulsionComboOpen] = useState(false);
 
   // Sync initial paint type from Room Measurements selection
   useEffect(() => {
@@ -1590,17 +1588,61 @@ export default function PaintEstimationScreen() {
                         </Button>
                       </div>
                     </div>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setEmulsionSearchQuery("");
-                        setEmulsionSheetOpen(true);
-                      }}
-                      className="h-9 w-full justify-between"
-                    >
-                      {selectedConfig.selectedMaterials.emulsion || "Select emulsion type"}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
+                    <Popover open={emulsionComboOpen} onOpenChange={setEmulsionComboOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={emulsionComboOpen}
+                          className="h-9 w-full justify-between"
+                        >
+                          {selectedConfig.selectedMaterials.emulsion || "Select emulsion type"}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[400px] p-0 pointer-events-auto z-50" align="start" side="top">
+                        <Command className="rounded-lg border shadow-md">
+                          <CommandList className="max-h-[300px]">
+                            <CommandEmpty>No emulsion found.</CommandEmpty>
+                            <CommandGroup>
+                              {coverageData
+                                .filter(item => {
+                                  const category = selectedPaintType === "Interior" ? "Interior Paint" :
+                                                 selectedPaintType === "Exterior" ? "Exterior Paint" : 
+                                                 selectedPaintType;
+                                  return item.category === category;
+                                })
+                                .map(item => item.product_name)
+                                .filter((value, index, self) => self.indexOf(value) === index)
+                                .map((emulsionName) => (
+                                  <CommandItem
+                                    key={emulsionName}
+                                    value={emulsionName}
+                                    onSelect={(currentValue) => {
+                                      handleUpdateConfig({
+                                        selectedMaterials: { 
+                                          ...selectedConfig.selectedMaterials, 
+                                          emulsion: currentValue === selectedConfig.selectedMaterials.emulsion ? "" : currentValue 
+                                        }
+                                      });
+                                      setEmulsionComboOpen(false);
+                                    }}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "mr-2 h-4 w-4",
+                                        selectedConfig.selectedMaterials.emulsion === emulsionName ? "opacity-100" : "opacity-0"
+                                      )}
+                                    />
+                                    {emulsionName}
+                                  </CommandItem>
+                                ))}
+                            </CommandGroup>
+                          </CommandList>
+                          <CommandInput placeholder="Search emulsion..." className="border-t" />
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 </div>
               )}
@@ -1704,17 +1746,61 @@ export default function PaintEstimationScreen() {
                         </Button>
                       </div>
                     </div>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setEmulsionSearchQuery("");
-                        setEmulsionSheetOpen(true);
-                      }}
-                      className="h-9 w-full justify-between"
-                    >
-                      {selectedConfig.selectedMaterials.emulsion || "Select emulsion type"}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
+                    <Popover open={emulsionComboOpen} onOpenChange={setEmulsionComboOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={emulsionComboOpen}
+                          className="h-9 w-full justify-between"
+                        >
+                          {selectedConfig.selectedMaterials.emulsion || "Select emulsion type"}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[400px] p-0 pointer-events-auto z-50" align="start" side="top">
+                        <Command className="rounded-lg border shadow-md">
+                          <CommandList className="max-h-[300px]">
+                            <CommandEmpty>No emulsion found.</CommandEmpty>
+                            <CommandGroup>
+                              {coverageData
+                                .filter(item => {
+                                  const category = selectedPaintType === "Interior" ? "Interior Paint" :
+                                                 selectedPaintType === "Exterior" ? "Exterior Paint" : 
+                                                 selectedPaintType;
+                                  return item.category === category;
+                                })
+                                .map(item => item.product_name)
+                                .filter((value, index, self) => self.indexOf(value) === index)
+                                .map((emulsionName) => (
+                                  <CommandItem
+                                    key={emulsionName}
+                                    value={emulsionName}
+                                    onSelect={(currentValue) => {
+                                      handleUpdateConfig({
+                                        selectedMaterials: { 
+                                          ...selectedConfig.selectedMaterials, 
+                                          emulsion: currentValue === selectedConfig.selectedMaterials.emulsion ? "" : currentValue 
+                                        }
+                                      });
+                                      setEmulsionComboOpen(false);
+                                    }}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "mr-2 h-4 w-4",
+                                        selectedConfig.selectedMaterials.emulsion === emulsionName ? "opacity-100" : "opacity-0"
+                                      )}
+                                    />
+                                    {emulsionName}
+                                  </CommandItem>
+                                ))}
+                            </CommandGroup>
+                          </CommandList>
+                          <CommandInput placeholder="Search emulsion..." className="border-t" />
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 </div>
               )}
@@ -1730,82 +1816,6 @@ export default function PaintEstimationScreen() {
           )}
         </DialogContent>
       </Dialog>
-
-      {/* Emulsion Selection Sheet */}
-      <Sheet open={emulsionSheetOpen} onOpenChange={setEmulsionSheetOpen}>
-        <SheetContent side="bottom" className="h-[85vh] flex flex-col">
-          <SheetHeader>
-            <SheetTitle>Select Emulsion Type</SheetTitle>
-          </SheetHeader>
-          <div className="flex-1 flex flex-col overflow-hidden mt-4">
-            <div className="px-3 pb-4">
-              <Input
-                placeholder="Search emulsion..."
-                value={emulsionSearchQuery}
-                onChange={(e) => setEmulsionSearchQuery(e.target.value)}
-                className="h-10"
-              />
-            </div>
-            <div className="flex-1 overflow-y-auto px-3">
-              {coverageData
-                .filter(item => {
-                  const category = selectedPaintType === "Interior" ? "Interior Paint" :
-                                 selectedPaintType === "Exterior" ? "Exterior Paint" : 
-                                 selectedPaintType;
-                  return item.category === category;
-                })
-                .map(item => item.product_name)
-                .filter((value, index, self) => self.indexOf(value) === index)
-                .filter((emulsionName) => 
-                  emulsionName.toLowerCase().includes(emulsionSearchQuery.toLowerCase())
-                )
-                .map((emulsionName) => (
-                  <button
-                    key={emulsionName}
-                    onClick={() => {
-                      handleUpdateConfig({
-                        selectedMaterials: { 
-                          ...selectedConfig?.selectedMaterials!, 
-                          emulsion: emulsionName
-                        }
-                      });
-                      setEmulsionSheetOpen(false);
-                      setEmulsionSearchQuery("");
-                    }}
-                    className={cn(
-                      "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors",
-                      selectedConfig?.selectedMaterials.emulsion === emulsionName 
-                        ? "bg-primary text-primary-foreground" 
-                        : "hover:bg-muted"
-                    )}
-                  >
-                    <Check
-                      className={cn(
-                        "h-4 w-4 shrink-0",
-                        selectedConfig?.selectedMaterials.emulsion === emulsionName ? "opacity-100" : "opacity-0"
-                      )}
-                    />
-                    <span className="flex-1">{emulsionName}</span>
-                  </button>
-                ))}
-              {coverageData
-                .filter(item => {
-                  const category = selectedPaintType === "Interior" ? "Interior Paint" :
-                                 selectedPaintType === "Exterior" ? "Exterior Paint" : 
-                                 selectedPaintType;
-                  return item.category === category;
-                })
-                .map(item => item.product_name)
-                .filter((value, index, self) => self.indexOf(value) === index)
-                .filter((emulsionName) => 
-                  emulsionName.toLowerCase().includes(emulsionSearchQuery.toLowerCase())
-                ).length === 0 && (
-                <p className="text-center text-muted-foreground py-8">No emulsion found.</p>
-              )}
-            </div>
-          </div>
-        </SheetContent>
-      </Sheet>
 
       {/* Fixed Bottom Button */}
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border">
