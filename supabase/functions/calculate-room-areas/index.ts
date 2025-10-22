@@ -43,8 +43,8 @@ serve(async (req) => {
     // Calculate total door/window grill area
     const total_door_window_grill_area = door_window_grills.reduce((sum, grill) => sum + (grill.area || 0), 0);
 
-    // Calculate adjusted wall area
-    const adjusted_wall_area = wall_area - total_opening_area + total_extra_surface + total_door_window_grill_area;
+    // Calculate adjusted wall area (door/window grills are for enamel only - NOT wall area)
+    const adjusted_wall_area = wall_area - total_opening_area + total_extra_surface;
 
     const result = {
       floor_area,
