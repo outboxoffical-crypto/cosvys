@@ -35,7 +35,6 @@ export default function GenerateSummaryScreen() {
   const navigate = useNavigate();
   const { projectId } = useParams();
   const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
   const [areaConfigs, setAreaConfigs] = useState<AreaConfig[]>([]);
   const [rooms, setRooms] = useState<any[]>([]);
   const [dealerMargin, setDealerMargin] = useState(0);
@@ -107,11 +106,8 @@ export default function GenerateSummaryScreen() {
           .single();
         if (dealerData) setDealerMargin(Number(dealerData.margin) || 0);
       }
-
-      setLoading(false);
     } catch (error) {
       console.error('Error loading data:', error);
-      setLoading(false);
     }
   };
 
@@ -1224,14 +1220,6 @@ export default function GenerateSummaryScreen() {
       </Card>
     );
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <p>Loading...</p>
-      </div>
-    );
-  }
 
   const totalAreas = rooms.reduce(
     (acc, room) => ({
