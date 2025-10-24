@@ -102,6 +102,27 @@ export default function PaintEstimationScreen() {
     } catch {}
   }, [selectedPaintType, projectId]);
 
+  // Quick hydrate configs from localStorage to avoid empty UI on return
+  useEffect(() => {
+    try {
+      const savedKey = `paint_configs_${projectId}_${selectedPaintType}`;
+      const raw = typeof window !== 'undefined' ? localStorage.getItem(savedKey) : null;
+      const list = raw ? JSON.parse(raw) : [];
+      if (Array.isArray(list) && list.length > 0) {
+        setAreaConfigurations(list);
+        setIsLoading(false);
+      } else {
+        const preservedKey = `configs_preserved_${projectId}_${selectedPaintType}`;
+        const raw2 = typeof window !== 'undefined' ? localStorage.getItem(preservedKey) : null;
+        const list2 = raw2 ? JSON.parse(raw2) : [];
+        if (Array.isArray(list2) && list2.length > 0) {
+          setAreaConfigurations(list2);
+          setIsLoading(false);
+        }
+      }
+    } catch {}
+  }, [projectId, selectedPaintType]);
+
   // Fetch coverage data
   useEffect(() => {
     fetchCoverageData();
@@ -523,6 +544,29 @@ export default function PaintEstimationScreen() {
         : cfg;
     });
 
+    // If user has saved configs (including rates and selections), load them and update only area values
+    try {
+      const savedConfigKey = `paint_configs_${projectId}_${selectedPaintType}`;
+      const savedRaw = typeof window !== 'undefined' ? localStorage.getItem(savedConfigKey) : null;
+      const savedList: AreaConfiguration[] = savedRaw ? JSON.parse(savedRaw) : [];
+      if (Array.isArray(savedList) && savedList.length > 0) {
+        const mergedWithSaved = savedList.map(saved => {
+          const match = merged.find(cfg =>
+            cfg.id === saved.id ||
+            (cfg.areaType === saved.areaType && cfg.label === saved.label && !!cfg.isAdditional === !!saved.isAdditional)
+          );
+          return match ? { ...saved, area: match.area } : saved;
+        });
+        const extras = merged.filter(cfg =>
+          !mergedWithSaved.some(s =>
+            s.id === cfg.id ||
+            (s.areaType === cfg.areaType && s.label === cfg.label && !!s.isAdditional === !!cfg.isAdditional)
+          )
+        );
+        setAreaConfigurations([...mergedWithSaved, ...extras]);
+        return;
+      }
+    } catch {}
     setAreaConfigurations(merged);
   };
 
