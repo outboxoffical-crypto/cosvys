@@ -612,11 +612,14 @@ export default function PaintEstimationScreen() {
   // Get selected configuration
   const selectedConfig = areaConfigurations.find(c => c.id === selectedConfigId);
 
-  // Calculate total cost
+  // Calculate total cost - sum of all area costs (emulsion + enamel)
   const calculateTotalCost = () => {
     return areaConfigurations.reduce((total, config) => {
-      if (config.perSqFtRate) {
-        return total + (config.area * parseFloat(config.perSqFtRate));
+      // For each area configuration (Floor, Wall, Ceiling, Enamel)
+      // Calculate: area × rate per sq ft, then add to total
+      if (config.perSqFtRate && config.area) {
+        const areaCost = config.area * parseFloat(config.perSqFtRate);
+        return total + areaCost;
       }
       return total;
     }, 0);
