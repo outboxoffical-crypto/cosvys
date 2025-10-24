@@ -66,9 +66,25 @@ export default function PaintEstimationScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [emulsionComboOpen, setEmulsionComboOpen] = useState(false);
 
-  // Sync initial paint type from Room Measurements selection
+  // Sync initial paint type, prefer snapshot from Generate Summary
   useEffect(() => {
     try {
+      const estimationKey = `estimation_${projectId}`;
+      const estimationStr = localStorage.getItem(estimationKey);
+      if (estimationStr) {
+        const est = JSON.parse(estimationStr);
+        const pt: any = est.paintType;
+        if (pt === 'Interior' || pt === 'Exterior' || pt === 'Waterproofing') {
+          setSelectedPaintType(pt);
+          localStorage.setItem(`selected_paint_type_${projectId}`, pt);
+          // Hydrate preserved configs so returning from Summary keeps selections
+          const preservedKey = `configs_preserved_${projectId}_${pt}`;
+          if (Array.isArray(est.configurations)) {
+            localStorage.setItem(preservedKey, JSON.stringify(est.configurations));
+          }
+        }
+        return;
+      }
       const key = `selected_paint_type_${projectId}`;
       const t = localStorage.getItem(key);
       if (t === 'Interior' || t === 'Exterior' || t === 'Waterproofing') {
@@ -76,6 +92,15 @@ export default function PaintEstimationScreen() {
       }
     } catch {}
   }, [projectId]);
+
+  // Persist paint type selection so it survives navigation
+  useEffect(() => {
+    try {
+      if (projectId && selectedPaintType) {
+        localStorage.setItem(`selected_paint_type_${projectId}`, selectedPaintType);
+      }
+    } catch {}
+  }, [selectedPaintType, projectId]);
 
   // Fetch coverage data
   useEffect(() => {

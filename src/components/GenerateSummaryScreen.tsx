@@ -254,6 +254,18 @@ export default function GenerateSummaryScreen() {
               )}
             </>
           )}
+          {/* Total Project Cost - quick visibility below configuration box */}
+          {areaConfigs.length > 0 && (
+            <div className="mt-3 p-3 rounded-md border border-primary/20 bg-primary/5 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <DollarSign className="h-4 w-4 text-primary" />
+                <span className="font-semibold">Total Project Cost</span>
+              </div>
+              <span className="font-bold text-primary">₹{(
+                areaConfigs.reduce((sum, c) => sum + ((Number(c.area) || 0) * (parseFloat(c.perSqFtRate) || 0)), 0)
+              ).toFixed(2)}</span>
+            </div>
+          )}
         </CardContent>
       </Card>
     );
