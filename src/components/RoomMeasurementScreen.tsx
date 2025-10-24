@@ -1881,7 +1881,7 @@ export default function RoomMeasurementScreen() {
                             size="sm"
                             className="w-full"
                             onClick={() => addDoorWindowGrillToRoom(room.id)}
-                            disabled={!newDoorWindowGrill.height || !newDoorWindowGrill.width || !newDoorWindowGrill.sides}
+                            disabled={!newDoorWindowGrill[room.id]?.height || !newDoorWindowGrill[room.id]?.width || !newDoorWindowGrill[room.id]?.sides}
                           >
                             <Plus className="mr-1 h-3 w-3" />
                             Add to {room.name}
