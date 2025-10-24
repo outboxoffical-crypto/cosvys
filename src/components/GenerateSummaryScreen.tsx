@@ -48,6 +48,7 @@ export default function GenerateSummaryScreen() {
   const paintConfigRef = useRef<HTMLDivElement>(null);
   const labourConfigRef = useRef<HTMLDivElement>(null);
   const materialConfigRef = useRef<HTMLDivElement>(null);
+  const topSectionRef = useRef<HTMLDivElement>(null);
   const perDayLabourCost = 1100; // Fixed per day labour cost in rupees
   const [projectData, setProjectData] = useState<any>(null);
 
@@ -124,7 +125,7 @@ export default function GenerateSummaryScreen() {
     return (
       <Card className="eca-shadow">
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+          <CardTitle className="flex items-center gap-2 text-base font-semibold">
             <Palette className="h-5 w-5 text-primary" />
             Paint Configuration Details
           </CardTitle>
@@ -256,14 +257,16 @@ export default function GenerateSummaryScreen() {
           )}
           {/* Total Project Cost - quick visibility below configuration box */}
           {areaConfigs.length > 0 && (
-            <div className="mt-3 p-3 rounded-md border border-primary/20 bg-primary/5 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4 text-primary" />
-                <span className="font-semibold">Total Project Cost</span>
+            <div className="mt-3 p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border-2 border-primary">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Total Project Cost</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">All configurations combined</p>
+                </div>
+                <p className="text-2xl font-bold text-primary">₹{(
+                  areaConfigs.reduce((sum, c) => sum + ((Number(c.area) || 0) * (parseFloat(c.perSqFtRate) || 0)), 0)
+                ).toFixed(2)}</p>
               </div>
-              <span className="font-bold text-primary">₹{(
-                areaConfigs.reduce((sum, c) => sum + ((Number(c.area) || 0) * (parseFloat(c.perSqFtRate) || 0)), 0)
-              ).toFixed(2)}</span>
             </div>
           )}
         </CardContent>
@@ -284,77 +287,149 @@ export default function GenerateSummaryScreen() {
       if (selectedAreas.ceiling) totalCeiling += Number(room.ceiling_area || 0);
     });
 
+    // Group rooms by project type
+    const roomsByType: { [key: string]: any[] } = {};
+    const projectTypes = ['Interior', 'Exterior', 'Waterproofing'];
+    
+    projectTypes.forEach(type => {
+      roomsByType[type] = rooms.filter(room => room.project_type === type);
+    });
+
+    // Get enamel areas (door/window/grill) grouped by room
+    const enamelAreas: { [roomId: string]: number } = {};
+    rooms.forEach(room => {
+      const dwgArea = Number(room.total_door_window_grill_area || 0);
+      if (dwgArea > 0) {
+        enamelAreas[room.id] = dwgArea;
+      }
+    });
+
     return (
       <Card className="eca-shadow">
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+          <CardTitle className="flex items-center gap-2 text-base font-semibold">
             <Home className="h-5 w-5 text-primary" />
             Total Room Details
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {/* Individual Rooms First */}
+          <div className="space-y-4">
+            {/* Individual Rooms by Project Type */}
             <div className="space-y-2">
               <p className="font-semibold text-foreground text-sm mb-4">Individual Rooms</p>
-              <div className="space-y-3">
-                {rooms.map(room => {
-                  const selectedAreas = room.selected_areas || { floor: true, wall: true, ceiling: false };
-                  const floorArea = Number(room.floor_area || 0);
-                  const wallArea = Number(room.adjusted_wall_area || room.wall_area || 0);
-                  const ceilingArea = Number(room.ceiling_area || 0);
-                  
-                  return (
-                    <div 
-                      key={room.id} 
-                      className="group relative bg-card rounded border-l-2 border-primary hover:border-l-4 eca-shadow hover:eca-shadow-medium eca-transition p-3 sm:p-4"
-                    >
-                      {/* Mobile: Vertical Layout, Desktop: Horizontal Layout */}
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-6">
-                        {/* Room Name */}
-                        <div className="flex-shrink-0">
-                          <h3 className="font-bold text-xs sm:text-sm tracking-wider text-foreground">
-                            {room.name}
-                          </h3>
-                        </div>
-                        
-                        {/* Measurements - Evenly distributed */}
-                        <div className="flex items-center justify-between gap-2 sm:gap-4 flex-1 sm:ml-auto sm:max-w-md">
-                          {/* Floor Area */}
-                          {selectedAreas.floor && (
-                            <div className="text-center flex-1">
-                              <p className="text-[9px] sm:text-[10px] uppercase tracking-widest text-muted-foreground mb-0.5 sm:mb-1">FLOOR</p>
-                              <p className="text-base sm:text-xl md:text-2xl font-bold text-foreground leading-none">
-                                {floorArea.toFixed(2)}
-                              </p>
-                            </div>
-                          )}
-                          
-                          {/* Wall Area */}
-                          {selectedAreas.wall && (
-                            <div className="text-center flex-1">
-                              <p className="text-[9px] sm:text-[10px] uppercase tracking-widest text-muted-foreground mb-0.5 sm:mb-1">WALL</p>
-                              <p className="text-base sm:text-xl md:text-2xl font-bold text-foreground leading-none">
-                                {wallArea.toFixed(2)}
-                              </p>
-                            </div>
-                          )}
-                          
-                          {/* Ceiling Area */}
-                          {selectedAreas.ceiling && (
-                            <div className="text-center flex-1">
-                              <p className="text-[9px] sm:text-[10px] uppercase tracking-widest text-muted-foreground mb-0.5 sm:mb-1">CEILING</p>
-                              <p className="text-base sm:text-xl md:text-2xl font-bold text-foreground leading-none">
-                                {ceilingArea.toFixed(2)}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
+              
+              {/* Group by project type */}
+              {projectTypes.map(projectType => {
+                const typeRooms = roomsByType[projectType];
+                if (!typeRooms || typeRooms.length === 0) return null;
+                
+                return (
+                  <div key={projectType} className="space-y-2">
+                    {/* Project Type Header */}
+                    <div className="flex items-center gap-2 mt-3">
+                      <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                        {projectType}
+                      </Badge>
                     </div>
-                  );
-                })}
-              </div>
+                    
+                    {/* Rooms under this type */}
+                    <div className="space-y-3">
+                      {typeRooms.map(room => {
+                        const selectedAreas = room.selected_areas || { floor: true, wall: true, ceiling: false };
+                        const floorArea = Number(room.floor_area || 0);
+                        const wallArea = Number(room.adjusted_wall_area || room.wall_area || 0);
+                        const ceilingArea = Number(room.ceiling_area || 0);
+                        
+                        return (
+                          <div 
+                            key={room.id} 
+                            className="group relative bg-card rounded border-l-2 border-primary hover:border-l-4 eca-shadow hover:eca-shadow-medium eca-transition p-3 sm:p-4"
+                          >
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-6">
+                              <div className="flex-shrink-0">
+                                <h3 className="font-bold text-xs sm:text-sm tracking-wider text-foreground">
+                                  {room.name}
+                                </h3>
+                              </div>
+                              
+                              <div className="flex items-center justify-between gap-2 sm:gap-4 flex-1 sm:ml-auto sm:max-w-md">
+                                {selectedAreas.floor && (
+                                  <div className="text-center flex-1">
+                                    <p className="text-[9px] sm:text-[10px] uppercase tracking-widest text-muted-foreground mb-0.5 sm:mb-1">FLOOR</p>
+                                    <p className="text-base sm:text-xl md:text-2xl font-bold text-foreground leading-none">
+                                      {floorArea.toFixed(2)}
+                                    </p>
+                                  </div>
+                                )}
+                                
+                                {selectedAreas.wall && (
+                                  <div className="text-center flex-1">
+                                    <p className="text-[9px] sm:text-[10px] uppercase tracking-widest text-muted-foreground mb-0.5 sm:mb-1">WALL</p>
+                                    <p className="text-base sm:text-xl md:text-2xl font-bold text-foreground leading-none">
+                                      {wallArea.toFixed(2)}
+                                    </p>
+                                  </div>
+                                )}
+                                
+                                {selectedAreas.ceiling && (
+                                  <div className="text-center flex-1">
+                                    <p className="text-[9px] sm:text-[10px] uppercase tracking-widest text-muted-foreground mb-0.5 sm:mb-1">CEILING</p>
+                                    <p className="text-base sm:text-xl md:text-2xl font-bold text-foreground leading-none">
+                                      {ceilingArea.toFixed(2)}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+              
+              {/* Enamel Areas (Door/Window/Grill) - Separate Section */}
+              {Object.keys(enamelAreas).length > 0 && (
+                <div className="space-y-2 mt-4">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="bg-orange-500/10 text-orange-600 border-orange-500/20">
+                      Enamel (Door & Window)
+                    </Badge>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {Object.entries(enamelAreas).map(([roomId, area]) => {
+                      const room = rooms.find(r => r.id === roomId);
+                      if (!room) return null;
+                      
+                      return (
+                        <div 
+                          key={roomId} 
+                          className="group relative bg-card rounded border-l-2 border-orange-500 hover:border-l-4 eca-shadow hover:eca-shadow-medium eca-transition p-3 sm:p-4"
+                        >
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-6">
+                            <div className="flex-shrink-0">
+                              <h3 className="font-bold text-xs sm:text-sm tracking-wider text-foreground">
+                                {room.name} - Door & Window
+                              </h3>
+                            </div>
+                            
+                            <div className="flex items-center justify-end gap-2 sm:gap-4 flex-1 sm:ml-auto sm:max-w-md">
+                              <div className="text-center flex-1">
+                                <p className="text-[9px] sm:text-[10px] uppercase tracking-widest text-muted-foreground mb-0.5 sm:mb-1">ENAMEL AREA</p>
+                                <p className="text-base sm:text-xl md:text-2xl font-bold text-orange-600 leading-none">
+                                  {area.toFixed(2)}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Totals Second with Project Type */}
@@ -632,7 +707,7 @@ export default function GenerateSummaryScreen() {
                 </p>
               </div>
             )}
-            {/* Labour Calculation Breakdown - Carousel Style */}
+            {/* Labour Calculation Breakdown - Carousel Style matching Material cards */}
             {labourMode === 'auto' && configTasks.length > 0 && (
               <div>
                 <p className="font-semibold text-sm mb-2 text-foreground">Labour Calculation Breakdown</p>
@@ -641,36 +716,51 @@ export default function GenerateSummaryScreen() {
                     {configTasks.map((configTask, index) => (
                       <div 
                         key={index} 
-                        className="snap-start flex-shrink-0 w-72 p-4 border border-border rounded-lg bg-muted/30 eca-shadow"
+                        className="snap-start flex-shrink-0 w-72 border-2 border-primary/20 bg-card rounded-lg eca-shadow"
                       >
-                        <div className="mb-3">
-                          <div className="flex items-center justify-between mb-1">
-                            <p className="text-xs text-primary uppercase tracking-wide font-medium">Labour Required</p>
-                            <Badge variant="secondary" className="text-[10px] px-2 py-0.5">
-                              {paintType}
-                            </Badge>
-                          </div>
-                          <p className="font-semibold text-base mt-1 text-foreground">{configTask.configLabel}</p>
-                        </div>
-                        <div className="space-y-2">
-                          {configTask.tasks.map((task: any, taskIdx: number) => {
-                            const adjustedDays = Math.ceil(task.daysRequired / autoLabourPerDay);
-                            return (
-                              <div key={taskIdx} className="p-3 bg-card rounded-md border border-border">
-                                <div className="flex justify-between items-center mb-2">
-                                  <span className="text-sm font-medium text-foreground">{task.name}</span>
-                                  <span className="text-sm font-bold text-primary">{adjustedDays} days</span>
+                        <div className="p-4">
+                          <div className="space-y-4">
+                            {/* Header with Type Badge */}
+                            <div className="flex items-center justify-between pb-2 border-b border-primary/10">
+                              <h3 className="font-semibold text-base uppercase tracking-wide text-primary">{configTask.configLabel}</h3>
+                              <Badge variant="secondary" className="text-xs">
+                                {paintType}
+                              </Badge>
+                            </div>
+                            
+                            {/* Tasks List */}
+                            {configTask.tasks.map((task: any, taskIdx: number) => {
+                              const adjustedDays = Math.ceil(task.daysRequired / autoLabourPerDay);
+                              return (
+                                <div key={taskIdx} className="space-y-2">
+                                  {/* Task Name - Large and Bold */}
+                                  <h4 className="text-base font-semibold text-foreground">{task.name}</h4>
+                                  
+                                  {/* Details Row */}
+                                  <div className="flex items-baseline justify-between">
+                                    <div className="flex-1">
+                                      <p className="text-sm text-muted-foreground">
+                                        Area: <span className="font-medium text-foreground">{task.area.toFixed(0)} sq.ft</span>
+                                      </p>
+                                      <p className="text-sm text-muted-foreground">
+                                        Coats: <span className="font-medium text-foreground">{task.coats}</span>
+                                      </p>
+                                    </div>
+                                    <div className="text-right">
+                                      <p className="text-xl font-bold text-primary">{adjustedDays} days</p>
+                                    </div>
+                                  </div>
                                 </div>
-                                <div className="flex justify-between items-center text-xs text-muted-foreground">
-                                  <span>Area: <span className="font-medium text-foreground">{task.area.toFixed(0)} sq.ft</span></span>
-                                  <span>Coats: <span className="font-medium text-foreground">{task.coats}</span></span>
-                                </div>
+                              );
+                            })}
+                            
+                            {/* Total Days */}
+                            <div className="pt-3 border-t-2 border-primary/20">
+                              <div className="flex items-center justify-between">
+                                <p className="text-sm font-medium text-muted-foreground">Total Days:</p>
+                                <p className="text-2xl font-bold text-primary">{Math.ceil(configTask.totalDays / autoLabourPerDay)} days</p>
                               </div>
-                            );
-                          })}
-                          <div className="pt-2 mt-2 flex justify-between items-center">
-                            <span className="text-sm font-medium text-muted-foreground">Total Days:</span>
-                            <span className="text-base font-bold text-primary">{Math.ceil(configTask.totalDays / autoLabourPerDay)} days</span>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -1393,14 +1483,22 @@ export default function GenerateSummaryScreen() {
       </div>
 
       <div className="p-4">
-        <Tabs defaultValue="generate" className="w-full">
+        <Tabs defaultValue="generate" className="w-full" onValueChange={(value) => {
+          if (value === "generate" && topSectionRef.current) {
+            setTimeout(() => {
+              topSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+          }
+        }}>
           <TabsList className="grid w-full grid-cols-2 mb-4">
             <TabsTrigger value="generate">Generate Summary</TabsTrigger>
             <TabsTrigger value="summary">Project Summary</TabsTrigger>
           </TabsList>
 
           <TabsContent value="generate" className="space-y-4">
-            {renderTypeDetails()}
+            <div ref={topSectionRef}>
+              {renderTypeDetails()}
+            </div>
             {renderRoomDetails()}
             {renderLabourSection()}
             {renderMaterialSection()}
