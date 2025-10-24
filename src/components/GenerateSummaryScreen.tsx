@@ -245,10 +245,7 @@ export default function GenerateSummaryScreen() {
           {/* Total Project Cost - quick visibility below configuration box */}
           {areaConfigs.length > 0 && <div className="mt-3 p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border-2 border-primary">
               <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-sm font-semibold text-foreground">Total Project Cost</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">All configurations combined</p>
-                </div>
+                <span className="text-base font-semibold text-slate-950">Total Project Cost</span>
                 <p className="text-2xl font-bold text-primary">₹{areaConfigs.reduce((sum, c) => sum + (Number(c.area) || 0) * (parseFloat(c.perSqFtRate) || 0), 0).toFixed(2)}</p>
               </div>
             </div>}
@@ -716,10 +713,7 @@ export default function GenerateSummaryScreen() {
             {/* Total Labour Cost - Only in Auto Mode */}
             {labourMode === 'auto' && <div className="p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border-2 border-primary">
                 <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">Total Labour Cost</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">Estimated total labour expense for the project</p>
-                  </div>
+                  <span className="text-base font-semibold text-slate-950">Total Labour Cost</span>
                   <p className="text-2xl font-bold text-primary">
                     ₹{(displayLabours * displayDays * perDayLabourCost).toLocaleString('en-IN')}
                   </p>
@@ -1007,13 +1001,10 @@ export default function GenerateSummaryScreen() {
                 </div>}
             </>}
 
-          {/* Total Cost Material Summary */}
+          {/* Total Material Cost Summary */}
           {configMaterials.length > 0 && <div className="p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border-2 border-primary mt-4">
               <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Cost Material</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">All configurations combined</p>
-                </div>
+                <span className="text-base font-semibold text-slate-950">Total Material Cost</span>
                 <p className="text-2xl font-bold text-primary">
                   ₹{configMaterials.reduce((sum, cm) => sum + cm.totalCost, 0).toFixed(2)}
                 </p>
@@ -1194,7 +1185,7 @@ export default function GenerateSummaryScreen() {
             </div>
             <div className="p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border-2 border-primary">
               <div className="flex justify-between items-center">
-                <span className="text-base font-semibold text-foreground">Project Total</span>
+                <span className="text-base font-semibold text-slate-950">Project Total</span>
                 <span className="text-2xl font-bold text-primary">₹{totalCost.toFixed(2)}</span>
               </div>
             </div>
