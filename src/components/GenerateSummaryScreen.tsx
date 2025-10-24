@@ -56,6 +56,16 @@ export default function GenerateSummaryScreen() {
   useEffect(() => {
     loadData();
   }, [projectId]);
+
+  // Scroll to top when component first loads
+  useEffect(() => {
+    setTimeout(() => {
+      topSectionRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }, 100);
+  }, []);
   const loadData = async () => {
     try {
       // Load project data
