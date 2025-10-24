@@ -7,7 +7,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-
 interface AreaConfig {
   id: string;
   areaType: string;
@@ -30,11 +29,14 @@ interface AreaConfig {
     emulsion: number;
   };
 }
-
 export default function GenerateSummaryScreen() {
   const navigate = useNavigate();
-  const { projectId } = useParams();
-  const { toast } = useToast();
+  const {
+    projectId
+  } = useParams();
+  const {
+    toast
+  } = useToast();
   const [areaConfigs, setAreaConfigs] = useState<AreaConfig[]>([]);
   const [rooms, setRooms] = useState<any[]>([]);
   const [dealerMargin, setDealerMargin] = useState(0);
@@ -51,11 +53,9 @@ export default function GenerateSummaryScreen() {
   const topSectionRef = useRef<HTMLDivElement>(null);
   const perDayLabourCost = 1100; // Fixed per day labour cost in rupees
   const [projectData, setProjectData] = useState<any>(null);
-
   useEffect(() => {
     loadData();
   }, [projectId]);
-
   const loadData = async () => {
     try {
       // Load project data
@@ -66,7 +66,6 @@ export default function GenerateSummaryScreen() {
       const estimationKey = `estimation_${projectId}`;
       const estimationStr = localStorage.getItem(estimationKey);
       const storedPaintType = localStorage.getItem(`selected_paint_type_${projectId}`) || 'Interior';
-
       if (estimationStr) {
         const est = JSON.parse(estimationStr);
         const pt = est.paintType || storedPaintType;
@@ -91,20 +90,21 @@ export default function GenerateSummaryScreen() {
       }
 
       // Load rooms from backend
-      const { data: roomsData } = await supabase
-        .from('rooms')
-        .select('*')
-        .eq('project_id', projectId);
+      const {
+        data: roomsData
+      } = await supabase.from('rooms').select('*').eq('project_id', projectId);
       if (roomsData) setRooms(roomsData);
 
       // Load dealer info
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
       if (user) {
-        const { data: dealerData } = await supabase
-          .from('dealer_info')
-          .select('margin')
-          .eq('user_id', user.id)
-          .single();
+        const {
+          data: dealerData
+        } = await supabase.from('dealer_info').select('margin').eq('user_id', user.id).single();
         if (dealerData) setDealerMargin(Number(dealerData.margin) || 0);
       }
     } catch (error) {
@@ -121,9 +121,7 @@ export default function GenerateSummaryScreen() {
       const newIndex = Math.round(scrollLeft / cardWidth);
       setActiveConfigIndex(newIndex);
     };
-
-    return (
-      <Card className="eca-shadow">
+    return <Card className="eca-shadow">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base font-semibold">
             <Palette className="h-5 w-5 text-primary" />
@@ -132,52 +130,45 @@ export default function GenerateSummaryScreen() {
           <p className="text-sm text-muted-foreground mt-1">Summary from {paintType} section</p>
         </CardHeader>
         <CardContent>
-          {areaConfigs.length === 0 ? (
-            <div className="text-sm text-muted-foreground p-4 border rounded-md bg-muted/30">
+          {areaConfigs.length === 0 ? <div className="text-sm text-muted-foreground p-4 border rounded-md bg-muted/30">
               No paint configurations found. Please add them in Paint Estimation and click Generate Summary.
-            </div>
-          ) : (
-            <>
+            </div> : <>
               {/* Horizontal scrolling container */}
-              <div 
-                ref={paintConfigRef}
-                onScroll={handleScroll}
-                className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide"
-                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-              >
-                {areaConfigs.map((config) => {
-                  const area = Number(config.area) || 0;
-                  const rate = parseFloat(config.perSqFtRate) || 0;
-                  const totalCost = area * rate;
-                  
-                  // Get coat details in proper format
-                  const getCoatDetails = () => {
-                    if (config.paintingSystem === 'Fresh Painting') {
-                      const parts = [];
-                      if (config.coatConfiguration.putty > 0) {
-                        parts.push(`${config.coatConfiguration.putty} coat${config.coatConfiguration.putty > 1 ? 's' : ''} of ${config.selectedMaterials.putty || 'Putty'}`);
-                      }
-                      if (config.coatConfiguration.primer > 0) {
-                        parts.push(`${config.coatConfiguration.primer} coat${config.coatConfiguration.primer > 1 ? 's' : ''} of ${config.selectedMaterials.primer || 'Primer'}`);
-                      }
-                      if (config.coatConfiguration.emulsion > 0) {
-                        parts.push(`${config.coatConfiguration.emulsion} coat${config.coatConfiguration.emulsion > 1 ? 's' : ''} of ${config.selectedMaterials.emulsion || 'Emulsion'}`);
-                      }
-                      return parts.join(' + ');
-                    } else {
-                      const parts = [];
-                      if (config.repaintingConfiguration?.primer > 0) {
-                        parts.push(`${config.repaintingConfiguration.primer} coat${config.repaintingConfiguration.primer > 1 ? 's' : ''} of ${config.selectedMaterials.primer || 'Primer'}`);
-                      }
-                      if (config.repaintingConfiguration?.emulsion > 0) {
-                        parts.push(`${config.repaintingConfiguration.emulsion} coat${config.repaintingConfiguration.emulsion > 1 ? 's' : ''} of ${config.selectedMaterials.emulsion || 'Emulsion'}`);
-                      }
-                      return parts.join(' + ');
-                    }
-                  };
+              <div ref={paintConfigRef} onScroll={handleScroll} className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide" style={{
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none'
+          }}>
+                {areaConfigs.map(config => {
+              const area = Number(config.area) || 0;
+              const rate = parseFloat(config.perSqFtRate) || 0;
+              const totalCost = area * rate;
 
-                  return (
-                    <Card key={config.id} className="flex-none w-72 border-2 border-primary/20 bg-primary/5 snap-start">
+              // Get coat details in proper format
+              const getCoatDetails = () => {
+                if (config.paintingSystem === 'Fresh Painting') {
+                  const parts = [];
+                  if (config.coatConfiguration.putty > 0) {
+                    parts.push(`${config.coatConfiguration.putty} coat${config.coatConfiguration.putty > 1 ? 's' : ''} of ${config.selectedMaterials.putty || 'Putty'}`);
+                  }
+                  if (config.coatConfiguration.primer > 0) {
+                    parts.push(`${config.coatConfiguration.primer} coat${config.coatConfiguration.primer > 1 ? 's' : ''} of ${config.selectedMaterials.primer || 'Primer'}`);
+                  }
+                  if (config.coatConfiguration.emulsion > 0) {
+                    parts.push(`${config.coatConfiguration.emulsion} coat${config.coatConfiguration.emulsion > 1 ? 's' : ''} of ${config.selectedMaterials.emulsion || 'Emulsion'}`);
+                  }
+                  return parts.join(' + ');
+                } else {
+                  const parts = [];
+                  if (config.repaintingConfiguration?.primer > 0) {
+                    parts.push(`${config.repaintingConfiguration.primer} coat${config.repaintingConfiguration.primer > 1 ? 's' : ''} of ${config.selectedMaterials.primer || 'Primer'}`);
+                  }
+                  if (config.repaintingConfiguration?.emulsion > 0) {
+                    parts.push(`${config.repaintingConfiguration.emulsion} coat${config.repaintingConfiguration.emulsion > 1 ? 's' : ''} of ${config.selectedMaterials.emulsion || 'Emulsion'}`);
+                  }
+                  return parts.join(' + ');
+                }
+              };
+              return <Card key={config.id} className="flex-none w-72 border-2 border-primary/20 bg-primary/5 snap-start">
                       <CardContent className="p-4">
                         <div className="space-y-3">
                           {/* Header with Type Badge */}
@@ -223,55 +214,36 @@ export default function GenerateSummaryScreen() {
                           </div>
                         </div>
                       </CardContent>
-                    </Card>
-                  );
-                })}
+                    </Card>;
+            })}
               </div>
               
               {/* Scroll indicators */}
-              {areaConfigs.length > 1 && (
-                <div className="flex justify-center gap-2 mt-2">
-                  {areaConfigs.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => {
-                        const container = paintConfigRef.current;
-                        if (container) {
-                          const cardWidth = 288 + 16;
-                          container.scrollTo({
-                            left: index * cardWidth,
-                            behavior: 'smooth'
-                          });
-                        }
-                      }}
-                      className={`h-2 rounded-full transition-all ${
-                        index === activeConfigIndex 
-                          ? 'w-8 bg-primary' 
-                          : 'w-2 bg-primary/30'
-                      }`}
-                    />
-                  ))}
-                </div>
-              )}
-            </>
-          )}
+              {areaConfigs.length > 1 && <div className="flex justify-center gap-2 mt-2">
+                  {areaConfigs.map((_, index) => <button key={index} onClick={() => {
+              const container = paintConfigRef.current;
+              if (container) {
+                const cardWidth = 288 + 16;
+                container.scrollTo({
+                  left: index * cardWidth,
+                  behavior: 'smooth'
+                });
+              }
+            }} className={`h-2 rounded-full transition-all ${index === activeConfigIndex ? 'w-8 bg-primary' : 'w-2 bg-primary/30'}`} />)}
+                </div>}
+            </>}
           {/* Total Project Cost - quick visibility below configuration box */}
-          {areaConfigs.length > 0 && (
-            <div className="mt-3 p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border-2 border-primary">
+          {areaConfigs.length > 0 && <div className="mt-3 p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border-2 border-primary">
               <div className="flex justify-between items-center">
                 <div>
                   <p className="text-sm font-semibold text-foreground">Total Project Cost</p>
                   <p className="text-xs text-muted-foreground mt-0.5">All configurations combined</p>
                 </div>
-                <p className="text-2xl font-bold text-primary">₹{(
-                  areaConfigs.reduce((sum, c) => sum + ((Number(c.area) || 0) * (parseFloat(c.perSqFtRate) || 0)), 0)
-                ).toFixed(2)}</p>
+                <p className="text-2xl font-bold text-primary">₹{areaConfigs.reduce((sum, c) => sum + (Number(c.area) || 0) * (parseFloat(c.perSqFtRate) || 0), 0).toFixed(2)}</p>
               </div>
-            </div>
-          )}
+            </div>}
         </CardContent>
-      </Card>
-    );
+      </Card>;
   };
 
   // Section 2: Total Room Details
@@ -279,33 +251,37 @@ export default function GenerateSummaryScreen() {
     let totalFloor = 0;
     let totalWall = 0;
     let totalCeiling = 0;
-
     rooms.forEach(room => {
-      const selectedAreas = room.selected_areas || { floor: true, wall: true, ceiling: false };
+      const selectedAreas = room.selected_areas || {
+        floor: true,
+        wall: true,
+        ceiling: false
+      };
       if (selectedAreas.floor) totalFloor += Number(room.floor_area || 0);
       if (selectedAreas.wall) totalWall += Number(room.adjusted_wall_area || room.wall_area || 0);
       if (selectedAreas.ceiling) totalCeiling += Number(room.ceiling_area || 0);
     });
 
     // Group rooms by project type
-    const roomsByType: { [key: string]: any[] } = {};
+    const roomsByType: {
+      [key: string]: any[];
+    } = {};
     const projectTypes = ['Interior', 'Exterior', 'Waterproofing'];
-    
     projectTypes.forEach(type => {
       roomsByType[type] = rooms.filter(room => room.project_type === type);
     });
 
     // Get enamel areas (door/window/grill) grouped by room
-    const enamelAreas: { [roomId: string]: number } = {};
+    const enamelAreas: {
+      [roomId: string]: number;
+    } = {};
     rooms.forEach(room => {
       const dwgArea = Number(room.total_door_window_grill_area || 0);
       if (dwgArea > 0) {
         enamelAreas[room.id] = dwgArea;
       }
     });
-
-    return (
-      <Card className="eca-shadow">
+    return <Card className="eca-shadow">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base font-semibold">
             <Home className="h-5 w-5 text-primary" />
@@ -320,11 +296,9 @@ export default function GenerateSummaryScreen() {
               
               {/* Group by project type */}
               {projectTypes.map(projectType => {
-                const typeRooms = roomsByType[projectType];
-                if (!typeRooms || typeRooms.length === 0) return null;
-                
-                return (
-                  <div key={projectType} className="space-y-2">
+              const typeRooms = roomsByType[projectType];
+              if (!typeRooms || typeRooms.length === 0) return null;
+              return <div key={projectType} className="space-y-2">
                     {/* Project Type Header */}
                     <div className="flex items-center gap-2 mt-3">
                       <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
@@ -335,16 +309,15 @@ export default function GenerateSummaryScreen() {
                     {/* Rooms under this type */}
                     <div className="space-y-3">
                       {typeRooms.map(room => {
-                        const selectedAreas = room.selected_areas || { floor: true, wall: true, ceiling: false };
-                        const floorArea = Number(room.floor_area || 0);
-                        const wallArea = Number(room.adjusted_wall_area || room.wall_area || 0);
-                        const ceilingArea = Number(room.ceiling_area || 0);
-                        
-                        return (
-                          <div 
-                            key={room.id} 
-                            className="group relative bg-card rounded border-l-2 border-primary hover:border-l-4 eca-shadow hover:eca-shadow-medium eca-transition p-3 sm:p-4"
-                          >
+                    const selectedAreas = room.selected_areas || {
+                      floor: true,
+                      wall: true,
+                      ceiling: false
+                    };
+                    const floorArea = Number(room.floor_area || 0);
+                    const wallArea = Number(room.adjusted_wall_area || room.wall_area || 0);
+                    const ceilingArea = Number(room.ceiling_area || 0);
+                    return <div key={room.id} className="group relative bg-card rounded border-l-2 border-primary hover:border-l-4 eca-shadow hover:eca-shadow-medium eca-transition p-3 sm:p-4">
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-6">
                               <div className="flex-shrink-0">
                                 <h3 className="font-bold text-xs sm:text-sm tracking-wider text-foreground">
@@ -353,45 +326,36 @@ export default function GenerateSummaryScreen() {
                               </div>
                               
                               <div className="flex items-center justify-between gap-2 sm:gap-4 flex-1 sm:ml-auto sm:max-w-md">
-                                {selectedAreas.floor && (
-                                  <div className="text-center flex-1">
+                                {selectedAreas.floor && <div className="text-center flex-1">
                                     <p className="text-[9px] sm:text-[10px] uppercase tracking-widest text-muted-foreground mb-0.5 sm:mb-1">FLOOR</p>
                                     <p className="text-base sm:text-xl md:text-2xl font-bold text-foreground leading-none">
                                       {floorArea.toFixed(2)}
                                     </p>
-                                  </div>
-                                )}
+                                  </div>}
                                 
-                                {selectedAreas.wall && (
-                                  <div className="text-center flex-1">
+                                {selectedAreas.wall && <div className="text-center flex-1">
                                     <p className="text-[9px] sm:text-[10px] uppercase tracking-widest text-muted-foreground mb-0.5 sm:mb-1">WALL</p>
                                     <p className="text-base sm:text-xl md:text-2xl font-bold text-foreground leading-none">
                                       {wallArea.toFixed(2)}
                                     </p>
-                                  </div>
-                                )}
+                                  </div>}
                                 
-                                {selectedAreas.ceiling && (
-                                  <div className="text-center flex-1">
+                                {selectedAreas.ceiling && <div className="text-center flex-1">
                                     <p className="text-[9px] sm:text-[10px] uppercase tracking-widest text-muted-foreground mb-0.5 sm:mb-1">CEILING</p>
                                     <p className="text-base sm:text-xl md:text-2xl font-bold text-foreground leading-none">
                                       {ceilingArea.toFixed(2)}
                                     </p>
-                                  </div>
-                                )}
+                                  </div>}
                               </div>
                             </div>
-                          </div>
-                        );
-                      })}
+                          </div>;
+                  })}
                     </div>
-                  </div>
-                );
-              })}
+                  </div>;
+            })}
               
               {/* Enamel Areas (Door/Window/Grill) - Separate Section */}
-              {Object.keys(enamelAreas).length > 0 && (
-                <div className="space-y-2 mt-4">
+              {Object.keys(enamelAreas).length > 0 && <div className="space-y-2 mt-4">
                   <div className="flex items-center gap-2">
                     <Badge variant="outline" className="bg-orange-500/10 text-orange-600 border-orange-500/20">
                       Enamel (Door & Window)
@@ -400,14 +364,9 @@ export default function GenerateSummaryScreen() {
                   
                   <div className="space-y-3">
                     {Object.entries(enamelAreas).map(([roomId, area]) => {
-                      const room = rooms.find(r => r.id === roomId);
-                      if (!room) return null;
-                      
-                      return (
-                        <div 
-                          key={roomId} 
-                          className="group relative bg-card rounded border-l-2 border-orange-500 hover:border-l-4 eca-shadow hover:eca-shadow-medium eca-transition p-3 sm:p-4"
-                        >
+                  const room = rooms.find(r => r.id === roomId);
+                  if (!room) return null;
+                  return <div key={roomId} className="group relative bg-card rounded border-l-2 border-orange-500 hover:border-l-4 eca-shadow hover:eca-shadow-medium eca-transition p-3 sm:p-4">
                           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-6">
                             <div className="flex-shrink-0">
                               <h3 className="font-bold text-xs sm:text-sm tracking-wider text-foreground">
@@ -424,12 +383,10 @@ export default function GenerateSummaryScreen() {
                               </div>
                             </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        </div>;
+                })}
                   </div>
-                </div>
-              )}
+                </div>}
             </div>
 
             {/* Totals Second with Project Type */}
@@ -458,8 +415,7 @@ export default function GenerateSummaryScreen() {
             </div>
           </div>
         </CardContent>
-      </Card>
-    );
+      </Card>;
   };
 
   // Section 3: Labour Section
@@ -482,30 +438,25 @@ export default function GenerateSummaryScreen() {
       waterBased: {
         putty: 800,
         primer: 1050,
-        emulsion: 1050,
+        emulsion: 1050
       },
       oilBased: {
         redOxide: 350,
         enamelBase: 250,
         enamelTop: 200,
-        full3Coat: 275,
+        full3Coat: 275
       }
     };
 
     // Group tasks by configuration
     const configTasks: any[] = [];
-
     areaConfigs.forEach(config => {
       const area = Number(config.area) || 0;
       const isFresh = config.paintingSystem === 'Fresh Painting';
-      
+
       // Determine if water-based or oil-based
-      const isOilBased = config.selectedMaterials.emulsion?.toLowerCase().includes('enamel') || 
-                         config.selectedMaterials.primer?.toLowerCase().includes('oxide') ||
-                         config.selectedMaterials.emulsion?.toLowerCase().includes('oil');
-      
+      const isOilBased = config.selectedMaterials.emulsion?.toLowerCase().includes('enamel') || config.selectedMaterials.primer?.toLowerCase().includes('oxide') || config.selectedMaterials.emulsion?.toLowerCase().includes('oil');
       const tasks: any[] = [];
-      
       if (isFresh) {
         // Putty
         if (config.coatConfiguration.putty > 0) {
@@ -518,10 +469,10 @@ export default function GenerateSummaryScreen() {
             coats: config.coatConfiguration.putty,
             totalWork,
             coverage: coverageRates.waterBased.putty,
-            daysRequired,
+            daysRequired
           });
         }
-        
+
         // Primer
         if (config.coatConfiguration.primer > 0) {
           const totalWork = area * config.coatConfiguration.primer;
@@ -534,10 +485,10 @@ export default function GenerateSummaryScreen() {
             coats: config.coatConfiguration.primer,
             totalWork,
             coverage,
-            daysRequired,
+            daysRequired
           });
         }
-        
+
         // Emulsion/Paint
         if (config.coatConfiguration.emulsion > 0) {
           const totalWork = area * config.coatConfiguration.emulsion;
@@ -550,7 +501,7 @@ export default function GenerateSummaryScreen() {
             coats: config.coatConfiguration.emulsion,
             totalWork,
             coverage,
-            daysRequired,
+            daysRequired
           });
         }
       } else {
@@ -566,10 +517,9 @@ export default function GenerateSummaryScreen() {
             coats: config.repaintingConfiguration.primer,
             totalWork,
             coverage,
-            daysRequired,
+            daysRequired
           });
         }
-        
         if (config.repaintingConfiguration?.emulsion && config.repaintingConfiguration.emulsion > 0) {
           const totalWork = area * config.repaintingConfiguration.emulsion;
           const coverage = isOilBased ? coverageRates.oilBased.enamelTop : coverageRates.waterBased.emulsion;
@@ -581,36 +531,27 @@ export default function GenerateSummaryScreen() {
             coats: config.repaintingConfiguration.emulsion,
             totalWork,
             coverage,
-            daysRequired,
+            daysRequired
           });
         }
       }
-
       configTasks.push({
         configLabel: config.label || config.areaType,
         tasks,
-        totalDays: tasks.reduce((sum, task) => sum + task.daysRequired, 0),
+        totalDays: tasks.reduce((sum, task) => sum + task.daysRequired, 0)
       });
     });
-
     const totalDays = configTasks.reduce((sum, ct) => sum + ct.totalDays, 0);
     const allTasks = configTasks.flatMap(ct => ct.tasks);
-    
+
     // Calculate labourers needed for manual mode
     const totalWorkAllTasks = allTasks.reduce((sum, task) => sum + task.totalWork, 0);
-    const averageCoverage = allTasks.length > 0 
-      ? allTasks.reduce((sum, task) => sum + task.coverage, 0) / allTasks.length 
-      : 1000;
+    const averageCoverage = allTasks.length > 0 ? allTasks.reduce((sum, task) => sum + task.coverage, 0) / allTasks.length : 1000;
     const adjustedAverageCoverage = averageCoverage * (workingHours / standardHours);
-    const laboursNeeded = manualDays > 0 
-      ? Math.ceil(totalWorkAllTasks / (adjustedAverageCoverage * manualDays))
-      : 1;
-
+    const laboursNeeded = manualDays > 0 ? Math.ceil(totalWorkAllTasks / (adjustedAverageCoverage * manualDays)) : 1;
     const displayDays = labourMode === 'auto' ? Math.ceil(totalDays / autoLabourPerDay) : manualDays;
     const displayLabours = labourMode === 'auto' ? autoLabourPerDay : laboursNeeded;
-
-    return (
-      <Card className="eca-shadow">
+    return <Card className="eca-shadow">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg font-semibold">
             <Users className="h-5 w-5 text-primary" />
@@ -622,102 +563,71 @@ export default function GenerateSummaryScreen() {
           <div className="space-y-3">
             {/* Mode Selector */}
             <div className="flex gap-2 p-1 bg-muted rounded-lg w-fit">
-              <Button
-                variant={labourMode === 'auto' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setLabourMode('auto')}
-                className="text-xs"
-              >
+              <Button variant={labourMode === 'auto' ? 'default' : 'ghost'} size="sm" onClick={() => setLabourMode('auto')} className="text-xs">
                 Auto
               </Button>
-              <Button
-                variant={labourMode === 'manual' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setLabourMode('manual')}
-                className="text-xs"
-              >
+              <Button variant={labourMode === 'manual' ? 'default' : 'ghost'} size="sm" onClick={() => setLabourMode('manual')} className="text-xs">
                 Manual
               </Button>
             </div>
 
             {/* Auto Mode - Per Day Labour Input */}
-            {labourMode === 'auto' && (
-              <div className="p-3 border border-border rounded-lg bg-muted/30">
+            {labourMode === 'auto' && <div className="p-3 border border-border rounded-lg bg-muted/30">
                 <label className="text-sm font-medium mb-2 block text-foreground">Per Day Labour</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={autoLabourPerDayInput}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setAutoLabourPerDayInput(value);
-                    const numValue = parseInt(value, 10);
-                    if (!isNaN(numValue) && numValue > 0) {
-                      setAutoLabourPerDay(numValue);
-                    }
-                  }}
-                  onBlur={() => {
-                    const numValue = parseInt(autoLabourPerDayInput, 10);
-                    if (isNaN(numValue) || numValue < 1) {
-                      setAutoLabourPerDay(1);
-                      setAutoLabourPerDayInput('1');
-                    } else {
-                      setAutoLabourPerDay(numValue);
-                      setAutoLabourPerDayInput(String(numValue));
-                    }
-                  }}
-                  className="w-full px-3 py-2 border border-input-border rounded text-sm bg-background"
-                />
+                <input type="number" min="1" value={autoLabourPerDayInput} onChange={e => {
+              const value = e.target.value;
+              setAutoLabourPerDayInput(value);
+              const numValue = parseInt(value, 10);
+              if (!isNaN(numValue) && numValue > 0) {
+                setAutoLabourPerDay(numValue);
+              }
+            }} onBlur={() => {
+              const numValue = parseInt(autoLabourPerDayInput, 10);
+              if (isNaN(numValue) || numValue < 1) {
+                setAutoLabourPerDay(1);
+                setAutoLabourPerDayInput('1');
+              } else {
+                setAutoLabourPerDay(numValue);
+                setAutoLabourPerDayInput(String(numValue));
+              }
+            }} className="w-full px-3 py-2 border border-input-border rounded text-sm bg-background" />
                 <p className="text-xs text-muted-foreground mt-2">
                   Number of labourers you can arrange per day
                 </p>
-              </div>
-            )}
+              </div>}
 
             {/* Manual Days Input */}
-            {labourMode === 'manual' && (
-              <div className="p-3 border border-border rounded-lg bg-muted/30">
+            {labourMode === 'manual' && <div className="p-3 border border-border rounded-lg bg-muted/30">
                 <label className="text-sm font-medium mb-2 block text-foreground">Desired Completion Days</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={manualDaysInput}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setManualDaysInput(value);
-                    const numValue = parseInt(value, 10);
-                    if (!isNaN(numValue) && numValue > 0) {
-                      setManualDays(numValue);
-                    }
-                  }}
-                  onBlur={() => {
-                    const numValue = parseInt(manualDaysInput, 10);
-                    if (isNaN(numValue) || numValue < 1) {
-                      setManualDays(1);
-                      setManualDaysInput('1');
-                    } else {
-                      setManualDays(numValue);
-                      setManualDaysInput(String(numValue));
-                    }
-                  }}
-                  className="w-full px-3 py-2 border border-input-border rounded text-sm bg-background"
-                />
+                <input type="number" min="1" value={manualDaysInput} onChange={e => {
+              const value = e.target.value;
+              setManualDaysInput(value);
+              const numValue = parseInt(value, 10);
+              if (!isNaN(numValue) && numValue > 0) {
+                setManualDays(numValue);
+              }
+            }} onBlur={() => {
+              const numValue = parseInt(manualDaysInput, 10);
+              if (isNaN(numValue) || numValue < 1) {
+                setManualDays(1);
+                setManualDaysInput('1');
+              } else {
+                setManualDays(numValue);
+                setManualDaysInput(String(numValue));
+              }
+            }} className="w-full px-3 py-2 border border-input-border rounded text-sm bg-background" />
                 <p className="text-xs text-muted-foreground mt-2">
                   Labourers needed: <span className="font-semibold text-primary">{laboursNeeded}</span> per day
                 </p>
-              </div>
-            )}
+              </div>}
             {/* Labour Calculation Breakdown - Carousel Style matching Material cards */}
-            {labourMode === 'auto' && configTasks.length > 0 && (
-              <div>
+            {labourMode === 'auto' && configTasks.length > 0 && <div>
                 <p className="font-semibold text-sm mb-2 text-foreground">Labour Calculation Breakdown</p>
                 <div ref={labourConfigRef} className="-mx-4 px-4 overflow-x-auto scroll-smooth touch-pan-x scrollbar-hide" onScroll={handleLabourScroll}>
-                  <div className="flex gap-4 pb-2 snap-x snap-mandatory" style={{ minWidth: 'min-content' }}>
-                    {configTasks.map((configTask, index) => (
-                      <div 
-                        key={index} 
-                        className="snap-start flex-shrink-0 w-72 border-2 border-primary/20 bg-card rounded-lg eca-shadow"
-                      >
+                  <div className="flex gap-4 pb-2 snap-x snap-mandatory" style={{
+                minWidth: 'min-content'
+              }}>
+                    {configTasks.map((configTask, index) => <div key={index} className="snap-start flex-shrink-0 w-72 border-2 border-primary/20 bg-card rounded-lg eca-shadow">
                         <div className="p-4">
                           <div className="space-y-4">
                             {/* Header with Type Badge */}
@@ -730,9 +640,8 @@ export default function GenerateSummaryScreen() {
                             
                             {/* Tasks List */}
                             {configTask.tasks.map((task: any, taskIdx: number) => {
-                              const adjustedDays = Math.ceil(task.daysRequired / autoLabourPerDay);
-                              return (
-                                <div key={taskIdx} className="space-y-2">
+                        const adjustedDays = Math.ceil(task.daysRequired / autoLabourPerDay);
+                        return <div key={taskIdx} className="space-y-2">
                                   {/* Task Name - Large and Bold */}
                                   <h4 className="text-base font-semibold text-foreground">{task.name}</h4>
                                   
@@ -750,9 +659,8 @@ export default function GenerateSummaryScreen() {
                                       <p className="text-xl font-bold text-primary">{adjustedDays} days</p>
                                     </div>
                                   </div>
-                                </div>
-                              );
-                            })}
+                                </div>;
+                      })}
                             
                             {/* Total Days */}
                             <div className="pt-3 border-t-2 border-primary/20">
@@ -763,38 +671,24 @@ export default function GenerateSummaryScreen() {
                             </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      </div>)}
                   </div>
                 </div>
                 
                 {/* Scroll indicators */}
-                {configTasks.length > 1 && (
-                  <div className="flex justify-center gap-2 mt-2">
-                    {configTasks.map((_, index) => (
-                      <button
-                        key={index}
-                        onClick={() => {
-                          const container = labourConfigRef.current;
-                          if (container) {
-                            const cardWidth = 288 + 16;
-                            container.scrollTo({
-                              left: index * cardWidth,
-                              behavior: 'smooth'
-                            });
-                          }
-                        }}
-                        className={`h-2 rounded-full transition-all ${
-                          index === activeConfigIndex 
-                            ? 'w-8 bg-primary' 
-                            : 'w-2 bg-primary/30'
-                        }`}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+                {configTasks.length > 1 && <div className="flex justify-center gap-2 mt-2">
+                    {configTasks.map((_, index) => <button key={index} onClick={() => {
+                const container = labourConfigRef.current;
+                if (container) {
+                  const cardWidth = 288 + 16;
+                  container.scrollTo({
+                    left: index * cardWidth,
+                    behavior: 'smooth'
+                  });
+                }
+              }} className={`h-2 rounded-full transition-all ${index === activeConfigIndex ? 'w-8 bg-primary' : 'w-2 bg-primary/30'}`} />)}
+                  </div>}
+              </div>}
 
             {/* Summary */}
             <div className="p-4 bg-background rounded-lg border border-border eca-shadow">
@@ -810,8 +704,7 @@ export default function GenerateSummaryScreen() {
             </div>
 
             {/* Total Labour Cost - Only in Auto Mode */}
-            {labourMode === 'auto' && (
-              <div className="p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border-2 border-primary">
+            {labourMode === 'auto' && <div className="p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border-2 border-primary">
                 <div className="flex justify-between items-center">
                   <div>
                     <p className="text-sm font-semibold text-foreground">Total Labour Cost</p>
@@ -821,12 +714,10 @@ export default function GenerateSummaryScreen() {
                     ₹{(displayLabours * displayDays * perDayLabourCost).toLocaleString('en-IN')}
                   </p>
                 </div>
-              </div>
-            )}
+              </div>}
 
             {/* Per Day Labour - Only in Manual Mode */}
-            {labourMode === 'manual' && (
-              <>
+            {labourMode === 'manual' && <>
                 <div className="p-3 bg-muted/30 rounded-lg border border-border">
                   <div className="flex justify-between items-center">
                     <p className="text-sm font-medium text-muted-foreground">Per Day Labour</p>
@@ -846,13 +737,11 @@ export default function GenerateSummaryScreen() {
                     Total man-days required for the project
                   </p>
                 </div>
-              </>
-            )}
+              </>}
 
           </div>
         </CardContent>
-      </Card>
-    );
+      </Card>;
   };
 
   // Section 4: Material Section
@@ -868,33 +757,58 @@ export default function GenerateSummaryScreen() {
 
     // Material pack sizes and prices (example prices - adjust as needed)
     const materialPricing: any = {
-      'Putty': { packSize: 40, unit: 'kg', pricePerPack: 800 },
-      'Primer': { packSize: 20, unit: 'L', pricePerPack: 1200 },
-      'Emulsion': { packSize: 20, unit: 'L', pricePerPack: 2500 },
-      'Enamel': { packSize: 4, unit: 'L', pricePerPack: 600 },
+      'Putty': {
+        packSize: 40,
+        unit: 'kg',
+        pricePerPack: 800
+      },
+      'Primer': {
+        packSize: 20,
+        unit: 'L',
+        pricePerPack: 1200
+      },
+      'Emulsion': {
+        packSize: 20,
+        unit: 'L',
+        pricePerPack: 2500
+      },
+      'Enamel': {
+        packSize: 4,
+        unit: 'L',
+        pricePerPack: 600
+      }
     };
 
     // Available pack sizes for each material type
     const availablePackSizes: any = {
-      'Putty': [40, 20, 5, 1], // Kg
-      'Primer': [20, 10, 4, 1], // Liters
-      'Emulsion': [20, 10, 4, 1], // Liters
-      'Enamel': [20, 10, 4, 1], // Liters
+      'Putty': [40, 20, 5, 1],
+      // Kg
+      'Primer': [20, 10, 4, 1],
+      // Liters
+      'Emulsion': [20, 10, 4, 1],
+      // Liters
+      'Enamel': [20, 10, 4, 1] // Liters
     };
 
     // Helper function to calculate optimal pack combination
     const calculateOptimalPacks = (materialKey: string, quantity: number) => {
       const packSizes = availablePackSizes[materialKey] || [20, 10, 4, 1];
       let remaining = quantity;
-      const packCombination: { size: number; count: number }[] = [];
+      const packCombination: {
+        size: number;
+        count: number;
+      }[] = [];
 
       // Greedy algorithm: start with largest pack size
       for (const packSize of packSizes) {
         if (remaining >= packSize) {
           const count = Math.floor(remaining / packSize);
           if (count > 0) {
-            packCombination.push({ size: packSize, count });
-            remaining = remaining - (count * packSize);
+            packCombination.push({
+              size: packSize,
+              count
+            });
+            remaining = remaining - count * packSize;
           }
         }
       }
@@ -906,121 +820,109 @@ export default function GenerateSummaryScreen() {
         if (existingSmallest) {
           existingSmallest.count += 1;
         } else {
-          packCombination.push({ size: smallestPack, count: 1 });
+          packCombination.push({
+            size: smallestPack,
+            count: 1
+          });
         }
       }
 
       // Format as "Pack: (40/2)(1/4)"
-      const packString = packCombination
-        .map(p => `(${p.size}/${p.count})`)
-        .join('');
-
+      const packString = packCombination.map(p => `(${p.size}/${p.count})`).join('');
       return packString;
     };
 
     // Helper function to calculate material requirements and cost
     const calculateMaterial = (material: string, quantity: number) => {
       let materialKey = 'Emulsion';
-      if (material.toLowerCase().includes('putty')) materialKey = 'Putty';
-      else if (material.toLowerCase().includes('primer')) materialKey = 'Primer';
-      else if (material.toLowerCase().includes('enamel')) materialKey = 'Enamel';
-
+      if (material.toLowerCase().includes('putty')) materialKey = 'Putty';else if (material.toLowerCase().includes('primer')) materialKey = 'Primer';else if (material.toLowerCase().includes('enamel')) materialKey = 'Enamel';
       const pricing = materialPricing[materialKey];
       const packsNeeded = Math.ceil(quantity / pricing.packSize);
       const totalCost = packsNeeded * pricing.pricePerPack;
       const packCombination = calculateOptimalPacks(materialKey, quantity);
-
       return {
         quantity: quantity.toFixed(2),
         unit: pricing.unit,
         packsNeeded,
         packSize: pricing.packSize,
         packCombination,
-        totalCost,
+        totalCost
       };
     };
 
     // Group materials by configuration
     const configMaterials: any[] = [];
-
     areaConfigs.forEach(config => {
       const area = Number(config.area) || 0;
       const isFresh = config.paintingSystem === 'Fresh Painting';
-      
       const materials: any[] = [];
-      
       if (isFresh) {
         // Putty
         if (config.selectedMaterials.putty && config.coatConfiguration.putty > 0) {
           const coverage = 20; // sq ft per kg
-          const kgNeeded = (area / coverage) * config.coatConfiguration.putty;
+          const kgNeeded = area / coverage * config.coatConfiguration.putty;
           const calc = calculateMaterial(config.selectedMaterials.putty, kgNeeded);
           materials.push({
             name: config.selectedMaterials.putty,
             type: 'Putty',
-            ...calc,
+            ...calc
           });
         }
-        
+
         // Primer
         if (config.selectedMaterials.primer && config.coatConfiguration.primer > 0) {
           const coverage = 120; // sq ft per liter
-          const litersNeeded = (area / coverage) * config.coatConfiguration.primer;
+          const litersNeeded = area / coverage * config.coatConfiguration.primer;
           const calc = calculateMaterial(config.selectedMaterials.primer, litersNeeded);
           materials.push({
             name: config.selectedMaterials.primer,
             type: 'Primer',
-            ...calc,
+            ...calc
           });
         }
-        
+
         // Emulsion
         if (config.selectedMaterials.emulsion && config.coatConfiguration.emulsion > 0) {
           const coverage = 120; // sq ft per liter
-          const litersNeeded = (area / coverage) * config.coatConfiguration.emulsion;
+          const litersNeeded = area / coverage * config.coatConfiguration.emulsion;
           const calc = calculateMaterial(config.selectedMaterials.emulsion, litersNeeded);
           materials.push({
             name: config.selectedMaterials.emulsion,
             type: config.selectedMaterials.emulsion.toLowerCase().includes('enamel') ? 'Enamel' : 'Emulsion',
-            ...calc,
+            ...calc
           });
         }
       } else {
         // Repainting
         if (config.selectedMaterials.primer && config.repaintingConfiguration?.primer && config.repaintingConfiguration.primer > 0) {
           const coverage = 120;
-          const litersNeeded = (area / coverage) * config.repaintingConfiguration.primer;
+          const litersNeeded = area / coverage * config.repaintingConfiguration.primer;
           const calc = calculateMaterial(config.selectedMaterials.primer, litersNeeded);
           materials.push({
             name: config.selectedMaterials.primer,
             type: 'Primer',
-            ...calc,
+            ...calc
           });
         }
-        
         if (config.selectedMaterials.emulsion && config.repaintingConfiguration?.emulsion && config.repaintingConfiguration.emulsion > 0) {
           const coverage = 120;
-          const litersNeeded = (area / coverage) * config.repaintingConfiguration.emulsion;
+          const litersNeeded = area / coverage * config.repaintingConfiguration.emulsion;
           const calc = calculateMaterial(config.selectedMaterials.emulsion, litersNeeded);
           materials.push({
             name: config.selectedMaterials.emulsion,
             type: config.selectedMaterials.emulsion.toLowerCase().includes('enamel') ? 'Enamel' : 'Emulsion',
-            ...calc,
+            ...calc
           });
         }
       }
-
       const totalCost = materials.reduce((sum, m) => sum + m.totalCost, 0);
-      
       configMaterials.push({
         configLabel: config.label || config.areaType,
         materials,
-        totalCost,
+        totalCost
       });
     });
-
-    return (
-      <Card className="eca-shadow">
+    return <Card className="eca-shadow">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg font-semibold">
             <Package className="h-5 w-5 text-primary" />
@@ -1028,16 +930,14 @@ export default function GenerateSummaryScreen() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {areaConfigs.length === 0 ? (
-            <div className="text-sm text-muted-foreground p-4 border rounded-md bg-muted/30">
+          {areaConfigs.length === 0 ? <div className="text-sm text-muted-foreground p-4 border rounded-md bg-muted/30">
               No material configurations found.
-            </div>
-          ) : (
-            <>
+            </div> : <>
               <div ref={materialConfigRef} className="-mx-4 px-4 overflow-x-auto scroll-smooth touch-pan-x scrollbar-hide" onScroll={handleMaterialScroll}>
-                <div className="flex gap-4 pb-2 snap-x snap-mandatory" style={{ minWidth: 'min-content' }}>
-                  {configMaterials.map((configMat, index) => (
-                    <div key={index} className="snap-start flex-shrink-0 w-72 border-2 border-primary/20 bg-card rounded-lg eca-shadow">
+                <div className="flex gap-4 pb-2 snap-x snap-mandatory" style={{
+              minWidth: 'min-content'
+            }}>
+                  {configMaterials.map((configMat, index) => <div key={index} className="snap-start flex-shrink-0 w-72 border-2 border-primary/20 bg-card rounded-lg eca-shadow">
                       <div className="p-4">
                         <div className="space-y-4">
                           {/* Header with Type Badge */}
@@ -1049,8 +949,7 @@ export default function GenerateSummaryScreen() {
                           </div>
                           
                           {/* Materials List */}
-                          {configMat.materials.map((mat: any, matIdx: number) => (
-                            <div key={matIdx} className="space-y-2">
+                          {configMat.materials.map((mat: any, matIdx: number) => <div key={matIdx} className="space-y-2">
                               {/* Material Name - Large and Bold */}
                               <h4 className="text-base font-semibold text-foreground">{mat.name}</h4>
                               
@@ -1068,8 +967,7 @@ export default function GenerateSummaryScreen() {
                                   <p className="text-xl font-bold text-primary">₹{mat.totalCost.toLocaleString('en-IN')}</p>
                                 </div>
                               </div>
-                            </div>
-                          ))}
+                            </div>)}
                           
                           {/* Total Cost */}
                           <div className="pt-3 border-t-2 border-primary/20">
@@ -1080,42 +978,27 @@ export default function GenerateSummaryScreen() {
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    </div>)}
                 </div>
               </div>
               
               {/* Scroll indicators */}
-              {configMaterials.length > 1 && (
-                <div className="flex justify-center gap-2 mt-2">
-                  {configMaterials.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => {
-                        const container = materialConfigRef.current;
-                        if (container) {
-                          const cardWidth = 288 + 16;
-                          container.scrollTo({
-                            left: index * cardWidth,
-                            behavior: 'smooth'
-                          });
-                        }
-                      }}
-                      className={`h-2 rounded-full transition-all ${
-                        index === activeConfigIndex 
-                          ? 'w-8 bg-primary' 
-                          : 'w-2 bg-primary/30'
-                      }`}
-                    />
-                  ))}
-                </div>
-              )}
-            </>
-          )}
+              {configMaterials.length > 1 && <div className="flex justify-center gap-2 mt-2">
+                  {configMaterials.map((_, index) => <button key={index} onClick={() => {
+              const container = materialConfigRef.current;
+              if (container) {
+                const cardWidth = 288 + 16;
+                container.scrollTo({
+                  left: index * cardWidth,
+                  behavior: 'smooth'
+                });
+              }
+            }} className={`h-2 rounded-full transition-all ${index === activeConfigIndex ? 'w-8 bg-primary' : 'w-2 bg-primary/30'}`} />)}
+                </div>}
+            </>}
 
           {/* Total Cost Material Summary */}
-          {configMaterials.length > 0 && (
-            <div className="p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border-2 border-primary mt-4">
+          {configMaterials.length > 0 && <div className="p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border-2 border-primary mt-4">
               <div className="flex justify-between items-center">
                 <div>
                   <p className="text-sm text-muted-foreground">Total Cost Material</p>
@@ -1125,11 +1008,9 @@ export default function GenerateSummaryScreen() {
                   ₹{configMaterials.reduce((sum, cm) => sum + cm.totalCost, 0).toFixed(2)}
                 </p>
               </div>
-            </div>
-          )}
+            </div>}
         </CardContent>
-      </Card>
-    );
+      </Card>;
   };
 
   // Section 5: Dealer Margin
@@ -1137,13 +1018,10 @@ export default function GenerateSummaryScreen() {
     const totalMaterialCost = areaConfigs.reduce((sum, config) => {
       const area = Number(config.area) || 0;
       const rate = parseFloat(config.perSqFtRate) || 0;
-      return sum + (area * rate);
+      return sum + area * rate;
     }, 0);
-    
-    const marginCost = (totalMaterialCost * dealerMargin) / 100;
-
-    return (
-      <Card className="eca-shadow">
+    const marginCost = totalMaterialCost * dealerMargin / 100;
+    return <Card className="eca-shadow">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg font-semibold">
             <TrendingUp className="h-5 w-5 text-primary" />
@@ -1160,14 +1038,13 @@ export default function GenerateSummaryScreen() {
             </div>
             <div className="p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border-2 border-primary">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Margin Cost</span>
+                <span className="text-base font-semibold text-slate-950">Margin Cost</span>
                 <span className="text-lg font-bold text-primary">₹{marginCost.toFixed(2)}</span>
               </div>
             </div>
           </div>
         </CardContent>
-      </Card>
-    );
+      </Card>;
   };
 
   // Section 6: Estimated Total Cost
@@ -1175,58 +1052,58 @@ export default function GenerateSummaryScreen() {
     const materialCost = areaConfigs.reduce((sum, config) => {
       const area = Number(config.area) || 0;
       const rate = parseFloat(config.perSqFtRate) || 0;
-      return sum + (area * rate);
+      return sum + area * rate;
     }, 0);
 
     // Use exact same labour calculation as Labour Section
     const workingHours = 7;
     const standardHours = 8;
     const numberOfLabours = 1;
-
     const coverageRates = {
       waterBased: {
         putty: 800,
         primer: 1050,
-        emulsion: 1050,
+        emulsion: 1050
       },
       oilBased: {
         redOxide: 350,
         enamelBase: 250,
         enamelTop: 200,
-        full3Coat: 275,
+        full3Coat: 275
       }
     };
-
     const configTasks: any[] = [];
     areaConfigs.forEach(config => {
       const area = Number(config.area) || 0;
       const isFresh = config.paintingSystem === 'Fresh Painting';
-      const isOilBased = config.selectedMaterials.emulsion?.toLowerCase().includes('enamel') || 
-                         config.selectedMaterials.primer?.toLowerCase().includes('oxide') ||
-                         config.selectedMaterials.emulsion?.toLowerCase().includes('oil');
-      
+      const isOilBased = config.selectedMaterials.emulsion?.toLowerCase().includes('enamel') || config.selectedMaterials.primer?.toLowerCase().includes('oxide') || config.selectedMaterials.emulsion?.toLowerCase().includes('oil');
       const tasks: any[] = [];
-      
       if (isFresh) {
         if (config.coatConfiguration.putty > 0) {
           const totalWork = area * config.coatConfiguration.putty;
           const adjustedCoverage = coverageRates.waterBased.putty * (workingHours / standardHours);
           const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
-          tasks.push({ daysRequired });
+          tasks.push({
+            daysRequired
+          });
         }
         if (config.coatConfiguration.primer > 0) {
           const totalWork = area * config.coatConfiguration.primer;
           const coverage = isOilBased ? coverageRates.oilBased.redOxide : coverageRates.waterBased.primer;
           const adjustedCoverage = coverage * (workingHours / standardHours);
           const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
-          tasks.push({ daysRequired });
+          tasks.push({
+            daysRequired
+          });
         }
         if (config.coatConfiguration.emulsion > 0) {
           const totalWork = area * config.coatConfiguration.emulsion;
           const coverage = isOilBased ? coverageRates.oilBased.enamelTop : coverageRates.waterBased.emulsion;
           const adjustedCoverage = coverage * (workingHours / standardHours);
           const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
-          tasks.push({ daysRequired });
+          tasks.push({
+            daysRequired
+          });
         }
       } else {
         if (config.repaintingConfiguration?.primer && config.repaintingConfiguration.primer > 0) {
@@ -1234,39 +1111,36 @@ export default function GenerateSummaryScreen() {
           const coverage = isOilBased ? coverageRates.oilBased.redOxide : coverageRates.waterBased.primer;
           const adjustedCoverage = coverage * (workingHours / standardHours);
           const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
-          tasks.push({ daysRequired });
+          tasks.push({
+            daysRequired
+          });
         }
         if (config.repaintingConfiguration?.emulsion && config.repaintingConfiguration.emulsion > 0) {
           const totalWork = area * config.repaintingConfiguration.emulsion;
           const coverage = isOilBased ? coverageRates.oilBased.enamelTop : coverageRates.waterBased.emulsion;
           const adjustedCoverage = coverage * (workingHours / standardHours);
           const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
-          tasks.push({ daysRequired });
+          tasks.push({
+            daysRequired
+          });
         }
       }
-      
       configTasks.push({
         tasks,
         totalDays: tasks.reduce((sum, task) => sum + task.daysRequired, 0)
       });
     });
-
     const totalDays = configTasks.reduce((sum, ct) => sum + ct.totalDays, 0);
     const allTasks = configTasks.flatMap(ct => ct.tasks);
     const totalWorkAllTasks = allTasks.reduce((sum, task) => sum + task.daysRequired, 0);
-    const averageCoverage = allTasks.length > 0 
-      ? allTasks.reduce((sum, task) => sum + task.daysRequired, 0) / allTasks.length 
-      : 1000;
+    const averageCoverage = allTasks.length > 0 ? allTasks.reduce((sum, task) => sum + task.daysRequired, 0) / allTasks.length : 1000;
     const adjustedAverageCoverage = averageCoverage * (workingHours / standardHours);
-    const laboursNeeded = manualDays > 0 
-      ? Math.ceil(totalWorkAllTasks / manualDays)
-      : 1;
+    const laboursNeeded = manualDays > 0 ? Math.ceil(totalWorkAllTasks / manualDays) : 1;
 
     // Calculate labour cost - Formula: Per Day Labour Cost * Number of Labour * Days
     let labourCost = 0;
     let displayDays = 0;
     let displayLabours = 0;
-    
     if (labourMode === 'auto') {
       displayDays = Math.ceil(totalDays / autoLabourPerDay);
       displayLabours = autoLabourPerDay;
@@ -1276,12 +1150,9 @@ export default function GenerateSummaryScreen() {
       displayLabours = laboursNeeded;
       labourCost = perDayLabourCost * displayLabours * displayDays;
     }
-
-    const marginCost = (materialCost * dealerMargin) / 100;
+    const marginCost = materialCost * dealerMargin / 100;
     const totalCost = materialCost + marginCost + labourCost;
-
-    return (
-      <Card className="eca-shadow bg-card border-primary/20">
+    return <Card className="eca-shadow bg-card border-primary/20">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg font-semibold">
             <DollarSign className="h-5 w-5 text-primary" />
@@ -1319,47 +1190,58 @@ export default function GenerateSummaryScreen() {
             </div>
           </div>
         </CardContent>
-      </Card>
-    );
+      </Card>;
   };
-
-  const totalAreas = rooms.reduce(
-    (acc, room) => ({
-      floorArea: acc.floorArea + (room.floor_area || 0),
-      wallArea: acc.wallArea + (room.wall_area || 0),
-      ceilingArea: acc.ceilingArea + (room.ceiling_area || 0)
-    }),
-    { floorArea: 0, wallArea: 0, ceilingArea: 0 }
-  );
-
+  const totalAreas = rooms.reduce((acc, room) => ({
+    floorArea: acc.floorArea + (room.floor_area || 0),
+    wallArea: acc.wallArea + (room.wall_area || 0),
+    ceilingArea: acc.ceilingArea + (room.ceiling_area || 0)
+  }), {
+    floorArea: 0,
+    wallArea: 0,
+    ceilingArea: 0
+  });
   const calculateTotalEstimatedCost = () => {
     // Calculate material cost directly from area configs
     let materialCost = 0;
-    
     const materialPricing: any = {
-      'Putty': { packSize: 40, unit: 'kg', pricePerPack: 800 },
-      'Primer': { packSize: 20, unit: 'L', pricePerPack: 1200 },
-      'Emulsion': { packSize: 20, unit: 'L', pricePerPack: 2500 },
-      'Enamel': { packSize: 4, unit: 'L', pricePerPack: 600 },
+      'Putty': {
+        packSize: 40,
+        unit: 'kg',
+        pricePerPack: 800
+      },
+      'Primer': {
+        packSize: 20,
+        unit: 'L',
+        pricePerPack: 1200
+      },
+      'Emulsion': {
+        packSize: 20,
+        unit: 'L',
+        pricePerPack: 2500
+      },
+      'Enamel': {
+        packSize: 4,
+        unit: 'L',
+        pricePerPack: 600
+      }
     };
-
     areaConfigs.forEach(config => {
       const area = Number(config.area) || 0;
       const isFresh = config.paintingSystem === 'Fresh Painting';
-      
       if (isFresh) {
         if (config.selectedMaterials?.putty && config.coatConfiguration?.putty > 0) {
-          const kgNeeded = (area / 20) * config.coatConfiguration.putty;
+          const kgNeeded = area / 20 * config.coatConfiguration.putty;
           const packsNeeded = Math.ceil(kgNeeded / materialPricing.Putty.packSize);
           materialCost += packsNeeded * materialPricing.Putty.pricePerPack;
         }
         if (config.selectedMaterials?.primer && config.coatConfiguration?.primer > 0) {
-          const litersNeeded = (area / 120) * config.coatConfiguration.primer;
+          const litersNeeded = area / 120 * config.coatConfiguration.primer;
           const packsNeeded = Math.ceil(litersNeeded / materialPricing.Primer.packSize);
           materialCost += packsNeeded * materialPricing.Primer.pricePerPack;
         }
         if (config.selectedMaterials?.emulsion && config.coatConfiguration?.emulsion > 0) {
-          const litersNeeded = (area / 120) * config.coatConfiguration.emulsion;
+          const litersNeeded = area / 120 * config.coatConfiguration.emulsion;
           const isEnamel = config.selectedMaterials.emulsion.toLowerCase().includes('enamel');
           const key = isEnamel ? 'Enamel' : 'Emulsion';
           const packsNeeded = Math.ceil(litersNeeded / materialPricing[key].packSize);
@@ -1367,12 +1249,12 @@ export default function GenerateSummaryScreen() {
         }
       } else {
         if (config.selectedMaterials?.primer && config.repaintingConfiguration?.primer && config.repaintingConfiguration.primer > 0) {
-          const litersNeeded = (area / 120) * config.repaintingConfiguration.primer;
+          const litersNeeded = area / 120 * config.repaintingConfiguration.primer;
           const packsNeeded = Math.ceil(litersNeeded / materialPricing.Primer.packSize);
           materialCost += packsNeeded * materialPricing.Primer.pricePerPack;
         }
         if (config.selectedMaterials?.emulsion && config.repaintingConfiguration?.emulsion && config.repaintingConfiguration.emulsion > 0) {
-          const litersNeeded = (area / 120) * config.repaintingConfiguration.emulsion;
+          const litersNeeded = area / 120 * config.repaintingConfiguration.emulsion;
           const isEnamel = config.selectedMaterials.emulsion.toLowerCase().includes('enamel');
           const key = isEnamel ? 'Enamel' : 'Emulsion';
           const packsNeeded = Math.ceil(litersNeeded / materialPricing[key].packSize);
@@ -1385,7 +1267,6 @@ export default function GenerateSummaryScreen() {
     let labourCost = 0;
     const workingHours = 7;
     const standardHours = 8;
-    
     if (labourMode === 'auto') {
       // Calculate total days needed
       let totalDays = 0;
@@ -1393,17 +1274,16 @@ export default function GenerateSummaryScreen() {
         const area = Number(config.area) || 0;
         const isFresh = config.paintingSystem === 'Fresh Painting';
         const coveragePerDay = 150; // sq ft per labour per day
-        
+
         if (isFresh) {
-          if (config.coatConfiguration?.putty > 0) totalDays += Math.ceil((area * config.coatConfiguration.putty) / coveragePerDay);
-          if (config.coatConfiguration?.primer > 0) totalDays += Math.ceil((area * config.coatConfiguration.primer) / coveragePerDay);
-          if (config.coatConfiguration?.emulsion > 0) totalDays += Math.ceil((area * config.coatConfiguration.emulsion) / coveragePerDay);
+          if (config.coatConfiguration?.putty > 0) totalDays += Math.ceil(area * config.coatConfiguration.putty / coveragePerDay);
+          if (config.coatConfiguration?.primer > 0) totalDays += Math.ceil(area * config.coatConfiguration.primer / coveragePerDay);
+          if (config.coatConfiguration?.emulsion > 0) totalDays += Math.ceil(area * config.coatConfiguration.emulsion / coveragePerDay);
         } else {
-          if (config.repaintingConfiguration?.primer > 0) totalDays += Math.ceil((area * config.repaintingConfiguration.primer) / coveragePerDay);
-          if (config.repaintingConfiguration?.emulsion > 0) totalDays += Math.ceil((area * config.repaintingConfiguration.emulsion) / coveragePerDay);
+          if (config.repaintingConfiguration?.primer > 0) totalDays += Math.ceil(area * config.repaintingConfiguration.primer / coveragePerDay);
+          if (config.repaintingConfiguration?.emulsion > 0) totalDays += Math.ceil(area * config.repaintingConfiguration.emulsion / coveragePerDay);
         }
       });
-      
       const adjustedDays = Math.ceil(totalDays / autoLabourPerDay);
       labourCost = perDayLabourCost * autoLabourPerDay * adjustedDays;
     } else {
@@ -1412,7 +1292,6 @@ export default function GenerateSummaryScreen() {
       areaConfigs.forEach(config => {
         const area = Number(config.area) || 0;
         const isFresh = config.paintingSystem === 'Fresh Painting';
-        
         if (isFresh) {
           if (config.coatConfiguration?.putty > 0) totalWork += area * config.coatConfiguration.putty;
           if (config.coatConfiguration?.primer > 0) totalWork += area * config.coatConfiguration.primer;
@@ -1422,55 +1301,42 @@ export default function GenerateSummaryScreen() {
           if (config.repaintingConfiguration?.emulsion > 0) totalWork += area * config.repaintingConfiguration.emulsion;
         }
       });
-      
       const coveragePerDay = 150;
       const laboursNeeded = Math.ceil(totalWork / (coveragePerDay * manualDays));
       labourCost = perDayLabourCost * laboursNeeded * manualDays;
     }
-
-    const marginCost = (materialCost * dealerMargin) / 100;
+    const marginCost = materialCost * dealerMargin / 100;
     return materialCost + labourCost + marginCost;
   };
-
   const handleExportPDF = () => {
     toast({
       title: "Export PDF",
-      description: "Exporting project summary as PDF...",
+      description: "Exporting project summary as PDF..."
     });
   };
-
   const handleExportExcel = () => {
     toast({
       title: "Export Excel",
-      description: "Exporting project data to Excel...",
+      description: "Exporting project data to Excel..."
     });
   };
-
   const handleShareWhatsApp = () => {
     const message = `ECA Pro Project Summary\n\nCustomer: ${projectData?.customerName}\nTotal Area: ${totalAreas.wallArea.toFixed(1)} sq.ft\nEstimated Cost: ₹${calculateTotalEstimatedCost().toLocaleString()}\n\nGenerated by Asian Paints ECA Pro`;
     const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
   };
-
   const handleShareEmail = () => {
     const subject = `Project Summary - ${projectData?.customerName}`;
     const body = `Please find the project summary for ${projectData?.customerName}.\n\nTotal Area: ${totalAreas.wallArea.toFixed(1)} sq.ft\nEstimated Cost: ₹${calculateTotalEstimatedCost().toLocaleString()}\n\nGenerated by Asian Paints ECA Pro`;
     const url = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.open(url);
   };
-
-  return (
-    <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="eca-gradient text-white p-4">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-white hover:bg-white/20"
-              onClick={() => navigate(`/paint-estimation/${projectId}`)}
-            >
+            <Button variant="ghost" size="icon" className="text-white hover:bg-white/20" onClick={() => navigate(`/paint-estimation/${projectId}`)}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
@@ -1483,13 +1349,16 @@ export default function GenerateSummaryScreen() {
       </div>
 
       <div className="p-4">
-        <Tabs defaultValue="generate" className="w-full" onValueChange={(value) => {
-          if (value === "generate" && topSectionRef.current) {
-            setTimeout(() => {
-              topSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 100);
-          }
-        }}>
+        <Tabs defaultValue="generate" className="w-full" onValueChange={value => {
+        if (value === "generate" && topSectionRef.current) {
+          setTimeout(() => {
+            topSectionRef.current?.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start'
+            });
+          }, 100);
+        }
+      }}>
           <TabsList className="grid w-full grid-cols-2 mb-4">
             <TabsTrigger value="generate">Generate Summary</TabsTrigger>
             <TabsTrigger value="summary">Project Summary</TabsTrigger>
@@ -1628,33 +1497,19 @@ export default function GenerateSummaryScreen() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
-                  <Button
-                    variant="outline"
-                    className="flex items-center justify-center gap-2"
-                    onClick={handleExportPDF}
-                  >
+                  <Button variant="outline" className="flex items-center justify-center gap-2" onClick={handleExportPDF}>
                     <FileText className="h-4 w-4" />
                     Export PDF
                   </Button>
-                  <Button
-                    variant="outline"
-                    className="flex items-center justify-center gap-2"
-                    onClick={handleExportExcel}
-                  >
+                  <Button variant="outline" className="flex items-center justify-center gap-2" onClick={handleExportExcel}>
                     <Download className="h-4 w-4" />
                     Export Excel
                   </Button>
                 </div>
-                <Button
-                  className="w-full bg-green-600 hover:bg-green-700 text-white"
-                  onClick={handleShareWhatsApp}
-                >
+                <Button className="w-full bg-green-600 hover:bg-green-700 text-white" onClick={handleShareWhatsApp}>
                   Share WhatsApp
                 </Button>
-                <Button
-                  className="w-full bg-purple-600 hover:bg-purple-700 text-white"
-                  onClick={handleShareEmail}
-                >
+                <Button className="w-full bg-purple-600 hover:bg-purple-700 text-white" onClick={handleShareEmail}>
                   Share Email
                 </Button>
               </CardContent>
@@ -1662,6 +1517,5 @@ export default function GenerateSummaryScreen() {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
-  );
+    </div>;
 }
