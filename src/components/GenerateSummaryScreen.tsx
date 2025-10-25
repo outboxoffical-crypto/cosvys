@@ -1172,7 +1172,7 @@ export default function GenerateSummaryScreen() {
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg font-semibold">
             <DollarSign className="h-5 w-5 text-primary" />
-            Project Total Cost
+            Actual Project Total Cost
           </CardTitle>
         </CardHeader>
         <CardContent>
