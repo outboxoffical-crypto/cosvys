@@ -710,9 +710,6 @@ export default function GenerateSummaryScreen() {
                   {displayDays} to {Math.ceil(displayDays * 1.22)} days
                 </p>
               </div>
-              <p className="text-xs text-muted-foreground mt-2 text-right">
-                Approximate range based on labor efficiency
-              </p>
             </div>
 
             {/* Total Labour Cost - Only in Auto Mode */}
