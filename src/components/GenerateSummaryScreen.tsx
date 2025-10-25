@@ -246,7 +246,7 @@ export default function GenerateSummaryScreen() {
           {areaConfigs.length > 0 && <div className="mt-3 p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border-2 border-primary">
               <div className="flex justify-between items-center">
                 <span className="text-base font-semibold text-slate-950">Total Project Cost</span>
-                <p className="text-2xl font-bold text-primary">₹{Math.round(areaConfigs.reduce((sum, c) => sum + (Number(c.area) || 0) * (parseFloat(c.perSqFtRate) || 0), 0))}</p>
+                <p className="text-2xl font-bold text-primary">₹{Math.round(areaConfigs.reduce((sum, c) => sum + (Number(c.area) || 0) * (parseFloat(c.perSqFtRate) || 0), 0)).toLocaleString('en-IN')}</p>
               </div>
             </div>}
         </CardContent>
@@ -1018,7 +1018,7 @@ export default function GenerateSummaryScreen() {
               <div className="flex justify-between items-center">
                 <span className="text-base font-semibold text-slate-950">Total Material Cost</span>
                 <p className="text-2xl font-bold text-primary">
-                  ₹{Math.round(configMaterials.reduce((sum, cm) => sum + cm.totalCost, 0))}
+                  ₹{Math.round(configMaterials.reduce((sum, cm) => sum + cm.totalCost, 0)).toLocaleString('en-IN')}
                 </p>
               </div>
             </div>}
@@ -1052,7 +1052,7 @@ export default function GenerateSummaryScreen() {
             <div className="p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border-2 border-primary">
               <div className="flex justify-between items-center">
                 <span className="text-base font-semibold text-slate-950">Margin Cost</span>
-                <span className="text-lg font-bold text-primary">₹{Math.round(marginCost)}</span>
+                <span className="text-lg font-bold text-primary">₹{Math.round(marginCost).toLocaleString('en-IN')}</span>
               </div>
             </div>
           </div>
@@ -1198,7 +1198,7 @@ export default function GenerateSummaryScreen() {
             <div className="p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border-2 border-primary">
               <div className="flex justify-between items-center">
                 <span className="text-base font-semibold text-slate-950">Project Total</span>
-                <span className="text-2xl font-bold text-primary">₹{Math.round(totalCost)}</span>
+                <span className="text-2xl font-bold text-primary">₹{Math.round(totalCost).toLocaleString('en-IN')}</span>
               </div>
             </div>
           </div>
