@@ -848,16 +848,19 @@ export default function GenerateSummaryScreen() {
       const pricing = materialPricing[materialKey];
       
       // Calculate min and max quantities based on coverage variations
-      const minQuantity = quantity; // Best coverage (smooth surface)
-      const maxQuantity = quantity * 1.25; // Worst coverage (rough surface) - 25% more
+      const minQuantity = Math.ceil(quantity); // Best coverage (smooth surface)
+      // For putty, add fixed 10kg; for others, add 25%
+      const maxQuantity = materialKey === 'Putty' 
+        ? Math.ceil(quantity + 10) 
+        : Math.ceil(quantity * 1.25);
       
       const packsNeeded = Math.ceil(maxQuantity / pricing.packSize);
       const totalCost = packsNeeded * pricing.pricePerPack;
       const packCombination = calculateOptimalPacks(materialKey, maxQuantity);
       return {
         quantity: quantity.toFixed(2),
-        minQuantity: minQuantity.toFixed(2),
-        maxQuantity: maxQuantity.toFixed(2),
+        minQuantity: minQuantity,
+        maxQuantity: maxQuantity,
         unit: pricing.unit,
         packsNeeded,
         packSize: pricing.packSize,
@@ -974,9 +977,6 @@ export default function GenerateSummaryScreen() {
                                 <div className="flex-1">
                                   <p className="text-sm text-muted-foreground">
                                     Quantity: <span className="font-medium text-foreground">{mat.minQuantity} to {mat.maxQuantity} {mat.unit}</span>
-                                  </p>
-                                  <p className="text-xs text-muted-foreground italic">
-                                    Based on surface coverage variation
                                   </p>
                                   <p className="text-sm text-muted-foreground mt-1">
                                     Pack: <span className="font-medium text-foreground">{mat.packCombination}</span>
