@@ -706,8 +706,13 @@ export default function GenerateSummaryScreen() {
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">With {displayLabours} labour(s)</p>
                 </div>
-                <p className="text-2xl font-bold text-primary">{displayDays} days</p>
+                <p className="text-2xl font-bold text-primary">
+                  {displayDays} to {Math.ceil(displayDays * 1.22)} days
+                </p>
               </div>
+              <p className="text-xs text-muted-foreground mt-2 text-right">
+                Approximate range based on labor efficiency
+              </p>
             </div>
 
             {/* Total Labour Cost - Only in Auto Mode */}
@@ -841,11 +846,18 @@ export default function GenerateSummaryScreen() {
       let materialKey = 'Emulsion';
       if (material.toLowerCase().includes('putty')) materialKey = 'Putty';else if (material.toLowerCase().includes('primer')) materialKey = 'Primer';else if (material.toLowerCase().includes('enamel')) materialKey = 'Enamel';
       const pricing = materialPricing[materialKey];
-      const packsNeeded = Math.ceil(quantity / pricing.packSize);
+      
+      // Calculate min and max quantities based on coverage variations
+      const minQuantity = quantity; // Best coverage (smooth surface)
+      const maxQuantity = quantity * 1.25; // Worst coverage (rough surface) - 25% more
+      
+      const packsNeeded = Math.ceil(maxQuantity / pricing.packSize);
       const totalCost = packsNeeded * pricing.pricePerPack;
-      const packCombination = calculateOptimalPacks(materialKey, quantity);
+      const packCombination = calculateOptimalPacks(materialKey, maxQuantity);
       return {
         quantity: quantity.toFixed(2),
+        minQuantity: minQuantity.toFixed(2),
+        maxQuantity: maxQuantity.toFixed(2),
         unit: pricing.unit,
         packsNeeded,
         packSize: pricing.packSize,
@@ -961,9 +973,12 @@ export default function GenerateSummaryScreen() {
                               <div className="flex items-baseline justify-between">
                                 <div className="flex-1">
                                   <p className="text-sm text-muted-foreground">
-                                    Quantity: <span className="font-medium text-foreground">{mat.quantity} {mat.unit}</span>
+                                    Quantity: <span className="font-medium text-foreground">{mat.minQuantity} to {mat.maxQuantity} {mat.unit}</span>
                                   </p>
-                                  <p className="text-sm text-muted-foreground">
+                                  <p className="text-xs text-muted-foreground italic">
+                                    Based on surface coverage variation
+                                  </p>
+                                  <p className="text-sm text-muted-foreground mt-1">
                                     Pack: <span className="font-medium text-foreground">{mat.packCombination}</span>
                                   </p>
                                 </div>
