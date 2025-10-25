@@ -246,7 +246,7 @@ export default function GenerateSummaryScreen() {
           {areaConfigs.length > 0 && <div className="mt-3 p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border-2 border-primary">
               <div className="flex justify-between items-center">
                 <span className="text-base font-semibold text-slate-950">Total Project Cost</span>
-                <p className="text-2xl font-bold text-primary">₹{areaConfigs.reduce((sum, c) => sum + (Number(c.area) || 0) * (parseFloat(c.perSqFtRate) || 0), 0).toFixed(2)}</p>
+                <p className="text-2xl font-bold text-primary">₹{Math.round(areaConfigs.reduce((sum, c) => sum + (Number(c.area) || 0) * (parseFloat(c.perSqFtRate) || 0), 0))}</p>
               </div>
             </div>}
         </CardContent>
@@ -1021,7 +1021,7 @@ export default function GenerateSummaryScreen() {
               <div className="flex justify-between items-center">
                 <span className="text-base font-semibold text-slate-950">Total Material Cost</span>
                 <p className="text-2xl font-bold text-primary">
-                  ₹{configMaterials.reduce((sum, cm) => sum + cm.totalCost, 0).toFixed(2)}
+                  ₹{Math.round(configMaterials.reduce((sum, cm) => sum + cm.totalCost, 0))}
                 </p>
               </div>
             </div>}
@@ -1055,7 +1055,7 @@ export default function GenerateSummaryScreen() {
             <div className="p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border-2 border-primary">
               <div className="flex justify-between items-center">
                 <span className="text-base font-semibold text-slate-950">Margin Cost</span>
-                <span className="text-lg font-bold text-primary">₹{marginCost.toFixed(2)}</span>
+                <span className="text-lg font-bold text-primary">₹{Math.round(marginCost)}</span>
               </div>
             </div>
           </div>
@@ -1201,7 +1201,7 @@ export default function GenerateSummaryScreen() {
             <div className="p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border-2 border-primary">
               <div className="flex justify-between items-center">
                 <span className="text-base font-semibold text-slate-950">Project Total</span>
-                <span className="text-2xl font-bold text-primary">₹{totalCost.toFixed(2)}</span>
+                <span className="text-2xl font-bold text-primary">₹{Math.round(totalCost)}</span>
               </div>
             </div>
           </div>
