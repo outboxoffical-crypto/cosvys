@@ -15,6 +15,7 @@ export default function DealerInfoScreen() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
   const [formData, setFormData] = useState({
     dealerName: "",
     shopName: "",
@@ -26,7 +27,7 @@ export default function DealerInfoScreen() {
   });
 
   useEffect(() => {
-    // Check if user is logged in
+    // Check if user is logged in and load existing dealer info
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
@@ -42,7 +43,17 @@ export default function DealerInfoScreen() {
         .maybeSingle();
       
       if (dealerInfo) {
-        navigate("/dashboard");
+        // Load existing data for editing
+        setIsEditMode(true);
+        setFormData({
+          dealerName: dealerInfo.dealer_name || "",
+          shopName: dealerInfo.shop_name || "",
+          employeeId: dealerInfo.employee_id || "",
+          phone: dealerInfo.phone || "",
+          address: dealerInfo.address || "",
+          email: dealerInfo.email || "",
+          margin: dealerInfo.margin?.toString() || ""
+        });
       }
     };
     checkAuth();
@@ -64,28 +75,53 @@ export default function DealerInfoScreen() {
         throw new Error("You must be logged in");
       }
 
-      // Insert dealer info
-      const { error } = await supabase
-        .from('dealer_info')
-        .insert({
-          user_id: session.user.id,
-          dealer_name: validated.dealerName,
-          shop_name: validated.shopName,
-          employee_id: validated.employeeId,
-          phone: validated.phone,
-          address: validated.address,
-          email: validated.email || null,
-          margin: validated.margin
+      if (isEditMode) {
+        // Update existing dealer info
+        const { error } = await supabase
+          .from('dealer_info')
+          .update({
+            dealer_name: validated.dealerName,
+            shop_name: validated.shopName,
+            employee_id: validated.employeeId,
+            phone: validated.phone,
+            address: validated.address,
+            email: validated.email || null,
+            margin: validated.margin
+          })
+          .eq('user_id', session.user.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Success",
+          description: "Dealer information updated successfully!",
         });
 
-      if (error) throw error;
+        navigate("/settings");
+      } else {
+        // Insert new dealer info
+        const { error } = await supabase
+          .from('dealer_info')
+          .insert({
+            user_id: session.user.id,
+            dealer_name: validated.dealerName,
+            shop_name: validated.shopName,
+            employee_id: validated.employeeId,
+            phone: validated.phone,
+            address: validated.address,
+            email: validated.email || null,
+            margin: validated.margin
+          });
 
-      toast({
-        title: "Success",
-        description: "Dealer information saved successfully!",
-      });
+        if (error) throw error;
 
-      navigate("/dealer-pricing");
+        toast({
+          title: "Success",
+          description: "Dealer information saved successfully!",
+        });
+
+        navigate("/dealer-pricing");
+      }
     } catch (error: any) {
       toast({
         title: "Validation Error",
@@ -110,7 +146,7 @@ export default function DealerInfoScreen() {
             className="h-8 w-auto object-contain"
           />
           <div>
-            <h1 className="text-xl font-semibold">ECA Pro Setup</h1>
+            <h1 className="text-xl font-semibold">{isEditMode ? 'Edit Dealer Info' : 'ECA Pro Setup'}</h1>
             <p className="text-white/80 text-sm">Dealer Information</p>
           </div>
         </div>
@@ -259,7 +295,7 @@ export default function DealerInfoScreen() {
               className="w-full h-12 text-base font-medium"
               disabled={!isFormValid || loading}
             >
-              {loading ? "Saving..." : "Continue to Product Pricing"}
+              {loading ? "Saving..." : isEditMode ? "Update Information" : "Continue to Product Pricing"}
             </Button>
           </div>
         </form>
