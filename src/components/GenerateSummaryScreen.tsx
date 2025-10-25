@@ -706,7 +706,7 @@ export default function GenerateSummaryScreen() {
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">With {displayLabours} labour(s)</p>
                 </div>
-                <p className="text-2xl font-bold text-primary">
+                <p className="text-2xl font-bold text-primary ml-8">
                   {displayDays} to {Math.ceil(displayDays * 1.22)} days
                 </p>
               </div>
