@@ -60,7 +60,27 @@ export default function PaintEstimationScreen() {
   const [selectedPaintType, setSelectedPaintType] = useState<"Interior" | "Exterior" | "Waterproofing">("Interior");
   const [rooms, setRooms] = useState<any[]>([]);
   const [coverageData, setCoverageData] = useState<CoverageData[]>([]);
-  const [areaConfigurations, setAreaConfigurations] = useState<AreaConfiguration[]>([]);
+  
+  // Separate state for each paint type to prevent mixing
+  const [interiorConfigurations, setInteriorConfigurations] = useState<AreaConfiguration[]>([]);
+  const [exteriorConfigurations, setExteriorConfigurations] = useState<AreaConfiguration[]>([]);
+  const [waterproofingConfigurations, setWaterproofingConfigurations] = useState<AreaConfiguration[]>([]);
+  
+  // Current configurations based on selected paint type
+  const areaConfigurations = selectedPaintType === "Interior" ? interiorConfigurations :
+                              selectedPaintType === "Exterior" ? exteriorConfigurations :
+                              waterproofingConfigurations;
+  
+  const setAreaConfigurations = (updater: AreaConfiguration[] | ((prev: AreaConfiguration[]) => AreaConfiguration[])) => {
+    if (selectedPaintType === "Interior") {
+      setInteriorConfigurations(updater);
+    } else if (selectedPaintType === "Exterior") {
+      setExteriorConfigurations(updater);
+    } else {
+      setWaterproofingConfigurations(updater);
+    }
+  };
+  
   const [selectedConfigId, setSelectedConfigId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -102,26 +122,57 @@ export default function PaintEstimationScreen() {
     } catch {}
   }, [selectedPaintType, projectId]);
 
-  // Quick hydrate configs from localStorage to avoid empty UI on return
+  // Quick hydrate all configs from localStorage on mount
   useEffect(() => {
     try {
-      const savedKey = `paint_configs_${projectId}_${selectedPaintType}`;
-      const raw = typeof window !== 'undefined' ? localStorage.getItem(savedKey) : null;
-      const list = raw ? JSON.parse(raw) : [];
-      if (Array.isArray(list) && list.length > 0) {
-        setAreaConfigurations(list);
-        setIsLoading(false);
+      // Load Interior configs
+      const interiorKey = `paint_configs_${projectId}_Interior`;
+      const interiorRaw = typeof window !== 'undefined' ? localStorage.getItem(interiorKey) : null;
+      const interiorList = interiorRaw ? JSON.parse(interiorRaw) : [];
+      if (Array.isArray(interiorList) && interiorList.length > 0) {
+        setInteriorConfigurations(interiorList);
       } else {
-        const preservedKey = `configs_preserved_${projectId}_${selectedPaintType}`;
+        const preservedKey = `configs_preserved_${projectId}_Interior`;
         const raw2 = typeof window !== 'undefined' ? localStorage.getItem(preservedKey) : null;
         const list2 = raw2 ? JSON.parse(raw2) : [];
         if (Array.isArray(list2) && list2.length > 0) {
-          setAreaConfigurations(list2);
-          setIsLoading(false);
+          setInteriorConfigurations(list2);
         }
       }
+      
+      // Load Exterior configs
+      const exteriorKey = `paint_configs_${projectId}_Exterior`;
+      const exteriorRaw = typeof window !== 'undefined' ? localStorage.getItem(exteriorKey) : null;
+      const exteriorList = exteriorRaw ? JSON.parse(exteriorRaw) : [];
+      if (Array.isArray(exteriorList) && exteriorList.length > 0) {
+        setExteriorConfigurations(exteriorList);
+      } else {
+        const preservedKey = `configs_preserved_${projectId}_Exterior`;
+        const raw2 = typeof window !== 'undefined' ? localStorage.getItem(preservedKey) : null;
+        const list2 = raw2 ? JSON.parse(raw2) : [];
+        if (Array.isArray(list2) && list2.length > 0) {
+          setExteriorConfigurations(list2);
+        }
+      }
+      
+      // Load Waterproofing configs
+      const waterproofingKey = `paint_configs_${projectId}_Waterproofing`;
+      const waterproofingRaw = typeof window !== 'undefined' ? localStorage.getItem(waterproofingKey) : null;
+      const waterproofingList = waterproofingRaw ? JSON.parse(waterproofingRaw) : [];
+      if (Array.isArray(waterproofingList) && waterproofingList.length > 0) {
+        setWaterproofingConfigurations(waterproofingList);
+      } else {
+        const preservedKey = `configs_preserved_${projectId}_Waterproofing`;
+        const raw2 = typeof window !== 'undefined' ? localStorage.getItem(preservedKey) : null;
+        const list2 = raw2 ? JSON.parse(raw2) : [];
+        if (Array.isArray(list2) && list2.length > 0) {
+          setWaterproofingConfigurations(list2);
+        }
+      }
+      
+      setIsLoading(false);
     } catch {}
-  }, [projectId, selectedPaintType]);
+  }, [projectId]);
 
   // Fetch coverage data
   useEffect(() => {
@@ -519,103 +570,131 @@ export default function PaintEstimationScreen() {
     // Append any additional configs detected (persisted + new)
     configs.push(...storedAdditional, ...additional);
 
-    // Merge with any preserved configuration choices (painting system, materials, rates)
-    let preservedList: any[] = [];
-    try {
-      const preservedKey = `configs_preserved_${projectId}_${selectedPaintType}`;
-      const raw = typeof window !== 'undefined' ? localStorage.getItem(preservedKey) : null;
-      preservedList = raw ? JSON.parse(raw) : [];
-    } catch {}
-    const merged = configs.map(cfg => {
-      const match = preservedList.find((p: any) =>
-        p.id === cfg.id ||
-        (p.areaType === cfg.areaType && p.label === cfg.label && !!p.isAdditional === !!cfg.isAdditional)
-      );
-      return match
-        ? {
-            ...cfg,
-            paintingSystem: match.paintingSystem ?? cfg.paintingSystem,
-            coatConfiguration: match.coatConfiguration ?? cfg.coatConfiguration,
-            repaintingConfiguration: match.repaintingConfiguration ?? cfg.repaintingConfiguration,
-            selectedMaterials: match.selectedMaterials ?? cfg.selectedMaterials,
-            perSqFtRate: match.perSqFtRate ?? cfg.perSqFtRate,
-            enamelConfig: match.enamelConfig ?? cfg.enamelConfig,
-          }
-        : cfg;
-    });
+    // Merge with existing configurations to preserve user choices
+    const existingConfigs = selectedPaintType === "Interior" ? interiorConfigurations :
+                            selectedPaintType === "Exterior" ? exteriorConfigurations :
+                            waterproofingConfigurations;
 
-    // If user has saved configs (including rates and selections), load them and update only area values
-    try {
-      const savedConfigKey = `paint_configs_${projectId}_${selectedPaintType}`;
-      const savedRaw = typeof window !== 'undefined' ? localStorage.getItem(savedConfigKey) : null;
-      const savedList: AreaConfiguration[] = savedRaw ? JSON.parse(savedRaw) : [];
-      if (Array.isArray(savedList) && savedList.length > 0) {
-        const mergedWithSaved = savedList.map(saved => {
-          const match = merged.find(cfg =>
-            cfg.id === saved.id ||
-            (cfg.areaType === saved.areaType && cfg.label === saved.label && !!cfg.isAdditional === !!saved.isAdditional)
-          );
-          return match ? { ...saved, area: match.area } : saved;
-        });
-        const extras = merged.filter(cfg =>
-          !mergedWithSaved.some(s =>
-            s.id === cfg.id ||
-            (s.areaType === cfg.areaType && s.label === cfg.label && !!s.isAdditional === !!cfg.isAdditional)
-          )
+    if (existingConfigs.length > 0) {
+      // Update areas only, preserve all user selections
+      const updated = existingConfigs.map(existing => {
+        const match = configs.find(cfg =>
+          cfg.id === existing.id ||
+          (cfg.areaType === existing.areaType && cfg.label === existing.label && !!cfg.isAdditional === !!existing.isAdditional)
         );
-        setAreaConfigurations([...mergedWithSaved, ...extras]);
-        return;
+        return match ? { ...existing, area: match.area } : existing;
+      });
+      
+      // Add any new configs not in existing
+      const newConfigs = configs.filter(cfg =>
+        !updated.some(u =>
+          u.id === cfg.id ||
+          (u.areaType === cfg.areaType && u.label === cfg.label && !!u.isAdditional === !!cfg.isAdditional)
+        )
+      );
+      
+      setAreaConfigurations([...updated, ...newConfigs]);
+    } else {
+      // First time initialization - try to load from localStorage
+      try {
+        const preservedKey = `configs_preserved_${projectId}_${selectedPaintType}`;
+        const raw = typeof window !== 'undefined' ? localStorage.getItem(preservedKey) : null;
+        const preservedList = raw ? JSON.parse(raw) : [];
+        
+        if (preservedList.length > 0) {
+          const merged = configs.map(cfg => {
+            const match = preservedList.find((p: any) =>
+              p.id === cfg.id ||
+              (p.areaType === cfg.areaType && p.label === cfg.label && !!p.isAdditional === !!cfg.isAdditional)
+            );
+            return match
+              ? {
+                  ...cfg,
+                  paintingSystem: match.paintingSystem ?? cfg.paintingSystem,
+                  coatConfiguration: match.coatConfiguration ?? cfg.coatConfiguration,
+                  repaintingConfiguration: match.repaintingConfiguration ?? cfg.repaintingConfiguration,
+                  selectedMaterials: match.selectedMaterials ?? cfg.selectedMaterials,
+                  perSqFtRate: match.perSqFtRate ?? cfg.perSqFtRate,
+                  enamelConfig: match.enamelConfig ?? cfg.enamelConfig,
+                }
+              : cfg;
+          });
+          setAreaConfigurations(merged);
+        } else {
+          setAreaConfigurations(configs);
+        }
+      } catch {
+        setAreaConfigurations(configs);
       }
-    } catch {}
-    setAreaConfigurations(merged);
+    }
   };
 
-  // Re-initialize when paint type changes - preserve existing configurations
+  // Re-initialize when rooms change or paint type changes
   useEffect(() => {
-    if (rooms.length > 0) {
-      setIsLoading(true);
-      setTimeout(() => {
-        // Save current configurations before re-initializing
-        const configsToPreserve = areaConfigurations.filter(c => c.paintingSystem || c.enamelConfig);
-        initializeConfigurations(rooms);
-        
-        // Restore painting system and material selections after re-init
-        if (configsToPreserve.length > 0) {
-          setAreaConfigurations(prev => prev.map(config => {
-            const preserved = configsToPreserve.find(p => 
-              (p.id === config.id) || 
-              (p.areaType === config.areaType && p.label === config.label && !p.isAdditional && !config.isAdditional)
-            );
-            if (preserved) {
-              return { ...config, ...preserved, area: config.area }; // Keep updated area but preserve config
-            }
-            return config;
-          }));
-        }
-        setIsLoading(false);
-      }, 100);
+    if (rooms.length > 0 && !isLoading) {
+      // Reinitialize configurations for current paint type
+      initializeConfigurations(rooms);
     }
-  }, [selectedPaintType]);
+  }, [rooms, selectedPaintType]);
 
   // Persist configurations so they survive navigation and reload
   useEffect(() => {
     try {
-      const preservedKey = `configs_preserved_${projectId}_${selectedPaintType}`;
-      const toStore = areaConfigurations.map(c => ({
-        id: c.id,
-        areaType: c.areaType,
-        paintingSystem: c.paintingSystem,
-        coatConfiguration: c.coatConfiguration,
-        repaintingConfiguration: c.repaintingConfiguration,
-        selectedMaterials: c.selectedMaterials,
-        perSqFtRate: c.perSqFtRate,
-        label: c.label,
-        isAdditional: c.isAdditional,
-        enamelConfig: c.enamelConfig,
-      }));
-      localStorage.setItem(preservedKey, JSON.stringify(toStore));
+      // Save Interior configs
+      if (interiorConfigurations.length > 0) {
+        const preservedKey = `configs_preserved_${projectId}_Interior`;
+        const toStore = interiorConfigurations.map(c => ({
+          id: c.id,
+          areaType: c.areaType,
+          paintingSystem: c.paintingSystem,
+          coatConfiguration: c.coatConfiguration,
+          repaintingConfiguration: c.repaintingConfiguration,
+          selectedMaterials: c.selectedMaterials,
+          perSqFtRate: c.perSqFtRate,
+          label: c.label,
+          isAdditional: c.isAdditional,
+          enamelConfig: c.enamelConfig,
+        }));
+        localStorage.setItem(preservedKey, JSON.stringify(toStore));
+      }
+      
+      // Save Exterior configs
+      if (exteriorConfigurations.length > 0) {
+        const preservedKey = `configs_preserved_${projectId}_Exterior`;
+        const toStore = exteriorConfigurations.map(c => ({
+          id: c.id,
+          areaType: c.areaType,
+          paintingSystem: c.paintingSystem,
+          coatConfiguration: c.coatConfiguration,
+          repaintingConfiguration: c.repaintingConfiguration,
+          selectedMaterials: c.selectedMaterials,
+          perSqFtRate: c.perSqFtRate,
+          label: c.label,
+          isAdditional: c.isAdditional,
+          enamelConfig: c.enamelConfig,
+        }));
+        localStorage.setItem(preservedKey, JSON.stringify(toStore));
+      }
+      
+      // Save Waterproofing configs
+      if (waterproofingConfigurations.length > 0) {
+        const preservedKey = `configs_preserved_${projectId}_Waterproofing`;
+        const toStore = waterproofingConfigurations.map(c => ({
+          id: c.id,
+          areaType: c.areaType,
+          paintingSystem: c.paintingSystem,
+          coatConfiguration: c.coatConfiguration,
+          repaintingConfiguration: c.repaintingConfiguration,
+          selectedMaterials: c.selectedMaterials,
+          perSqFtRate: c.perSqFtRate,
+          label: c.label,
+          isAdditional: c.isAdditional,
+          enamelConfig: c.enamelConfig,
+        }));
+        localStorage.setItem(preservedKey, JSON.stringify(toStore));
+      }
     } catch {}
-  }, [areaConfigurations, selectedPaintType, projectId]);
+  }, [interiorConfigurations, exteriorConfigurations, waterproofingConfigurations, projectId]);
 
   // Handle edit configuration
   const handleEditConfig = (configId: string) => {
@@ -702,8 +781,9 @@ export default function PaintEstimationScreen() {
   };
 
   const handleContinue = () => {
-    // Validate at least one configuration is complete
-    const hasValidConfig = areaConfigurations.some(
+    // Validate at least one configuration is complete across all paint types
+    const allConfigs = [...interiorConfigurations, ...exteriorConfigurations, ...waterproofingConfigurations];
+    const hasValidConfig = allConfigs.some(
       config => config.paintingSystem && config.perSqFtRate
     );
 
@@ -712,21 +792,11 @@ export default function PaintEstimationScreen() {
       return;
     }
 
-    // Load existing estimation data to preserve other paint types
-    let existingData: any = {};
-    try {
-      const existing = localStorage.getItem(`estimation_${projectId}`);
-      if (existing) {
-        existingData = JSON.parse(existing);
-      }
-    } catch {}
-
-    // Save configurations for current paint type
+    // Save all configurations (all paint types)
     const updatedData = {
-      ...existingData,
-      interiorConfigurations: selectedPaintType === 'Interior' ? areaConfigurations : (existingData.interiorConfigurations || []),
-      exteriorConfigurations: selectedPaintType === 'Exterior' ? areaConfigurations : (existingData.exteriorConfigurations || []),
-      waterproofingConfigurations: selectedPaintType === 'Waterproofing' ? areaConfigurations : (existingData.waterproofingConfigurations || []),
+      interiorConfigurations: interiorConfigurations,
+      exteriorConfigurations: exteriorConfigurations,
+      waterproofingConfigurations: waterproofingConfigurations,
       lastPaintType: selectedPaintType,
       totalCost: calculateTotalCost()
     };
