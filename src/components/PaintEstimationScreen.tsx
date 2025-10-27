@@ -712,13 +712,26 @@ export default function PaintEstimationScreen() {
       return;
     }
 
-    // Save to localStorage
-    const estimationData = {
-      paintType: selectedPaintType,
-      configurations: areaConfigurations,
+    // Load existing estimation data to preserve other paint types
+    let existingData: any = {};
+    try {
+      const existing = localStorage.getItem(`estimation_${projectId}`);
+      if (existing) {
+        existingData = JSON.parse(existing);
+      }
+    } catch {}
+
+    // Save configurations for current paint type
+    const updatedData = {
+      ...existingData,
+      interiorConfigurations: selectedPaintType === 'Interior' ? areaConfigurations : (existingData.interiorConfigurations || []),
+      exteriorConfigurations: selectedPaintType === 'Exterior' ? areaConfigurations : (existingData.exteriorConfigurations || []),
+      waterproofingConfigurations: selectedPaintType === 'Waterproofing' ? areaConfigurations : (existingData.waterproofingConfigurations || []),
+      lastPaintType: selectedPaintType,
       totalCost: calculateTotalCost()
     };
-    localStorage.setItem(`estimation_${projectId}`, JSON.stringify(estimationData));
+    
+    localStorage.setItem(`estimation_${projectId}`, JSON.stringify(updatedData));
     navigate(`/generate-summary/${projectId}`);
   };
 

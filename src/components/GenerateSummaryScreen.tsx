@@ -14,6 +14,7 @@ interface AreaConfig {
   area: number;
   perSqFtRate: string;
   label?: string;
+  paintTypeCategory?: 'Interior' | 'Exterior' | 'Waterproofing';
   selectedMaterials: {
     putty: string;
     primer: string;
@@ -72,17 +73,42 @@ export default function GenerateSummaryScreen() {
       const project = localStorage.getItem(`project_${projectId}`);
       if (project) setProjectData(JSON.parse(project));
 
-      // Prefer snapshot saved when user clicked Continue in Estimation
+      // Load all configurations from estimation data
       const estimationKey = `estimation_${projectId}`;
       const estimationStr = localStorage.getItem(estimationKey);
       const storedPaintType = localStorage.getItem(`selected_paint_type_${projectId}`) || 'Interior';
+      
       if (estimationStr) {
         const est = JSON.parse(estimationStr);
-        const pt = est.paintType || storedPaintType;
+        const pt = est.lastPaintType || storedPaintType;
         setPaintType(pt);
-        const configurations = Array.isArray(est.configurations) ? est.configurations : [];
-        console.log('Loaded configs from estimation:', configurations.length);
-        setAreaConfigs(configurations);
+        
+        // Combine all configurations from all paint types
+        const allConfigs: AreaConfig[] = [];
+        
+        // Add Interior configurations with type marker
+        if (Array.isArray(est.interiorConfigurations) && est.interiorConfigurations.length > 0) {
+          est.interiorConfigurations.forEach((config: any) => {
+            allConfigs.push({ ...config, paintTypeCategory: 'Interior' });
+          });
+        }
+        
+        // Add Exterior configurations with type marker
+        if (Array.isArray(est.exteriorConfigurations) && est.exteriorConfigurations.length > 0) {
+          est.exteriorConfigurations.forEach((config: any) => {
+            allConfigs.push({ ...config, paintTypeCategory: 'Exterior' });
+          });
+        }
+        
+        // Add Waterproofing configurations with type marker
+        if (Array.isArray(est.waterproofingConfigurations) && est.waterproofingConfigurations.length > 0) {
+          est.waterproofingConfigurations.forEach((config: any) => {
+            allConfigs.push({ ...config, paintTypeCategory: 'Waterproofing' });
+          });
+        }
+        
+        console.log('Loaded all configs from estimation:', allConfigs.length);
+        setAreaConfigs(allConfigs);
       } else {
         // Fallback to per-type saved configs while still on estimation screen
         const pt = storedPaintType;
@@ -95,6 +121,8 @@ export default function GenerateSummaryScreen() {
         } else if (preservedConfigs) {
           configs = JSON.parse(preservedConfigs);
         }
+        // Add paint type marker to fallback configs
+        configs = configs.map(c => ({ ...c, paintTypeCategory: pt }));
         console.log('Loaded fallback configs:', configs);
         setAreaConfigs(Array.isArray(configs) ? configs : []);
       }
@@ -131,24 +159,27 @@ export default function GenerateSummaryScreen() {
       const newIndex = Math.round(scrollLeft / cardWidth);
       setActiveConfigIndex(newIndex);
     };
-    return <Card className="eca-shadow">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base font-semibold">
-            <Palette className="h-5 w-5 text-primary" />
-            Paint Configuration Details
-          </CardTitle>
-          <p className="text-sm text-muted-foreground mt-1">Summary from {paintType} section</p>
-        </CardHeader>
-        <CardContent>
-          {areaConfigs.length === 0 ? <div className="text-sm text-muted-foreground p-4 border rounded-md bg-muted/30">
-              No paint configurations found. Please add them in Paint Estimation and click Generate Summary.
-            </div> : <>
-              {/* Horizontal scrolling container */}
-              <div ref={paintConfigRef} onScroll={handleScroll} className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide" style={{
+
+    // Group configurations by paint type
+    const interiorConfigs = areaConfigs.filter(c => c.paintTypeCategory === 'Interior');
+    const exteriorConfigs = areaConfigs.filter(c => c.paintTypeCategory === 'Exterior');
+    const waterproofingConfigs = areaConfigs.filter(c => c.paintTypeCategory === 'Waterproofing');
+
+    const renderConfigGroup = (configs: AreaConfig[], typeLabel: string) => {
+      if (configs.length === 0) return null;
+
+      return (
+        <div key={typeLabel} className="space-y-3 mb-6">
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+              {typeLabel}
+            </Badge>
+          </div>
+          <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide" style={{
             scrollbarWidth: 'none',
             msOverflowStyle: 'none'
           }}>
-                {areaConfigs.map(config => {
+            {configs.map(config => {
               const area = Number(config.area) || 0;
               const rate = parseFloat(config.perSqFtRate) || 0;
               const totalCost = area * rate;
@@ -178,79 +209,86 @@ export default function GenerateSummaryScreen() {
                   return parts.join(' + ');
                 }
               };
-              return <Card key={config.id} className="flex-none w-72 border-2 border-primary/20 bg-primary/5 snap-start">
-                      <CardContent className="p-4">
-                        <div className="space-y-3">
-                          {/* Header with Type Badge */}
-                          <div className="flex items-center justify-between">
-                            <h3 className="font-semibold text-base">{config.label || config.areaType}</h3>
-                            <Badge variant="secondary" className="text-xs">
-                              {paintType}
-                            </Badge>
-                          </div>
-                          
-                          <div className="space-y-1">
-                            <p className="text-sm text-muted-foreground">Paint Type</p>
-                            <p className="font-medium">{config.selectedMaterials.emulsion || config.areaType}</p>
-                          </div>
-                          
-                          <div className="space-y-1">
-                            <p className="text-sm text-muted-foreground">Painting System</p>
-                            <p className="font-medium">{config.paintingSystem || '-'}</p>
-                          </div>
 
-                          <div className="space-y-1">
-                            <p className="text-sm text-muted-foreground">Coats</p>
-                            <p className="font-medium text-sm leading-relaxed">{getCoatDetails() || 'Not configured'}</p>
-                          </div>
+              return (
+                <Card key={config.id} className="flex-none w-72 border-2 border-primary/20 bg-primary/5 snap-start">
+                  <CardContent className="p-4">
+                    <div className="space-y-3">
+                      {/* Header with Type Badge */}
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold text-base">{config.label || config.areaType}</h3>
+                        <Badge variant="secondary" className="text-xs">
+                          {config.paintTypeCategory || typeLabel}
+                        </Badge>
+                      </div>
+                      
+                      <div className="space-y-1">
+                        <p className="text-sm text-muted-foreground">Paint Type</p>
+                        <p className="font-medium">{config.selectedMaterials.emulsion || config.areaType}</p>
+                      </div>
+                      
+                      <div className="space-y-1">
+                        <p className="text-sm text-muted-foreground">Painting System</p>
+                        <p className="font-medium">{config.paintingSystem || '-'}</p>
+                      </div>
 
-                          <div className="grid grid-cols-2 gap-3">
-                            <div className="space-y-1">
-                              <p className="text-sm text-muted-foreground">Area</p>
-                              <p className="font-medium">{area.toFixed(2)} Sq.ft</p>
-                            </div>
+                      <div className="space-y-1">
+                        <p className="text-sm text-muted-foreground">Coats</p>
+                        <p className="font-medium text-sm leading-relaxed">{getCoatDetails() || 'Not configured'}</p>
+                      </div>
 
-                            <div className="space-y-1">
-                              <p className="text-sm text-muted-foreground">Rate/Sq.ft</p>
-                              <p className="font-medium">₹{rate.toFixed(2)}</p>
-                            </div>
-                          </div>
-
-                          <div className="pt-2 border-t border-primary/20">
-                            <div className="space-y-1">
-                              <p className="text-sm text-muted-foreground">Total Cost</p>
-                              <p className="font-semibold text-lg text-primary">₹{totalCost.toFixed(2)}</p>
-                            </div>
-                          </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">Area</p>
+                          <p className="font-medium">{area.toFixed(2)} Sq.ft</p>
                         </div>
-                      </CardContent>
-                    </Card>;
+
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">Rate/Sq.ft</p>
+                          <p className="font-medium">₹{rate.toFixed(2)}</p>
+                        </div>
+                      </div>
+
+                      <div className="pt-2 border-t border-primary/20">
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">Total Cost</p>
+                          <p className="font-semibold text-lg text-primary">₹{totalCost.toFixed(2)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
             })}
-              </div>
-              
-              {/* Scroll indicators */}
-              {areaConfigs.length > 1 && <div className="flex justify-center gap-2 mt-2">
-                  {areaConfigs.map((_, index) => <button key={index} onClick={() => {
-              const container = paintConfigRef.current;
-              if (container) {
-                const cardWidth = 288 + 16;
-                container.scrollTo({
-                  left: index * cardWidth,
-                  behavior: 'smooth'
-                });
-              }
-            }} className={`h-2 rounded-full transition-all ${index === activeConfigIndex ? 'w-8 bg-primary' : 'w-2 bg-primary/30'}`} />)}
-                </div>}
-            </>}
-          {/* Total Project Cost - quick visibility below configuration box */}
-          {areaConfigs.length > 0 && <div className="mt-3 p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border-2 border-primary">
-              <div className="flex justify-between items-center">
-                <span className="text-base font-semibold text-slate-950">Total Project Cost</span>
-                <p className="text-2xl font-bold text-primary">₹{Math.round(areaConfigs.reduce((sum, c) => sum + (Number(c.area) || 0) * (parseFloat(c.perSqFtRate) || 0), 0)).toLocaleString('en-IN')}</p>
-              </div>
-            </div>}
+          </div>
+        </div>
+      );
+    };
+
+    return (
+      <Card className="eca-shadow">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base font-semibold">
+            <Palette className="h-5 w-5 text-primary" />
+            Paint Configuration Details
+          </CardTitle>
+          <p className="text-sm text-muted-foreground mt-1">All configured paint types</p>
+        </CardHeader>
+        <CardContent>
+          {areaConfigs.length === 0 ? (
+            <div className="text-sm text-muted-foreground p-4 border rounded-md bg-muted/30">
+              No paint configurations found. Please add them in Paint Estimation and click Generate Summary.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {renderConfigGroup(interiorConfigs, 'Interior')}
+              {renderConfigGroup(exteriorConfigs, 'Exterior')}
+              {renderConfigGroup(waterproofingConfigs, 'Waterproofing')}
+            </div>
+          )}
         </CardContent>
-      </Card>;
+      </Card>
+    );
   };
 
   // Section 2: Total Room Details
