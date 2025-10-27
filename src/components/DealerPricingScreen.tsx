@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Package, Plus, Edit, Check, X, Trash2 } from "lucide-react";
+import { ArrowLeft, Package, Plus, Edit, Check, X, Trash2, Search, ChevronDown } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 
 interface ProductPrice {
@@ -75,6 +75,8 @@ export default function DealerPricingScreen() {
   const [editingCustomProductCategory, setEditingCustomProductCategory] = useState<string | null>(null);
   const [renamingCategory, setRenamingCategory] = useState<string | null>(null);
   const [newCategoryName, setNewCategoryName] = useState<string>('');
+  const [sizeSearchTerm, setSizeSearchTerm] = useState<string>('');
+  const [sizeDropdownOpen, setSizeDropdownOpen] = useState<boolean>(false);
 
   useEffect(() => {
     const stored = localStorage.getItem('dealerInfo');
@@ -501,30 +503,190 @@ export default function DealerPricingScreen() {
                         )}
                       </div>
 
-                      {editingProduct === product && (
+                       {editingProduct === product && (
                         <div className="mt-3 space-y-3 bg-muted p-3 rounded-md">
-                          <div>
-                            <Label className="text-xs font-medium mb-2 block">Available Sizes</Label>
-                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
-                              {availableSizes.map((size) => (
-                                <button
-                                  key={size}
-                                  type="button"
-                                  onClick={() => handleSizeToggle(size)}
-                                  className={`
-                                    aspect-square rounded-lg text-xs font-medium transition-all
-                                    flex items-center justify-center
-                                    border-2 shadow-sm hover:shadow-md
-                                    ${tempSizes.includes(size)
-                                      ? 'bg-primary text-primary-foreground border-primary shadow-primary/20'
-                                      : 'bg-background text-foreground border-input hover:bg-accent hover:border-primary/40'
-                                    }
-                                  `}
-                                >
-                                  {size}
-                                </button>
-                              ))}
+                          <div className="space-y-2">
+                            <Label className="text-xs font-medium">Available Sizes</Label>
+                            
+                            {/* Dropdown Trigger */}
+                            <div 
+                              onClick={() => setSizeDropdownOpen(!sizeDropdownOpen)}
+                              className="flex items-center justify-between p-2.5 border border-input rounded-lg bg-background hover:bg-accent cursor-pointer transition-colors shadow-sm"
+                            >
+                              <span className="text-xs text-muted-foreground">
+                                {tempSizes.length === 0 
+                                  ? "Select sizes..." 
+                                  : `${tempSizes.length} size${tempSizes.length > 1 ? 's' : ''} selected`}
+                              </span>
+                              <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${sizeDropdownOpen ? 'rotate-180' : ''}`} />
                             </div>
+
+                            {/* Dropdown Content */}
+                            {sizeDropdownOpen && (
+                              <div className="border border-input rounded-lg bg-background shadow-md overflow-hidden">
+                                {/* Search Bar */}
+                                <div className="p-2 border-b border-border bg-muted/30">
+                                  <div className="relative">
+                                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                                    <Input
+                                      type="text"
+                                      placeholder="Search sizes..."
+                                      value={sizeSearchTerm}
+                                      onChange={(e) => setSizeSearchTerm(e.target.value)}
+                                      className="h-8 pl-8 text-xs border-input"
+                                    />
+                                  </div>
+                                </div>
+
+                                {/* Select All / Clear All */}
+                                <div className="flex items-center justify-between px-3 py-2 bg-muted/20 border-b border-border">
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => {
+                                      const filteredSizes = availableSizes.filter(size => 
+                                        size.toLowerCase().includes(sizeSearchTerm.toLowerCase())
+                                      );
+                                      filteredSizes.forEach(size => {
+                                        if (!tempSizes.includes(size)) {
+                                          handleSizeToggle(size);
+                                        }
+                                      });
+                                    }}
+                                    className="h-7 text-xs text-primary hover:text-primary hover:bg-primary/10"
+                                  >
+                                    Select All
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => {
+                                      const filteredSizes = availableSizes.filter(size => 
+                                        size.toLowerCase().includes(sizeSearchTerm.toLowerCase())
+                                      );
+                                      filteredSizes.forEach(size => {
+                                        if (tempSizes.includes(size)) {
+                                          handleSizeToggle(size);
+                                        }
+                                      });
+                                    }}
+                                    className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  >
+                                    Clear All
+                                  </Button>
+                                </div>
+
+                                {/* Size Options - Grouped by Category */}
+                                <div className="max-h-64 overflow-y-auto">
+                                  {/* Weight-based sizes */}
+                                  {availableSizes.filter(s => s.includes('g') || s.includes('kg')).filter(size => 
+                                    size.toLowerCase().includes(sizeSearchTerm.toLowerCase())
+                                  ).length > 0 && (
+                                    <div className="border-b border-border last:border-0">
+                                      <div className="px-3 py-1.5 bg-muted/50">
+                                        <span className="text-xs font-medium text-muted-foreground">Weight</span>
+                                      </div>
+                                      <div className="p-2 grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                                        {availableSizes
+                                          .filter(s => s.includes('g') || s.includes('kg'))
+                                          .filter(size => size.toLowerCase().includes(sizeSearchTerm.toLowerCase()))
+                                          .map((size) => (
+                                            <button
+                                              key={size}
+                                              type="button"
+                                              onClick={() => handleSizeToggle(size)}
+                                              className={`
+                                                px-3 py-1.5 rounded-md text-xs font-medium transition-all
+                                                border ${tempSizes.includes(size)
+                                                  ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                                                  : 'bg-background text-foreground border-input hover:bg-accent hover:border-primary/40'
+                                                }
+                                              `}
+                                            >
+                                              {size}
+                                            </button>
+                                          ))}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Volume-based sizes */}
+                                  {availableSizes.filter(s => s.includes('ml') || s.includes('L')).filter(size => 
+                                    size.toLowerCase().includes(sizeSearchTerm.toLowerCase())
+                                  ).length > 0 && (
+                                    <div className="border-b border-border last:border-0">
+                                      <div className="px-3 py-1.5 bg-muted/50">
+                                        <span className="text-xs font-medium text-muted-foreground">Volume</span>
+                                      </div>
+                                      <div className="p-2 grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                                        {availableSizes
+                                          .filter(s => s.includes('ml') || s.includes('L'))
+                                          .filter(size => size.toLowerCase().includes(sizeSearchTerm.toLowerCase()))
+                                          .map((size) => (
+                                            <button
+                                              key={size}
+                                              type="button"
+                                              onClick={() => handleSizeToggle(size)}
+                                              className={`
+                                                px-3 py-1.5 rounded-md text-xs font-medium transition-all
+                                                border ${tempSizes.includes(size)
+                                                  ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                                                  : 'bg-background text-foreground border-input hover:bg-accent hover:border-primary/40'
+                                                }
+                                              `}
+                                            >
+                                              {size}
+                                            </button>
+                                          ))}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Other sizes (like "1 pack") */}
+                                  {availableSizes.filter(s => !s.includes('g') && !s.includes('kg') && !s.includes('ml') && !s.includes('L')).filter(size => 
+                                    size.toLowerCase().includes(sizeSearchTerm.toLowerCase())
+                                  ).length > 0 && (
+                                    <div className="border-b border-border last:border-0">
+                                      <div className="px-3 py-1.5 bg-muted/50">
+                                        <span className="text-xs font-medium text-muted-foreground">Other</span>
+                                      </div>
+                                      <div className="p-2 grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                                        {availableSizes
+                                          .filter(s => !s.includes('g') && !s.includes('kg') && !s.includes('ml') && !s.includes('L'))
+                                          .filter(size => size.toLowerCase().includes(sizeSearchTerm.toLowerCase()))
+                                          .map((size) => (
+                                            <button
+                                              key={size}
+                                              type="button"
+                                              onClick={() => handleSizeToggle(size)}
+                                              className={`
+                                                px-3 py-1.5 rounded-md text-xs font-medium transition-all
+                                                border ${tempSizes.includes(size)
+                                                  ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                                                  : 'bg-background text-foreground border-input hover:bg-accent hover:border-primary/40'
+                                                }
+                                              `}
+                                            >
+                                              {size}
+                                            </button>
+                                          ))}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* No results message */}
+                                  {availableSizes.filter(size => 
+                                    size.toLowerCase().includes(sizeSearchTerm.toLowerCase())
+                                  ).length === 0 && (
+                                    <div className="p-4 text-center">
+                                      <p className="text-xs text-muted-foreground">No sizes found</p>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
                           </div>
 
                           {tempSizes.map((size) => (
