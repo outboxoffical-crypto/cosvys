@@ -504,22 +504,25 @@ export default function DealerPricingScreen() {
                       {editingProduct === product && (
                         <div className="mt-3 space-y-3 bg-muted p-3 rounded-md">
                           <div>
-                            <Label className="text-xs font-medium">Available Sizes</Label>
-                            <div className="flex flex-wrap gap-2 mt-1">
+                            <Label className="text-xs font-medium mb-2 block">Available Sizes</Label>
+                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
                               {availableSizes.map((size) => (
-                                <div key={size} className="flex items-center space-x-1">
-                                  <Checkbox
-                                    id={`${product}-${size}`}
-                                    checked={tempSizes.includes(size)}
-                                    onCheckedChange={() => handleSizeToggle(size)}
-                                  />
-                                  <Label 
-                                    htmlFor={`${product}-${size}`}
-                                    className="text-xs cursor-pointer"
-                                  >
-                                    {size}
-                                  </Label>
-                                </div>
+                                <button
+                                  key={size}
+                                  type="button"
+                                  onClick={() => handleSizeToggle(size)}
+                                  className={`
+                                    aspect-square rounded-lg text-xs font-medium transition-all
+                                    flex items-center justify-center
+                                    border-2 shadow-sm hover:shadow-md
+                                    ${tempSizes.includes(size)
+                                      ? 'bg-primary text-primary-foreground border-primary shadow-primary/20'
+                                      : 'bg-background text-foreground border-input hover:bg-accent hover:border-primary/40'
+                                    }
+                                  `}
+                                >
+                                  {size}
+                                </button>
                               ))}
                             </div>
                           </div>
