@@ -281,9 +281,9 @@ export default function GenerateSummaryScreen() {
             </div>
           ) : (
             <div className="space-y-4">
-              {renderConfigGroup(interiorConfigs, 'Interior')}
-              {renderConfigGroup(exteriorConfigs, 'Exterior')}
-              {renderConfigGroup(waterproofingConfigs, 'Waterproofing')}
+              {renderConfigGroup(interiorConfigs, 'Interior Paint Configurations')}
+              {renderConfigGroup(exteriorConfigs, 'Exterior Paint Configurations')}
+              {renderConfigGroup(waterproofingConfigs, 'Waterproofing Configurations')}
             </div>
           )}
         </CardContent>
