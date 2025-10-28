@@ -296,12 +296,9 @@ export default function GenerateSummaryScreen() {
               {areaConfigs.length > 0 && (
                 <Card className="border-2 border-primary bg-primary/5 mt-4">
                   <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-1">
-                        <p className="text-sm text-muted-foreground">Total Project Cost</p>
-                        <p className="text-2xl font-bold text-primary">₹{totalProjectCost.toFixed(2)}</p>
-                      </div>
-                      <IndianRupee className="h-8 w-8 text-primary" />
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">Total Project Cost</p>
+                      <p className="text-2xl font-bold text-primary">₹{totalProjectCost.toFixed(2)}</p>
                     </div>
                   </CardContent>
                 </Card>
