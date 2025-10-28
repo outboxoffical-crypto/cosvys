@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, FileText, Palette, Home, Users, Package, TrendingUp, DollarSign, Phone, MapPin, Download, Share2 } from "lucide-react";
+import { ArrowLeft, FileText, Palette, Home, Users, Package, TrendingUp, DollarSign, Phone, MapPin, Download, Share2, IndianRupee } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -265,6 +265,13 @@ export default function GenerateSummaryScreen() {
       );
     };
 
+    // Calculate total project cost from all configurations
+    const totalProjectCost = areaConfigs.reduce((sum, config) => {
+      const area = Number(config.area) || 0;
+      const rate = parseFloat(config.perSqFtRate) || 0;
+      return sum + area * rate;
+    }, 0);
+
     return (
       <Card className="eca-shadow">
         <CardHeader className="pb-3">
@@ -284,6 +291,21 @@ export default function GenerateSummaryScreen() {
               {renderConfigGroup(interiorConfigs, 'Interior Paint Configurations')}
               {renderConfigGroup(exteriorConfigs, 'Exterior Paint Configurations')}
               {renderConfigGroup(waterproofingConfigs, 'Waterproofing Configurations')}
+              
+              {/* Total Project Cost Summary */}
+              {areaConfigs.length > 0 && (
+                <Card className="border-2 border-primary bg-primary/5 mt-4">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <p className="text-sm text-muted-foreground">Total Project Cost</p>
+                        <p className="text-2xl font-bold text-primary">₹{totalProjectCost.toFixed(2)}</p>
+                      </div>
+                      <IndianRupee className="h-8 w-8 text-primary" />
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           )}
         </CardContent>
