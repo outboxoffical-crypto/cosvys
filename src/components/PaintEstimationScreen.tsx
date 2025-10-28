@@ -707,6 +707,19 @@ export default function PaintEstimationScreen() {
     } catch {}
   }, [interiorConfigurations, exteriorConfigurations, waterproofingConfigurations, projectId]);
 
+  // Sync estimation data to localStorage whenever configurations change
+  useEffect(() => {
+    try {
+      const updatedData = {
+        interiorConfigurations,
+        exteriorConfigurations,
+        waterproofingConfigurations,
+        lastPaintType: selectedPaintType
+      };
+      localStorage.setItem(`estimation_${projectId}`, JSON.stringify(updatedData));
+    } catch {}
+  }, [interiorConfigurations, exteriorConfigurations, waterproofingConfigurations, selectedPaintType, projectId]);
+
   // Handle edit configuration
   const handleEditConfig = (configId: string) => {
     setSelectedConfigId(configId);
