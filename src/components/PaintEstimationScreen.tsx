@@ -975,7 +975,7 @@ export default function PaintEstimationScreen() {
 
                           <div className="space-y-1">
                             <p className="text-sm text-muted-foreground">Area Sq.ft</p>
-                            <p className="font-medium">{config.area.toFixed(2)}</p>
+                            <p className="font-medium">{config.area ? config.area.toFixed(2) : '0.00'}</p>
                           </div>
 
                           <div className="space-y-2">
@@ -1035,7 +1035,7 @@ export default function PaintEstimationScreen() {
                         {config.paintingSystem ? config.paintingSystem : 'Select System'}
                       </Button>
                       <div>
-                        <p className="text-3xl font-bold">{config.area.toFixed(1)}</p>
+                        <p className="text-3xl font-bold">{config.area ? config.area.toFixed(1) : '0.0'}</p>
                         <p className="text-sm text-muted-foreground">{config.label}</p>
                       </div>
                     </div>
@@ -1059,7 +1059,7 @@ export default function PaintEstimationScreen() {
                         {config.paintingSystem ? config.paintingSystem : 'Select System'}
                       </Button>
                       <div>
-                        <p className="text-3xl font-bold">{config.area.toFixed(1)}</p>
+                        <p className="text-3xl font-bold">{config.area ? config.area.toFixed(1) : '0.0'}</p>
                         <p className="text-sm text-muted-foreground">{config.label}</p>
                       </div>
                     </div>
@@ -1083,7 +1083,7 @@ export default function PaintEstimationScreen() {
                         {config.paintingSystem ? config.paintingSystem : 'Select System'}
                       </Button>
                       <div>
-                        <p className="text-3xl font-bold">{config.area.toFixed(1)}</p>
+                        <p className="text-3xl font-bold">{config.area ? config.area.toFixed(1) : '0.0'}</p>
                         <p className="text-sm text-muted-foreground">{config.label}</p>
                       </div>
                     </div>
@@ -1122,7 +1122,7 @@ export default function PaintEstimationScreen() {
                           {config.paintingSystem || 'Select System'}
                         </Button>
                         <div>
-                          <p className="text-2xl font-bold">{config.area.toFixed(1)}</p>
+                          <p className="text-2xl font-bold">{config.area ? config.area.toFixed(1) : '0.0'}</p>
                           <p className="text-xs text-muted-foreground">{config.label}</p>
                         </div>
                       </div>
@@ -1227,7 +1227,7 @@ export default function PaintEstimationScreen() {
 
                           <div className="space-y-1">
                             <p className="text-sm text-muted-foreground">Area Sq.ft</p>
-                            <p className="font-medium">{config.area.toFixed(2)}</p>
+                            <p className="font-medium">{config.area ? config.area.toFixed(2) : '0.00'}</p>
                           </div>
 
                           <div className="space-y-2">
@@ -1303,7 +1303,7 @@ export default function PaintEstimationScreen() {
                         {config.paintingSystem || 'Configure Enamel'}
                       </Button>
                       <div>
-                        <p className="text-2xl font-bold text-orange-700 dark:text-orange-300">{config.area.toFixed(1)}</p>
+                        <p className="text-2xl font-bold text-orange-700 dark:text-orange-300">{config.area ? config.area.toFixed(1) : '0.0'}</p>
                         <p className="text-xs text-orange-600 dark:text-orange-400">
                           {config.label || 'Enamel Area'}
                         </p>
@@ -1711,7 +1711,7 @@ export default function PaintEstimationScreen() {
                           .filter((value, index, self) => self.indexOf(value) === index)
                           .filter(primerName => {
                             // These primers should only show for Exterior Paint
-                            const exteriorOnlyPrimers = ['Ultima Protek (Base Coat)', 'Ultima Protek Durolife (Top Coat)'];
+                            const exteriorOnlyPrimers = ['Ultima Protek (Base Coat)', 'Ultima Protek Durolife (Base Coat)'];
                             if (exteriorOnlyPrimers.includes(primerName)) {
                               return selectedPaintType === "Exterior";
                             }
