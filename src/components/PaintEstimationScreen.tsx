@@ -174,6 +174,17 @@ export default function PaintEstimationScreen() {
     } catch {}
   }, [projectId]);
 
+  // Custom sort function for product names to handle specific ordering requirements
+  const sortProductNames = (names: string[]) => {
+    return names.sort((a, b) => {
+      // Special case: "Ultima" should come after "Ultima Stretch"
+      if (a === "Ultima" && b === "Ultima Stretch") return 1;
+      if (a === "Ultima Stretch" && b === "Ultima") return -1;
+      // Default alphabetical sorting
+      return a.localeCompare(b);
+    });
+  };
+
   // Fetch coverage data
   useEffect(() => {
     fetchCoverageData();
@@ -1698,6 +1709,14 @@ export default function PaintEstimationScreen() {
                           .filter(item => item.category === "Primer")
                           .map(item => item.product_name)
                           .filter((value, index, self) => self.indexOf(value) === index)
+                          .filter(primerName => {
+                            // These primers should only show for Exterior Paint
+                            const exteriorOnlyPrimers = ['Ultima Protek (Base Coat)', 'Ultima Protek Durolife (Top Coat)'];
+                            if (exteriorOnlyPrimers.includes(primerName)) {
+                              return selectedPaintType === "Exterior";
+                            }
+                            return true;
+                          })
                           .map((primerName) => (
                             <SelectItem key={primerName} value={primerName}>
                               {primerName}
@@ -1760,7 +1779,8 @@ export default function PaintEstimationScreen() {
                           <CommandList className="max-h-[300px]">
                             <CommandEmpty>No emulsion found.</CommandEmpty>
                             <CommandGroup>
-                              {coverageData
+                              {sortProductNames(
+                                coverageData
                                 .filter(item => {
                                   const category = selectedPaintType === "Interior" ? "Interior Paint" :
                                                  selectedPaintType === "Exterior" ? "Exterior Paint" : 
@@ -1769,7 +1789,7 @@ export default function PaintEstimationScreen() {
                                 })
                                 .map(item => item.product_name)
                                 .filter((value, index, self) => self.indexOf(value) === index)
-                                .map((emulsionName) => (
+                              ).map((emulsionName) => (
                                   <CommandItem
                                     key={emulsionName}
                                     value={emulsionName}
@@ -1856,6 +1876,14 @@ export default function PaintEstimationScreen() {
                           .filter(item => item.category === "Primer")
                           .map(item => item.product_name)
                           .filter((value, index, self) => self.indexOf(value) === index)
+                          .filter(primerName => {
+                            // These primers should only show for Exterior Paint
+                            const exteriorOnlyPrimers = ['Ultima Protek (Base Coat)', 'Ultima Protek Durolife (Top Coat)'];
+                            if (exteriorOnlyPrimers.includes(primerName)) {
+                              return selectedPaintType === "Exterior";
+                            }
+                            return true;
+                          })
                           .map((primerName) => (
                             <SelectItem key={primerName} value={primerName}>
                               {primerName}
@@ -1918,7 +1946,8 @@ export default function PaintEstimationScreen() {
                           <CommandList className="max-h-[300px]">
                             <CommandEmpty>No emulsion found.</CommandEmpty>
                             <CommandGroup>
-                              {coverageData
+                                {sortProductNames(
+                                coverageData
                                 .filter(item => {
                                   const category = selectedPaintType === "Interior" ? "Interior Paint" :
                                                  selectedPaintType === "Exterior" ? "Exterior Paint" : 
@@ -1927,7 +1956,7 @@ export default function PaintEstimationScreen() {
                                 })
                                 .map(item => item.product_name)
                                 .filter((value, index, self) => self.indexOf(value) === index)
-                                .map((emulsionName) => (
+                              ).map((emulsionName) => (
                                   <CommandItem
                                     key={emulsionName}
                                     value={emulsionName}
