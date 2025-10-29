@@ -680,23 +680,23 @@ export default function GenerateSummaryScreen() {
               <div className="space-y-4">
                 <p className="font-semibold text-sm text-foreground">Labour Calculation Breakdown</p>
                 
-                {/* Scrollable Container */}
-                <ScrollArea className="h-[500px] rounded-md border border-primary/10 p-4">
-                  <div className="space-y-4">
-                    {/* Interior Configurations */}
-                    {configTasks.filter(ct => ct.paintTypeCategory === 'Interior').length > 0 && (
-                      <div className="space-y-3">
-                        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
-                          Interior Paint Configurations
-                        </Badge>
-                    <div className="space-y-3">
+                {/* Interior Configurations */}
+                {configTasks.filter(ct => ct.paintTypeCategory === 'Interior').length > 0 && (
+                  <div className="space-y-3">
+                    <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                      Interior Paint Configurations
+                    </Badge>
+                    <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide" style={{
+                      scrollbarWidth: 'none',
+                      msOverflowStyle: 'none'
+                    }}>
                       {configTasks.filter(ct => ct.paintTypeCategory === 'Interior').map((configTask, index) => (
-                        <div key={index} className="border-2 border-primary/20 bg-primary/5 rounded-lg eca-shadow">
-                          <div className="p-4">
+                        <Card key={index} className="flex-none w-72 border-2 border-primary/20 bg-primary/5 snap-start">
+                          <CardContent className="p-4">
                             <div className="space-y-4">
                               {/* Header with Type Badge */}
                               <div className="flex items-center justify-between pb-2 border-b border-primary/10">
-                                <h3 className="font-semibold text-base uppercase tracking-wide text-primary">{configTask.configLabel}</h3>
+                                <h3 className="font-semibold text-base">{configTask.configLabel}</h3>
                                 <Badge variant="secondary" className="text-xs">
                                   Interior
                                 </Badge>
@@ -704,31 +704,28 @@ export default function GenerateSummaryScreen() {
                               
                               {/* Tasks List */}
                               <div className="space-y-3">
-                      {configTask.tasks.map((task: any, taskIdx: number) => {
-                                const adjustedDays = Math.ceil(task.daysRequired / autoLabourPerDay);
-                                return (
-                                  <div key={taskIdx} className="space-y-2">
-                                    {/* Task Name - Large and Bold */}
-                                    <h4 className="text-base font-semibold text-foreground">{task.name}</h4>
-                                    
-                                    {/* Details Row */}
-                                    <div className="flex items-baseline justify-between">
-                                      <div className="flex-1">
-                                        <p className="text-sm text-muted-foreground">
-                                          Area: <span className="font-medium text-foreground">{task.area.toFixed(0)} sq.ft</span>
-                                        </p>
-                                        <p className="text-sm text-muted-foreground">
-                                          Coats: <span className="font-medium text-foreground">{task.coats}</span>
-                                        </p>
-                                      </div>
-                                      <div className="text-right">
-                                        <p className="text-xl font-bold text-primary">{adjustedDays} days</p>
+                                {configTask.tasks.map((task: any, taskIdx: number) => {
+                                  const adjustedDays = Math.ceil(task.daysRequired / autoLabourPerDay);
+                                  return (
+                                    <div key={taskIdx} className="space-y-2">
+                                      <h4 className="text-base font-semibold text-foreground">{task.name}</h4>
+                                      <div className="flex items-baseline justify-between">
+                                        <div className="flex-1">
+                                          <p className="text-sm text-muted-foreground">
+                                            Area: <span className="font-medium text-foreground">{task.area.toFixed(0)} sq.ft</span>
+                                          </p>
+                                          <p className="text-sm text-muted-foreground">
+                                            Coats: <span className="font-medium text-foreground">{task.coats}</span>
+                                          </p>
+                                        </div>
+                                        <div className="text-right">
+                                          <p className="text-xl font-bold text-primary">{adjustedDays} days</p>
+                                        </div>
                                       </div>
                                     </div>
-                                  </div>
-                                );
-                                  })}
-                                </div>
+                                  );
+                                })}
+                              </div>
                               
                               {/* Total Days */}
                               <div className="pt-3 border-t-2 border-primary/20">
@@ -738,8 +735,8 @@ export default function GenerateSummaryScreen() {
                                 </div>
                               </div>
                             </div>
-                          </div>
-                        </div>
+                          </CardContent>
+                        </Card>
                       ))}
                     </div>
                   </div>
@@ -751,14 +748,17 @@ export default function GenerateSummaryScreen() {
                     <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                       Exterior Paint Configurations
                     </Badge>
-                    <div className="space-y-3">
+                    <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide" style={{
+                      scrollbarWidth: 'none',
+                      msOverflowStyle: 'none'
+                    }}>
                       {configTasks.filter(ct => ct.paintTypeCategory === 'Exterior').map((configTask, index) => (
-                        <div key={index} className="border-2 border-primary/20 bg-primary/5 rounded-lg eca-shadow">
-                          <div className="p-4">
+                        <Card key={index} className="flex-none w-72 border-2 border-primary/20 bg-primary/5 snap-start">
+                          <CardContent className="p-4">
                             <div className="space-y-4">
                               {/* Header with Type Badge */}
                               <div className="flex items-center justify-between pb-2 border-b border-primary/10">
-                                <h3 className="font-semibold text-base uppercase tracking-wide text-primary">{configTask.configLabel}</h3>
+                                <h3 className="font-semibold text-base">{configTask.configLabel}</h3>
                                 <Badge variant="secondary" className="text-xs">
                                   Exterior
                                 </Badge>
@@ -766,31 +766,28 @@ export default function GenerateSummaryScreen() {
                               
                               {/* Tasks List */}
                               <div className="space-y-3">
-                      {configTask.tasks.map((task: any, taskIdx: number) => {
-                                const adjustedDays = Math.ceil(task.daysRequired / autoLabourPerDay);
-                                return (
-                                  <div key={taskIdx} className="space-y-2">
-                                    {/* Task Name - Large and Bold */}
-                                    <h4 className="text-base font-semibold text-foreground">{task.name}</h4>
-                                    
-                                    {/* Details Row */}
-                                    <div className="flex items-baseline justify-between">
-                                      <div className="flex-1">
-                                        <p className="text-sm text-muted-foreground">
-                                          Area: <span className="font-medium text-foreground">{task.area.toFixed(0)} sq.ft</span>
-                                        </p>
-                                        <p className="text-sm text-muted-foreground">
-                                          Coats: <span className="font-medium text-foreground">{task.coats}</span>
-                                        </p>
-                                      </div>
-                                      <div className="text-right">
-                                        <p className="text-xl font-bold text-primary">{adjustedDays} days</p>
+                                {configTask.tasks.map((task: any, taskIdx: number) => {
+                                  const adjustedDays = Math.ceil(task.daysRequired / autoLabourPerDay);
+                                  return (
+                                    <div key={taskIdx} className="space-y-2">
+                                      <h4 className="text-base font-semibold text-foreground">{task.name}</h4>
+                                      <div className="flex items-baseline justify-between">
+                                        <div className="flex-1">
+                                          <p className="text-sm text-muted-foreground">
+                                            Area: <span className="font-medium text-foreground">{task.area.toFixed(0)} sq.ft</span>
+                                          </p>
+                                          <p className="text-sm text-muted-foreground">
+                                            Coats: <span className="font-medium text-foreground">{task.coats}</span>
+                                          </p>
+                                        </div>
+                                        <div className="text-right">
+                                          <p className="text-xl font-bold text-primary">{adjustedDays} days</p>
+                                        </div>
                                       </div>
                                     </div>
-                                  </div>
-                                );
-                                  })}
-                                </div>
+                                  );
+                                })}
+                              </div>
                               
                               {/* Total Days */}
                               <div className="pt-3 border-t-2 border-primary/20">
@@ -800,8 +797,8 @@ export default function GenerateSummaryScreen() {
                                 </div>
                               </div>
                             </div>
-                          </div>
-                        </div>
+                          </CardContent>
+                        </Card>
                       ))}
                     </div>
                   </div>
@@ -813,14 +810,17 @@ export default function GenerateSummaryScreen() {
                     <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                       Waterproofing Configurations
                     </Badge>
-                    <div className="space-y-3">
+                    <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide" style={{
+                      scrollbarWidth: 'none',
+                      msOverflowStyle: 'none'
+                    }}>
                       {configTasks.filter(ct => ct.paintTypeCategory === 'Waterproofing').map((configTask, index) => (
-                        <div key={index} className="border-2 border-primary/20 bg-primary/5 rounded-lg eca-shadow">
-                          <div className="p-4">
+                        <Card key={index} className="flex-none w-72 border-2 border-primary/20 bg-primary/5 snap-start">
+                          <CardContent className="p-4">
                             <div className="space-y-4">
                               {/* Header with Type Badge */}
                               <div className="flex items-center justify-between pb-2 border-b border-primary/10">
-                                <h3 className="font-semibold text-base uppercase tracking-wide text-primary">{configTask.configLabel}</h3>
+                                <h3 className="font-semibold text-base">{configTask.configLabel}</h3>
                                 <Badge variant="secondary" className="text-xs">
                                   Waterproofing
                                 </Badge>
@@ -828,31 +828,28 @@ export default function GenerateSummaryScreen() {
                               
                               {/* Tasks List */}
                               <div className="space-y-3">
-                      {configTask.tasks.map((task: any, taskIdx: number) => {
-                                const adjustedDays = Math.ceil(task.daysRequired / autoLabourPerDay);
-                                return (
-                                  <div key={taskIdx} className="space-y-2">
-                                    {/* Task Name - Large and Bold */}
-                                    <h4 className="text-base font-semibold text-foreground">{task.name}</h4>
-                                    
-                                    {/* Details Row */}
-                                    <div className="flex items-baseline justify-between">
-                                      <div className="flex-1">
-                                        <p className="text-sm text-muted-foreground">
-                                          Area: <span className="font-medium text-foreground">{task.area.toFixed(0)} sq.ft</span>
-                                        </p>
-                                        <p className="text-sm text-muted-foreground">
-                                          Coats: <span className="font-medium text-foreground">{task.coats}</span>
-                                        </p>
-                                      </div>
-                                      <div className="text-right">
-                                        <p className="text-xl font-bold text-primary">{adjustedDays} days</p>
+                                {configTask.tasks.map((task: any, taskIdx: number) => {
+                                  const adjustedDays = Math.ceil(task.daysRequired / autoLabourPerDay);
+                                  return (
+                                    <div key={taskIdx} className="space-y-2">
+                                      <h4 className="text-base font-semibold text-foreground">{task.name}</h4>
+                                      <div className="flex items-baseline justify-between">
+                                        <div className="flex-1">
+                                          <p className="text-sm text-muted-foreground">
+                                            Area: <span className="font-medium text-foreground">{task.area.toFixed(0)} sq.ft</span>
+                                          </p>
+                                          <p className="text-sm text-muted-foreground">
+                                            Coats: <span className="font-medium text-foreground">{task.coats}</span>
+                                          </p>
+                                        </div>
+                                        <div className="text-right">
+                                          <p className="text-xl font-bold text-primary">{adjustedDays} days</p>
+                                        </div>
                                       </div>
                                     </div>
-                                  </div>
-                                );
-                                  })}
-                                </div>
+                                  );
+                                })}
+                              </div>
                               
                               {/* Total Days */}
                               <div className="pt-3 border-t-2 border-primary/20">
@@ -862,29 +859,27 @@ export default function GenerateSummaryScreen() {
                                 </div>
                               </div>
                             </div>
-                          </div>
-                        </div>
+                          </CardContent>
+                        </Card>
                       ))}
                     </div>
                   </div>
                 )}
 
-                    {/* Summary */}
-                    <div className="p-4 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 rounded-lg border-2 border-red-500">
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <p className="text-sm font-medium text-muted-foreground">Total Project Duration</p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            With {autoLabourPerDay} labourer{autoLabourPerDay > 1 ? 's' : ''} per day
-                          </p>
-                        </div>
-                        <p className="text-3xl font-bold text-primary">
-                          {displayDays} days
-                        </p>
-                      </div>
+                {/* Summary */}
+                <div className="p-4 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 rounded-lg border-2 border-red-500">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Total Project Duration</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        With {autoLabourPerDay} labourer{autoLabourPerDay > 1 ? 's' : ''} per day
+                      </p>
                     </div>
+                    <p className="text-3xl font-bold text-primary">
+                      {displayDays} days
+                    </p>
                   </div>
-                </ScrollArea>
+                </div>
               </div>
             )}
 
@@ -1119,22 +1114,24 @@ export default function GenerateSummaryScreen() {
               No material configurations found.
             </div>
           ) : (
-            <ScrollArea className="h-[500px] rounded-md border border-primary/10 p-4">
-              <div className="space-y-4">
+            <div className="space-y-4">
               {/* Interior Configurations */}
               {configMaterials.filter(cm => cm.paintTypeCategory === 'Interior').length > 0 && (
                 <div className="space-y-3">
                   <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                     Interior Paint Configurations
                   </Badge>
-                  <div className="space-y-3">
+                  <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide" style={{
+                    scrollbarWidth: 'none',
+                    msOverflowStyle: 'none'
+                  }}>
                     {configMaterials.filter(cm => cm.paintTypeCategory === 'Interior').map((configMat, index) => (
-                      <div key={index} className="border-2 border-primary/20 bg-primary/5 rounded-lg eca-shadow">
-                        <div className="p-4">
+                      <Card key={index} className="flex-none w-72 border-2 border-primary/20 bg-primary/5 snap-start">
+                        <CardContent className="p-4">
                           <div className="space-y-4">
                             {/* Header with Type Badge */}
                             <div className="flex items-center justify-between pb-2 border-b border-primary/10">
-                              <h3 className="font-semibold text-base uppercase tracking-wide text-primary">{configMat.configLabel}</h3>
+                              <h3 className="font-semibold text-base">{configMat.configLabel}</h3>
                               <Badge variant="secondary" className="text-xs">
                                 Interior
                               </Badge>
@@ -1142,28 +1139,25 @@ export default function GenerateSummaryScreen() {
                             
                             {/* Materials List */}
                             <div className="space-y-3">
-                                {configMat.materials.map((mat: any, matIdx: number) => (
-                              <div key={matIdx} className="space-y-2">
-                                {/* Material Name - Large and Bold */}
-                                <h4 className="text-base font-semibold text-foreground">{mat.name}</h4>
-                                
-                                {/* Details Row */}
-                                <div className="flex items-baseline justify-between">
-                                  <div className="flex-1">
-                                    <p className="text-sm text-muted-foreground">
-                                      Quantity: <span className="font-medium text-foreground">{mat.minQuantity} to {mat.maxQuantity} {mat.unit}</span>
-                                    </p>
-                                    <p className="text-sm text-muted-foreground mt-1">
-                                      Pack: <span className="font-medium text-foreground">{mat.packCombination}</span>
-                                    </p>
-                                  </div>
-                                  <div className="text-right">
-                                    <p className="text-xl font-bold text-primary">₹{mat.totalCost.toLocaleString('en-IN')}</p>
+                              {configMat.materials.map((mat: any, matIdx: number) => (
+                                <div key={matIdx} className="space-y-2">
+                                  <h4 className="text-base font-semibold text-foreground">{mat.name}</h4>
+                                  <div className="flex items-baseline justify-between">
+                                    <div className="flex-1">
+                                      <p className="text-sm text-muted-foreground">
+                                        Quantity: <span className="font-medium text-foreground">{mat.minQuantity} to {mat.maxQuantity} {mat.unit}</span>
+                                      </p>
+                                      <p className="text-sm text-muted-foreground mt-1">
+                                        Pack: <span className="font-medium text-foreground">{mat.packCombination}</span>
+                                      </p>
+                                    </div>
+                                    <div className="text-right">
+                                      <p className="text-xl font-bold text-primary">₹{mat.totalCost.toLocaleString('en-IN')}</p>
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                                ))}
-                              </div>
+                              ))}
+                            </div>
                             
                             {/* Total Cost */}
                             <div className="pt-3 border-t-2 border-primary/20">
@@ -1173,8 +1167,8 @@ export default function GenerateSummaryScreen() {
                               </div>
                             </div>
                           </div>
-                        </div>
-                      </div>
+                        </CardContent>
+                      </Card>
                     ))}
                   </div>
                 </div>
@@ -1186,14 +1180,17 @@ export default function GenerateSummaryScreen() {
                   <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                     Exterior Paint Configurations
                   </Badge>
-                  <div className="space-y-3">
+                  <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide" style={{
+                    scrollbarWidth: 'none',
+                    msOverflowStyle: 'none'
+                  }}>
                     {configMaterials.filter(cm => cm.paintTypeCategory === 'Exterior').map((configMat, index) => (
-                      <div key={index} className="border-2 border-primary/20 bg-primary/5 rounded-lg eca-shadow">
-                        <div className="p-4">
+                      <Card key={index} className="flex-none w-72 border-2 border-primary/20 bg-primary/5 snap-start">
+                        <CardContent className="p-4">
                           <div className="space-y-4">
                             {/* Header with Type Badge */}
                             <div className="flex items-center justify-between pb-2 border-b border-primary/10">
-                              <h3 className="font-semibold text-base uppercase tracking-wide text-primary">{configMat.configLabel}</h3>
+                              <h3 className="font-semibold text-base">{configMat.configLabel}</h3>
                               <Badge variant="secondary" className="text-xs">
                                 Exterior
                               </Badge>
@@ -1201,28 +1198,25 @@ export default function GenerateSummaryScreen() {
                             
                             {/* Materials List */}
                             <div className="space-y-3">
-                                {configMat.materials.map((mat: any, matIdx: number) => (
-                              <div key={matIdx} className="space-y-2">
-                                {/* Material Name - Large and Bold */}
-                                <h4 className="text-base font-semibold text-foreground">{mat.name}</h4>
-                                
-                                {/* Details Row */}
-                                <div className="flex items-baseline justify-between">
-                                  <div className="flex-1">
-                                    <p className="text-sm text-muted-foreground">
-                                      Quantity: <span className="font-medium text-foreground">{mat.minQuantity} to {mat.maxQuantity} {mat.unit}</span>
-                                    </p>
-                                    <p className="text-sm text-muted-foreground mt-1">
-                                      Pack: <span className="font-medium text-foreground">{mat.packCombination}</span>
-                                    </p>
-                                  </div>
-                                  <div className="text-right">
-                                    <p className="text-xl font-bold text-primary">₹{mat.totalCost.toLocaleString('en-IN')}</p>
+                              {configMat.materials.map((mat: any, matIdx: number) => (
+                                <div key={matIdx} className="space-y-2">
+                                  <h4 className="text-base font-semibold text-foreground">{mat.name}</h4>
+                                  <div className="flex items-baseline justify-between">
+                                    <div className="flex-1">
+                                      <p className="text-sm text-muted-foreground">
+                                        Quantity: <span className="font-medium text-foreground">{mat.minQuantity} to {mat.maxQuantity} {mat.unit}</span>
+                                      </p>
+                                      <p className="text-sm text-muted-foreground mt-1">
+                                        Pack: <span className="font-medium text-foreground">{mat.packCombination}</span>
+                                      </p>
+                                    </div>
+                                    <div className="text-right">
+                                      <p className="text-xl font-bold text-primary">₹{mat.totalCost.toLocaleString('en-IN')}</p>
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                                ))}
-                              </div>
+                              ))}
+                            </div>
                             
                             {/* Total Cost */}
                             <div className="pt-3 border-t-2 border-primary/20">
@@ -1232,8 +1226,8 @@ export default function GenerateSummaryScreen() {
                               </div>
                             </div>
                           </div>
-                        </div>
-                      </div>
+                        </CardContent>
+                      </Card>
                     ))}
                   </div>
                 </div>
@@ -1245,14 +1239,17 @@ export default function GenerateSummaryScreen() {
                   <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                     Waterproofing Configurations
                   </Badge>
-                  <div className="space-y-3">
+                  <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide" style={{
+                    scrollbarWidth: 'none',
+                    msOverflowStyle: 'none'
+                  }}>
                     {configMaterials.filter(cm => cm.paintTypeCategory === 'Waterproofing').map((configMat, index) => (
-                      <div key={index} className="border-2 border-primary/20 bg-primary/5 rounded-lg eca-shadow">
-                        <div className="p-4">
+                      <Card key={index} className="flex-none w-72 border-2 border-primary/20 bg-primary/5 snap-start">
+                        <CardContent className="p-4">
                           <div className="space-y-4">
                             {/* Header with Type Badge */}
                             <div className="flex items-center justify-between pb-2 border-b border-primary/10">
-                              <h3 className="font-semibold text-base uppercase tracking-wide text-primary">{configMat.configLabel}</h3>
+                              <h3 className="font-semibold text-base">{configMat.configLabel}</h3>
                               <Badge variant="secondary" className="text-xs">
                                 Waterproofing
                               </Badge>
@@ -1260,28 +1257,25 @@ export default function GenerateSummaryScreen() {
                             
                             {/* Materials List */}
                             <div className="space-y-3">
-                                {configMat.materials.map((mat: any, matIdx: number) => (
-                              <div key={matIdx} className="space-y-2">
-                                {/* Material Name - Large and Bold */}
-                                <h4 className="text-base font-semibold text-foreground">{mat.name}</h4>
-                                
-                                {/* Details Row */}
-                                <div className="flex items-baseline justify-between">
-                                  <div className="flex-1">
-                                    <p className="text-sm text-muted-foreground">
-                                      Quantity: <span className="font-medium text-foreground">{mat.minQuantity} to {mat.maxQuantity} {mat.unit}</span>
-                                    </p>
-                                    <p className="text-sm text-muted-foreground mt-1">
-                                      Pack: <span className="font-medium text-foreground">{mat.packCombination}</span>
-                                    </p>
-                                  </div>
-                                  <div className="text-right">
-                                    <p className="text-xl font-bold text-primary">₹{mat.totalCost.toLocaleString('en-IN')}</p>
+                              {configMat.materials.map((mat: any, matIdx: number) => (
+                                <div key={matIdx} className="space-y-2">
+                                  <h4 className="text-base font-semibold text-foreground">{mat.name}</h4>
+                                  <div className="flex items-baseline justify-between">
+                                    <div className="flex-1">
+                                      <p className="text-sm text-muted-foreground">
+                                        Quantity: <span className="font-medium text-foreground">{mat.minQuantity} to {mat.maxQuantity} {mat.unit}</span>
+                                      </p>
+                                      <p className="text-sm text-muted-foreground mt-1">
+                                        Pack: <span className="font-medium text-foreground">{mat.packCombination}</span>
+                                      </p>
+                                    </div>
+                                    <div className="text-right">
+                                      <p className="text-xl font-bold text-primary">₹{mat.totalCost.toLocaleString('en-IN')}</p>
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                                ))}
-                              </div>
+                              ))}
+                            </div>
                             
                             {/* Total Cost */}
                             <div className="pt-3 border-t-2 border-primary/20">
@@ -1291,14 +1285,13 @@ export default function GenerateSummaryScreen() {
                               </div>
                             </div>
                           </div>
-                        </div>
-                      </div>
+                        </CardContent>
+                      </Card>
                     ))}
                   </div>
                 </div>
               )}
-              </div>
-            </ScrollArea>
+            </div>
           )}
 
           {/* Total Material Cost Summary */}
