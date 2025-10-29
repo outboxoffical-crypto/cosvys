@@ -680,12 +680,15 @@ export default function GenerateSummaryScreen() {
               <div className="space-y-4">
                 <p className="font-semibold text-sm text-foreground">Labour Calculation Breakdown</p>
                 
-                {/* Interior Configurations */}
-                {configTasks.filter(ct => ct.paintTypeCategory === 'Interior').length > 0 && (
-                  <div className="space-y-3">
-                    <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
-                      Interior Paint Configurations
-                    </Badge>
+                {/* Scrollable Container */}
+                <ScrollArea className="h-[500px] rounded-md border border-primary/10 p-4">
+                  <div className="space-y-4">
+                    {/* Interior Configurations */}
+                    {configTasks.filter(ct => ct.paintTypeCategory === 'Interior').length > 0 && (
+                      <div className="space-y-3">
+                        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                          Interior Paint Configurations
+                        </Badge>
                     <div className="space-y-3">
                       {configTasks.filter(ct => ct.paintTypeCategory === 'Interior').map((configTask, index) => (
                         <div key={index} className="border-2 border-primary/20 bg-primary/5 rounded-lg eca-shadow">
@@ -699,10 +702,9 @@ export default function GenerateSummaryScreen() {
                                 </Badge>
                               </div>
                               
-                              {/* Tasks List - Scrollable */}
-                              <ScrollArea className="h-[300px] w-full">
-                                <div className="space-y-3 pr-4">
-                                  {configTask.tasks.map((task: any, taskIdx: number) => {
+                              {/* Tasks List */}
+                              <div className="space-y-3">
+                      {configTask.tasks.map((task: any, taskIdx: number) => {
                                 const adjustedDays = Math.ceil(task.daysRequired / autoLabourPerDay);
                                 return (
                                   <div key={taskIdx} className="space-y-2">
@@ -727,7 +729,6 @@ export default function GenerateSummaryScreen() {
                                 );
                                   })}
                                 </div>
-                              </ScrollArea>
                               
                               {/* Total Days */}
                               <div className="pt-3 border-t-2 border-primary/20">
@@ -763,10 +764,9 @@ export default function GenerateSummaryScreen() {
                                 </Badge>
                               </div>
                               
-                              {/* Tasks List - Scrollable */}
-                              <ScrollArea className="h-[300px] w-full">
-                                <div className="space-y-3 pr-4">
-                                  {configTask.tasks.map((task: any, taskIdx: number) => {
+                              {/* Tasks List */}
+                              <div className="space-y-3">
+                      {configTask.tasks.map((task: any, taskIdx: number) => {
                                 const adjustedDays = Math.ceil(task.daysRequired / autoLabourPerDay);
                                 return (
                                   <div key={taskIdx} className="space-y-2">
@@ -791,7 +791,6 @@ export default function GenerateSummaryScreen() {
                                 );
                                   })}
                                 </div>
-                              </ScrollArea>
                               
                               {/* Total Days */}
                               <div className="pt-3 border-t-2 border-primary/20">
@@ -827,10 +826,9 @@ export default function GenerateSummaryScreen() {
                                 </Badge>
                               </div>
                               
-                              {/* Tasks List - Scrollable */}
-                              <ScrollArea className="h-[300px] w-full">
-                                <div className="space-y-3 pr-4">
-                                  {configTask.tasks.map((task: any, taskIdx: number) => {
+                              {/* Tasks List */}
+                              <div className="space-y-3">
+                      {configTask.tasks.map((task: any, taskIdx: number) => {
                                 const adjustedDays = Math.ceil(task.daysRequired / autoLabourPerDay);
                                 return (
                                   <div key={taskIdx} className="space-y-2">
@@ -855,7 +853,6 @@ export default function GenerateSummaryScreen() {
                                 );
                                   })}
                                 </div>
-                              </ScrollArea>
                               
                               {/* Total Days */}
                               <div className="pt-3 border-t-2 border-primary/20">
@@ -871,23 +868,25 @@ export default function GenerateSummaryScreen() {
                     </div>
                   </div>
                 )}
+
+                    {/* Summary */}
+                    <div className="p-4 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 rounded-lg border-2 border-red-500">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Total Project Duration</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            With {autoLabourPerDay} labourer{autoLabourPerDay > 1 ? 's' : ''} per day
+                          </p>
+                        </div>
+                        <p className="text-3xl font-bold text-primary">
+                          {displayDays} days
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </ScrollArea>
               </div>
             )}
-
-            {/* Summary */}
-            <div className="p-4 bg-background rounded-lg border border-border eca-shadow">
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-sm text-muted-foreground font-medium">
-                    {labourMode === 'auto' ? 'Total Project Duration' : 'Custom Project Duration'}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">With {displayLabours} labour(s)</p>
-                </div>
-                <p className="text-2xl font-bold text-primary ml-8">
-                  {displayDays} to {Math.ceil(displayDays * 1.22)} days
-                </p>
-              </div>
-            </div>
 
             {/* Total Labour Cost - Only in Auto Mode */}
             {labourMode === 'auto' && <div className="p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border-2 border-primary">
@@ -1120,7 +1119,8 @@ export default function GenerateSummaryScreen() {
               No material configurations found.
             </div>
           ) : (
-            <div className="space-y-4">
+            <ScrollArea className="h-[500px] rounded-md border border-primary/10 p-4">
+              <div className="space-y-4">
               {/* Interior Configurations */}
               {configMaterials.filter(cm => cm.paintTypeCategory === 'Interior').length > 0 && (
                 <div className="space-y-3">
@@ -1140,9 +1140,8 @@ export default function GenerateSummaryScreen() {
                               </Badge>
                             </div>
                             
-                            {/* Materials List - Scrollable */}
-                            <ScrollArea className="h-[300px] w-full">
-                              <div className="space-y-3 pr-4">
+                            {/* Materials List */}
+                            <div className="space-y-3">
                                 {configMat.materials.map((mat: any, matIdx: number) => (
                               <div key={matIdx} className="space-y-2">
                                 {/* Material Name - Large and Bold */}
@@ -1165,7 +1164,6 @@ export default function GenerateSummaryScreen() {
                               </div>
                                 ))}
                               </div>
-                            </ScrollArea>
                             
                             {/* Total Cost */}
                             <div className="pt-3 border-t-2 border-primary/20">
@@ -1201,9 +1199,8 @@ export default function GenerateSummaryScreen() {
                               </Badge>
                             </div>
                             
-                            {/* Materials List - Scrollable */}
-                            <ScrollArea className="h-[300px] w-full">
-                              <div className="space-y-3 pr-4">
+                            {/* Materials List */}
+                            <div className="space-y-3">
                                 {configMat.materials.map((mat: any, matIdx: number) => (
                               <div key={matIdx} className="space-y-2">
                                 {/* Material Name - Large and Bold */}
@@ -1226,7 +1223,6 @@ export default function GenerateSummaryScreen() {
                               </div>
                                 ))}
                               </div>
-                            </ScrollArea>
                             
                             {/* Total Cost */}
                             <div className="pt-3 border-t-2 border-primary/20">
@@ -1262,9 +1258,8 @@ export default function GenerateSummaryScreen() {
                               </Badge>
                             </div>
                             
-                            {/* Materials List - Scrollable */}
-                            <ScrollArea className="h-[300px] w-full">
-                              <div className="space-y-3 pr-4">
+                            {/* Materials List */}
+                            <div className="space-y-3">
                                 {configMat.materials.map((mat: any, matIdx: number) => (
                               <div key={matIdx} className="space-y-2">
                                 {/* Material Name - Large and Bold */}
@@ -1287,7 +1282,6 @@ export default function GenerateSummaryScreen() {
                               </div>
                                 ))}
                               </div>
-                            </ScrollArea>
                             
                             {/* Total Cost */}
                             <div className="pt-3 border-t-2 border-primary/20">
@@ -1303,7 +1297,8 @@ export default function GenerateSummaryScreen() {
                   </div>
                 </div>
               )}
-            </div>
+              </div>
+            </ScrollArea>
           )}
 
           {/* Total Material Cost Summary */}
