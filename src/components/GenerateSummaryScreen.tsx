@@ -680,197 +680,209 @@ export default function GenerateSummaryScreen() {
               <div className="space-y-4">
                 <p className="font-semibold text-sm text-foreground">Labour Calculation Breakdown</p>
                 
-                {/* Interior Configurations */}
-                {configTasks.filter(ct => ct.paintTypeCategory === 'Interior').length > 0 && (
-                  <div className="space-y-3">
-                    <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
-                      Interior Paint Configurations
-                    </Badge>
-                    <div className="space-y-3">
-                      {configTasks.filter(ct => ct.paintTypeCategory === 'Interior').map((configTask, index) => (
-                        <div key={index} className="border-2 border-primary/20 bg-primary/5 rounded-lg eca-shadow">
-                          <div className="p-4">
-                            <div className="space-y-4">
-                              {/* Header with Type Badge */}
-                              <div className="flex items-center justify-between pb-2 border-b border-primary/10">
-                                <h3 className="font-semibold text-base uppercase tracking-wide text-primary">{configTask.configLabel}</h3>
-                                <Badge variant="secondary" className="text-xs">
-                                  Interior
-                                </Badge>
-                              </div>
-                              
-                              {/* Tasks List - Scrollable */}
-                              <ScrollArea className="h-[250px] w-full rounded-md border border-primary/10">
-                                <div className="space-y-3 p-4">
-                                  {configTask.tasks.map((task: any, taskIdx: number) => {
-                                const adjustedDays = Math.ceil(task.daysRequired / autoLabourPerDay);
-                                return (
-                                  <div key={taskIdx} className="space-y-2">
-                                    {/* Task Name - Large and Bold */}
-                                    <h4 className="text-base font-semibold text-foreground">{task.name}</h4>
-                                    
-                                    {/* Details Row */}
-                                    <div className="flex items-baseline justify-between">
-                                      <div className="flex-1">
-                                        <p className="text-sm text-muted-foreground">
-                                          Area: <span className="font-medium text-foreground">{task.area.toFixed(0)} sq.ft</span>
-                                        </p>
-                                        <p className="text-sm text-muted-foreground">
-                                          Coats: <span className="font-medium text-foreground">{task.coats}</span>
-                                        </p>
-                                      </div>
-                                      <div className="text-right">
-                                        <p className="text-xl font-bold text-primary">{adjustedDays} days</p>
+                <ScrollArea className="h-[400px] w-full rounded-md border border-primary/10">
+                  <div className="space-y-4 p-4">
+                    {/* Interior Configurations */}
+                    {configTasks.filter(ct => ct.paintTypeCategory === 'Interior').length > 0 && (
+                      <div className="space-y-3">
+                        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                          Interior Paint Configurations
+                        </Badge>
+                        <div className="space-y-3">
+                          {configTasks.filter(ct => ct.paintTypeCategory === 'Interior').map((configTask, index) => (
+                            <div key={index} className="border-2 border-primary/20 bg-primary/5 rounded-lg eca-shadow">
+                              <div className="p-4">
+                                <div className="space-y-4">
+                                  {/* Header with Type Badge */}
+                                  <div className="flex items-center justify-between pb-2 border-b border-primary/10">
+                                    <h3 className="font-semibold text-base uppercase tracking-wide text-primary">{configTask.configLabel}</h3>
+                                    <Badge variant="secondary" className="text-xs">
+                                      Interior
+                                    </Badge>
+                                  </div>
+                                  
+                                  {/* Tasks List */}
+                                  <div className="space-y-3">
+                                    {configTask.tasks.map((task: any, taskIdx: number) => {
+                                  const adjustedDays = Math.ceil(task.daysRequired / autoLabourPerDay);
+                                  return (
+                                    <div key={taskIdx} className="space-y-2">
+                                      {/* Task Name - Large and Bold */}
+                                      <h4 className="text-base font-semibold text-foreground">{task.name}</h4>
+                                      
+                                      {/* Details Row */}
+                                      <div className="flex items-baseline justify-between">
+                                        <div className="flex-1">
+                                          <p className="text-sm text-muted-foreground">
+                                            Area: <span className="font-medium text-foreground">{task.area.toFixed(0)} sq.ft</span>
+                                          </p>
+                                          <p className="text-sm text-muted-foreground">
+                                            Coats: <span className="font-medium text-foreground">{task.coats}</span>
+                                          </p>
+                                        </div>
+                                        <div className="text-right">
+                                          <p className="text-xl font-bold text-primary">{adjustedDays} days</p>
+                                        </div>
                                       </div>
                                     </div>
+                                  );
+                                    })}
                                   </div>
-                                );
-                                  })}
-                                </div>
-                              </ScrollArea>
-                              
-                              {/* Total Days */}
-                              <div className="pt-3 border-t-2 border-primary/20">
-                                <div className="flex items-center justify-between">
-                                  <p className="text-sm font-medium text-muted-foreground">Total Days:</p>
-                                  <p className="text-2xl font-bold text-primary">{Math.ceil(configTask.totalDays / autoLabourPerDay)} days</p>
+                                  
+                                  {/* Total Days */}
+                                  <div className="pt-3 border-t-2 border-primary/20">
+                                    <div className="flex items-center justify-between">
+                                      <p className="text-sm font-medium text-muted-foreground">Total Days:</p>
+                                      <p className="text-2xl font-bold text-primary">{Math.ceil(configTask.totalDays / autoLabourPerDay)} days</p>
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
                             </div>
-                          </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                      </div>
+                    )}
 
-                {/* Exterior Configurations */}
-                {configTasks.filter(ct => ct.paintTypeCategory === 'Exterior').length > 0 && (
-                  <div className="space-y-3">
-                    <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
-                      Exterior Paint Configurations
-                    </Badge>
-                    <div className="space-y-3">
-                      {configTasks.filter(ct => ct.paintTypeCategory === 'Exterior').map((configTask, index) => (
-                        <div key={index} className="border-2 border-primary/20 bg-primary/5 rounded-lg eca-shadow">
-                          <div className="p-4">
-                            <div className="space-y-4">
-                              {/* Header with Type Badge */}
-                              <div className="flex items-center justify-between pb-2 border-b border-primary/10">
-                                <h3 className="font-semibold text-base uppercase tracking-wide text-primary">{configTask.configLabel}</h3>
-                                <Badge variant="secondary" className="text-xs">
-                                  Exterior
-                                </Badge>
-                              </div>
-                              
-                              {/* Tasks List - Scrollable */}
-                              <ScrollArea className="h-[250px] w-full rounded-md border border-primary/10">
-                                <div className="space-y-3 p-4">
-                                  {configTask.tasks.map((task: any, taskIdx: number) => {
-                                const adjustedDays = Math.ceil(task.daysRequired / autoLabourPerDay);
-                                return (
-                                  <div key={taskIdx} className="space-y-2">
-                                    {/* Task Name - Large and Bold */}
-                                    <h4 className="text-base font-semibold text-foreground">{task.name}</h4>
-                                    
-                                    {/* Details Row */}
-                                    <div className="flex items-baseline justify-between">
-                                      <div className="flex-1">
-                                        <p className="text-sm text-muted-foreground">
-                                          Area: <span className="font-medium text-foreground">{task.area.toFixed(0)} sq.ft</span>
-                                        </p>
-                                        <p className="text-sm text-muted-foreground">
-                                          Coats: <span className="font-medium text-foreground">{task.coats}</span>
-                                        </p>
-                                      </div>
-                                      <div className="text-right">
-                                        <p className="text-xl font-bold text-primary">{adjustedDays} days</p>
+                    {/* Exterior Configurations */}
+                    {configTasks.filter(ct => ct.paintTypeCategory === 'Exterior').length > 0 && (
+                      <div className="space-y-3">
+                        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                          Exterior Paint Configurations
+                        </Badge>
+                        <div className="space-y-3">
+                          {configTasks.filter(ct => ct.paintTypeCategory === 'Exterior').map((configTask, index) => (
+                            <div key={index} className="border-2 border-primary/20 bg-primary/5 rounded-lg eca-shadow">
+                              <div className="p-4">
+                                <div className="space-y-4">
+                                  {/* Header with Type Badge */}
+                                  <div className="flex items-center justify-between pb-2 border-b border-primary/10">
+                                    <h3 className="font-semibold text-base uppercase tracking-wide text-primary">{configTask.configLabel}</h3>
+                                    <Badge variant="secondary" className="text-xs">
+                                      Exterior
+                                    </Badge>
+                                  </div>
+                                  
+                                  {/* Tasks List */}
+                                  <div className="space-y-3">
+                                    {configTask.tasks.map((task: any, taskIdx: number) => {
+                                  const adjustedDays = Math.ceil(task.daysRequired / autoLabourPerDay);
+                                  return (
+                                    <div key={taskIdx} className="space-y-2">
+                                      {/* Task Name - Large and Bold */}
+                                      <h4 className="text-base font-semibold text-foreground">{task.name}</h4>
+                                      
+                                      {/* Details Row */}
+                                      <div className="flex items-baseline justify-between">
+                                        <div className="flex-1">
+                                          <p className="text-sm text-muted-foreground">
+                                            Area: <span className="font-medium text-foreground">{task.area.toFixed(0)} sq.ft</span>
+                                          </p>
+                                          <p className="text-sm text-muted-foreground">
+                                            Coats: <span className="font-medium text-foreground">{task.coats}</span>
+                                          </p>
+                                        </div>
+                                        <div className="text-right">
+                                          <p className="text-xl font-bold text-primary">{adjustedDays} days</p>
+                                        </div>
                                       </div>
                                     </div>
+                                  );
+                                    })}
                                   </div>
-                                );
-                                  })}
-                                </div>
-                              </ScrollArea>
-                              
-                              {/* Total Days */}
-                              <div className="pt-3 border-t-2 border-primary/20">
-                                <div className="flex items-center justify-between">
-                                  <p className="text-sm font-medium text-muted-foreground">Total Days:</p>
-                                  <p className="text-2xl font-bold text-primary">{Math.ceil(configTask.totalDays / autoLabourPerDay)} days</p>
+                                  
+                                  {/* Total Days */}
+                                  <div className="pt-3 border-t-2 border-primary/20">
+                                    <div className="flex items-center justify-between">
+                                      <p className="text-sm font-medium text-muted-foreground">Total Days:</p>
+                                      <p className="text-2xl font-bold text-primary">{Math.ceil(configTask.totalDays / autoLabourPerDay)} days</p>
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
                             </div>
-                          </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                      </div>
+                    )}
 
-                {/* Waterproofing Configurations */}
-                {configTasks.filter(ct => ct.paintTypeCategory === 'Waterproofing').length > 0 && (
-                  <div className="space-y-3">
-                    <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
-                      Waterproofing Configurations
-                    </Badge>
-                    <div className="space-y-3">
-                      {configTasks.filter(ct => ct.paintTypeCategory === 'Waterproofing').map((configTask, index) => (
-                        <div key={index} className="border-2 border-primary/20 bg-primary/5 rounded-lg eca-shadow">
-                          <div className="p-4">
-                            <div className="space-y-4">
-                              {/* Header with Type Badge */}
-                              <div className="flex items-center justify-between pb-2 border-b border-primary/10">
-                                <h3 className="font-semibold text-base uppercase tracking-wide text-primary">{configTask.configLabel}</h3>
-                                <Badge variant="secondary" className="text-xs">
-                                  Waterproofing
-                                </Badge>
-                              </div>
-                              
-                              {/* Tasks List - Scrollable */}
-                              <ScrollArea className="h-[250px] w-full rounded-md border border-primary/10">
-                                <div className="space-y-3 p-4">
-                                  {configTask.tasks.map((task: any, taskIdx: number) => {
-                                const adjustedDays = Math.ceil(task.daysRequired / autoLabourPerDay);
-                                return (
-                                  <div key={taskIdx} className="space-y-2">
-                                    {/* Task Name - Large and Bold */}
-                                    <h4 className="text-base font-semibold text-foreground">{task.name}</h4>
-                                    
-                                    {/* Details Row */}
-                                    <div className="flex items-baseline justify-between">
-                                      <div className="flex-1">
-                                        <p className="text-sm text-muted-foreground">
-                                          Area: <span className="font-medium text-foreground">{task.area.toFixed(0)} sq.ft</span>
-                                        </p>
-                                        <p className="text-sm text-muted-foreground">
-                                          Coats: <span className="font-medium text-foreground">{task.coats}</span>
-                                        </p>
-                                      </div>
-                                      <div className="text-right">
-                                        <p className="text-xl font-bold text-primary">{adjustedDays} days</p>
+                    {/* Waterproofing Configurations */}
+                    {configTasks.filter(ct => ct.paintTypeCategory === 'Waterproofing').length > 0 && (
+                      <div className="space-y-3">
+                        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                          Waterproofing Configurations
+                        </Badge>
+                        <div className="space-y-3">
+                          {configTasks.filter(ct => ct.paintTypeCategory === 'Waterproofing').map((configTask, index) => (
+                            <div key={index} className="border-2 border-primary/20 bg-primary/5 rounded-lg eca-shadow">
+                              <div className="p-4">
+                                <div className="space-y-4">
+                                  {/* Header with Type Badge */}
+                                  <div className="flex items-center justify-between pb-2 border-b border-primary/10">
+                                    <h3 className="font-semibold text-base uppercase tracking-wide text-primary">{configTask.configLabel}</h3>
+                                    <Badge variant="secondary" className="text-xs">
+                                      Waterproofing
+                                    </Badge>
+                                  </div>
+                                  
+                                  {/* Tasks List */}
+                                  <div className="space-y-3">
+                                    {configTask.tasks.map((task: any, taskIdx: number) => {
+                                  const adjustedDays = Math.ceil(task.daysRequired / autoLabourPerDay);
+                                  return (
+                                    <div key={taskIdx} className="space-y-2">
+                                      {/* Task Name - Large and Bold */}
+                                      <h4 className="text-base font-semibold text-foreground">{task.name}</h4>
+                                      
+                                      {/* Details Row */}
+                                      <div className="flex items-baseline justify-between">
+                                        <div className="flex-1">
+                                          <p className="text-sm text-muted-foreground">
+                                            Area: <span className="font-medium text-foreground">{task.area.toFixed(0)} sq.ft</span>
+                                          </p>
+                                          <p className="text-sm text-muted-foreground">
+                                            Coats: <span className="font-medium text-foreground">{task.coats}</span>
+                                          </p>
+                                        </div>
+                                        <div className="text-right">
+                                          <p className="text-xl font-bold text-primary">{adjustedDays} days</p>
+                                        </div>
                                       </div>
                                     </div>
+                                  );
+                                    })}
                                   </div>
-                                );
-                                  })}
-                                </div>
-                              </ScrollArea>
-                              
-                              {/* Total Days */}
-                              <div className="pt-3 border-t-2 border-primary/20">
-                                <div className="flex items-center justify-between">
-                                  <p className="text-sm font-medium text-muted-foreground">Total Days:</p>
-                                  <p className="text-2xl font-bold text-primary">{Math.ceil(configTask.totalDays / autoLabourPerDay)} days</p>
+                                  
+                                  {/* Total Days */}
+                                  <div className="pt-3 border-t-2 border-primary/20">
+                                    <div className="flex items-center justify-between">
+                                      <p className="text-sm font-medium text-muted-foreground">Total Days:</p>
+                                      <p className="text-2xl font-bold text-primary">{Math.ceil(configTask.totalDays / autoLabourPerDay)} days</p>
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
                             </div>
-                          </div>
+                          ))}
                         </div>
-                      ))}
+                      </div>
+                    )}
+
+                    {/* Total Summary */}
+                    <div className="pt-4 border-t-2 border-primary/20">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="text-center p-4 bg-primary/5 rounded-lg border border-primary/20">
+                          <p className="text-sm text-muted-foreground mb-1">Total Days</p>
+                          <p className="text-3xl font-bold text-primary">{displayDays}</p>
+                        </div>
+                        <div className="text-center p-4 bg-primary/5 rounded-lg border border-primary/20">
+                          <p className="text-sm text-muted-foreground mb-1">Labourers per Day</p>
+                          <p className="text-3xl font-bold text-primary">{displayLabours}</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                )}
+                </ScrollArea>
               </div>
             )}
 
