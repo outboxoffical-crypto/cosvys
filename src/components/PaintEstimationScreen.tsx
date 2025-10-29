@@ -1724,7 +1724,7 @@ export default function PaintEstimationScreen() {
                           .filter((value, index, self) => self.indexOf(value) === index)
                           .filter(primerName => {
                             // These primers should only show for Exterior Paint
-                            const exteriorOnlyPrimers = ['Ultima Protek (Base Coat)', 'Ultima Protek Durolife (Base Coat)'];
+                            const exteriorOnlyPrimers = ['Ultima Protek (Base Coat)', 'Ultima Protek Durolife (Base Coat)', 'Ultima Protek Durolife'];
                             if (exteriorOnlyPrimers.includes(primerName)) {
                               return selectedPaintType === "Exterior";
                             }
@@ -1891,7 +1891,7 @@ export default function PaintEstimationScreen() {
                           .filter((value, index, self) => self.indexOf(value) === index)
                           .filter(primerName => {
                             // These primers should only show for Exterior Paint
-                            const exteriorOnlyPrimers = ['Ultima Protek (Base Coat)', 'Ultima Protek Durolife (Top Coat)'];
+                            const exteriorOnlyPrimers = ['Ultima Protek (Base Coat)', 'Ultima Protek Durolife (Top Coat)', 'Ultima Protek Durolife', 'Ultima Protek Durolife (Base Coat)'];
                             if (exteriorOnlyPrimers.includes(primerName)) {
                               return selectedPaintType === "Exterior";
                             }
