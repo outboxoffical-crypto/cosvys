@@ -686,61 +686,61 @@ export default function GenerateSummaryScreen() {
                     <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                       Interior Paint Configurations
                     </Badge>
-                    <div className="space-y-3">
-                      {configTasks.filter(ct => ct.paintTypeCategory === 'Interior').map((configTask, index) => (
-                        <div key={index} className="border-2 border-primary/20 bg-primary/5 rounded-lg eca-shadow">
-                          <div className="p-4">
-                            <div className="space-y-4">
-                              {/* Header with Type Badge */}
-                              <div className="flex items-center justify-between pb-2 border-b border-primary/10">
-                                <h3 className="font-semibold text-base uppercase tracking-wide text-primary">{configTask.configLabel}</h3>
-                                <Badge variant="secondary" className="text-xs">
-                                  Interior
-                                </Badge>
-                              </div>
-                              
-                              {/* Tasks List - Scrollable */}
-                              <ScrollArea className="h-[250px] w-full rounded-md border border-primary/10">
-                                <div className="space-y-3 p-4">
+                    <ScrollArea className="h-[600px] w-full rounded-md border border-primary/10">
+                      <div className="space-y-3 p-4">
+                        {configTasks.filter(ct => ct.paintTypeCategory === 'Interior').map((configTask, index) => (
+                          <div key={index} className="border-2 border-primary/20 bg-primary/5 rounded-lg eca-shadow">
+                            <div className="p-4">
+                              <div className="space-y-4">
+                                {/* Header with Type Badge */}
+                                <div className="flex items-center justify-between pb-2 border-b border-primary/10">
+                                  <h3 className="font-semibold text-base uppercase tracking-wide text-primary">{configTask.configLabel}</h3>
+                                  <Badge variant="secondary" className="text-xs">
+                                    Interior
+                                  </Badge>
+                                </div>
+                                
+                                {/* Tasks List */}
+                                <div className="space-y-3">
                                   {configTask.tasks.map((task: any, taskIdx: number) => {
-                                const adjustedDays = Math.ceil(task.daysRequired / autoLabourPerDay);
-                                return (
-                                  <div key={taskIdx} className="space-y-2">
-                                    {/* Task Name - Large and Bold */}
-                                    <h4 className="text-base font-semibold text-foreground">{task.name}</h4>
-                                    
-                                    {/* Details Row */}
-                                    <div className="flex items-baseline justify-between">
-                                      <div className="flex-1">
-                                        <p className="text-sm text-muted-foreground">
-                                          Area: <span className="font-medium text-foreground">{task.area.toFixed(0)} sq.ft</span>
-                                        </p>
-                                        <p className="text-sm text-muted-foreground">
-                                          Coats: <span className="font-medium text-foreground">{task.coats}</span>
-                                        </p>
+                                    const adjustedDays = Math.ceil(task.daysRequired / autoLabourPerDay);
+                                    return (
+                                      <div key={taskIdx} className="space-y-2">
+                                        {/* Task Name - Large and Bold */}
+                                        <h4 className="text-base font-semibold text-foreground">{task.name}</h4>
+                                        
+                                        {/* Details Row */}
+                                        <div className="flex items-baseline justify-between">
+                                          <div className="flex-1">
+                                            <p className="text-sm text-muted-foreground">
+                                              Area: <span className="font-medium text-foreground">{task.area.toFixed(0)} sq.ft</span>
+                                            </p>
+                                            <p className="text-sm text-muted-foreground">
+                                              Coats: <span className="font-medium text-foreground">{task.coats}</span>
+                                            </p>
+                                          </div>
+                                          <div className="text-right">
+                                            <p className="text-xl font-bold text-primary">{adjustedDays} days</p>
+                                          </div>
+                                        </div>
                                       </div>
-                                      <div className="text-right">
-                                        <p className="text-xl font-bold text-primary">{adjustedDays} days</p>
-                                      </div>
-                                    </div>
-                                  </div>
-                                );
+                                    );
                                   })}
                                 </div>
-                              </ScrollArea>
-                              
-                              {/* Total Days */}
-                              <div className="pt-3 border-t-2 border-primary/20">
-                                <div className="flex items-center justify-between">
-                                  <p className="text-sm font-medium text-muted-foreground">Total Days:</p>
-                                  <p className="text-2xl font-bold text-primary">{Math.ceil(configTask.totalDays / autoLabourPerDay)} days</p>
+                                
+                                {/* Total Days */}
+                                <div className="pt-3 border-t-2 border-primary/20">
+                                  <div className="flex items-center justify-between">
+                                    <p className="text-sm font-medium text-muted-foreground">Total Days:</p>
+                                    <p className="text-2xl font-bold text-primary">{Math.ceil(configTask.totalDays / autoLabourPerDay)} days</p>
+                                  </div>
                                 </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
                   </div>
                 )}
 
@@ -750,61 +750,61 @@ export default function GenerateSummaryScreen() {
                     <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                       Exterior Paint Configurations
                     </Badge>
-                    <div className="space-y-3">
-                      {configTasks.filter(ct => ct.paintTypeCategory === 'Exterior').map((configTask, index) => (
-                        <div key={index} className="border-2 border-primary/20 bg-primary/5 rounded-lg eca-shadow">
-                          <div className="p-4">
-                            <div className="space-y-4">
-                              {/* Header with Type Badge */}
-                              <div className="flex items-center justify-between pb-2 border-b border-primary/10">
-                                <h3 className="font-semibold text-base uppercase tracking-wide text-primary">{configTask.configLabel}</h3>
-                                <Badge variant="secondary" className="text-xs">
-                                  Exterior
-                                </Badge>
-                              </div>
-                              
-                              {/* Tasks List - Scrollable */}
-                              <ScrollArea className="h-[250px] w-full rounded-md border border-primary/10">
-                                <div className="space-y-3 p-4">
+                    <ScrollArea className="h-[600px] w-full rounded-md border border-primary/10">
+                      <div className="space-y-3 p-4">
+                        {configTasks.filter(ct => ct.paintTypeCategory === 'Exterior').map((configTask, index) => (
+                          <div key={index} className="border-2 border-primary/20 bg-primary/5 rounded-lg eca-shadow">
+                            <div className="p-4">
+                              <div className="space-y-4">
+                                {/* Header with Type Badge */}
+                                <div className="flex items-center justify-between pb-2 border-primary/10">
+                                  <h3 className="font-semibold text-base uppercase tracking-wide text-primary">{configTask.configLabel}</h3>
+                                  <Badge variant="secondary" className="text-xs">
+                                    Exterior
+                                  </Badge>
+                                </div>
+                                
+                                {/* Tasks List */}
+                                <div className="space-y-3">
                                   {configTask.tasks.map((task: any, taskIdx: number) => {
-                                const adjustedDays = Math.ceil(task.daysRequired / autoLabourPerDay);
-                                return (
-                                  <div key={taskIdx} className="space-y-2">
-                                    {/* Task Name - Large and Bold */}
-                                    <h4 className="text-base font-semibold text-foreground">{task.name}</h4>
-                                    
-                                    {/* Details Row */}
-                                    <div className="flex items-baseline justify-between">
-                                      <div className="flex-1">
-                                        <p className="text-sm text-muted-foreground">
-                                          Area: <span className="font-medium text-foreground">{task.area.toFixed(0)} sq.ft</span>
-                                        </p>
-                                        <p className="text-sm text-muted-foreground">
-                                          Coats: <span className="font-medium text-foreground">{task.coats}</span>
-                                        </p>
+                                    const adjustedDays = Math.ceil(task.daysRequired / autoLabourPerDay);
+                                    return (
+                                      <div key={taskIdx} className="space-y-2">
+                                        {/* Task Name - Large and Bold */}
+                                        <h4 className="text-base font-semibold text-foreground">{task.name}</h4>
+                                        
+                                        {/* Details Row */}
+                                        <div className="flex items-baseline justify-between">
+                                          <div className="flex-1">
+                                            <p className="text-sm text-muted-foreground">
+                                              Area: <span className="font-medium text-foreground">{task.area.toFixed(0)} sq.ft</span>
+                                            </p>
+                                            <p className="text-sm text-muted-foreground">
+                                              Coats: <span className="font-medium text-foreground">{task.coats}</span>
+                                            </p>
+                                          </div>
+                                          <div className="text-right">
+                                            <p className="text-xl font-bold text-primary">{adjustedDays} days</p>
+                                          </div>
+                                        </div>
                                       </div>
-                                      <div className="text-right">
-                                        <p className="text-xl font-bold text-primary">{adjustedDays} days</p>
-                                      </div>
-                                    </div>
-                                  </div>
-                                );
+                                    );
                                   })}
                                 </div>
-                              </ScrollArea>
-                              
-                              {/* Total Days */}
-                              <div className="pt-3 border-t-2 border-primary/20">
-                                <div className="flex items-center justify-between">
-                                  <p className="text-sm font-medium text-muted-foreground">Total Days:</p>
-                                  <p className="text-2xl font-bold text-primary">{Math.ceil(configTask.totalDays / autoLabourPerDay)} days</p>
+                                
+                                {/* Total Days */}
+                                <div className="pt-3 border-t-2 border-primary/20">
+                                  <div className="flex items-center justify-between">
+                                    <p className="text-sm font-medium text-muted-foreground">Total Days:</p>
+                                    <p className="text-2xl font-bold text-primary">{Math.ceil(configTask.totalDays / autoLabourPerDay)} days</p>
+                                  </div>
                                 </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
                   </div>
                 )}
 
@@ -814,61 +814,61 @@ export default function GenerateSummaryScreen() {
                     <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                       Waterproofing Configurations
                     </Badge>
-                    <div className="space-y-3">
-                      {configTasks.filter(ct => ct.paintTypeCategory === 'Waterproofing').map((configTask, index) => (
-                        <div key={index} className="border-2 border-primary/20 bg-primary/5 rounded-lg eca-shadow">
-                          <div className="p-4">
-                            <div className="space-y-4">
-                              {/* Header with Type Badge */}
-                              <div className="flex items-center justify-between pb-2 border-b border-primary/10">
-                                <h3 className="font-semibold text-base uppercase tracking-wide text-primary">{configTask.configLabel}</h3>
-                                <Badge variant="secondary" className="text-xs">
-                                  Waterproofing
-                                </Badge>
-                              </div>
-                              
-                              {/* Tasks List - Scrollable */}
-                              <ScrollArea className="h-[250px] w-full rounded-md border border-primary/10">
-                                <div className="space-y-3 p-4">
+                    <ScrollArea className="h-[600px] w-full rounded-md border border-primary/10">
+                      <div className="space-y-3 p-4">
+                        {configTasks.filter(ct => ct.paintTypeCategory === 'Waterproofing').map((configTask, index) => (
+                          <div key={index} className="border-2 border-primary/20 bg-primary/5 rounded-lg eca-shadow">
+                            <div className="p-4">
+                              <div className="space-y-4">
+                                {/* Header with Type Badge */}
+                                <div className="flex items-center justify-between pb-2 border-b border-primary/10">
+                                  <h3 className="font-semibold text-base uppercase tracking-wide text-primary">{configTask.configLabel}</h3>
+                                  <Badge variant="secondary" className="text-xs">
+                                    Waterproofing
+                                  </Badge>
+                                </div>
+                                
+                                {/* Tasks List */}
+                                <div className="space-y-3">
                                   {configTask.tasks.map((task: any, taskIdx: number) => {
-                                const adjustedDays = Math.ceil(task.daysRequired / autoLabourPerDay);
-                                return (
-                                  <div key={taskIdx} className="space-y-2">
-                                    {/* Task Name - Large and Bold */}
-                                    <h4 className="text-base font-semibold text-foreground">{task.name}</h4>
-                                    
-                                    {/* Details Row */}
-                                    <div className="flex items-baseline justify-between">
-                                      <div className="flex-1">
-                                        <p className="text-sm text-muted-foreground">
-                                          Area: <span className="font-medium text-foreground">{task.area.toFixed(0)} sq.ft</span>
-                                        </p>
-                                        <p className="text-sm text-muted-foreground">
-                                          Coats: <span className="font-medium text-foreground">{task.coats}</span>
-                                        </p>
+                                    const adjustedDays = Math.ceil(task.daysRequired / autoLabourPerDay);
+                                    return (
+                                      <div key={taskIdx} className="space-y-2">
+                                        {/* Task Name - Large and Bold */}
+                                        <h4 className="text-base font-semibold text-foreground">{task.name}</h4>
+                                        
+                                        {/* Details Row */}
+                                        <div className="flex items-baseline justify-between">
+                                          <div className="flex-1">
+                                            <p className="text-sm text-muted-foreground">
+                                              Area: <span className="font-medium text-foreground">{task.area.toFixed(0)} sq.ft</span>
+                                            </p>
+                                            <p className="text-sm text-muted-foreground">
+                                              Coats: <span className="font-medium text-foreground">{task.coats}</span>
+                                            </p>
+                                          </div>
+                                          <div className="text-right">
+                                            <p className="text-xl font-bold text-primary">{adjustedDays} days</p>
+                                          </div>
+                                        </div>
                                       </div>
-                                      <div className="text-right">
-                                        <p className="text-xl font-bold text-primary">{adjustedDays} days</p>
-                                      </div>
-                                    </div>
-                                  </div>
-                                );
+                                    );
                                   })}
                                 </div>
-                              </ScrollArea>
-                              
-                              {/* Total Days */}
-                              <div className="pt-3 border-t-2 border-primary/20">
-                                <div className="flex items-center justify-between">
-                                  <p className="text-sm font-medium text-muted-foreground">Total Days:</p>
-                                  <p className="text-2xl font-bold text-primary">{Math.ceil(configTask.totalDays / autoLabourPerDay)} days</p>
+                                
+                                {/* Total Days */}
+                                <div className="pt-3 border-t-2 border-primary/20">
+                                  <div className="flex items-center justify-between">
+                                    <p className="text-sm font-medium text-muted-foreground">Total Days:</p>
+                                    <p className="text-2xl font-bold text-primary">{Math.ceil(configTask.totalDays / autoLabourPerDay)} days</p>
+                                  </div>
                                 </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
                   </div>
                 )}
               </div>
@@ -1127,58 +1127,58 @@ export default function GenerateSummaryScreen() {
                   <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                     Interior Paint Configurations
                   </Badge>
-                  <div className="space-y-3">
-                    {configMaterials.filter(cm => cm.paintTypeCategory === 'Interior').map((configMat, index) => (
-                      <div key={index} className="border-2 border-primary/20 bg-primary/5 rounded-lg eca-shadow">
-                        <div className="p-4">
-                          <div className="space-y-4">
-                            {/* Header with Type Badge */}
-                            <div className="flex items-center justify-between pb-2 border-b border-primary/10">
-                              <h3 className="font-semibold text-base uppercase tracking-wide text-primary">{configMat.configLabel}</h3>
-                              <Badge variant="secondary" className="text-xs">
-                                Interior
-                              </Badge>
-                            </div>
-                            
-                            {/* Materials List - Scrollable */}
-                            <ScrollArea className="h-[250px] w-full rounded-md border border-primary/10">
-                              <div className="space-y-3 p-4">
-                                {configMat.materials.map((mat: any, matIdx: number) => (
-                              <div key={matIdx} className="space-y-2">
-                                {/* Material Name - Large and Bold */}
-                                <h4 className="text-base font-semibold text-foreground">{mat.name}</h4>
-                                
-                                {/* Details Row */}
-                                <div className="flex items-baseline justify-between">
-                                  <div className="flex-1">
-                                    <p className="text-sm text-muted-foreground">
-                                      Quantity: <span className="font-medium text-foreground">{mat.minQuantity} to {mat.maxQuantity} {mat.unit}</span>
-                                    </p>
-                                    <p className="text-sm text-muted-foreground mt-1">
-                                      Pack: <span className="font-medium text-foreground">{mat.packCombination}</span>
-                                    </p>
-                                  </div>
-                                  <div className="text-right">
-                                    <p className="text-xl font-bold text-primary">₹{mat.totalCost.toLocaleString('en-IN')}</p>
-                                  </div>
-                                </div>
+                  <ScrollArea className="h-[600px] w-full rounded-md border border-primary/10">
+                    <div className="space-y-3 p-4">
+                      {configMaterials.filter(cm => cm.paintTypeCategory === 'Interior').map((configMat, index) => (
+                        <div key={index} className="border-2 border-primary/20 bg-primary/5 rounded-lg eca-shadow">
+                          <div className="p-4">
+                            <div className="space-y-4">
+                              {/* Header with Type Badge */}
+                              <div className="flex items-center justify-between pb-2 border-b border-primary/10">
+                                <h3 className="font-semibold text-base uppercase tracking-wide text-primary">{configMat.configLabel}</h3>
+                                <Badge variant="secondary" className="text-xs">
+                                  Interior
+                                </Badge>
                               </div>
+                              
+                              {/* Materials List */}
+                              <div className="space-y-3">
+                                {configMat.materials.map((mat: any, matIdx: number) => (
+                                  <div key={matIdx} className="space-y-2">
+                                    {/* Material Name - Large and Bold */}
+                                    <h4 className="text-base font-semibold text-foreground">{mat.name}</h4>
+                                    
+                                    {/* Details Row */}
+                                    <div className="flex items-baseline justify-between">
+                                      <div className="flex-1">
+                                        <p className="text-sm text-muted-foreground">
+                                          Quantity: <span className="font-medium text-foreground">{mat.minQuantity} to {mat.maxQuantity} {mat.unit}</span>
+                                        </p>
+                                        <p className="text-sm text-muted-foreground mt-1">
+                                          Pack: <span className="font-medium text-foreground">{mat.packCombination}</span>
+                                        </p>
+                                      </div>
+                                      <div className="text-right">
+                                        <p className="text-xl font-bold text-primary">₹{mat.totalCost.toLocaleString('en-IN')}</p>
+                                      </div>
+                                    </div>
+                                  </div>
                                 ))}
                               </div>
-                            </ScrollArea>
-                            
-                            {/* Total Cost */}
-                            <div className="pt-3 border-t-2 border-primary/20">
-                              <div className="flex items-center justify-between">
-                                <p className="text-sm font-medium text-muted-foreground">Total Material Cost:</p>
-                                <p className="text-2xl font-bold text-primary">₹{configMat.totalCost.toLocaleString('en-IN')}</p>
+                              
+                              {/* Total Cost */}
+                              <div className="pt-3 border-t-2 border-primary/20">
+                                <div className="flex items-center justify-between">
+                                  <p className="text-sm font-medium text-muted-foreground">Total Material Cost:</p>
+                                  <p className="text-2xl font-bold text-primary">₹{configMat.totalCost.toLocaleString('en-IN')}</p>
+                                </div>
                               </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
                 </div>
               )}
 
@@ -1188,58 +1188,58 @@ export default function GenerateSummaryScreen() {
                   <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                     Exterior Paint Configurations
                   </Badge>
-                  <div className="space-y-3">
-                    {configMaterials.filter(cm => cm.paintTypeCategory === 'Exterior').map((configMat, index) => (
-                      <div key={index} className="border-2 border-primary/20 bg-primary/5 rounded-lg eca-shadow">
-                        <div className="p-4">
-                          <div className="space-y-4">
-                            {/* Header with Type Badge */}
-                            <div className="flex items-center justify-between pb-2 border-b border-primary/10">
-                              <h3 className="font-semibold text-base uppercase tracking-wide text-primary">{configMat.configLabel}</h3>
-                              <Badge variant="secondary" className="text-xs">
-                                Exterior
-                              </Badge>
-                            </div>
-                            
-                            {/* Materials List - Scrollable */}
-                            <ScrollArea className="h-[250px] w-full rounded-md border border-primary/10">
-                              <div className="space-y-3 p-4">
-                                {configMat.materials.map((mat: any, matIdx: number) => (
-                              <div key={matIdx} className="space-y-2">
-                                {/* Material Name - Large and Bold */}
-                                <h4 className="text-base font-semibold text-foreground">{mat.name}</h4>
-                                
-                                {/* Details Row */}
-                                <div className="flex items-baseline justify-between">
-                                  <div className="flex-1">
-                                    <p className="text-sm text-muted-foreground">
-                                      Quantity: <span className="font-medium text-foreground">{mat.minQuantity} to {mat.maxQuantity} {mat.unit}</span>
-                                    </p>
-                                    <p className="text-sm text-muted-foreground mt-1">
-                                      Pack: <span className="font-medium text-foreground">{mat.packCombination}</span>
-                                    </p>
-                                  </div>
-                                  <div className="text-right">
-                                    <p className="text-xl font-bold text-primary">₹{mat.totalCost.toLocaleString('en-IN')}</p>
-                                  </div>
-                                </div>
+                  <ScrollArea className="h-[600px] w-full rounded-md border border-primary/10">
+                    <div className="space-y-3 p-4">
+                      {configMaterials.filter(cm => cm.paintTypeCategory === 'Exterior').map((configMat, index) => (
+                        <div key={index} className="border-2 border-primary/20 bg-primary/5 rounded-lg eca-shadow">
+                          <div className="p-4">
+                            <div className="space-y-4">
+                              {/* Header with Type Badge */}
+                              <div className="flex items-center justify-between pb-2 border-b border-primary/10">
+                                <h3 className="font-semibold text-base uppercase tracking-wide text-primary">{configMat.configLabel}</h3>
+                                <Badge variant="secondary" className="text-xs">
+                                  Exterior
+                                </Badge>
                               </div>
+                              
+                              {/* Materials List */}
+                              <div className="space-y-3">
+                                {configMat.materials.map((mat: any, matIdx: number) => (
+                                  <div key={matIdx} className="space-y-2">
+                                    {/* Material Name - Large and Bold */}
+                                    <h4 className="text-base font-semibold text-foreground">{mat.name}</h4>
+                                    
+                                    {/* Details Row */}
+                                    <div className="flex items-baseline justify-between">
+                                      <div className="flex-1">
+                                        <p className="text-sm text-muted-foreground">
+                                          Quantity: <span className="font-medium text-foreground">{mat.minQuantity} to {mat.maxQuantity} {mat.unit}</span>
+                                        </p>
+                                        <p className="text-sm text-muted-foreground mt-1">
+                                          Pack: <span className="font-medium text-foreground">{mat.packCombination}</span>
+                                        </p>
+                                      </div>
+                                      <div className="text-right">
+                                        <p className="text-xl font-bold text-primary">₹{mat.totalCost.toLocaleString('en-IN')}</p>
+                                      </div>
+                                    </div>
+                                  </div>
                                 ))}
                               </div>
-                            </ScrollArea>
-                            
-                            {/* Total Cost */}
-                            <div className="pt-3 border-t-2 border-primary/20">
-                              <div className="flex items-center justify-between">
-                                <p className="text-sm font-medium text-muted-foreground">Total Material Cost:</p>
-                                <p className="text-2xl font-bold text-primary">₹{configMat.totalCost.toLocaleString('en-IN')}</p>
+                              
+                              {/* Total Cost */}
+                              <div className="pt-3 border-t-2 border-primary/20">
+                                <div className="flex items-center justify-between">
+                                  <p className="text-sm font-medium text-muted-foreground">Total Material Cost:</p>
+                                  <p className="text-2xl font-bold text-primary">₹{configMat.totalCost.toLocaleString('en-IN')}</p>
+                                </div>
                               </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
                 </div>
               )}
 
@@ -1249,58 +1249,58 @@ export default function GenerateSummaryScreen() {
                   <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                     Waterproofing Configurations
                   </Badge>
-                  <div className="space-y-3">
-                    {configMaterials.filter(cm => cm.paintTypeCategory === 'Waterproofing').map((configMat, index) => (
-                      <div key={index} className="border-2 border-primary/20 bg-primary/5 rounded-lg eca-shadow">
-                        <div className="p-4">
-                          <div className="space-y-4">
-                            {/* Header with Type Badge */}
-                            <div className="flex items-center justify-between pb-2 border-b border-primary/10">
-                              <h3 className="font-semibold text-base uppercase tracking-wide text-primary">{configMat.configLabel}</h3>
-                              <Badge variant="secondary" className="text-xs">
-                                Waterproofing
-                              </Badge>
-                            </div>
-                            
-                            {/* Materials List - Scrollable */}
-                            <ScrollArea className="h-[250px] w-full rounded-md border border-primary/10">
-                              <div className="space-y-3 p-4">
-                                {configMat.materials.map((mat: any, matIdx: number) => (
-                              <div key={matIdx} className="space-y-2">
-                                {/* Material Name - Large and Bold */}
-                                <h4 className="text-base font-semibold text-foreground">{mat.name}</h4>
-                                
-                                {/* Details Row */}
-                                <div className="flex items-baseline justify-between">
-                                  <div className="flex-1">
-                                    <p className="text-sm text-muted-foreground">
-                                      Quantity: <span className="font-medium text-foreground">{mat.minQuantity} to {mat.maxQuantity} {mat.unit}</span>
-                                    </p>
-                                    <p className="text-sm text-muted-foreground mt-1">
-                                      Pack: <span className="font-medium text-foreground">{mat.packCombination}</span>
-                                    </p>
-                                  </div>
-                                  <div className="text-right">
-                                    <p className="text-xl font-bold text-primary">₹{mat.totalCost.toLocaleString('en-IN')}</p>
-                                  </div>
-                                </div>
+                  <ScrollArea className="h-[600px] w-full rounded-md border border-primary/10">
+                    <div className="space-y-3 p-4">
+                      {configMaterials.filter(cm => cm.paintTypeCategory === 'Waterproofing').map((configMat, index) => (
+                        <div key={index} className="border-2 border-primary/20 bg-primary/5 rounded-lg eca-shadow">
+                          <div className="p-4">
+                            <div className="space-y-4">
+                              {/* Header with Type Badge */}
+                              <div className="flex items-center justify-between pb-2 border-b border-primary/10">
+                                <h3 className="font-semibold text-base uppercase tracking-wide text-primary">{configMat.configLabel}</h3>
+                                <Badge variant="secondary" className="text-xs">
+                                  Waterproofing
+                                </Badge>
                               </div>
+                              
+                              {/* Materials List */}
+                              <div className="space-y-3">
+                                {configMat.materials.map((mat: any, matIdx: number) => (
+                                  <div key={matIdx} className="space-y-2">
+                                    {/* Material Name - Large and Bold */}
+                                    <h4 className="text-base font-semibold text-foreground">{mat.name}</h4>
+                                    
+                                    {/* Details Row */}
+                                    <div className="flex items-baseline justify-between">
+                                      <div className="flex-1">
+                                        <p className="text-sm text-muted-foreground">
+                                          Quantity: <span className="font-medium text-foreground">{mat.minQuantity} to {mat.maxQuantity} {mat.unit}</span>
+                                        </p>
+                                        <p className="text-sm text-muted-foreground mt-1">
+                                          Pack: <span className="font-medium text-foreground">{mat.packCombination}</span>
+                                        </p>
+                                      </div>
+                                      <div className="text-right">
+                                        <p className="text-xl font-bold text-primary">₹{mat.totalCost.toLocaleString('en-IN')}</p>
+                                      </div>
+                                    </div>
+                                  </div>
                                 ))}
                               </div>
-                            </ScrollArea>
-                            
-                            {/* Total Cost */}
-                            <div className="pt-3 border-t-2 border-primary/20">
-                              <div className="flex items-center justify-between">
-                                <p className="text-sm font-medium text-muted-foreground">Total Material Cost:</p>
-                                <p className="text-2xl font-bold text-primary">₹{configMat.totalCost.toLocaleString('en-IN')}</p>
+                              
+                              {/* Total Cost */}
+                              <div className="pt-3 border-t-2 border-primary/20">
+                                <div className="flex items-center justify-between">
+                                  <p className="text-sm font-medium text-muted-foreground">Total Material Cost:</p>
+                                  <p className="text-2xl font-bold text-primary">₹{configMat.totalCost.toLocaleString('en-IN')}</p>
+                                </div>
                               </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
                 </div>
               )}
             </div>
