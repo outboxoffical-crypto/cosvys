@@ -700,8 +700,8 @@ export default function GenerateSummaryScreen() {
                               </div>
                               
                               {/* Tasks List - Scrollable */}
-                              <ScrollArea className="h-[300px] w-full">
-                                <div className="space-y-3 pr-4">
+                              <ScrollArea className="h-[250px] w-full rounded-md border border-primary/10">
+                                <div className="space-y-3 p-4">
                                   {configTask.tasks.map((task: any, taskIdx: number) => {
                                 const adjustedDays = Math.ceil(task.daysRequired / autoLabourPerDay);
                                 return (
@@ -764,8 +764,8 @@ export default function GenerateSummaryScreen() {
                               </div>
                               
                               {/* Tasks List - Scrollable */}
-                              <ScrollArea className="h-[300px] w-full">
-                                <div className="space-y-3 pr-4">
+                              <ScrollArea className="h-[250px] w-full rounded-md border border-primary/10">
+                                <div className="space-y-3 p-4">
                                   {configTask.tasks.map((task: any, taskIdx: number) => {
                                 const adjustedDays = Math.ceil(task.daysRequired / autoLabourPerDay);
                                 return (
@@ -828,8 +828,8 @@ export default function GenerateSummaryScreen() {
                               </div>
                               
                               {/* Tasks List - Scrollable */}
-                              <ScrollArea className="h-[300px] w-full">
-                                <div className="space-y-3 pr-4">
+                              <ScrollArea className="h-[250px] w-full rounded-md border border-primary/10">
+                                <div className="space-y-3 p-4">
                                   {configTask.tasks.map((task: any, taskIdx: number) => {
                                 const adjustedDays = Math.ceil(task.daysRequired / autoLabourPerDay);
                                 return (
@@ -1141,8 +1141,8 @@ export default function GenerateSummaryScreen() {
                             </div>
                             
                             {/* Materials List - Scrollable */}
-                            <ScrollArea className="h-[300px] w-full">
-                              <div className="space-y-3 pr-4">
+                            <ScrollArea className="h-[250px] w-full rounded-md border border-primary/10">
+                              <div className="space-y-3 p-4">
                                 {configMat.materials.map((mat: any, matIdx: number) => (
                               <div key={matIdx} className="space-y-2">
                                 {/* Material Name - Large and Bold */}
@@ -1202,8 +1202,8 @@ export default function GenerateSummaryScreen() {
                             </div>
                             
                             {/* Materials List - Scrollable */}
-                            <ScrollArea className="h-[300px] w-full">
-                              <div className="space-y-3 pr-4">
+                            <ScrollArea className="h-[250px] w-full rounded-md border border-primary/10">
+                              <div className="space-y-3 p-4">
                                 {configMat.materials.map((mat: any, matIdx: number) => (
                               <div key={matIdx} className="space-y-2">
                                 {/* Material Name - Large and Bold */}
@@ -1263,8 +1263,8 @@ export default function GenerateSummaryScreen() {
                             </div>
                             
                             {/* Materials List - Scrollable */}
-                            <ScrollArea className="h-[300px] w-full">
-                              <div className="space-y-3 pr-4">
+                            <ScrollArea className="h-[250px] w-full rounded-md border border-primary/10">
+                              <div className="space-y-3 p-4">
                                 {configMat.materials.map((mat: any, matIdx: number) => (
                               <div key={matIdx} className="space-y-2">
                                 {/* Material Name - Large and Bold */}
