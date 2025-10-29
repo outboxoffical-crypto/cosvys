@@ -131,6 +131,7 @@ export default function RoomMeasurementScreen() {
   // Add Door/Window Dialog state
   const [doorWindowDialogOpen, setDoorWindowDialogOpen] = useState(false);
   const [doorWindowRoomName, setDoorWindowRoomName] = useState("");
+  const [doorWindowProjectType, setDoorWindowProjectType] = useState<string>("");
 
   useEffect(() => {
     const loadData = async () => {
@@ -723,7 +724,8 @@ export default function RoomMeasurementScreen() {
 
     // Use doorWindowRoomName from state or create new room
     const roomName = doorWindowRoomName.trim() || "Untitled Room";
-    let targetRoom = rooms.find(r => r.name.toLowerCase() === roomName.toLowerCase());
+    const projectType = doorWindowProjectType || activeProjectType || projectData?.projectTypes[0] || "";
+    let targetRoom = rooms.find(r => r.name.toLowerCase() === roomName.toLowerCase() && r.projectType === projectType);
 
     if (targetRoom) {
       // Add to existing room
@@ -768,7 +770,7 @@ export default function RoomMeasurementScreen() {
         length: 0,
         width: 0,
         height: 0,
-        projectType: activeProjectType || projectData?.projectTypes[0] || "",
+        projectType: projectType,
         pictures: [],
         openingAreas: [],
         extraSurfaces: [],
@@ -837,6 +839,7 @@ export default function RoomMeasurementScreen() {
       grillMultiplier: "1"
     });
     setDoorWindowRoomName("");
+    setDoorWindowProjectType("");
     setDoorWindowDialogOpen(false);
   };
 
@@ -1751,6 +1754,32 @@ export default function RoomMeasurementScreen() {
           </TabsContent>
 
           <TabsContent value="doorwindow" className="space-y-6">
+            {/* Project Type Selection for Door & Window */}
+            {projectData && projectData.projectTypes.length > 0 && (
+              <Card className="eca-shadow">
+                <CardHeader>
+                  <CardTitle className="flex items-center text-lg">
+                    <Home className="mr-2 h-5 w-5 text-primary" />
+                    Select Project Type
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-3">
+                    {projectData.projectTypes.map((type) => (
+                      <Button
+                        key={type}
+                        variant={activeProjectType === type ? "default" : "outline"}
+                        onClick={() => setActiveProjectType(type)}
+                        className="h-12 px-6"
+                      >
+                        {type}
+                      </Button>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             <Card className="eca-shadow">
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -1767,16 +1796,19 @@ export default function RoomMeasurementScreen() {
                     variant="outline"
                     size="icon"
                     className="h-10 w-10"
-                    onClick={() => setDoorWindowDialogOpen(true)}
+                    onClick={() => {
+                      setDoorWindowProjectType(activeProjectType);
+                      setDoorWindowDialogOpen(true);
+                    }}
                   >
                     <Plus className="h-5 w-5" />
                   </Button>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                {rooms.length > 0 && (
+                {getRoomsByProjectType(activeProjectType).length > 0 && (
                   <div className="space-y-4">
-                    {rooms.map((room) => (
+                    {getRoomsByProjectType(activeProjectType).map((room) => (
                       <Card key={`dwg-${room.id}`} className="border-amber-200 dark:border-amber-800">
                         <CardContent className="p-4">
                           <div className="flex items-center justify-between mb-3">
@@ -1991,14 +2023,40 @@ export default function RoomMeasurementScreen() {
       <Dialog open={doorWindowDialogOpen} onOpenChange={setDoorWindowDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <Input
-              placeholder="Room name (e.g., outside)"
-              value={doorWindowRoomName}
-              onChange={(e) => setDoorWindowRoomName(e.target.value)}
-              className="h-10 text-lg font-semibold border-none px-0 focus-visible:ring-0"
-            />
+            <DialogTitle>Add Door & Window</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            {/* Project Type Selection */}
+            {projectData && projectData.projectTypes.length > 1 && (
+              <div className="space-y-2">
+                <Label>Project Type</Label>
+                <div className="flex flex-wrap gap-2">
+                  {projectData.projectTypes.map((type) => (
+                    <Button
+                      key={type}
+                      variant={doorWindowProjectType === type ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setDoorWindowProjectType(type)}
+                      className="h-10"
+                    >
+                      {type}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Room Name Input */}
+            <div className="space-y-2">
+              <Label htmlFor="room-name">Room Name</Label>
+              <Input
+                id="room-name"
+                placeholder="e.g., outside, living room"
+                value={doorWindowRoomName}
+                onChange={(e) => setDoorWindowRoomName(e.target.value)}
+                className="h-12"
+              />
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <Input
                 placeholder="e.g., Main Door, Window 1"
@@ -2046,7 +2104,7 @@ export default function RoomMeasurementScreen() {
             <Button
               className="w-full h-12"
               onClick={handleAddDoorWindowFromDialog}
-              disabled={!doorWindowRoomName.trim() || !dialogDoorWindowGrill.height || !dialogDoorWindowGrill.width || !dialogDoorWindowGrill.sides}
+              disabled={!doorWindowRoomName.trim() || !doorWindowProjectType || !dialogDoorWindowGrill.height || !dialogDoorWindowGrill.width || !dialogDoorWindowGrill.sides}
             >
               <Plus className="mr-2 h-4 w-4" />
               Add to {doorWindowRoomName || "Room"}
