@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { ScrollArea } from "@/components/ui/scroll-area";
 interface AreaConfig {
   id: string;
   areaType: string;
@@ -698,8 +699,10 @@ export default function GenerateSummaryScreen() {
                                 </Badge>
                               </div>
                               
-                              {/* Tasks List */}
-                              {configTask.tasks.map((task: any, taskIdx: number) => {
+                              {/* Tasks List - Scrollable */}
+                              <ScrollArea className="h-[300px] w-full">
+                                <div className="space-y-3 pr-4">
+                                  {configTask.tasks.map((task: any, taskIdx: number) => {
                                 const adjustedDays = Math.ceil(task.daysRequired / autoLabourPerDay);
                                 return (
                                   <div key={taskIdx} className="space-y-2">
@@ -722,7 +725,9 @@ export default function GenerateSummaryScreen() {
                                     </div>
                                   </div>
                                 );
-                              })}
+                                  })}
+                                </div>
+                              </ScrollArea>
                               
                               {/* Total Days */}
                               <div className="pt-3 border-t-2 border-primary/20">
@@ -758,8 +763,10 @@ export default function GenerateSummaryScreen() {
                                 </Badge>
                               </div>
                               
-                              {/* Tasks List */}
-                              {configTask.tasks.map((task: any, taskIdx: number) => {
+                              {/* Tasks List - Scrollable */}
+                              <ScrollArea className="h-[300px] w-full">
+                                <div className="space-y-3 pr-4">
+                                  {configTask.tasks.map((task: any, taskIdx: number) => {
                                 const adjustedDays = Math.ceil(task.daysRequired / autoLabourPerDay);
                                 return (
                                   <div key={taskIdx} className="space-y-2">
@@ -782,7 +789,9 @@ export default function GenerateSummaryScreen() {
                                     </div>
                                   </div>
                                 );
-                              })}
+                                  })}
+                                </div>
+                              </ScrollArea>
                               
                               {/* Total Days */}
                               <div className="pt-3 border-t-2 border-primary/20">
@@ -818,8 +827,10 @@ export default function GenerateSummaryScreen() {
                                 </Badge>
                               </div>
                               
-                              {/* Tasks List */}
-                              {configTask.tasks.map((task: any, taskIdx: number) => {
+                              {/* Tasks List - Scrollable */}
+                              <ScrollArea className="h-[300px] w-full">
+                                <div className="space-y-3 pr-4">
+                                  {configTask.tasks.map((task: any, taskIdx: number) => {
                                 const adjustedDays = Math.ceil(task.daysRequired / autoLabourPerDay);
                                 return (
                                   <div key={taskIdx} className="space-y-2">
@@ -842,7 +853,9 @@ export default function GenerateSummaryScreen() {
                                     </div>
                                   </div>
                                 );
-                              })}
+                                  })}
+                                </div>
+                              </ScrollArea>
                               
                               {/* Total Days */}
                               <div className="pt-3 border-t-2 border-primary/20">
@@ -1127,8 +1140,10 @@ export default function GenerateSummaryScreen() {
                               </Badge>
                             </div>
                             
-                            {/* Materials List */}
-                            {configMat.materials.map((mat: any, matIdx: number) => (
+                            {/* Materials List - Scrollable */}
+                            <ScrollArea className="h-[300px] w-full">
+                              <div className="space-y-3 pr-4">
+                                {configMat.materials.map((mat: any, matIdx: number) => (
                               <div key={matIdx} className="space-y-2">
                                 {/* Material Name - Large and Bold */}
                                 <h4 className="text-base font-semibold text-foreground">{mat.name}</h4>
@@ -1148,7 +1163,9 @@ export default function GenerateSummaryScreen() {
                                   </div>
                                 </div>
                               </div>
-                            ))}
+                                ))}
+                              </div>
+                            </ScrollArea>
                             
                             {/* Total Cost */}
                             <div className="pt-3 border-t-2 border-primary/20">
@@ -1184,8 +1201,10 @@ export default function GenerateSummaryScreen() {
                               </Badge>
                             </div>
                             
-                            {/* Materials List */}
-                            {configMat.materials.map((mat: any, matIdx: number) => (
+                            {/* Materials List - Scrollable */}
+                            <ScrollArea className="h-[300px] w-full">
+                              <div className="space-y-3 pr-4">
+                                {configMat.materials.map((mat: any, matIdx: number) => (
                               <div key={matIdx} className="space-y-2">
                                 {/* Material Name - Large and Bold */}
                                 <h4 className="text-base font-semibold text-foreground">{mat.name}</h4>
@@ -1205,7 +1224,9 @@ export default function GenerateSummaryScreen() {
                                   </div>
                                 </div>
                               </div>
-                            ))}
+                                ))}
+                              </div>
+                            </ScrollArea>
                             
                             {/* Total Cost */}
                             <div className="pt-3 border-t-2 border-primary/20">
@@ -1241,8 +1262,10 @@ export default function GenerateSummaryScreen() {
                               </Badge>
                             </div>
                             
-                            {/* Materials List */}
-                            {configMat.materials.map((mat: any, matIdx: number) => (
+                            {/* Materials List - Scrollable */}
+                            <ScrollArea className="h-[300px] w-full">
+                              <div className="space-y-3 pr-4">
+                                {configMat.materials.map((mat: any, matIdx: number) => (
                               <div key={matIdx} className="space-y-2">
                                 {/* Material Name - Large and Bold */}
                                 <h4 className="text-base font-semibold text-foreground">{mat.name}</h4>
@@ -1262,7 +1285,9 @@ export default function GenerateSummaryScreen() {
                                   </div>
                                 </div>
                               </div>
-                            ))}
+                                ))}
+                              </div>
+                            </ScrollArea>
                             
                             {/* Total Cost */}
                             <div className="pt-3 border-t-2 border-primary/20">
