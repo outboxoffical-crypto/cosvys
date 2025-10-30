@@ -47,7 +47,7 @@ const productCategories: ProductCategory[] = [
     products: [
       "Ace Emulsion", "Ace Advance", "Ace Shyne", "Ace Shyne Advance", "Apex Emulsion", 
       "Apex Advance", "Apex Shyne", "Apex Shyne Advance", "Ultima", "Ultima Stretch", 
-      "Ultima Protek", "Ultima Protek Durolife Top Coat"
+      "Ultima Protek", "Ultima Protek Durolife"
     ]
   },
   {
