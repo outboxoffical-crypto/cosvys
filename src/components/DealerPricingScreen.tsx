@@ -137,6 +137,15 @@ export default function DealerPricingScreen() {
     setTempPrices({ '1kg': 0 });
   };
 
+  const handleEditProduct = (productName: string) => {
+    const existingProduct = productPrices[productName];
+    if (existingProduct) {
+      setEditingProduct(productName);
+      setTempSizes(Object.keys(existingProduct.sizes));
+      setTempPrices({ ...existingProduct.sizes });
+    }
+  };
+
   const handleSaveProduct = async () => {
     if (!editingProduct) return;
 
@@ -821,7 +830,7 @@ export default function DealerPricingScreen() {
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => handleAddProduct(product)}
+                            onClick={() => handleEditProduct(product)}
                             className="text-xs h-6 mt-1 p-0"
                           >
                             <Edit className="h-3 w-3 mr-1" />
