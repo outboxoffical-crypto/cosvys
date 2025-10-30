@@ -39,8 +39,10 @@ export default function GenerateSummaryScreen() {
   const {
     toast
   } = useToast();
-  const [areaConfigs, setAreaConfigs] = useState<AreaConfig[]>([]); // Paint Estimation only
-  const [calculationConfigs, setCalculationConfigs] = useState<AreaConfig[]>([]); // For Labour & Material
+  // Paint Configuration Details shows only Paint Estimation configs
+  const [areaConfigs, setAreaConfigs] = useState<AreaConfig[]>([]);
+  // Labour & Material use Paint Estimation + Room Measurement enamel areas
+  const [calculationConfigs, setCalculationConfigs] = useState<AreaConfig[]>([]);
   const [rooms, setRooms] = useState<any[]>([]);
   const [dealerMargin, setDealerMargin] = useState(0);
   const [paintType, setPaintType] = useState<string>('Interior');
