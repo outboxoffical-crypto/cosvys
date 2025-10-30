@@ -39,7 +39,8 @@ export default function GenerateSummaryScreen() {
   const {
     toast
   } = useToast();
-  const [areaConfigs, setAreaConfigs] = useState<AreaConfig[]>([]);
+  const [areaConfigs, setAreaConfigs] = useState<AreaConfig[]>([]); // Paint Estimation only
+  const [calculationConfigs, setCalculationConfigs] = useState<AreaConfig[]>([]); // For Labour & Material
   const [rooms, setRooms] = useState<any[]>([]);
   const [dealerMargin, setDealerMargin] = useState(0);
   const [paintType, setPaintType] = useState<string>('Interior');
@@ -77,6 +78,8 @@ export default function GenerateSummaryScreen() {
       const estimationStr = localStorage.getItem(estimationKey);
       const storedPaintType = localStorage.getItem(`selected_paint_type_${projectId}`) || 'Interior';
       
+      let paintEstimationConfigs: AreaConfig[] = [];
+      
       if (estimationStr) {
         const est = JSON.parse(estimationStr);
         const pt = est.lastPaintType || storedPaintType;
@@ -107,6 +110,7 @@ export default function GenerateSummaryScreen() {
         }
         
         console.log('Loaded all configs from estimation:', allConfigs.length);
+        paintEstimationConfigs = allConfigs;
         setAreaConfigs(allConfigs);
       } else {
         // Fallback to per-type saved configs while still on estimation screen
@@ -123,6 +127,7 @@ export default function GenerateSummaryScreen() {
         // Add paint type marker to fallback configs
         configs = configs.map(c => ({ ...c, paintTypeCategory: pt }));
         console.log('Loaded fallback configs:', configs);
+        paintEstimationConfigs = Array.isArray(configs) ? configs : [];
         setAreaConfigs(Array.isArray(configs) ? configs : []);
       }
 
@@ -133,7 +138,7 @@ export default function GenerateSummaryScreen() {
       if (roomsData) {
         setRooms(roomsData);
         
-        // Create enamel configurations from door/window/grill areas
+        // Create enamel configurations from door/window/grill areas for calculations only
         const enamelConfigs: AreaConfig[] = [];
         roomsData.forEach(room => {
           const enamelArea = Number(room.total_door_window_grill_area || 0);
@@ -160,10 +165,11 @@ export default function GenerateSummaryScreen() {
           }
         });
         
-        // Add enamel configs to existing configs
-        if (enamelConfigs.length > 0) {
-          setAreaConfigs(prev => [...prev, ...enamelConfigs]);
-        }
+        // Set calculation configs: Paint Estimation configs + Room Measurement enamel areas
+        setCalculationConfigs([...paintEstimationConfigs, ...enamelConfigs]);
+      } else {
+        // If no rooms data, just use paint estimation configs
+        setCalculationConfigs(paintEstimationConfigs);
       }
 
       // Load dealer info
@@ -538,7 +544,7 @@ export default function GenerateSummaryScreen() {
 
     // Group tasks by configuration
     const configTasks: any[] = [];
-    areaConfigs.forEach(config => {
+    calculationConfigs.forEach(config => {
       const area = Number(config.area) || 0;
       const isFresh = config.paintingSystem === 'Fresh Painting';
 
@@ -1070,7 +1076,8 @@ export default function GenerateSummaryScreen() {
 
     // Group materials by configuration
     const configMaterials: any[] = [];
-    areaConfigs.forEach(config => {
+    // Use calculationConfigs which includes Paint Estimation + Room Measurement enamel areas
+    calculationConfigs.forEach(config => {
       const area = Number(config.area) || 0;
       const isFresh = config.paintingSystem === 'Fresh Painting';
       const materials: any[] = [];
@@ -1153,7 +1160,7 @@ export default function GenerateSummaryScreen() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {areaConfigs.length === 0 ? (
+          {calculationConfigs.length === 0 ? (
             <div className="text-sm text-muted-foreground p-4 border rounded-md bg-muted/30">
               No material configurations found.
             </div>
