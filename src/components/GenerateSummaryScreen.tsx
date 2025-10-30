@@ -738,8 +738,11 @@ export default function GenerateSummaryScreen() {
                       scrollbarWidth: 'none',
                       msOverflowStyle: 'none'
                     }}>
-                      {configTasks.filter(ct => ct.paintTypeCategory === 'Interior' && ct.totalDays > 0).map((configTask, index) => (
-                        <Card key={index} className="flex-none w-72 border-2 border-primary/20 bg-primary/5 snap-start">
+                      {configTasks.filter(ct => ct.paintTypeCategory === 'Interior' && ct.totalDays > 0).map((configTask, index) => {
+                        const isEnamelConfig = configTask.configLabel.toLowerCase().includes('enamel') || 
+                                              configTask.tasks.some((t: any) => t.name.toLowerCase().includes('enamel'));
+                        return (
+                        <Card key={index} className={`flex-none w-72 border-2 snap-start ${isEnamelConfig ? 'bg-orange-50 border-orange-300' : 'border-primary/20 bg-primary/5'}`}>
                           <CardContent className="p-4">
                             <div className="space-y-4">
                               {/* Header with Type Badge */}
@@ -785,7 +788,8 @@ export default function GenerateSummaryScreen() {
                             </div>
                           </CardContent>
                         </Card>
-                      ))}
+                      )})}
+                      
                     </div>
                   </div>
                 )}
@@ -800,8 +804,11 @@ export default function GenerateSummaryScreen() {
                       scrollbarWidth: 'none',
                       msOverflowStyle: 'none'
                     }}>
-                      {configTasks.filter(ct => ct.paintTypeCategory === 'Exterior' && ct.totalDays > 0).map((configTask, index) => (
-                        <Card key={index} className="flex-none w-72 border-2 border-primary/20 bg-primary/5 snap-start">
+                      {configTasks.filter(ct => ct.paintTypeCategory === 'Exterior' && ct.totalDays > 0).map((configTask, index) => {
+                        const isEnamelConfig = configTask.configLabel.toLowerCase().includes('enamel') || 
+                                              configTask.tasks.some((t: any) => t.name.toLowerCase().includes('enamel'));
+                        return (
+                        <Card key={index} className={`flex-none w-72 border-2 snap-start ${isEnamelConfig ? 'bg-orange-50 border-orange-300' : 'border-primary/20 bg-primary/5'}`}>
                           <CardContent className="p-4">
                             <div className="space-y-4">
                               {/* Header with Type Badge */}
@@ -847,7 +854,8 @@ export default function GenerateSummaryScreen() {
                             </div>
                           </CardContent>
                         </Card>
-                      ))}
+                      )})}
+                      
                     </div>
                   </div>
                 )}
@@ -862,8 +870,11 @@ export default function GenerateSummaryScreen() {
                       scrollbarWidth: 'none',
                       msOverflowStyle: 'none'
                     }}>
-                      {configTasks.filter(ct => ct.paintTypeCategory === 'Waterproofing' && ct.totalDays > 0).map((configTask, index) => (
-                        <Card key={index} className="flex-none w-72 border-2 border-primary/20 bg-primary/5 snap-start">
+                      {configTasks.filter(ct => ct.paintTypeCategory === 'Waterproofing' && ct.totalDays > 0).map((configTask, index) => {
+                        const isEnamelConfig = configTask.configLabel.toLowerCase().includes('enamel') || 
+                                              configTask.tasks.some((t: any) => t.name.toLowerCase().includes('enamel'));
+                        return (
+                        <Card key={index} className={`flex-none w-72 border-2 snap-start ${isEnamelConfig ? 'bg-orange-50 border-orange-300' : 'border-primary/20 bg-primary/5'}`}>
                           <CardContent className="p-4">
                             <div className="space-y-4">
                               {/* Header with Type Badge */}
@@ -909,7 +920,8 @@ export default function GenerateSummaryScreen() {
                             </div>
                           </CardContent>
                         </Card>
-                      ))}
+                      )})}
+                      
                     </div>
                   </div>
                 )}
@@ -1178,8 +1190,11 @@ export default function GenerateSummaryScreen() {
                     scrollbarWidth: 'none',
                     msOverflowStyle: 'none'
                   }}>
-                    {configMaterials.filter(cm => cm.paintTypeCategory === 'Interior' && cm.totalCost > 0).map((configMat, index) => (
-                      <Card key={index} className="flex-none w-72 border-2 border-primary/20 bg-primary/5 snap-start">
+                    {configMaterials.filter(cm => cm.paintTypeCategory === 'Interior' && cm.totalCost > 0).map((configMat, index) => {
+                      const isEnamelConfig = configMat.configLabel.toLowerCase().includes('enamel') || 
+                                            configMat.materials.some((m: any) => m.name.toLowerCase().includes('enamel'));
+                      return (
+                      <Card key={index} className={`flex-none w-72 border-2 snap-start ${isEnamelConfig ? 'bg-orange-50 border-orange-300' : 'border-primary/20 bg-primary/5'}`}>
                         <CardContent className="p-4">
                           <div className="space-y-4">
                             {/* Header with Type Badge */}
@@ -1222,7 +1237,8 @@ export default function GenerateSummaryScreen() {
                           </div>
                         </CardContent>
                       </Card>
-                    ))}
+                    )})}
+                    
                   </div>
                 </div>
               )}
@@ -1237,8 +1253,11 @@ export default function GenerateSummaryScreen() {
                     scrollbarWidth: 'none',
                     msOverflowStyle: 'none'
                   }}>
-                    {configMaterials.filter(cm => cm.paintTypeCategory === 'Exterior' && cm.totalCost > 0).map((configMat, index) => (
-                      <Card key={index} className="flex-none w-72 border-2 border-primary/20 bg-primary/5 snap-start">
+                    {configMaterials.filter(cm => cm.paintTypeCategory === 'Exterior' && cm.totalCost > 0).map((configMat, index) => {
+                      const isEnamelConfig = configMat.configLabel.toLowerCase().includes('enamel') || 
+                                            configMat.materials.some((m: any) => m.name.toLowerCase().includes('enamel'));
+                      return (
+                      <Card key={index} className={`flex-none w-72 border-2 snap-start ${isEnamelConfig ? 'bg-orange-50 border-orange-300' : 'border-primary/20 bg-primary/5'}`}>
                         <CardContent className="p-4">
                           <div className="space-y-4">
                             {/* Header with Type Badge */}
@@ -1281,7 +1300,8 @@ export default function GenerateSummaryScreen() {
                           </div>
                         </CardContent>
                       </Card>
-                    ))}
+                    )})}
+                    
                   </div>
                 </div>
               )}
@@ -1296,8 +1316,11 @@ export default function GenerateSummaryScreen() {
                     scrollbarWidth: 'none',
                     msOverflowStyle: 'none'
                   }}>
-                    {configMaterials.filter(cm => cm.paintTypeCategory === 'Waterproofing' && cm.totalCost > 0).map((configMat, index) => (
-                      <Card key={index} className="flex-none w-72 border-2 border-primary/20 bg-primary/5 snap-start">
+                    {configMaterials.filter(cm => cm.paintTypeCategory === 'Waterproofing' && cm.totalCost > 0).map((configMat, index) => {
+                      const isEnamelConfig = configMat.configLabel.toLowerCase().includes('enamel') || 
+                                            configMat.materials.some((m: any) => m.name.toLowerCase().includes('enamel'));
+                      return (
+                      <Card key={index} className={`flex-none w-72 border-2 snap-start ${isEnamelConfig ? 'bg-orange-50 border-orange-300' : 'border-primary/20 bg-primary/5'}`}>
                         <CardContent className="p-4">
                           <div className="space-y-4">
                             {/* Header with Type Badge */}
@@ -1340,7 +1363,8 @@ export default function GenerateSummaryScreen() {
                           </div>
                         </CardContent>
                       </Card>
-                    ))}
+                    )})}
+                    
                   </div>
                 </div>
               )}
