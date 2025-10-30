@@ -729,7 +729,7 @@ export default function GenerateSummaryScreen() {
                 <p className="font-semibold text-sm text-foreground">Labour Calculation Breakdown</p>
                 
                 {/* Interior Configurations */}
-                {configTasks.filter(ct => ct.paintTypeCategory === 'Interior').length > 0 && (
+                {configTasks.filter(ct => ct.paintTypeCategory === 'Interior' && ct.totalDays > 0).length > 0 && (
                   <div className="space-y-3">
                     <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                       Interior Paint Configurations
@@ -738,7 +738,7 @@ export default function GenerateSummaryScreen() {
                       scrollbarWidth: 'none',
                       msOverflowStyle: 'none'
                     }}>
-                      {configTasks.filter(ct => ct.paintTypeCategory === 'Interior').map((configTask, index) => (
+                      {configTasks.filter(ct => ct.paintTypeCategory === 'Interior' && ct.totalDays > 0).map((configTask, index) => (
                         <Card key={index} className="flex-none w-72 border-2 border-primary/20 bg-primary/5 snap-start">
                           <CardContent className="p-4">
                             <div className="space-y-4">
@@ -791,7 +791,7 @@ export default function GenerateSummaryScreen() {
                 )}
 
                 {/* Exterior Configurations */}
-                {configTasks.filter(ct => ct.paintTypeCategory === 'Exterior').length > 0 && (
+                {configTasks.filter(ct => ct.paintTypeCategory === 'Exterior' && ct.totalDays > 0).length > 0 && (
                   <div className="space-y-3">
                     <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                       Exterior Paint Configurations
@@ -800,7 +800,7 @@ export default function GenerateSummaryScreen() {
                       scrollbarWidth: 'none',
                       msOverflowStyle: 'none'
                     }}>
-                      {configTasks.filter(ct => ct.paintTypeCategory === 'Exterior').map((configTask, index) => (
+                      {configTasks.filter(ct => ct.paintTypeCategory === 'Exterior' && ct.totalDays > 0).map((configTask, index) => (
                         <Card key={index} className="flex-none w-72 border-2 border-primary/20 bg-primary/5 snap-start">
                           <CardContent className="p-4">
                             <div className="space-y-4">
@@ -853,7 +853,7 @@ export default function GenerateSummaryScreen() {
                 )}
 
                 {/* Waterproofing Configurations */}
-                {configTasks.filter(ct => ct.paintTypeCategory === 'Waterproofing').length > 0 && (
+                {configTasks.filter(ct => ct.paintTypeCategory === 'Waterproofing' && ct.totalDays > 0).length > 0 && (
                   <div className="space-y-3">
                     <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                       Waterproofing Configurations
@@ -862,7 +862,7 @@ export default function GenerateSummaryScreen() {
                       scrollbarWidth: 'none',
                       msOverflowStyle: 'none'
                     }}>
-                      {configTasks.filter(ct => ct.paintTypeCategory === 'Waterproofing').map((configTask, index) => (
+                      {configTasks.filter(ct => ct.paintTypeCategory === 'Waterproofing' && ct.totalDays > 0).map((configTask, index) => (
                         <Card key={index} className="flex-none w-72 border-2 border-primary/20 bg-primary/5 snap-start">
                           <CardContent className="p-4">
                             <div className="space-y-4">
@@ -1169,7 +1169,7 @@ export default function GenerateSummaryScreen() {
           ) : (
             <div className="space-y-4">
               {/* Interior Configurations */}
-              {configMaterials.filter(cm => cm.paintTypeCategory === 'Interior').length > 0 && (
+              {configMaterials.filter(cm => cm.paintTypeCategory === 'Interior' && cm.totalCost > 0).length > 0 && (
                 <div className="space-y-3">
                   <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                     Interior Paint Configurations
@@ -1178,7 +1178,7 @@ export default function GenerateSummaryScreen() {
                     scrollbarWidth: 'none',
                     msOverflowStyle: 'none'
                   }}>
-                    {configMaterials.filter(cm => cm.paintTypeCategory === 'Interior').map((configMat, index) => (
+                    {configMaterials.filter(cm => cm.paintTypeCategory === 'Interior' && cm.totalCost > 0).map((configMat, index) => (
                       <Card key={index} className="flex-none w-72 border-2 border-primary/20 bg-primary/5 snap-start">
                         <CardContent className="p-4">
                           <div className="space-y-4">
@@ -1228,7 +1228,7 @@ export default function GenerateSummaryScreen() {
               )}
 
               {/* Exterior Configurations */}
-              {configMaterials.filter(cm => cm.paintTypeCategory === 'Exterior').length > 0 && (
+              {configMaterials.filter(cm => cm.paintTypeCategory === 'Exterior' && cm.totalCost > 0).length > 0 && (
                 <div className="space-y-3">
                   <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                     Exterior Paint Configurations
@@ -1237,7 +1237,7 @@ export default function GenerateSummaryScreen() {
                     scrollbarWidth: 'none',
                     msOverflowStyle: 'none'
                   }}>
-                    {configMaterials.filter(cm => cm.paintTypeCategory === 'Exterior').map((configMat, index) => (
+                    {configMaterials.filter(cm => cm.paintTypeCategory === 'Exterior' && cm.totalCost > 0).map((configMat, index) => (
                       <Card key={index} className="flex-none w-72 border-2 border-primary/20 bg-primary/5 snap-start">
                         <CardContent className="p-4">
                           <div className="space-y-4">
@@ -1287,7 +1287,7 @@ export default function GenerateSummaryScreen() {
               )}
 
               {/* Waterproofing Configurations */}
-              {configMaterials.filter(cm => cm.paintTypeCategory === 'Waterproofing').length > 0 && (
+              {configMaterials.filter(cm => cm.paintTypeCategory === 'Waterproofing' && cm.totalCost > 0).length > 0 && (
                 <div className="space-y-3">
                   <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                     Waterproofing Configurations
@@ -1296,7 +1296,7 @@ export default function GenerateSummaryScreen() {
                     scrollbarWidth: 'none',
                     msOverflowStyle: 'none'
                   }}>
-                    {configMaterials.filter(cm => cm.paintTypeCategory === 'Waterproofing').map((configMat, index) => (
+                    {configMaterials.filter(cm => cm.paintTypeCategory === 'Waterproofing' && cm.totalCost > 0).map((configMat, index) => (
                       <Card key={index} className="flex-none w-72 border-2 border-primary/20 bg-primary/5 snap-start">
                         <CardContent className="p-4">
                           <div className="space-y-4">
