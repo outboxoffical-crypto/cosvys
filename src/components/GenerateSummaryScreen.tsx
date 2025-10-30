@@ -130,7 +130,41 @@ export default function GenerateSummaryScreen() {
       const {
         data: roomsData
       } = await supabase.from('rooms').select('*').eq('project_id', projectId);
-      if (roomsData) setRooms(roomsData);
+      if (roomsData) {
+        setRooms(roomsData);
+        
+        // Create enamel configurations from door/window/grill areas
+        const enamelConfigs: AreaConfig[] = [];
+        roomsData.forEach(room => {
+          const enamelArea = Number(room.total_door_window_grill_area || 0);
+          if (enamelArea > 0) {
+            enamelConfigs.push({
+              id: `enamel_${room.id}`,
+              areaType: 'Door & Window',
+              paintingSystem: 'Fresh Painting',
+              area: enamelArea,
+              perSqFtRate: '0',
+              label: `${room.name} - Door & Window`,
+              paintTypeCategory: room.project_type as 'Interior' | 'Exterior' | 'Waterproofing',
+              selectedMaterials: {
+                putty: '',
+                primer: 'Enamel Primer',
+                emulsion: 'Enamel Paint'
+              },
+              coatConfiguration: {
+                putty: 0,
+                primer: 1,
+                emulsion: 2
+              }
+            });
+          }
+        });
+        
+        // Add enamel configs to existing configs
+        if (enamelConfigs.length > 0) {
+          setAreaConfigs(prev => [...prev, ...enamelConfigs]);
+        }
+      }
 
       // Load dealer info
       const {
@@ -530,11 +564,15 @@ export default function GenerateSummaryScreen() {
         // Primer
         if (config.coatConfiguration.primer > 0) {
           const totalWork = area * config.coatConfiguration.primer;
-          const coverage = isOilBased ? coverageRates.oilBased.redOxide : coverageRates.waterBased.primer;
+          // Use enamel base coat coverage for enamel primer
+          const isEnamel = config.selectedMaterials.primer?.toLowerCase().includes('enamel') || 
+                          config.selectedMaterials.emulsion?.toLowerCase().includes('enamel');
+          const coverage = isEnamel ? coverageRates.oilBased.enamelBase : 
+                          (isOilBased ? coverageRates.oilBased.redOxide : coverageRates.waterBased.primer);
           const adjustedCoverage = coverage * (workingHours / standardHours);
           const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
           tasks.push({
-            name: 'Primer',
+            name: isEnamel ? 'Enamel Primer' : 'Primer',
             area,
             coats: config.coatConfiguration.primer,
             totalWork,
@@ -546,11 +584,13 @@ export default function GenerateSummaryScreen() {
         // Emulsion/Paint
         if (config.coatConfiguration.emulsion > 0) {
           const totalWork = area * config.coatConfiguration.emulsion;
-          const coverage = isOilBased ? coverageRates.oilBased.enamelTop : coverageRates.waterBased.emulsion;
+          const isEnamel = config.selectedMaterials.emulsion?.toLowerCase().includes('enamel');
+          const coverage = isEnamel ? coverageRates.oilBased.enamelTop : 
+                          (isOilBased ? coverageRates.oilBased.enamelTop : coverageRates.waterBased.emulsion);
           const adjustedCoverage = coverage * (workingHours / standardHours);
           const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
           tasks.push({
-            name: isOilBased ? 'Enamel' : 'Emulsion',
+            name: isEnamel ? 'Enamel' : (isOilBased ? 'Enamel' : 'Emulsion'),
             area,
             coats: config.coatConfiguration.emulsion,
             totalWork,
@@ -1049,24 +1089,28 @@ export default function GenerateSummaryScreen() {
 
         // Primer
         if (config.selectedMaterials.primer && config.coatConfiguration.primer > 0) {
-          const coverage = 120; // sq ft per liter
+          // Use enamel-specific coverage for enamel primer
+          const isEnamel = config.selectedMaterials.primer?.toLowerCase().includes('enamel') || 
+                          config.selectedMaterials.emulsion?.toLowerCase().includes('enamel');
+          const coverage = isEnamel ? 100 : 120; // sq ft per liter (enamel has lower coverage)
           const litersNeeded = area / coverage * config.coatConfiguration.primer;
           const calc = calculateMaterial(config.selectedMaterials.primer, litersNeeded);
           materials.push({
             name: config.selectedMaterials.primer,
-            type: 'Primer',
+            type: isEnamel ? 'Enamel' : 'Primer',
             ...calc
           });
         }
 
         // Emulsion
         if (config.selectedMaterials.emulsion && config.coatConfiguration.emulsion > 0) {
-          const coverage = 120; // sq ft per liter
+          const isEnamel = config.selectedMaterials.emulsion.toLowerCase().includes('enamel');
+          const coverage = isEnamel ? 100 : 120; // sq ft per liter (enamel has lower coverage)
           const litersNeeded = area / coverage * config.coatConfiguration.emulsion;
           const calc = calculateMaterial(config.selectedMaterials.emulsion, litersNeeded);
           materials.push({
             name: config.selectedMaterials.emulsion,
-            type: config.selectedMaterials.emulsion.toLowerCase().includes('enamel') ? 'Enamel' : 'Emulsion',
+            type: isEnamel ? 'Enamel' : 'Emulsion',
             ...calc
           });
         }
