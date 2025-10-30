@@ -388,7 +388,7 @@ export default function DealerPricingScreen() {
               variant="ghost" 
               size="icon"
               className="text-white hover:bg-white/20"
-              onClick={() => navigate("/dealer-info")}
+              onClick={() => navigate("/dashboard")}
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
