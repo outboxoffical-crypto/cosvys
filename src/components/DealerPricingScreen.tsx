@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Package, Plus, Edit, Check, X, Trash2, Search, ChevronDown } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface ProductPrice {
   productName: string;
@@ -79,25 +81,51 @@ export default function DealerPricingScreen() {
   const [sizeDropdownOpen, setSizeDropdownOpen] = useState<boolean>(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem('dealerInfo');
-    if (stored) {
-      setDealerInfo(JSON.parse(stored));
-    }
-    
-    const storedPrices = localStorage.getItem('productPrices');
-    if (storedPrices) {
-      setProductPrices(JSON.parse(storedPrices));
-    }
+    const loadData = async () => {
+      // Load dealer info from localStorage (keeping this for now)
+      const stored = localStorage.getItem('dealerInfo');
+      if (stored) {
+        setDealerInfo(JSON.parse(stored));
+      }
 
-    const storedCustomProducts = localStorage.getItem('customProducts');
-    if (storedCustomProducts) {
-      setCustomProducts(JSON.parse(storedCustomProducts));
-    }
+      // Load product prices from database
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: productPricingData, error } = await supabase
+          .from('product_pricing')
+          .select('*')
+          .eq('user_id', user.id);
 
-    const storedCustomCategories = localStorage.getItem('customCategories');
-    if (storedCustomCategories) {
-      setCustomCategories(JSON.parse(storedCustomCategories));
-    }
+        if (error) {
+          console.error('Error loading product prices:', error);
+          toast.error('Failed to load product prices');
+        } else if (productPricingData) {
+          // Convert database format to component format
+          const prices: { [key: string]: ProductPrice } = {};
+          productPricingData.forEach(item => {
+            prices[item.product_name] = {
+              productName: item.product_name,
+              sizes: item.sizes as { [key: string]: number },
+              margin: item.margin ? parseFloat(item.margin.toString()) : undefined
+            };
+          });
+          setProductPrices(prices);
+        }
+      }
+
+      // Keep custom products and categories in localStorage for now
+      const storedCustomProducts = localStorage.getItem('customProducts');
+      if (storedCustomProducts) {
+        setCustomProducts(JSON.parse(storedCustomProducts));
+      }
+
+      const storedCustomCategories = localStorage.getItem('customCategories');
+      if (storedCustomCategories) {
+        setCustomCategories(JSON.parse(storedCustomCategories));
+      }
+    };
+
+    loadData();
   }, []);
 
   const getAllCategories = () => {
@@ -110,7 +138,7 @@ export default function DealerPricingScreen() {
     setTempPrices({ '1kg': 0 });
   };
 
-  const handleSaveProduct = () => {
+  const handleSaveProduct = async () => {
     if (!editingProduct) return;
 
     const newProduct: ProductPrice = {
@@ -125,7 +153,28 @@ export default function DealerPricingScreen() {
     };
 
     setProductPrices(updatedPrices);
-    localStorage.setItem('productPrices', JSON.stringify(updatedPrices));
+
+    // Save to database
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { error } = await supabase
+        .from('product_pricing')
+        .upsert({
+          user_id: user.id,
+          product_name: editingProduct,
+          sizes: tempPrices,
+          margin: dealerInfo?.margin ? parseFloat(dealerInfo.margin) : 0
+        }, {
+          onConflict: 'user_id,product_name'
+        });
+
+      if (error) {
+        console.error('Error saving product price:', error);
+        toast.error('Failed to save product price');
+      } else {
+        toast.success('Product price saved successfully');
+      }
+    }
     
     setEditingProduct(null);
     setTempPrices({});
@@ -196,7 +245,7 @@ export default function DealerPricingScreen() {
     setNewProductName('');
   };
 
-  const handleDeleteCustomProduct = (productName: string, categoryName: string) => {
+  const handleDeleteCustomProduct = async (productName: string, categoryName: string) => {
     const categoryProducts = customProducts[categoryName] || [];
     const updatedCategoryProducts = categoryProducts.filter(product => product !== productName);
 
@@ -213,7 +262,23 @@ export default function DealerPricingScreen() {
       const updatedPrices = { ...productPrices };
       delete updatedPrices[productName];
       setProductPrices(updatedPrices);
-      localStorage.setItem('productPrices', JSON.stringify(updatedPrices));
+
+      // Delete from database
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { error } = await supabase
+          .from('product_pricing')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('product_name', productName);
+
+        if (error) {
+          console.error('Error deleting product price:', error);
+          toast.error('Failed to delete product price');
+        } else {
+          toast.success('Product price deleted successfully');
+        }
+      }
     }
   };
 
@@ -258,7 +323,7 @@ export default function DealerPricingScreen() {
     setNewCategoryName('');
   };
 
-  const handleDeleteCategory = (categoryName: string) => {
+  const handleDeleteCategory = async (categoryName: string) => {
     const updatedCategories = customCategories.filter(category => category.name !== categoryName);
     setCustomCategories(updatedCategories);
     localStorage.setItem('customCategories', JSON.stringify(updatedCategories));
@@ -272,11 +337,28 @@ export default function DealerPricingScreen() {
     // Remove product prices for this category
     const categoryProducts = customProducts[categoryName] || [];
     const updatedPrices = { ...productPrices };
+    
+    // Delete from database
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user && categoryProducts.length > 0) {
+      const { error } = await supabase
+        .from('product_pricing')
+        .delete()
+        .eq('user_id', user.id)
+        .in('product_name', categoryProducts);
+
+      if (error) {
+        console.error('Error deleting category products:', error);
+        toast.error('Failed to delete category products');
+      } else {
+        toast.success('Category deleted successfully');
+      }
+    }
+
     categoryProducts.forEach(product => {
       delete updatedPrices[product];
     });
     setProductPrices(updatedPrices);
-    localStorage.setItem('productPrices', JSON.stringify(updatedPrices));
   };
 
   const getAllProductsInCategory = (category: ProductCategory) => {
