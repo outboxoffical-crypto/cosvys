@@ -31,7 +31,7 @@ const productCategories: ProductCategory[] = [
   },
   {
     name: "Primers",
-    products: ["Interior Wall Primer", "Exterior Wall Primer", "Damp Sheath Interior", "Damp Sheath Exterior"]
+    products: ["Interior Wall Primer", "Exterior Wall Primer", "Damp Sheath Interior", "Damp Sheath Exterior", "Ultima Protek Base Coat", "Ultima Protek Durolife Base Coat"]
   },
   {
     name: "Interior Products",
@@ -47,8 +47,7 @@ const productCategories: ProductCategory[] = [
     products: [
       "Ace Emulsion", "Ace Advance", "Ace Shyne", "Ace Shyne Advance", "Apex Emulsion", 
       "Apex Advance", "Apex Shyne", "Apex Shyne Advance", "Ultima", "Ultima Stretch", 
-      "Ultima Protek Base Coat", "Ultima Protek Top Coat", "Ultima Protek Durolife Base Coat", 
-      "Ultima Protek Durolife Top Coat"
+      "Ultima Protek Top Coat", "Ultima Protek Durolife Top Coat"
     ]
   },
   {
