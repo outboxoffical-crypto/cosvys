@@ -1883,6 +1883,48 @@ export default function GenerateSummaryScreen() {
         </div>
       </div>
 
+      {/* Category Toggle Buttons */}
+      <div className="px-4 py-4 flex items-center justify-center gap-3 flex-wrap">
+        <button
+          onClick={() => setPaintType('Interior')}
+          className={`
+            px-6 py-3 rounded-full font-semibold text-sm transition-all duration-300 ease-in-out cursor-pointer
+            ${paintType === 'Interior' 
+              ? 'bg-gradient-to-br from-[#e91e63] to-[#9c27b0] text-white shadow-lg shadow-primary/30' 
+              : 'bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200'
+            }
+          `}
+        >
+          Interior
+        </button>
+        
+        <button
+          onClick={() => setPaintType('Exterior')}
+          className={`
+            px-6 py-3 rounded-full font-semibold text-sm transition-all duration-300 ease-in-out cursor-pointer
+            ${paintType === 'Exterior' 
+              ? 'bg-gradient-to-br from-[#e91e63] to-[#9c27b0] text-white shadow-lg shadow-primary/30' 
+              : 'bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200'
+            }
+          `}
+        >
+          Exterior
+        </button>
+        
+        <button
+          onClick={() => setPaintType('Waterproofing')}
+          className={`
+            px-6 py-3 rounded-full font-semibold text-sm transition-all duration-300 ease-in-out cursor-pointer
+            ${paintType === 'Waterproofing' 
+              ? 'bg-gradient-to-br from-[#e91e63] to-[#9c27b0] text-white shadow-lg shadow-primary/30' 
+              : 'bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200'
+            }
+          `}
+        >
+          Waterproofing
+        </button>
+      </div>
+
       <div className="p-4">
         <Tabs defaultValue="generate" className="w-full" onValueChange={value => {
         if (value === "generate" && topSectionRef.current) {
