@@ -349,11 +349,11 @@ export default function ProjectSummaryScreen() {
                     <p className="text-sm text-muted-foreground">Address</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex flex-col gap-2">
                   {activeProjectTypes.map((type: string) => (
-                    <Badge key={type} variant="outline" className="bg-accent">
-                      {type}
-                    </Badge>
+                    <div key={type} className="inline-flex items-center px-4 py-2 bg-primary/10 border border-primary/20 rounded-md">
+                      <span className="font-semibold text-foreground">{type} Project</span>
+                    </div>
                   ))}
                 </div>
               </CardContent>
