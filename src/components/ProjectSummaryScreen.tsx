@@ -554,10 +554,21 @@ export default function ProjectSummaryScreen() {
                     <p className="text-sm text-muted-foreground">Address</p>
                   </div>
                 </div>
-                <div className="flex flex-col gap-2">
-                  {(projectData?.projectTypes || []).map((type: string) => (
-                    <div key={type} className="inline-flex items-center px-4 py-2 bg-primary/10 border border-primary/20 rounded-md">
-                      <span className="font-semibold text-foreground">{type} Project</span>
+                <div className="flex flex-wrap gap-3">
+                  <span className="text-sm text-muted-foreground font-medium mb-2 w-full">Project Type:</span>
+                  {(projectData?.projectTypes || []).map((type: string, index: number) => (
+                    <div 
+                      key={type} 
+                      className={`inline-flex items-center px-4 py-2 font-semibold text-sm rounded-full transition-all duration-200 hover:shadow-md ${
+                        index === 0 && projectData?.projectTypes?.length >= 1
+                          ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white shadow-md' 
+                          : 'bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200'
+                      }`}
+                      style={{
+                        fontFamily: '"Segoe UI", "Inter", system-ui, sans-serif'
+                      }}
+                    >
+                      {type}
                     </div>
                   ))}
                 </div>
