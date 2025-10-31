@@ -263,52 +263,86 @@ export default function ProjectSummaryScreen() {
             </Card>
 
             {/* Section 2: Total Room Details */}
-            <div className="relative overflow-hidden rounded-[25px] p-[30px] md:p-[20px] shadow-[0_10px_30px_-10px_rgba(233,30,99,0.2)] bg-gradient-to-br from-[#ffe6eb] to-[#f5e6ff]">
-              <div className="flex items-center mb-6">
-                <Home className="mr-2 h-5 w-5 text-primary" />
-                <h3 className="text-lg font-bold text-primary">Room Measurements</h3>
+            <div 
+              className="relative overflow-hidden rounded-[30px] p-[30px] md:p-[20px]"
+              style={{
+                background: 'linear-gradient(135deg, #ff80ab 0%, #ba68c8 100%)',
+                boxShadow: '0px 8px 16px rgba(233, 30, 99, 0.3)',
+                fontFamily: '"Segoe UI", "Inter", system-ui, sans-serif'
+              }}
+            >
+              <div className="mb-6">
+                <h3 
+                  className="text-center font-bold text-white text-[1.8em]"
+                  style={{ textShadow: '0 2px 8px rgba(255, 255, 255, 0.3)' }}
+                >
+                  Room Measurements
+                </h3>
               </div>
 
               {/* Interior Section */}
               {rooms.some(room => room.project_type === 'Interior') && (
                 <div className="mb-[35px]">
-                  <h4 className="text-center font-bold text-primary text-lg mb-2">Interior</h4>
-                  <div className="h-[1px] bg-primary/25 mb-4"></div>
-                  <div className="grid grid-cols-1 md:grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
+                  <h4 
+                    className="text-center font-bold text-white text-[1.4em] mb-3"
+                    style={{ textShadow: '0 1px 4px rgba(255, 255, 255, 0.2)' }}
+                  >
+                    Interior
+                  </h4>
+                  <div 
+                    className="h-[2px] mb-5 mx-auto w-full"
+                    style={{ background: 'rgba(255, 255, 255, 0.3)' }}
+                  ></div>
+                  <div className="grid grid-cols-1 md:grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4">
                     {rooms.filter(room => room.project_type === 'Interior').map((room) => (
                       <div
                         key={room.id}
-                        className="bg-white/20 border border-white/30 rounded-[20px] p-[25px] backdrop-blur-[8px] text-center transition-all duration-300 hover:-translate-y-[5px] hover:shadow-[0_10px_25px_-5px_rgba(233,30,99,0.25)]"
+                        className="rounded-[20px] p-[25px] text-center transition-all duration-300"
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.25)',
+                          border: '1px solid rgba(255, 255, 255, 0.2)',
+                          backdropFilter: 'blur(10px)',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = 'scale(1.03) translateY(-3px)';
+                          e.currentTarget.style.filter = 'brightness(1.1)';
+                          e.currentTarget.style.boxShadow = '0 10px 25px rgba(255, 255, 255, 0.3)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = 'scale(1) translateY(0)';
+                          e.currentTarget.style.filter = 'brightness(1)';
+                          e.currentTarget.style.boxShadow = 'none';
+                        }}
                       >
-                        <p className="font-semibold text-primary mb-4 text-base">{room.name}</p>
+                        <p className="font-bold text-white mb-4 text-[1.2em]">{room.name}</p>
                         <div className="space-y-3">
                           <div>
-                            <p className="text-[#444] text-[1.1em] font-medium">Wall Area</p>
-                            <p className="text-primary text-[2.8em] md:text-[2.4em] font-bold leading-none my-1">
+                            <p className="text-white/90 text-[1.1em]">Wall Area</p>
+                            <p className="text-white font-[800] text-[3em] md:text-[2.5em] leading-none my-1">
                               {room.wall_area?.toFixed(1) || 0}
                             </p>
-                            <p className="text-[#666] text-[1.1em]">sq.ft</p>
+                            <p className="text-white/90 text-[1.1em]">sq.ft</p>
                           </div>
                           <div>
-                            <p className="text-[#444] text-[1.1em] font-medium">Floor Area</p>
-                            <p className="text-primary text-[2.8em] md:text-[2.4em] font-bold leading-none my-1">
+                            <p className="text-white/90 text-[1.1em]">Floor Area</p>
+                            <p className="text-white font-[800] text-[3em] md:text-[2.5em] leading-none my-1">
                               {room.floor_area?.toFixed(1) || 0}
                             </p>
-                            <p className="text-[#666] text-[1.1em]">sq.ft</p>
+                            <p className="text-white/90 text-[1.1em]">sq.ft</p>
                           </div>
                           <div>
-                            <p className="text-[#444] text-[1.1em] font-medium">Ceiling Area</p>
-                            <p className="text-primary text-[2.8em] md:text-[2.4em] font-bold leading-none my-1">
+                            <p className="text-white/90 text-[1.1em]">Ceiling Area</p>
+                            <p className="text-white font-[800] text-[3em] md:text-[2.5em] leading-none my-1">
                               {room.ceiling_area?.toFixed(1) || 0}
                             </p>
-                            <p className="text-[#666] text-[1.1em]">sq.ft</p>
+                            <p className="text-white/90 text-[1.1em]">sq.ft</p>
                           </div>
                           <div>
-                            <p className="text-[#444] text-[1.1em] font-medium">Ceiling Height</p>
-                            <p className="text-primary text-[2.8em] md:text-[2.4em] font-bold leading-none my-1">
+                            <p className="text-white/90 text-[1.1em]">Ceiling Height</p>
+                            <p className="text-white font-[800] text-[3em] md:text-[2.5em] leading-none my-1">
                               {room.height?.toFixed(1) || 0}
                             </p>
-                            <p className="text-[#666] text-[1.1em]">ft</p>
+                            <p className="text-white/90 text-[1.1em]">ft</p>
                           </div>
                         </div>
                       </div>
@@ -320,43 +354,66 @@ export default function ProjectSummaryScreen() {
               {/* Waterproofing Section */}
               {rooms.some(room => room.project_type === 'Waterproofing') && (
                 <div className="mb-[35px]">
-                  <h4 className="text-center font-bold text-primary text-lg mb-2">Waterproofing</h4>
-                  <div className="h-[1px] bg-primary/25 mb-4"></div>
-                  <div className="grid grid-cols-1 md:grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
+                  <h4 
+                    className="text-center font-bold text-white text-[1.4em] mb-3"
+                    style={{ textShadow: '0 1px 4px rgba(255, 255, 255, 0.2)' }}
+                  >
+                    Waterproofing
+                  </h4>
+                  <div 
+                    className="h-[2px] mb-5 mx-auto w-full"
+                    style={{ background: 'rgba(255, 255, 255, 0.3)' }}
+                  ></div>
+                  <div className="grid grid-cols-1 md:grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4">
                     {rooms.filter(room => room.project_type === 'Waterproofing').map((room) => (
                       <div
                         key={room.id}
-                        className="bg-white/20 border border-white/30 rounded-[20px] p-[25px] backdrop-blur-[8px] text-center transition-all duration-300 hover:-translate-y-[5px] hover:shadow-[0_10px_25px_-5px_rgba(233,30,99,0.25)]"
+                        className="rounded-[20px] p-[25px] text-center transition-all duration-300"
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.25)',
+                          border: '1px solid rgba(255, 255, 255, 0.2)',
+                          backdropFilter: 'blur(10px)',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = 'scale(1.03) translateY(-3px)';
+                          e.currentTarget.style.filter = 'brightness(1.1)';
+                          e.currentTarget.style.boxShadow = '0 10px 25px rgba(255, 255, 255, 0.3)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = 'scale(1) translateY(0)';
+                          e.currentTarget.style.filter = 'brightness(1)';
+                          e.currentTarget.style.boxShadow = 'none';
+                        }}
                       >
-                        <p className="font-semibold text-primary mb-4 text-base">{room.name}</p>
+                        <p className="font-bold text-white mb-4 text-[1.2em]">{room.name}</p>
                         <div className="space-y-3">
                           <div>
-                            <p className="text-[#444] text-[1.1em] font-medium">Wall Area</p>
-                            <p className="text-primary text-[2.8em] md:text-[2.4em] font-bold leading-none my-1">
+                            <p className="text-white/90 text-[1.1em]">Wall Area</p>
+                            <p className="text-white font-[800] text-[3em] md:text-[2.5em] leading-none my-1">
                               {room.wall_area?.toFixed(1) || 0}
                             </p>
-                            <p className="text-[#666] text-[1.1em]">sq.ft</p>
+                            <p className="text-white/90 text-[1.1em]">sq.ft</p>
                           </div>
                           <div>
-                            <p className="text-[#444] text-[1.1em] font-medium">Floor Area</p>
-                            <p className="text-primary text-[2.8em] md:text-[2.4em] font-bold leading-none my-1">
+                            <p className="text-white/90 text-[1.1em]">Floor Area</p>
+                            <p className="text-white font-[800] text-[3em] md:text-[2.5em] leading-none my-1">
                               {room.floor_area?.toFixed(1) || 0}
                             </p>
-                            <p className="text-[#666] text-[1.1em]">sq.ft</p>
+                            <p className="text-white/90 text-[1.1em]">sq.ft</p>
                           </div>
                           <div>
-                            <p className="text-[#444] text-[1.1em] font-medium">Ceiling Area</p>
-                            <p className="text-primary text-[2.8em] md:text-[2.4em] font-bold leading-none my-1">
+                            <p className="text-white/90 text-[1.1em]">Ceiling Area</p>
+                            <p className="text-white font-[800] text-[3em] md:text-[2.5em] leading-none my-1">
                               {room.ceiling_area?.toFixed(1) || 0}
                             </p>
-                            <p className="text-[#666] text-[1.1em]">sq.ft</p>
+                            <p className="text-white/90 text-[1.1em]">sq.ft</p>
                           </div>
                           <div>
-                            <p className="text-[#444] text-[1.1em] font-medium">Ceiling Height</p>
-                            <p className="text-primary text-[2.8em] md:text-[2.4em] font-bold leading-none my-1">
+                            <p className="text-white/90 text-[1.1em]">Ceiling Height</p>
+                            <p className="text-white font-[800] text-[3em] md:text-[2.5em] leading-none my-1">
                               {room.height?.toFixed(1) || 0}
                             </p>
-                            <p className="text-[#666] text-[1.1em]">ft</p>
+                            <p className="text-white/90 text-[1.1em]">ft</p>
                           </div>
                         </div>
                       </div>
@@ -368,43 +425,66 @@ export default function ProjectSummaryScreen() {
               {/* Exterior Section */}
               {rooms.some(room => room.project_type === 'Exterior') && (
                 <div className="mb-[35px] last:mb-0">
-                  <h4 className="text-center font-bold text-primary text-lg mb-2">Exterior</h4>
-                  <div className="h-[1px] bg-primary/25 mb-4"></div>
-                  <div className="grid grid-cols-1 md:grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
+                  <h4 
+                    className="text-center font-bold text-white text-[1.4em] mb-3"
+                    style={{ textShadow: '0 1px 4px rgba(255, 255, 255, 0.2)' }}
+                  >
+                    Exterior
+                  </h4>
+                  <div 
+                    className="h-[2px] mb-5 mx-auto w-full"
+                    style={{ background: 'rgba(255, 255, 255, 0.3)' }}
+                  ></div>
+                  <div className="grid grid-cols-1 md:grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4">
                     {rooms.filter(room => room.project_type === 'Exterior').map((room) => (
                       <div
                         key={room.id}
-                        className="bg-white/20 border border-white/30 rounded-[20px] p-[25px] backdrop-blur-[8px] text-center transition-all duration-300 hover:-translate-y-[5px] hover:shadow-[0_10px_25px_-5px_rgba(233,30,99,0.25)]"
+                        className="rounded-[20px] p-[25px] text-center transition-all duration-300"
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.25)',
+                          border: '1px solid rgba(255, 255, 255, 0.2)',
+                          backdropFilter: 'blur(10px)',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = 'scale(1.03) translateY(-3px)';
+                          e.currentTarget.style.filter = 'brightness(1.1)';
+                          e.currentTarget.style.boxShadow = '0 10px 25px rgba(255, 255, 255, 0.3)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = 'scale(1) translateY(0)';
+                          e.currentTarget.style.filter = 'brightness(1)';
+                          e.currentTarget.style.boxShadow = 'none';
+                        }}
                       >
-                        <p className="font-semibold text-primary mb-4 text-base">{room.name}</p>
+                        <p className="font-bold text-white mb-4 text-[1.2em]">{room.name}</p>
                         <div className="space-y-3">
                           <div>
-                            <p className="text-[#444] text-[1.1em] font-medium">Wall Area</p>
-                            <p className="text-primary text-[2.8em] md:text-[2.4em] font-bold leading-none my-1">
+                            <p className="text-white/90 text-[1.1em]">Wall Area</p>
+                            <p className="text-white font-[800] text-[3em] md:text-[2.5em] leading-none my-1">
                               {room.wall_area?.toFixed(1) || 0}
                             </p>
-                            <p className="text-[#666] text-[1.1em]">sq.ft</p>
+                            <p className="text-white/90 text-[1.1em]">sq.ft</p>
                           </div>
                           <div>
-                            <p className="text-[#444] text-[1.1em] font-medium">Floor Area</p>
-                            <p className="text-primary text-[2.8em] md:text-[2.4em] font-bold leading-none my-1">
+                            <p className="text-white/90 text-[1.1em]">Floor Area</p>
+                            <p className="text-white font-[800] text-[3em] md:text-[2.5em] leading-none my-1">
                               {room.floor_area?.toFixed(1) || 0}
                             </p>
-                            <p className="text-[#666] text-[1.1em]">sq.ft</p>
+                            <p className="text-white/90 text-[1.1em]">sq.ft</p>
                           </div>
                           <div>
-                            <p className="text-[#444] text-[1.1em] font-medium">Ceiling Area</p>
-                            <p className="text-primary text-[2.8em] md:text-[2.4em] font-bold leading-none my-1">
+                            <p className="text-white/90 text-[1.1em]">Ceiling Area</p>
+                            <p className="text-white font-[800] text-[3em] md:text-[2.5em] leading-none my-1">
                               {room.ceiling_area?.toFixed(1) || 0}
                             </p>
-                            <p className="text-[#666] text-[1.1em]">sq.ft</p>
+                            <p className="text-white/90 text-[1.1em]">sq.ft</p>
                           </div>
                           <div>
-                            <p className="text-[#444] text-[1.1em] font-medium">Ceiling Height</p>
-                            <p className="text-primary text-[2.8em] md:text-[2.4em] font-bold leading-none my-1">
+                            <p className="text-white/90 text-[1.1em]">Ceiling Height</p>
+                            <p className="text-white font-[800] text-[3em] md:text-[2.5em] leading-none my-1">
                               {room.height?.toFixed(1) || 0}
                             </p>
-                            <p className="text-[#666] text-[1.1em]">ft</p>
+                            <p className="text-white/90 text-[1.1em]">ft</p>
                           </div>
                         </div>
                       </div>
@@ -414,22 +494,29 @@ export default function ProjectSummaryScreen() {
               )}
 
               {/* Totals Summary */}
-              <div className="mt-6 bg-white/30 backdrop-blur-[10px] border border-white/40 rounded-[20px] p-6">
+              <div 
+                className="mt-6 rounded-[20px] p-6"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.35)',
+                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                  backdropFilter: 'blur(12px)',
+                }}
+              >
                 <div className="grid grid-cols-3 gap-4 text-center">
                   <div>
-                    <p className="text-[#444] text-sm md:text-xs mb-1">Total Floor</p>
-                    <p className="text-primary text-2xl md:text-xl font-bold">{totalAreas.floorArea.toFixed(1)}</p>
-                    <p className="text-[#666] text-xs">sq.ft</p>
+                    <p className="text-white/90 text-sm md:text-xs mb-1">Total Floor</p>
+                    <p className="text-white font-bold text-2xl md:text-xl">{totalAreas.floorArea.toFixed(1)}</p>
+                    <p className="text-white/90 text-xs">sq.ft</p>
                   </div>
                   <div>
-                    <p className="text-[#444] text-sm md:text-xs mb-1">Total Wall</p>
-                    <p className="text-primary text-2xl md:text-xl font-bold">{totalAreas.wallArea.toFixed(1)}</p>
-                    <p className="text-[#666] text-xs">sq.ft</p>
+                    <p className="text-white/90 text-sm md:text-xs mb-1">Total Wall</p>
+                    <p className="text-white font-bold text-2xl md:text-xl">{totalAreas.wallArea.toFixed(1)}</p>
+                    <p className="text-white/90 text-xs">sq.ft</p>
                   </div>
                   <div>
-                    <p className="text-[#444] text-sm md:text-xs mb-1">Total Ceiling</p>
-                    <p className="text-primary text-2xl md:text-xl font-bold">{totalAreas.ceilingArea.toFixed(1)}</p>
-                    <p className="text-[#666] text-xs">sq.ft</p>
+                    <p className="text-white/90 text-sm md:text-xs mb-1">Total Ceiling</p>
+                    <p className="text-white font-bold text-2xl md:text-xl">{totalAreas.ceilingArea.toFixed(1)}</p>
+                    <p className="text-white/90 text-xs">sq.ft</p>
                   </div>
                 </div>
               </div>
