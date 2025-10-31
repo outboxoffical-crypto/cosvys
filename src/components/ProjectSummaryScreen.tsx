@@ -53,6 +53,11 @@ export default function ProjectSummaryScreen() {
     loadData();
   }, [projectId]);
 
+  // Get unique project types from rooms
+  const activeProjectTypes = Array.from(new Set(
+    rooms.map(room => room.project_type).filter(Boolean)
+  )).sort();
+
   const totalAreas = rooms.reduce(
     (acc, room) => ({
       floorArea: acc.floorArea + (room.floor_area || 0),
@@ -345,7 +350,7 @@ export default function ProjectSummaryScreen() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  {projectData?.projectTypes?.map((type: string) => (
+                  {activeProjectTypes.map((type: string) => (
                     <Badge key={type} variant="outline" className="bg-accent">
                       {type}
                     </Badge>
