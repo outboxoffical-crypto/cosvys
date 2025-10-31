@@ -344,10 +344,12 @@ export default function ProjectSummaryScreen() {
                     <p className="text-sm text-muted-foreground">Address</p>
                   </div>
                 </div>
-                <div className="flex items-center">
-                  <Badge variant="outline" className="bg-accent">
-                    {projectData?.projectType} Project
-                  </Badge>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {projectData?.projectTypes?.map((type: string) => (
+                    <Badge key={type} variant="outline" className="bg-accent">
+                      {type}
+                    </Badge>
+                  ))}
                 </div>
               </CardContent>
             </Card>
