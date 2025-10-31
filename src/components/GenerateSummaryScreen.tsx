@@ -56,6 +56,7 @@ export default function GenerateSummaryScreen() {
   const topSectionRef = useRef<HTMLDivElement>(null);
   const perDayLabourCost = 1100; // Fixed per day labour cost in rupees
   const [projectData, setProjectData] = useState<any>(null);
+  const [coverageData, setCoverageData] = useState<any>({});
   useEffect(() => {
     loadData();
   }, [projectId]);
@@ -71,6 +72,19 @@ export default function GenerateSummaryScreen() {
   }, []);
   const loadData = async () => {
     try {
+      // Load coverage data from database
+      const { data: coverageResults } = await supabase
+        .from('coverage_data')
+        .select('product_name, coverage_range');
+      
+      if (coverageResults) {
+        const coverageMap: any = {};
+        coverageResults.forEach(item => {
+          coverageMap[item.product_name.toLowerCase()] = item.coverage_range;
+        });
+        setCoverageData(coverageMap);
+      }
+
       // Load project data
       const project = localStorage.getItem(`project_${projectId}`);
       if (project) setProjectData(JSON.parse(project));
@@ -1216,7 +1230,7 @@ export default function GenerateSummaryScreen() {
                                         Quantity: <span className="font-medium text-foreground">{mat.minQuantity} to {mat.maxQuantity} {mat.unit}</span>
                                       </p>
                                       <p className="text-sm text-muted-foreground mt-1">
-                                        Pack: <span className="font-medium text-foreground">{mat.packCombination}</span>
+                                        Coverage: <span className="font-medium text-foreground">{coverageData[mat.name.toLowerCase()] || 'N/A'}</span>
                                       </p>
                                     </div>
                                     <div className="text-right">
@@ -1279,7 +1293,7 @@ export default function GenerateSummaryScreen() {
                                         Quantity: <span className="font-medium text-foreground">{mat.minQuantity} to {mat.maxQuantity} {mat.unit}</span>
                                       </p>
                                       <p className="text-sm text-muted-foreground mt-1">
-                                        Pack: <span className="font-medium text-foreground">{mat.packCombination}</span>
+                                        Coverage: <span className="font-medium text-foreground">{coverageData[mat.name.toLowerCase()] || 'N/A'}</span>
                                       </p>
                                     </div>
                                     <div className="text-right">
@@ -1342,7 +1356,7 @@ export default function GenerateSummaryScreen() {
                                         Quantity: <span className="font-medium text-foreground">{mat.minQuantity} to {mat.maxQuantity} {mat.unit}</span>
                                       </p>
                                       <p className="text-sm text-muted-foreground mt-1">
-                                        Pack: <span className="font-medium text-foreground">{mat.packCombination}</span>
+                                        Coverage: <span className="font-medium text-foreground">{coverageData[mat.name.toLowerCase()] || 'N/A'}</span>
                                       </p>
                                     </div>
                                     <div className="text-right">
