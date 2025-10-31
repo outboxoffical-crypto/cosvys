@@ -263,59 +263,177 @@ export default function ProjectSummaryScreen() {
             </Card>
 
             {/* Section 2: Total Room Details */}
-            <Card className="eca-shadow">
-              <CardHeader>
-                <CardTitle className="flex items-center text-lg">
-                  <Home className="mr-2 h-5 w-5 text-secondary" />
-                  Total Room Details
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Individual Rooms */}
-                <div className="space-y-3">
-                  {rooms.map((room) => (
-                    <div key={room.id} className="border border-border rounded-lg p-3">
-                      <p className="font-semibold text-foreground mb-2">{room.name}</p>
-                      <div className="grid grid-cols-3 gap-2 text-sm">
-                        <div>
-                          <p className="text-muted-foreground">Floor</p>
-                          <p className="font-medium">{room.floor_area?.toFixed(2) || 0} sq.ft</p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Wall</p>
-                          <p className="font-medium">{room.wall_area?.toFixed(2) || 0} sq.ft</p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Ceiling</p>
-                          <p className="font-medium">{room.ceiling_area?.toFixed(2) || 0} sq.ft</p>
+            <div className="relative overflow-hidden rounded-[25px] p-[30px] md:p-[20px] shadow-[0_10px_30px_-10px_rgba(233,30,99,0.2)] bg-gradient-to-br from-[#ffe6eb] to-[#f5e6ff]">
+              <div className="flex items-center mb-6">
+                <Home className="mr-2 h-5 w-5 text-primary" />
+                <h3 className="text-lg font-bold text-primary">Room Measurements</h3>
+              </div>
+
+              {/* Interior Section */}
+              {rooms.some(room => room.project_type === 'Interior') && (
+                <div className="mb-[35px]">
+                  <h4 className="text-center font-bold text-primary text-lg mb-2">Interior</h4>
+                  <div className="h-[1px] bg-primary/25 mb-4"></div>
+                  <div className="grid grid-cols-1 md:grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
+                    {rooms.filter(room => room.project_type === 'Interior').map((room) => (
+                      <div
+                        key={room.id}
+                        className="bg-white/20 border border-white/30 rounded-[20px] p-[25px] backdrop-blur-[8px] text-center transition-all duration-300 hover:-translate-y-[5px] hover:shadow-[0_10px_25px_-5px_rgba(233,30,99,0.25)]"
+                      >
+                        <p className="font-semibold text-primary mb-4 text-base">{room.name}</p>
+                        <div className="space-y-3">
+                          <div>
+                            <p className="text-[#444] text-[1.1em] font-medium">Wall Area</p>
+                            <p className="text-primary text-[2.8em] md:text-[2.4em] font-bold leading-none my-1">
+                              {room.wall_area?.toFixed(1) || 0}
+                            </p>
+                            <p className="text-[#666] text-[1.1em]">sq.ft</p>
+                          </div>
+                          <div>
+                            <p className="text-[#444] text-[1.1em] font-medium">Floor Area</p>
+                            <p className="text-primary text-[2.8em] md:text-[2.4em] font-bold leading-none my-1">
+                              {room.floor_area?.toFixed(1) || 0}
+                            </p>
+                            <p className="text-[#666] text-[1.1em]">sq.ft</p>
+                          </div>
+                          <div>
+                            <p className="text-[#444] text-[1.1em] font-medium">Ceiling Area</p>
+                            <p className="text-primary text-[2.8em] md:text-[2.4em] font-bold leading-none my-1">
+                              {room.ceiling_area?.toFixed(1) || 0}
+                            </p>
+                            <p className="text-[#666] text-[1.1em]">sq.ft</p>
+                          </div>
+                          <div>
+                            <p className="text-[#444] text-[1.1em] font-medium">Ceiling Height</p>
+                            <p className="text-primary text-[2.8em] md:text-[2.4em] font-bold leading-none my-1">
+                              {room.height?.toFixed(1) || 0}
+                            </p>
+                            <p className="text-[#666] text-[1.1em]">ft</p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Totals */}
-                <div className="eca-gradient text-white rounded-lg p-4">
-                  <div className="grid grid-cols-3 gap-4 text-center">
-                    <div>
-                      <p className="text-white/80 text-sm">Total Floor</p>
-                      <p className="text-xl font-bold">{totalAreas.floorArea.toFixed(2)}</p>
-                      <p className="text-white/80 text-xs">sq.ft</p>
-                    </div>
-                    <div>
-                      <p className="text-white/80 text-sm">Total Wall</p>
-                      <p className="text-xl font-bold">{totalAreas.wallArea.toFixed(2)}</p>
-                      <p className="text-white/80 text-xs">sq.ft</p>
-                    </div>
-                    <div>
-                      <p className="text-white/80 text-sm">Total Ceiling</p>
-                      <p className="text-xl font-bold">{totalAreas.ceilingArea.toFixed(2)}</p>
-                      <p className="text-white/80 text-xs">sq.ft</p>
-                    </div>
+                    ))}
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              )}
+
+              {/* Waterproofing Section */}
+              {rooms.some(room => room.project_type === 'Waterproofing') && (
+                <div className="mb-[35px]">
+                  <h4 className="text-center font-bold text-primary text-lg mb-2">Waterproofing</h4>
+                  <div className="h-[1px] bg-primary/25 mb-4"></div>
+                  <div className="grid grid-cols-1 md:grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
+                    {rooms.filter(room => room.project_type === 'Waterproofing').map((room) => (
+                      <div
+                        key={room.id}
+                        className="bg-white/20 border border-white/30 rounded-[20px] p-[25px] backdrop-blur-[8px] text-center transition-all duration-300 hover:-translate-y-[5px] hover:shadow-[0_10px_25px_-5px_rgba(233,30,99,0.25)]"
+                      >
+                        <p className="font-semibold text-primary mb-4 text-base">{room.name}</p>
+                        <div className="space-y-3">
+                          <div>
+                            <p className="text-[#444] text-[1.1em] font-medium">Wall Area</p>
+                            <p className="text-primary text-[2.8em] md:text-[2.4em] font-bold leading-none my-1">
+                              {room.wall_area?.toFixed(1) || 0}
+                            </p>
+                            <p className="text-[#666] text-[1.1em]">sq.ft</p>
+                          </div>
+                          <div>
+                            <p className="text-[#444] text-[1.1em] font-medium">Floor Area</p>
+                            <p className="text-primary text-[2.8em] md:text-[2.4em] font-bold leading-none my-1">
+                              {room.floor_area?.toFixed(1) || 0}
+                            </p>
+                            <p className="text-[#666] text-[1.1em]">sq.ft</p>
+                          </div>
+                          <div>
+                            <p className="text-[#444] text-[1.1em] font-medium">Ceiling Area</p>
+                            <p className="text-primary text-[2.8em] md:text-[2.4em] font-bold leading-none my-1">
+                              {room.ceiling_area?.toFixed(1) || 0}
+                            </p>
+                            <p className="text-[#666] text-[1.1em]">sq.ft</p>
+                          </div>
+                          <div>
+                            <p className="text-[#444] text-[1.1em] font-medium">Ceiling Height</p>
+                            <p className="text-primary text-[2.8em] md:text-[2.4em] font-bold leading-none my-1">
+                              {room.height?.toFixed(1) || 0}
+                            </p>
+                            <p className="text-[#666] text-[1.1em]">ft</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Exterior Section */}
+              {rooms.some(room => room.project_type === 'Exterior') && (
+                <div className="mb-[35px] last:mb-0">
+                  <h4 className="text-center font-bold text-primary text-lg mb-2">Exterior</h4>
+                  <div className="h-[1px] bg-primary/25 mb-4"></div>
+                  <div className="grid grid-cols-1 md:grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
+                    {rooms.filter(room => room.project_type === 'Exterior').map((room) => (
+                      <div
+                        key={room.id}
+                        className="bg-white/20 border border-white/30 rounded-[20px] p-[25px] backdrop-blur-[8px] text-center transition-all duration-300 hover:-translate-y-[5px] hover:shadow-[0_10px_25px_-5px_rgba(233,30,99,0.25)]"
+                      >
+                        <p className="font-semibold text-primary mb-4 text-base">{room.name}</p>
+                        <div className="space-y-3">
+                          <div>
+                            <p className="text-[#444] text-[1.1em] font-medium">Wall Area</p>
+                            <p className="text-primary text-[2.8em] md:text-[2.4em] font-bold leading-none my-1">
+                              {room.wall_area?.toFixed(1) || 0}
+                            </p>
+                            <p className="text-[#666] text-[1.1em]">sq.ft</p>
+                          </div>
+                          <div>
+                            <p className="text-[#444] text-[1.1em] font-medium">Floor Area</p>
+                            <p className="text-primary text-[2.8em] md:text-[2.4em] font-bold leading-none my-1">
+                              {room.floor_area?.toFixed(1) || 0}
+                            </p>
+                            <p className="text-[#666] text-[1.1em]">sq.ft</p>
+                          </div>
+                          <div>
+                            <p className="text-[#444] text-[1.1em] font-medium">Ceiling Area</p>
+                            <p className="text-primary text-[2.8em] md:text-[2.4em] font-bold leading-none my-1">
+                              {room.ceiling_area?.toFixed(1) || 0}
+                            </p>
+                            <p className="text-[#666] text-[1.1em]">sq.ft</p>
+                          </div>
+                          <div>
+                            <p className="text-[#444] text-[1.1em] font-medium">Ceiling Height</p>
+                            <p className="text-primary text-[2.8em] md:text-[2.4em] font-bold leading-none my-1">
+                              {room.height?.toFixed(1) || 0}
+                            </p>
+                            <p className="text-[#666] text-[1.1em]">ft</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Totals Summary */}
+              <div className="mt-6 bg-white/30 backdrop-blur-[10px] border border-white/40 rounded-[20px] p-6">
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div>
+                    <p className="text-[#444] text-sm md:text-xs mb-1">Total Floor</p>
+                    <p className="text-primary text-2xl md:text-xl font-bold">{totalAreas.floorArea.toFixed(1)}</p>
+                    <p className="text-[#666] text-xs">sq.ft</p>
+                  </div>
+                  <div>
+                    <p className="text-[#444] text-sm md:text-xs mb-1">Total Wall</p>
+                    <p className="text-primary text-2xl md:text-xl font-bold">{totalAreas.wallArea.toFixed(1)}</p>
+                    <p className="text-[#666] text-xs">sq.ft</p>
+                  </div>
+                  <div>
+                    <p className="text-[#444] text-sm md:text-xs mb-1">Total Ceiling</p>
+                    <p className="text-primary text-2xl md:text-xl font-bold">{totalAreas.ceilingArea.toFixed(1)}</p>
+                    <p className="text-[#666] text-xs">sq.ft</p>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             {/* Customer Information */}
             <Card className="eca-shadow">
