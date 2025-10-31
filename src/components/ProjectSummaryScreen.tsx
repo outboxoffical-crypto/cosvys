@@ -555,7 +555,7 @@ export default function ProjectSummaryScreen() {
                   </div>
                 </div>
                 <div className="flex flex-col gap-2">
-                  {activeProjectTypes.map((type: string) => (
+                  {(projectData?.projectTypes || []).map((type: string) => (
                     <div key={type} className="inline-flex items-center px-4 py-2 bg-primary/10 border border-primary/20 rounded-md">
                       <span className="font-semibold text-foreground">{type} Project</span>
                     </div>
