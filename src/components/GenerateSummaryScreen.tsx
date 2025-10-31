@@ -1122,6 +1122,50 @@ export default function GenerateSummaryScreen() {
       return packString;
     };
 
+    // Helper function to get correct coverage data for a material
+    const getMaterialCoverage = (materialName: string, materialType: string) => {
+      // Remove pack sizes from material name (e.g., "20L", "10L", "4L", "1L")
+      let cleanName = materialName.replace(/\s*\d+L\b/gi, '').trim();
+      
+      // For Exterior configurations, handle base coat vs top coat distinction
+      const isBaseCost = materialType === 'Primer' || 
+                        cleanName.toLowerCase().includes('base coat') || 
+                        cleanName.toLowerCase().includes('primer');
+      
+      // For base coats/primers, look for the exact match with "Base Coat" suffix
+      if (isBaseCost && (cleanName.toLowerCase().includes('ultima protek') || 
+                        cleanName.toLowerCase().includes('durolife'))) {
+        // Try to find base coat coverage
+        const baseCoatKey = cleanName.toLowerCase().includes('base coat') 
+          ? cleanName.toLowerCase() 
+          : `${cleanName.toLowerCase()} base coat`;
+        
+        if (coverageData[baseCoatKey]) {
+          return coverageData[baseCoatKey];
+        }
+      }
+      
+      // For top coats, ensure we don't match base coat entries
+      if (!isBaseCost) {
+        // Remove "base coat" from the name to ensure we get top coat coverage
+        cleanName = cleanName.replace(/\s*base\s*coat\s*/gi, '').trim();
+        
+        // For Durolife top coat, look specifically for "durolife top coat"
+        if (cleanName.toLowerCase().includes('durolife')) {
+          const topCoatKey = cleanName.toLowerCase().includes('top coat') 
+            ? cleanName.toLowerCase() 
+            : `${cleanName.toLowerCase()} top coat`;
+          
+          if (coverageData[topCoatKey]) {
+            return coverageData[topCoatKey];
+          }
+        }
+      }
+      
+      // Default lookup
+      return coverageData[cleanName.toLowerCase()] || 'N/A';
+    };
+
     // Helper function to calculate material requirements and cost
     const calculateMaterial = (material: string, quantity: number) => {
       let materialKey = 'Emulsion';
@@ -1284,7 +1328,7 @@ export default function GenerateSummaryScreen() {
                                         Quantity: <span className="font-medium text-foreground">{mat.minQuantity} to {mat.maxQuantity} {mat.unit}</span>
                                       </p>
                                       <p className="text-sm text-muted-foreground mt-1">
-                                        Coverage: <span className="font-medium text-foreground">{coverageData[mat.name.toLowerCase()] || 'N/A'}</span>
+                                        Coverage: <span className="font-medium text-foreground">{getMaterialCoverage(mat.name, mat.type)}</span>
                                       </p>
                                       <p className="text-sm text-muted-foreground mt-1">
                                         Rate: <span className="font-medium text-foreground">{mat.rate > 0 ? `₹${mat.rate.toLocaleString('en-IN')}` : '₹0'}</span>
@@ -1350,7 +1394,7 @@ export default function GenerateSummaryScreen() {
                                         Quantity: <span className="font-medium text-foreground">{mat.minQuantity} to {mat.maxQuantity} {mat.unit}</span>
                                       </p>
                                       <p className="text-sm text-muted-foreground mt-1">
-                                        Coverage: <span className="font-medium text-foreground">{coverageData[mat.name.toLowerCase()] || 'N/A'}</span>
+                                        Coverage: <span className="font-medium text-foreground">{getMaterialCoverage(mat.name, mat.type)}</span>
                                       </p>
                                       <p className="text-sm text-muted-foreground mt-1">
                                         Rate: <span className="font-medium text-foreground">{mat.rate > 0 ? `₹${mat.rate.toLocaleString('en-IN')}` : '₹0'}</span>
@@ -1416,7 +1460,7 @@ export default function GenerateSummaryScreen() {
                                         Quantity: <span className="font-medium text-foreground">{mat.minQuantity} to {mat.maxQuantity} {mat.unit}</span>
                                       </p>
                                       <p className="text-sm text-muted-foreground mt-1">
-                                        Coverage: <span className="font-medium text-foreground">{coverageData[mat.name.toLowerCase()] || 'N/A'}</span>
+                                        Coverage: <span className="font-medium text-foreground">{getMaterialCoverage(mat.name, mat.type)}</span>
                                       </p>
                                       <p className="text-sm text-muted-foreground mt-1">
                                         Rate: <span className="font-medium text-foreground">{mat.rate > 0 ? `₹${mat.rate.toLocaleString('en-IN')}` : '₹0'}</span>
