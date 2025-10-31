@@ -2027,14 +2027,22 @@ export default function GenerateSummaryScreen() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-3 bg-muted/30 rounded-lg border border-border text-center">
-                    <p className="text-sm text-muted-foreground mb-1">Paint Required</p>
-                    <p className="text-2xl font-bold text-foreground">N/A</p>
-                    <p className="text-xs text-muted-foreground">Liters (2 coats)</p>
+                    <p className="text-sm text-muted-foreground mb-1">Company Cost</p>
+                    <p className="text-2xl font-bold text-foreground">
+                      ₹{areaConfigs.reduce((sum, config) => {
+                        const area = Number(config.area) || 0;
+                        const rate = parseFloat(config.perSqFtRate) || 0;
+                        return sum + area * rate;
+                      }, 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Total Project Cost</p>
                   </div>
                   <div className="p-3 bg-muted/30 rounded-lg border border-border text-center">
-                    <p className="text-sm text-muted-foreground mb-1">Area Coverage</p>
-                    <p className="text-2xl font-bold text-foreground">N/A</p>
-                    <p className="text-xs text-muted-foreground">sq.ft</p>
+                    <p className="text-sm text-muted-foreground mb-1">Project Cost</p>
+                    <p className="text-2xl font-bold text-foreground">
+                      ₹{calculateTotalEstimatedCost().toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Actual Total</p>
                   </div>
                 </div>
 
