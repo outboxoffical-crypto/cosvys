@@ -1946,14 +1946,10 @@ export default function GenerateSummaryScreen() {
                 <div className="flex flex-wrap gap-3">
                   <span className="text-sm text-muted-foreground font-medium mb-2 w-full">Project Type:</span>
                   {Array.isArray(projectData?.projectTypes) && projectData.projectTypes.length > 0 ? (
-                    projectData.projectTypes.map((type: string, index: number) => (
+                    projectData.projectTypes.map((type: string) => (
                       <div 
                         key={type} 
-                        className={`inline-flex items-center px-4 py-2 font-semibold text-sm rounded-full transition-all duration-200 hover:shadow-md ${
-                          index === 0 && projectData?.projectTypes?.length >= 1
-                            ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white shadow-md' 
-                            : 'bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200'
-                        }`}
+                        className="inline-flex items-center px-4 py-2 font-semibold text-sm rounded-full bg-gradient-to-r from-red-500 to-pink-500 text-white shadow-md transition-all duration-200 hover:shadow-lg"
                         style={{
                           fontFamily: '"Segoe UI", "Inter", system-ui, sans-serif'
                         }}
