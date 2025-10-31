@@ -199,8 +199,31 @@ export default function GenerateSummaryScreen() {
           }
         });
         
-        // Set calculation configs: Paint Estimation configs + Room Measurement enamel areas
-        setCalculationConfigs([...paintEstimationConfigs, ...enamelConfigs]);
+        // Before setting, filter out area types that have 0 selected area in Room Measurements
+        const selectedTotalsByType: Record<string, { floor: number; wall: number; ceiling: number }> = {};
+        ['Interior','Exterior','Waterproofing'].forEach(t => { selectedTotalsByType[t] = { floor: 0, wall: 0, ceiling: 0 }; });
+        roomsData.forEach(room => {
+          const sel = (typeof room.selected_areas === 'object' && room.selected_areas !== null && !Array.isArray(room.selected_areas)) 
+            ? (room.selected_areas as any) 
+            : { floor: false, wall: true, ceiling: false };
+          const type = room.project_type || 'Interior';
+          if (!selectedTotalsByType[type]) selectedTotalsByType[type] = { floor: 0, wall: 0, ceiling: 0 };
+          if (sel.floor) selectedTotalsByType[type].floor += Number(room.floor_area || 0);
+          if (sel.wall) selectedTotalsByType[type].wall += Number(room.adjusted_wall_area || room.wall_area || 0);
+          if (sel.ceiling) selectedTotalsByType[type].ceiling += Number(room.ceiling_area || 0);
+        });
+
+        const filteredPaintConfigs = (paintEstimationConfigs || []).filter(cfg => {
+          const type = cfg.paintTypeCategory || 'Interior';
+          if (cfg.areaType === 'Floor') return (selectedTotalsByType[type]?.floor || 0) > 0;
+          if (cfg.areaType === 'Wall') return (selectedTotalsByType[type]?.wall || 0) > 0;
+          if (cfg.areaType === 'Ceiling') return (selectedTotalsByType[type]?.ceiling || 0) > 0;
+          return true;
+        });
+
+        // Update both areaConfigs and calculationConfigs with filtered list
+        setAreaConfigs(filteredPaintConfigs);
+        setCalculationConfigs([...filteredPaintConfigs, ...enamelConfigs]);
       } else {
         // If no rooms data, just use paint estimation configs
         setCalculationConfigs(paintEstimationConfigs);
@@ -390,7 +413,7 @@ export default function GenerateSummaryScreen() {
     let totalCeiling = 0;
     rooms.forEach(room => {
       const selectedAreas = room.selected_areas || {
-        floor: true,
+        floor: false,
         wall: true,
         ceiling: false
       };
@@ -447,7 +470,7 @@ export default function GenerateSummaryScreen() {
                     <div className="space-y-3">
                       {typeRooms.map(room => {
                     const selectedAreas = room.selected_areas || {
-                      floor: true,
+                      floor: false,
                       wall: true,
                       ceiling: false
                     };
@@ -1687,7 +1710,7 @@ export default function GenerateSummaryScreen() {
   // Group room areas by project type and only count selected areas
   const totalAreas = rooms.reduce((acc, room) => {
     const projectType = room.project_type || 'Interior';
-    const selectedAreas = room.selected_areas || { wall: true, floor: true, ceiling: false };
+    const selectedAreas = room.selected_areas || { wall: true, floor: false, ceiling: false };
     
     if (!acc[projectType]) {
       acc[projectType] = { wallArea: 0, floorArea: 0, ceilingArea: 0 };

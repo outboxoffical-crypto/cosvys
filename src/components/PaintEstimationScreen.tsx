@@ -259,7 +259,7 @@ export default function PaintEstimationScreen() {
 
     filteredRooms.forEach((room: any) => {
       const selectedAreas = (typeof room.selected_areas === 'object' && room.selected_areas !== null) ? 
-        room.selected_areas as any : { floor: true, wall: true, ceiling: false };
+        room.selected_areas as any : { floor: false, wall: true, ceiling: false };
       
       if (selectedAreas.floor) {
         floorAreaTotal += Number(room.floor_area || 0);
@@ -356,7 +356,7 @@ export default function PaintEstimationScreen() {
         let newRoomName = 'Additional Floor Area';
         const newFloorRoom = newRooms.find(room => {
           const selectedAreas = (typeof room.selected_areas === 'object' && room.selected_areas !== null) ? 
-            room.selected_areas as any : { floor: true, wall: true, ceiling: false };
+            room.selected_areas as any : { floor: false, wall: true, ceiling: false };
           return selectedAreas.floor;
         });
         if (newFloorRoom) {
@@ -387,7 +387,7 @@ export default function PaintEstimationScreen() {
         let newRoomName = 'Additional Wall Area';
         const newWallRoom = newRooms.find(room => {
           const selectedAreas = (typeof room.selected_areas === 'object' && room.selected_areas !== null) ? 
-            room.selected_areas as any : { floor: true, wall: true, ceiling: false };
+            room.selected_areas as any : { floor: false, wall: true, ceiling: false };
           return selectedAreas.wall;
         });
         if (newWallRoom) {
@@ -418,7 +418,7 @@ export default function PaintEstimationScreen() {
         let newRoomName = 'Additional Ceiling Area';
         const newCeilingRoom = newRooms.find(room => {
           const selectedAreas = (typeof room.selected_areas === 'object' && room.selected_areas !== null) ? 
-            room.selected_areas as any : { floor: true, wall: true, ceiling: false };
+            room.selected_areas as any : { floor: false, wall: true, ceiling: false };
           return selectedAreas.ceiling;
         });
         if (newCeilingRoom) {
@@ -578,8 +578,15 @@ export default function PaintEstimationScreen() {
       });
     }
 
-    // Append any additional configs detected (persisted + new)
-    configs.push(...storedAdditional, ...additional);
+    // Append any additional configs detected (persisted + new) but only keep area types that still have totals > 0
+    const filteredStored = storedAdditional.filter(a => {
+      if (a.areaType === 'Floor') return floorAreaTotal > 0;
+      if (a.areaType === 'Wall') return wallAreaTotal > 0;
+      if (a.areaType === 'Ceiling') return ceilingAreaTotal > 0;
+      if (a.areaType === 'Enamel') return enamelAreaTotal > 0;
+      return true;
+    });
+    configs.push(...filteredStored, ...additional);
 
     // Merge with existing configurations to preserve user choices
     const existingConfigs = selectedPaintType === "Interior" ? interiorConfigurations :
