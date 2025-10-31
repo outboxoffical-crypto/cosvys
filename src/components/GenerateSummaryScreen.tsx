@@ -1943,10 +1943,20 @@ export default function GenerateSummaryScreen() {
                     <p className="text-sm text-muted-foreground">Address</p>
                   </div>
                 </div>
-                <div className="flex items-center">
-                  <Badge variant="outline" className="bg-accent">
-                    {projectData?.projectType || paintType} Project
-                  </Badge>
+                <div className="flex flex-wrap items-center gap-2">
+                  {Array.isArray(projectData?.projectTypes) && projectData.projectTypes.length > 0 ? (
+                    projectData.projectTypes.map((type: string) => (
+                      <Badge key={type} variant="default" className="rounded-full px-4 py-2">
+                        {type}
+                      </Badge>
+                    ))
+                  ) : (
+                    paintType && (
+                      <Badge variant="outline" className="rounded-full px-4 py-2">
+                        {paintType}
+                      </Badge>
+                    )
+                  )}
                 </div>
               </CardContent>
             </Card>
