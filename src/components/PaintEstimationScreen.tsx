@@ -251,11 +251,15 @@ export default function PaintEstimationScreen() {
       return false;
     });
 
-    // Calculate totals for each area type
+    // Calculate totals for each area type and track which areas are selected
     let floorAreaTotal = 0;
     let wallAreaTotal = 0;
     let ceilingAreaTotal = 0;
     let enamelAreaTotal = 0;
+    let hasFloorSelected = false;
+    let hasWallSelected = false;
+    let hasCeilingSelected = false;
+    let hasEnamelSelected = false;
 
     filteredRooms.forEach((room: any) => {
       const selectedAreas = (typeof room.selected_areas === 'object' && room.selected_areas !== null) ? 
@@ -263,15 +267,19 @@ export default function PaintEstimationScreen() {
       
       if (selectedAreas.floor) {
         floorAreaTotal += Number(room.floor_area || 0);
+        hasFloorSelected = true;
       }
       if (selectedAreas.wall) {
         wallAreaTotal += Number(room.adjusted_wall_area || room.wall_area || 0);
+        hasWallSelected = true;
       }
       if (selectedAreas.ceiling) {
         ceilingAreaTotal += Number(room.ceiling_area || 0);
+        hasCeilingSelected = true;
       }
       if (room.door_window_grills && Array.isArray(room.door_window_grills)) {
         enamelAreaTotal += Number(room.total_door_window_grill_area || 0);
+        hasEnamelSelected = true;
       }
     });
 
@@ -517,8 +525,8 @@ export default function PaintEstimationScreen() {
       } catch {}
     }
 
-    // Create initial configurations only for areas with actual sq.ft
-    if (floorMain > 0) {
+    // Create initial configurations only for areas that were selected and have actual sq.ft
+    if (floorMain > 0 && hasFloorSelected) {
       configs.push({
         id: 'floor-main',
         areaType: 'Floor' as any,
@@ -533,7 +541,7 @@ export default function PaintEstimationScreen() {
       });
     }
 
-    if (wallMain > 0) {
+    if (wallMain > 0 && hasWallSelected) {
       configs.push({
         id: 'wall-main',
         areaType: 'Wall',
@@ -548,7 +556,7 @@ export default function PaintEstimationScreen() {
       });
     }
 
-    if (ceilingMain > 0) {
+    if (ceilingMain > 0 && hasCeilingSelected) {
       configs.push({
         id: 'ceiling-main',
         areaType: 'Ceiling',
