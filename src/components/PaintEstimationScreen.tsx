@@ -304,7 +304,7 @@ export default function PaintEstimationScreen() {
       }));
     } catch {}
 
-    // Main areas default to current totals
+    // Main areas default to current totals (only if > 0)
     let floorMain = floorAreaTotal;
     let wallMain = wallAreaTotal;
     let ceilingMain = ceilingAreaTotal;
@@ -587,14 +587,16 @@ export default function PaintEstimationScreen() {
                             waterproofingConfigurations;
 
     if (existingConfigs.length > 0) {
-      // Update areas only, preserve all user selections
-      const updated = existingConfigs.map(existing => {
-        const match = configs.find(cfg =>
-          cfg.id === existing.id ||
-          (cfg.areaType === existing.areaType && cfg.label === existing.label && !!cfg.isAdditional === !!existing.isAdditional)
-        );
-        return match ? { ...existing, area: match.area } : existing;
-      });
+      // Update areas only, preserve all user selections, but remove configs that no longer have area
+      const updated = existingConfigs
+        .map(existing => {
+          const match = configs.find(cfg =>
+            cfg.id === existing.id ||
+            (cfg.areaType === existing.areaType && cfg.label === existing.label && !!cfg.isAdditional === !!existing.isAdditional)
+          );
+          return match ? { ...existing, area: match.area } : null;
+        })
+        .filter(Boolean) as AreaConfiguration[];
       
       // Add any new configs not in existing
       const newConfigs = configs.filter(cfg =>
