@@ -57,6 +57,7 @@ export default function GenerateSummaryScreen() {
   const perDayLabourCost = 1100; // Fixed per day labour cost in rupees
   const [projectData, setProjectData] = useState<any>(null);
   const [coverageData, setCoverageData] = useState<any>({});
+  const [productPricing, setProductPricing] = useState<any>({});
   useEffect(() => {
     loadData();
   }, [projectId]);
@@ -83,6 +84,23 @@ export default function GenerateSummaryScreen() {
           coverageMap[item.product_name.toLowerCase()] = item.coverage_range;
         });
         setCoverageData(coverageMap);
+      }
+
+      // Load product pricing from database
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (currentUser) {
+        const { data: pricingData } = await supabase
+          .from('product_pricing')
+          .select('product_name, sizes')
+          .eq('user_id', currentUser.id);
+        
+        if (pricingData) {
+          const pricingMap: any = {};
+          pricingData.forEach(item => {
+            pricingMap[item.product_name.toLowerCase()] = item.sizes;
+          });
+          setProductPricing(pricingMap);
+        }
       }
 
       // Load project data
@@ -995,6 +1013,36 @@ export default function GenerateSummaryScreen() {
       </Card>;
   };
 
+  // Helper function to extract product name and size from material string
+  const extractProductNameAndSize = (materialName: string): { productName: string; size: string } => {
+    // Extract size pattern (e.g., "20L", "10kg", "1L", etc.)
+    const sizePattern = /(\d+(?:\.\d+)?)(kg|L|g|ml|pack)$/i;
+    const match = materialName.match(sizePattern);
+    
+    if (match) {
+      const size = match[0]; // e.g., "20L"
+      const productName = materialName.replace(size, '').trim(); // e.g., "Damp Sheath Exterior"
+      return { productName, size };
+    }
+    
+    return { productName: materialName, size: '' };
+  };
+
+  // Helper function to get price for a specific material and size
+  const getMaterialPrice = (materialName: string): number => {
+    const { productName, size } = extractProductNameAndSize(materialName);
+    const productKey = productName.toLowerCase();
+    
+    if (productPricing[productKey] && size) {
+      const price = productPricing[productKey][size];
+      if (price && typeof price === 'number') {
+        return price;
+      }
+    }
+    
+    return 0; // Return 0 if no price found
+  };
+
   // Section 4: Material Section
   const renderMaterialSection = () => {
     // Material pack sizes and prices (example prices - adjust as needed)
@@ -1088,7 +1136,12 @@ export default function GenerateSummaryScreen() {
         : Math.ceil(quantity * 1.25);
       
       const packsNeeded = Math.ceil(maxQuantity / pricing.packSize);
-      const totalCost = packsNeeded * pricing.pricePerPack;
+      
+      // Get price from database or fallback to hardcoded pricing
+      const dbPrice = getMaterialPrice(material);
+      const pricePerPack = dbPrice > 0 ? dbPrice : pricing.pricePerPack;
+      const totalCost = packsNeeded * pricePerPack;
+      
       const packCombination = calculateOptimalPacks(materialKey, maxQuantity);
       return {
         quantity: quantity.toFixed(2),
@@ -1098,7 +1151,8 @@ export default function GenerateSummaryScreen() {
         packsNeeded,
         packSize: pricing.packSize,
         packCombination,
-        totalCost
+        totalCost,
+        rate: pricePerPack
       };
     };
 
@@ -1232,6 +1286,9 @@ export default function GenerateSummaryScreen() {
                                       <p className="text-sm text-muted-foreground mt-1">
                                         Coverage: <span className="font-medium text-foreground">{coverageData[mat.name.toLowerCase()] || 'N/A'}</span>
                                       </p>
+                                      <p className="text-sm text-muted-foreground mt-1">
+                                        Rate: <span className="font-medium text-foreground">{mat.rate > 0 ? `₹${mat.rate.toLocaleString('en-IN')}` : '₹0'}</span>
+                                      </p>
                                     </div>
                                     <div className="text-right">
                                       <p className="text-xl font-bold text-primary">₹{mat.totalCost.toLocaleString('en-IN')}</p>
@@ -1295,6 +1352,9 @@ export default function GenerateSummaryScreen() {
                                       <p className="text-sm text-muted-foreground mt-1">
                                         Coverage: <span className="font-medium text-foreground">{coverageData[mat.name.toLowerCase()] || 'N/A'}</span>
                                       </p>
+                                      <p className="text-sm text-muted-foreground mt-1">
+                                        Rate: <span className="font-medium text-foreground">{mat.rate > 0 ? `₹${mat.rate.toLocaleString('en-IN')}` : '₹0'}</span>
+                                      </p>
                                     </div>
                                     <div className="text-right">
                                       <p className="text-xl font-bold text-primary">₹{mat.totalCost.toLocaleString('en-IN')}</p>
@@ -1357,6 +1417,9 @@ export default function GenerateSummaryScreen() {
                                       </p>
                                       <p className="text-sm text-muted-foreground mt-1">
                                         Coverage: <span className="font-medium text-foreground">{coverageData[mat.name.toLowerCase()] || 'N/A'}</span>
+                                      </p>
+                                      <p className="text-sm text-muted-foreground mt-1">
+                                        Rate: <span className="font-medium text-foreground">{mat.rate > 0 ? `₹${mat.rate.toLocaleString('en-IN')}` : '₹0'}</span>
                                       </p>
                                     </div>
                                     <div className="text-right">
