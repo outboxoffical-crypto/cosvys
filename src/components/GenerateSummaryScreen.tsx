@@ -2004,7 +2004,13 @@ export default function GenerateSummaryScreen() {
                 <div className="p-4 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 rounded-lg border border-red-200 dark:border-red-800">
                   <p className="text-sm text-red-700 dark:text-red-300 mb-2 font-medium">Average Value</p>
                   <p className="text-3xl font-bold text-red-700 dark:text-red-300">
-                    ₹{calculateTotalEstimatedCost().toLocaleString()}
+                    ₹{Math.abs(
+                      areaConfigs.reduce((sum, config) => {
+                        const area = Number(config.area) || 0;
+                        const rate = parseFloat(config.perSqFtRate) || 0;
+                        return sum + area * rate;
+                      }, 0) - calculateTotalEstimatedCost()
+                    ).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                   </p>
                 </div>
               </CardContent>
