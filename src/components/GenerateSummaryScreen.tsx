@@ -1852,7 +1852,7 @@ export default function GenerateSummaryScreen() {
 
       <div className="p-4">
         {/* Category Toggle Buttons */}
-        <div className="flex flex-wrap gap-3 mb-4">
+        <div className="flex flex-wrap mb-4">
           {['Interior', 'Exterior', 'Waterproofing'].map(category => {
           const isActive = paintType === category;
           return <button key={category} onClick={() => setPaintType(category)} className="px-5 py-3 font-semibold text-sm rounded-full transition-all duration-300 cursor-pointer" style={{
