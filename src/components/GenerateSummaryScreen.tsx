@@ -74,10 +74,9 @@ export default function GenerateSummaryScreen() {
   const loadData = async () => {
     try {
       // Load coverage data from database
-      const { data: coverageResults } = await supabase
-        .from('coverage_data')
-        .select('product_name, coverage_range');
-      
+      const {
+        data: coverageResults
+      } = await supabase.from('coverage_data').select('product_name, coverage_range');
       if (coverageResults) {
         const coverageMap: any = {};
         coverageResults.forEach(item => {
@@ -87,13 +86,15 @@ export default function GenerateSummaryScreen() {
       }
 
       // Load product pricing from database
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      const {
+        data: {
+          user: currentUser
+        }
+      } = await supabase.auth.getUser();
       if (currentUser) {
-        const { data: pricingData } = await supabase
-          .from('product_pricing')
-          .select('product_name, sizes')
-          .eq('user_id', currentUser.id);
-        
+        const {
+          data: pricingData
+        } = await supabase.from('product_pricing').select('product_name, sizes').eq('user_id', currentUser.id);
         if (pricingData) {
           const pricingMap: any = {};
           pricingData.forEach(item => {
@@ -111,38 +112,44 @@ export default function GenerateSummaryScreen() {
       const estimationKey = `estimation_${projectId}`;
       const estimationStr = localStorage.getItem(estimationKey);
       const storedPaintType = localStorage.getItem(`selected_paint_type_${projectId}`) || 'Interior';
-      
       let paintEstimationConfigs: AreaConfig[] = [];
-      
       if (estimationStr) {
         const est = JSON.parse(estimationStr);
         const pt = est.lastPaintType || storedPaintType;
         setPaintType(pt);
-        
+
         // Combine all configurations from all paint types
         const allConfigs: AreaConfig[] = [];
-        
+
         // Add Interior configurations with type marker
         if (Array.isArray(est.interiorConfigurations) && est.interiorConfigurations.length > 0) {
           est.interiorConfigurations.forEach((config: any) => {
-            allConfigs.push({ ...config, paintTypeCategory: 'Interior' });
+            allConfigs.push({
+              ...config,
+              paintTypeCategory: 'Interior'
+            });
           });
         }
-        
+
         // Add Exterior configurations with type marker
         if (Array.isArray(est.exteriorConfigurations) && est.exteriorConfigurations.length > 0) {
           est.exteriorConfigurations.forEach((config: any) => {
-            allConfigs.push({ ...config, paintTypeCategory: 'Exterior' });
+            allConfigs.push({
+              ...config,
+              paintTypeCategory: 'Exterior'
+            });
           });
         }
-        
+
         // Add Waterproofing configurations with type marker
         if (Array.isArray(est.waterproofingConfigurations) && est.waterproofingConfigurations.length > 0) {
           est.waterproofingConfigurations.forEach((config: any) => {
-            allConfigs.push({ ...config, paintTypeCategory: 'Waterproofing' });
+            allConfigs.push({
+              ...config,
+              paintTypeCategory: 'Waterproofing'
+            });
           });
         }
-        
         console.log('Loaded all configs from estimation:', allConfigs.length);
         paintEstimationConfigs = allConfigs;
         setAreaConfigs(allConfigs);
@@ -159,7 +166,10 @@ export default function GenerateSummaryScreen() {
           configs = JSON.parse(preservedConfigs);
         }
         // Add paint type marker to fallback configs
-        configs = configs.map(c => ({ ...c, paintTypeCategory: pt }));
+        configs = configs.map(c => ({
+          ...c,
+          paintTypeCategory: pt
+        }));
         console.log('Loaded fallback configs:', configs);
         paintEstimationConfigs = Array.isArray(configs) ? configs : [];
         setAreaConfigs(Array.isArray(configs) ? configs : []);
@@ -171,7 +181,7 @@ export default function GenerateSummaryScreen() {
       } = await supabase.from('rooms').select('*').eq('project_id', projectId);
       if (roomsData) {
         setRooms(roomsData);
-        
+
         // Create enamel configurations from door/window/grill areas for calculations only
         const enamelConfigs: AreaConfig[] = [];
         roomsData.forEach(room => {
@@ -198,21 +208,36 @@ export default function GenerateSummaryScreen() {
             });
           }
         });
-        
+
         // Before setting, filter out area types that have 0 selected area in Room Measurements
-        const selectedTotalsByType: Record<string, { floor: number; wall: number; ceiling: number }> = {};
-        ['Interior','Exterior','Waterproofing'].forEach(t => { selectedTotalsByType[t] = { floor: 0, wall: 0, ceiling: 0 }; });
+        const selectedTotalsByType: Record<string, {
+          floor: number;
+          wall: number;
+          ceiling: number;
+        }> = {};
+        ['Interior', 'Exterior', 'Waterproofing'].forEach(t => {
+          selectedTotalsByType[t] = {
+            floor: 0,
+            wall: 0,
+            ceiling: 0
+          };
+        });
         roomsData.forEach(room => {
-          const sel = (typeof room.selected_areas === 'object' && room.selected_areas !== null && !Array.isArray(room.selected_areas)) 
-            ? (room.selected_areas as any) 
-            : { floor: false, wall: true, ceiling: false };
+          const sel = typeof room.selected_areas === 'object' && room.selected_areas !== null && !Array.isArray(room.selected_areas) ? room.selected_areas as any : {
+            floor: false,
+            wall: true,
+            ceiling: false
+          };
           const type = room.project_type || 'Interior';
-          if (!selectedTotalsByType[type]) selectedTotalsByType[type] = { floor: 0, wall: 0, ceiling: 0 };
+          if (!selectedTotalsByType[type]) selectedTotalsByType[type] = {
+            floor: 0,
+            wall: 0,
+            ceiling: 0
+          };
           if (sel.floor) selectedTotalsByType[type].floor += Number(room.floor_area || 0);
           if (sel.wall) selectedTotalsByType[type].wall += Number(room.adjusted_wall_area || room.wall_area || 0);
           if (sel.ceiling) selectedTotalsByType[type].ceiling += Number(room.ceiling_area || 0);
         });
-
         const filteredPaintConfigs = (paintEstimationConfigs || []).filter(cfg => {
           const type = cfg.paintTypeCategory || 'Interior';
           if (cfg.areaType === 'Floor') return (selectedTotalsByType[type]?.floor || 0) > 0;
@@ -260,54 +285,49 @@ export default function GenerateSummaryScreen() {
     const interiorConfigs = areaConfigs.filter(c => c.paintTypeCategory === 'Interior');
     const exteriorConfigs = areaConfigs.filter(c => c.paintTypeCategory === 'Exterior');
     const waterproofingConfigs = areaConfigs.filter(c => c.paintTypeCategory === 'Waterproofing');
-
     const renderConfigGroup = (configs: AreaConfig[], typeLabel: string) => {
       if (configs.length === 0) return null;
-
-      return (
-        <div key={typeLabel} className="space-y-3 mb-6">
+      return <div key={typeLabel} className="space-y-3 mb-6">
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
               {typeLabel}
             </Badge>
           </div>
           <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide" style={{
-            scrollbarWidth: 'none',
-            msOverflowStyle: 'none'
-          }}>
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none'
+        }}>
             {configs.map(config => {
-              const area = Number(config.area) || 0;
-              const rate = parseFloat(config.perSqFtRate) || 0;
-              const totalCost = area * rate;
+            const area = Number(config.area) || 0;
+            const rate = parseFloat(config.perSqFtRate) || 0;
+            const totalCost = area * rate;
 
-              // Get coat details in proper format
-              const getCoatDetails = () => {
-                if (config.paintingSystem === 'Fresh Painting') {
-                  const parts = [];
-                  if (config.coatConfiguration.putty > 0) {
-                    parts.push(`${config.coatConfiguration.putty} coat${config.coatConfiguration.putty > 1 ? 's' : ''} of ${config.selectedMaterials.putty || 'Putty'}`);
-                  }
-                  if (config.coatConfiguration.primer > 0) {
-                    parts.push(`${config.coatConfiguration.primer} coat${config.coatConfiguration.primer > 1 ? 's' : ''} of ${config.selectedMaterials.primer || 'Primer'}`);
-                  }
-                  if (config.coatConfiguration.emulsion > 0) {
-                    parts.push(`${config.coatConfiguration.emulsion} coat${config.coatConfiguration.emulsion > 1 ? 's' : ''} of ${config.selectedMaterials.emulsion || 'Emulsion'}`);
-                  }
-                  return parts.join(' + ');
-                } else {
-                  const parts = [];
-                  if (config.repaintingConfiguration?.primer > 0) {
-                    parts.push(`${config.repaintingConfiguration.primer} coat${config.repaintingConfiguration.primer > 1 ? 's' : ''} of ${config.selectedMaterials.primer || 'Primer'}`);
-                  }
-                  if (config.repaintingConfiguration?.emulsion > 0) {
-                    parts.push(`${config.repaintingConfiguration.emulsion} coat${config.repaintingConfiguration.emulsion > 1 ? 's' : ''} of ${config.selectedMaterials.emulsion || 'Emulsion'}`);
-                  }
-                  return parts.join(' + ');
+            // Get coat details in proper format
+            const getCoatDetails = () => {
+              if (config.paintingSystem === 'Fresh Painting') {
+                const parts = [];
+                if (config.coatConfiguration.putty > 0) {
+                  parts.push(`${config.coatConfiguration.putty} coat${config.coatConfiguration.putty > 1 ? 's' : ''} of ${config.selectedMaterials.putty || 'Putty'}`);
                 }
-              };
-
-              return (
-                <Card key={config.id} className="flex-none w-72 border-2 border-primary/20 bg-primary/5 snap-start">
+                if (config.coatConfiguration.primer > 0) {
+                  parts.push(`${config.coatConfiguration.primer} coat${config.coatConfiguration.primer > 1 ? 's' : ''} of ${config.selectedMaterials.primer || 'Primer'}`);
+                }
+                if (config.coatConfiguration.emulsion > 0) {
+                  parts.push(`${config.coatConfiguration.emulsion} coat${config.coatConfiguration.emulsion > 1 ? 's' : ''} of ${config.selectedMaterials.emulsion || 'Emulsion'}`);
+                }
+                return parts.join(' + ');
+              } else {
+                const parts = [];
+                if (config.repaintingConfiguration?.primer > 0) {
+                  parts.push(`${config.repaintingConfiguration.primer} coat${config.repaintingConfiguration.primer > 1 ? 's' : ''} of ${config.selectedMaterials.primer || 'Primer'}`);
+                }
+                if (config.repaintingConfiguration?.emulsion > 0) {
+                  parts.push(`${config.repaintingConfiguration.emulsion} coat${config.repaintingConfiguration.emulsion > 1 ? 's' : ''} of ${config.selectedMaterials.emulsion || 'Emulsion'}`);
+                }
+                return parts.join(' + ');
+              }
+            };
+            return <Card key={config.id} className="flex-none w-72 border-2 border-primary/20 bg-primary/5 snap-start">
                   <CardContent className="p-4">
                     <div className="space-y-3">
                       {/* Header with Type Badge */}
@@ -353,12 +373,10 @@ export default function GenerateSummaryScreen() {
                       </div>
                     </div>
                   </CardContent>
-                </Card>
-              );
-            })}
+                </Card>;
+          })}
           </div>
-        </div>
-      );
+        </div>;
     };
 
     // Calculate total project cost from all configurations
@@ -367,9 +385,7 @@ export default function GenerateSummaryScreen() {
       const rate = parseFloat(config.perSqFtRate) || 0;
       return sum + area * rate;
     }, 0);
-
-    return (
-      <Card className="eca-shadow">
+    return <Card className="eca-shadow">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base font-semibold">
             <Palette className="h-5 w-5 text-primary" />
@@ -378,32 +394,25 @@ export default function GenerateSummaryScreen() {
           <p className="text-sm text-muted-foreground mt-1">All configured paint types</p>
         </CardHeader>
         <CardContent>
-          {areaConfigs.length === 0 ? (
-            <div className="text-sm text-muted-foreground p-4 border rounded-md bg-muted/30">
+          {areaConfigs.length === 0 ? <div className="text-sm text-muted-foreground p-4 border rounded-md bg-muted/30">
               No paint configurations found. Please add them in Paint Estimation and click Generate Summary.
-            </div>
-          ) : (
-            <div className="space-y-4">
+            </div> : <div className="space-y-4">
               {renderConfigGroup(interiorConfigs, 'Interior Paint Configurations')}
               {renderConfigGroup(exteriorConfigs, 'Exterior Paint Configurations')}
               {renderConfigGroup(waterproofingConfigs, 'Waterproofing Configurations')}
               
               {/* Total Project Cost Summary */}
-              {areaConfigs.length > 0 && (
-                <Card className="border-2 border-primary bg-primary/5 mt-4">
+              {areaConfigs.length > 0 && <Card className="border-2 border-primary bg-primary/5 mt-4">
                   <CardContent className="p-4">
                     <div className="space-y-1">
                       <p className="text-sm text-muted-foreground">Total Project Cost</p>
                       <p className="text-2xl font-bold text-primary">₹{totalProjectCost.toFixed(2)}</p>
                     </div>
                   </CardContent>
-                </Card>
-              )}
-            </div>
-          )}
+                </Card>}
+            </div>}
         </CardContent>
-      </Card>
-    );
+      </Card>;
   };
 
   // Section 2: Total Room Details
@@ -628,10 +637,8 @@ export default function GenerateSummaryScreen() {
         if (config.coatConfiguration.primer > 0) {
           const totalWork = area * config.coatConfiguration.primer;
           // Use enamel base coat coverage for enamel primer
-          const isEnamel = config.selectedMaterials.primer?.toLowerCase().includes('enamel') || 
-                          config.selectedMaterials.emulsion?.toLowerCase().includes('enamel');
-          const coverage = isEnamel ? coverageRates.oilBased.enamelBase : 
-                          (isOilBased ? coverageRates.oilBased.redOxide : coverageRates.waterBased.primer);
+          const isEnamel = config.selectedMaterials.primer?.toLowerCase().includes('enamel') || config.selectedMaterials.emulsion?.toLowerCase().includes('enamel');
+          const coverage = isEnamel ? coverageRates.oilBased.enamelBase : isOilBased ? coverageRates.oilBased.redOxide : coverageRates.waterBased.primer;
           const adjustedCoverage = coverage * (workingHours / standardHours);
           const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
           tasks.push({
@@ -648,12 +655,11 @@ export default function GenerateSummaryScreen() {
         if (config.coatConfiguration.emulsion > 0) {
           const totalWork = area * config.coatConfiguration.emulsion;
           const isEnamel = config.selectedMaterials.emulsion?.toLowerCase().includes('enamel');
-          const coverage = isEnamel ? coverageRates.oilBased.enamelTop : 
-                          (isOilBased ? coverageRates.oilBased.enamelTop : coverageRates.waterBased.emulsion);
+          const coverage = isEnamel ? coverageRates.oilBased.enamelTop : isOilBased ? coverageRates.oilBased.enamelTop : coverageRates.waterBased.emulsion;
           const adjustedCoverage = coverage * (workingHours / standardHours);
           const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
           tasks.push({
-            name: isEnamel ? 'Enamel' : (isOilBased ? 'Enamel' : 'Emulsion'),
+            name: isEnamel ? 'Enamel' : isOilBased ? 'Enamel' : 'Emulsion',
             area,
             coats: config.coatConfiguration.emulsion,
             totalWork,
@@ -779,25 +785,21 @@ export default function GenerateSummaryScreen() {
                 </p>
               </div>}
             {/* Labour Calculation Breakdown - Grouped by Type */}
-            {labourMode === 'auto' && configTasks.length > 0 && (
-              <div className="space-y-4">
+            {labourMode === 'auto' && configTasks.length > 0 && <div className="space-y-4">
                 <p className="font-semibold text-sm text-foreground">Labour Calculation Breakdown</p>
                 
                 {/* Interior Configurations */}
-                {configTasks.filter(ct => ct.paintTypeCategory === 'Interior' && ct.totalDays > 0).length > 0 && (
-                  <div className="space-y-3">
+                {configTasks.filter(ct => ct.paintTypeCategory === 'Interior' && ct.totalDays > 0).length > 0 && <div className="space-y-3">
                     <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                       Interior Paint Configurations
                     </Badge>
                     <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide" style={{
-                      scrollbarWidth: 'none',
-                      msOverflowStyle: 'none'
-                    }}>
+                scrollbarWidth: 'none',
+                msOverflowStyle: 'none'
+              }}>
                       {configTasks.filter(ct => ct.paintTypeCategory === 'Interior' && ct.totalDays > 0).map((configTask, index) => {
-                        const isEnamelConfig = configTask.configLabel.toLowerCase().includes('enamel') || 
-                                              configTask.tasks.some((t: any) => t.name.toLowerCase().includes('enamel'));
-                        return (
-                        <Card key={index} className={`flex-none w-72 border-2 snap-start ${isEnamelConfig ? 'bg-orange-50 border-orange-300' : 'border-primary/20 bg-primary/5'}`}>
+                  const isEnamelConfig = configTask.configLabel.toLowerCase().includes('enamel') || configTask.tasks.some((t: any) => t.name.toLowerCase().includes('enamel'));
+                  return <Card key={index} className={`flex-none w-72 border-2 snap-start ${isEnamelConfig ? 'bg-orange-50 border-orange-300' : 'border-primary/20 bg-primary/5'}`}>
                           <CardContent className="p-4">
                             <div className="space-y-4">
                               {/* Header with Type Badge */}
@@ -811,9 +813,8 @@ export default function GenerateSummaryScreen() {
                               {/* Tasks List */}
                               <div className="space-y-3">
                                 {configTask.tasks.map((task: any, taskIdx: number) => {
-                                  const adjustedDays = Math.ceil(task.daysRequired / autoLabourPerDay);
-                                  return (
-                                    <div key={taskIdx} className="space-y-2">
+                            const adjustedDays = Math.ceil(task.daysRequired / autoLabourPerDay);
+                            return <div key={taskIdx} className="space-y-2">
                                       <h4 className="text-base font-semibold text-foreground">{task.name}</h4>
                                       <div className="flex items-baseline justify-between">
                                         <div className="flex-1">
@@ -828,9 +829,8 @@ export default function GenerateSummaryScreen() {
                                           <p className="text-xl font-bold text-primary">{adjustedDays} days</p>
                                         </div>
                                       </div>
-                                    </div>
-                                  );
-                                })}
+                                    </div>;
+                          })}
                               </div>
                               
                               {/* Total Days */}
@@ -842,28 +842,24 @@ export default function GenerateSummaryScreen() {
                               </div>
                             </div>
                           </CardContent>
-                        </Card>
-                      )})}
+                        </Card>;
+                })}
                       
                     </div>
-                  </div>
-                )}
+                  </div>}
 
                 {/* Exterior Configurations */}
-                {configTasks.filter(ct => ct.paintTypeCategory === 'Exterior' && ct.totalDays > 0).length > 0 && (
-                  <div className="space-y-3">
+                {configTasks.filter(ct => ct.paintTypeCategory === 'Exterior' && ct.totalDays > 0).length > 0 && <div className="space-y-3">
                     <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                       Exterior Paint Configurations
                     </Badge>
                     <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide" style={{
-                      scrollbarWidth: 'none',
-                      msOverflowStyle: 'none'
-                    }}>
+                scrollbarWidth: 'none',
+                msOverflowStyle: 'none'
+              }}>
                       {configTasks.filter(ct => ct.paintTypeCategory === 'Exterior' && ct.totalDays > 0).map((configTask, index) => {
-                        const isEnamelConfig = configTask.configLabel.toLowerCase().includes('enamel') || 
-                                              configTask.tasks.some((t: any) => t.name.toLowerCase().includes('enamel'));
-                        return (
-                        <Card key={index} className={`flex-none w-72 border-2 snap-start ${isEnamelConfig ? 'bg-orange-50 border-orange-300' : 'border-primary/20 bg-primary/5'}`}>
+                  const isEnamelConfig = configTask.configLabel.toLowerCase().includes('enamel') || configTask.tasks.some((t: any) => t.name.toLowerCase().includes('enamel'));
+                  return <Card key={index} className={`flex-none w-72 border-2 snap-start ${isEnamelConfig ? 'bg-orange-50 border-orange-300' : 'border-primary/20 bg-primary/5'}`}>
                           <CardContent className="p-4">
                             <div className="space-y-4">
                               {/* Header with Type Badge */}
@@ -877,9 +873,8 @@ export default function GenerateSummaryScreen() {
                               {/* Tasks List */}
                               <div className="space-y-3">
                                 {configTask.tasks.map((task: any, taskIdx: number) => {
-                                  const adjustedDays = Math.ceil(task.daysRequired / autoLabourPerDay);
-                                  return (
-                                    <div key={taskIdx} className="space-y-2">
+                            const adjustedDays = Math.ceil(task.daysRequired / autoLabourPerDay);
+                            return <div key={taskIdx} className="space-y-2">
                                       <h4 className="text-base font-semibold text-foreground">{task.name}</h4>
                                       <div className="flex items-baseline justify-between">
                                         <div className="flex-1">
@@ -894,9 +889,8 @@ export default function GenerateSummaryScreen() {
                                           <p className="text-xl font-bold text-primary">{adjustedDays} days</p>
                                         </div>
                                       </div>
-                                    </div>
-                                  );
-                                })}
+                                    </div>;
+                          })}
                               </div>
                               
                               {/* Total Days */}
@@ -908,28 +902,24 @@ export default function GenerateSummaryScreen() {
                               </div>
                             </div>
                           </CardContent>
-                        </Card>
-                      )})}
+                        </Card>;
+                })}
                       
                     </div>
-                  </div>
-                )}
+                  </div>}
 
                 {/* Waterproofing Configurations */}
-                {configTasks.filter(ct => ct.paintTypeCategory === 'Waterproofing' && ct.totalDays > 0).length > 0 && (
-                  <div className="space-y-3">
+                {configTasks.filter(ct => ct.paintTypeCategory === 'Waterproofing' && ct.totalDays > 0).length > 0 && <div className="space-y-3">
                     <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                       Waterproofing Configurations
                     </Badge>
                     <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide" style={{
-                      scrollbarWidth: 'none',
-                      msOverflowStyle: 'none'
-                    }}>
+                scrollbarWidth: 'none',
+                msOverflowStyle: 'none'
+              }}>
                       {configTasks.filter(ct => ct.paintTypeCategory === 'Waterproofing' && ct.totalDays > 0).map((configTask, index) => {
-                        const isEnamelConfig = configTask.configLabel.toLowerCase().includes('enamel') || 
-                                              configTask.tasks.some((t: any) => t.name.toLowerCase().includes('enamel'));
-                        return (
-                        <Card key={index} className={`flex-none w-72 border-2 snap-start ${isEnamelConfig ? 'bg-orange-50 border-orange-300' : 'border-primary/20 bg-primary/5'}`}>
+                  const isEnamelConfig = configTask.configLabel.toLowerCase().includes('enamel') || configTask.tasks.some((t: any) => t.name.toLowerCase().includes('enamel'));
+                  return <Card key={index} className={`flex-none w-72 border-2 snap-start ${isEnamelConfig ? 'bg-orange-50 border-orange-300' : 'border-primary/20 bg-primary/5'}`}>
                           <CardContent className="p-4">
                             <div className="space-y-4">
                               {/* Header with Type Badge */}
@@ -943,9 +933,8 @@ export default function GenerateSummaryScreen() {
                               {/* Tasks List */}
                               <div className="space-y-3">
                                 {configTask.tasks.map((task: any, taskIdx: number) => {
-                                  const adjustedDays = Math.ceil(task.daysRequired / autoLabourPerDay);
-                                  return (
-                                    <div key={taskIdx} className="space-y-2">
+                            const adjustedDays = Math.ceil(task.daysRequired / autoLabourPerDay);
+                            return <div key={taskIdx} className="space-y-2">
                                       <h4 className="text-base font-semibold text-foreground">{task.name}</h4>
                                       <div className="flex items-baseline justify-between">
                                         <div className="flex-1">
@@ -960,9 +949,8 @@ export default function GenerateSummaryScreen() {
                                           <p className="text-xl font-bold text-primary">{adjustedDays} days</p>
                                         </div>
                                       </div>
-                                    </div>
-                                  );
-                                })}
+                                    </div>;
+                          })}
                               </div>
                               
                               {/* Total Days */}
@@ -974,12 +962,11 @@ export default function GenerateSummaryScreen() {
                               </div>
                             </div>
                           </CardContent>
-                        </Card>
-                      )})}
+                        </Card>;
+                })}
                       
                     </div>
-                  </div>
-                )}
+                  </div>}
 
                 {/* Summary */}
                 <div className="p-4 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 rounded-lg border-2 border-red-500">
@@ -995,8 +982,7 @@ export default function GenerateSummaryScreen() {
                     </p>
                   </div>
                 </div>
-              </div>
-            )}
+              </div>}
 
             {/* Total Labour Cost - Only in Auto Mode */}
             {labourMode === 'auto' && <div className="p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border-2 border-primary">
@@ -1037,32 +1023,40 @@ export default function GenerateSummaryScreen() {
   };
 
   // Helper function to extract product name and size from material string
-  const extractProductNameAndSize = (materialName: string): { productName: string; size: string } => {
+  const extractProductNameAndSize = (materialName: string): {
+    productName: string;
+    size: string;
+  } => {
     // Extract size pattern (e.g., "20L", "10kg", "1L", etc.)
     const sizePattern = /(\d+(?:\.\d+)?)(kg|L|g|ml|pack)$/i;
     const match = materialName.match(sizePattern);
-    
     if (match) {
       const size = match[0]; // e.g., "20L"
       const productName = materialName.replace(size, '').trim(); // e.g., "Damp Sheath Exterior"
-      return { productName, size };
+      return {
+        productName,
+        size
+      };
     }
-    
-    return { productName: materialName, size: '' };
+    return {
+      productName: materialName,
+      size: ''
+    };
   };
 
   // Helper function to get price for a specific material and size
   const getMaterialPrice = (materialName: string): number => {
-    const { productName, size } = extractProductNameAndSize(materialName);
+    const {
+      productName,
+      size
+    } = extractProductNameAndSize(materialName);
     const productKey = productName.toLowerCase();
-    
     if (productPricing[productKey] && size) {
       const price = productPricing[productKey][size];
       if (price && typeof price === 'number') {
         return price;
       }
     }
-    
     return 0; // Return 0 if no price found
   };
 
@@ -1149,42 +1143,33 @@ export default function GenerateSummaryScreen() {
     const getMaterialCoverage = (materialName: string, materialType: string) => {
       // Remove pack sizes from material name (e.g., "20L", "10L", "4L", "1L")
       let cleanName = materialName.replace(/\s*\d+L\b/gi, '').trim();
-      
+
       // For Exterior configurations, handle base coat vs top coat distinction
-      const isBaseCost = materialType === 'Primer' || 
-                        cleanName.toLowerCase().includes('base coat') || 
-                        cleanName.toLowerCase().includes('primer');
-      
+      const isBaseCost = materialType === 'Primer' || cleanName.toLowerCase().includes('base coat') || cleanName.toLowerCase().includes('primer');
+
       // For base coats/primers, look for the exact match with "Base Coat" suffix
-      if (isBaseCost && (cleanName.toLowerCase().includes('ultima protek') || 
-                        cleanName.toLowerCase().includes('durolife'))) {
+      if (isBaseCost && (cleanName.toLowerCase().includes('ultima protek') || cleanName.toLowerCase().includes('durolife'))) {
         // Try to find base coat coverage
-        const baseCoatKey = cleanName.toLowerCase().includes('base coat') 
-          ? cleanName.toLowerCase() 
-          : `${cleanName.toLowerCase()} base coat`;
-        
+        const baseCoatKey = cleanName.toLowerCase().includes('base coat') ? cleanName.toLowerCase() : `${cleanName.toLowerCase()} base coat`;
         if (coverageData[baseCoatKey]) {
           return coverageData[baseCoatKey];
         }
       }
-      
+
       // For top coats, ensure we don't match base coat entries
       if (!isBaseCost) {
         // Remove "base coat" from the name to ensure we get top coat coverage
         cleanName = cleanName.replace(/\s*base\s*coat\s*/gi, '').trim();
-        
+
         // For Durolife top coat, look specifically for "durolife top coat"
         if (cleanName.toLowerCase().includes('durolife')) {
-          const topCoatKey = cleanName.toLowerCase().includes('top coat') 
-            ? cleanName.toLowerCase() 
-            : `${cleanName.toLowerCase()} top coat`;
-          
+          const topCoatKey = cleanName.toLowerCase().includes('top coat') ? cleanName.toLowerCase() : `${cleanName.toLowerCase()} top coat`;
           if (coverageData[topCoatKey]) {
             return coverageData[topCoatKey];
           }
         }
       }
-      
+
       // Default lookup
       return coverageData[cleanName.toLowerCase()] || 'N/A';
     };
@@ -1194,21 +1179,17 @@ export default function GenerateSummaryScreen() {
       let materialKey = 'Emulsion';
       if (material.toLowerCase().includes('putty')) materialKey = 'Putty';else if (material.toLowerCase().includes('primer')) materialKey = 'Primer';else if (material.toLowerCase().includes('enamel')) materialKey = 'Enamel';
       const pricing = materialPricing[materialKey];
-      
+
       // Calculate min and max quantities based on coverage variations
       const minQuantity = Math.ceil(quantity); // Best coverage (smooth surface)
       // For putty, add fixed 10kg; for others, add 25%
-      const maxQuantity = materialKey === 'Putty' 
-        ? Math.ceil(quantity + 10) 
-        : Math.ceil(quantity * 1.25);
-      
+      const maxQuantity = materialKey === 'Putty' ? Math.ceil(quantity + 10) : Math.ceil(quantity * 1.25);
       const packsNeeded = Math.ceil(maxQuantity / pricing.packSize);
-      
+
       // Get price from database or fallback to hardcoded pricing
       const dbPrice = getMaterialPrice(material);
       const pricePerPack = dbPrice > 0 ? dbPrice : pricing.pricePerPack;
       const totalCost = packsNeeded * pricePerPack;
-      
       const packCombination = calculateOptimalPacks(materialKey, maxQuantity);
       return {
         quantity: quantity.toFixed(2),
@@ -1246,8 +1227,7 @@ export default function GenerateSummaryScreen() {
         // Primer
         if (config.selectedMaterials.primer && config.coatConfiguration.primer > 0) {
           // Use enamel-specific coverage for enamel primer
-          const isEnamel = config.selectedMaterials.primer?.toLowerCase().includes('enamel') || 
-                          config.selectedMaterials.emulsion?.toLowerCase().includes('enamel');
+          const isEnamel = config.selectedMaterials.primer?.toLowerCase().includes('enamel') || config.selectedMaterials.emulsion?.toLowerCase().includes('enamel');
           const coverage = isEnamel ? 100 : 120; // sq ft per liter (enamel has lower coverage)
           const litersNeeded = area / coverage * config.coatConfiguration.primer;
           const calc = calculateMaterial(config.selectedMaterials.primer, litersNeeded);
@@ -1309,27 +1289,21 @@ export default function GenerateSummaryScreen() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {calculationConfigs.length === 0 ? (
-            <div className="text-sm text-muted-foreground p-4 border rounded-md bg-muted/30">
+          {calculationConfigs.length === 0 ? <div className="text-sm text-muted-foreground p-4 border rounded-md bg-muted/30">
               No material configurations found.
-            </div>
-          ) : (
-            <div className="space-y-4">
+            </div> : <div className="space-y-4">
               {/* Interior Configurations */}
-              {configMaterials.filter(cm => cm.paintTypeCategory === 'Interior' && cm.totalCost > 0).length > 0 && (
-                <div className="space-y-3">
+              {configMaterials.filter(cm => cm.paintTypeCategory === 'Interior' && cm.totalCost > 0).length > 0 && <div className="space-y-3">
                   <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                     Interior Paint Configurations
                   </Badge>
                   <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide" style={{
-                    scrollbarWidth: 'none',
-                    msOverflowStyle: 'none'
-                  }}>
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none'
+            }}>
                     {configMaterials.filter(cm => cm.paintTypeCategory === 'Interior' && cm.totalCost > 0).map((configMat, index) => {
-                      const isEnamelConfig = configMat.configLabel.toLowerCase().includes('enamel') || 
-                                            configMat.materials.some((m: any) => m.name.toLowerCase().includes('enamel'));
-                      return (
-                      <Card key={index} className={`flex-none w-72 border-2 snap-start ${isEnamelConfig ? 'bg-orange-50 border-orange-300' : 'border-primary/20 bg-primary/5'}`}>
+                const isEnamelConfig = configMat.configLabel.toLowerCase().includes('enamel') || configMat.materials.some((m: any) => m.name.toLowerCase().includes('enamel'));
+                return <Card key={index} className={`flex-none w-72 border-2 snap-start ${isEnamelConfig ? 'bg-orange-50 border-orange-300' : 'border-primary/20 bg-primary/5'}`}>
                         <CardContent className="p-4">
                           <div className="space-y-4">
                             {/* Header with Type Badge */}
@@ -1342,8 +1316,7 @@ export default function GenerateSummaryScreen() {
                             
                             {/* Materials List */}
                             <div className="space-y-3">
-                              {configMat.materials.map((mat: any, matIdx: number) => (
-                                <div key={matIdx} className="space-y-2">
+                              {configMat.materials.map((mat: any, matIdx: number) => <div key={matIdx} className="space-y-2">
                                   <h4 className="text-base font-semibold text-foreground">{mat.name}</h4>
                                   <div className="flex items-baseline justify-between">
                                     <div className="flex-1">
@@ -1361,8 +1334,7 @@ export default function GenerateSummaryScreen() {
                                       <p className="text-xl font-bold text-primary">₹{mat.totalCost.toLocaleString('en-IN')}</p>
                                     </div>
                                   </div>
-                                </div>
-                              ))}
+                                </div>)}
                             </div>
                             
                             {/* Total Cost */}
@@ -1374,28 +1346,24 @@ export default function GenerateSummaryScreen() {
                             </div>
                           </div>
                         </CardContent>
-                      </Card>
-                    )})}
+                      </Card>;
+              })}
                     
                   </div>
-                </div>
-              )}
+                </div>}
 
               {/* Exterior Configurations */}
-              {configMaterials.filter(cm => cm.paintTypeCategory === 'Exterior' && cm.totalCost > 0).length > 0 && (
-                <div className="space-y-3">
+              {configMaterials.filter(cm => cm.paintTypeCategory === 'Exterior' && cm.totalCost > 0).length > 0 && <div className="space-y-3">
                   <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                     Exterior Paint Configurations
                   </Badge>
                   <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide" style={{
-                    scrollbarWidth: 'none',
-                    msOverflowStyle: 'none'
-                  }}>
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none'
+            }}>
                     {configMaterials.filter(cm => cm.paintTypeCategory === 'Exterior' && cm.totalCost > 0).map((configMat, index) => {
-                      const isEnamelConfig = configMat.configLabel.toLowerCase().includes('enamel') || 
-                                            configMat.materials.some((m: any) => m.name.toLowerCase().includes('enamel'));
-                      return (
-                      <Card key={index} className={`flex-none w-72 border-2 snap-start ${isEnamelConfig ? 'bg-orange-50 border-orange-300' : 'border-primary/20 bg-primary/5'}`}>
+                const isEnamelConfig = configMat.configLabel.toLowerCase().includes('enamel') || configMat.materials.some((m: any) => m.name.toLowerCase().includes('enamel'));
+                return <Card key={index} className={`flex-none w-72 border-2 snap-start ${isEnamelConfig ? 'bg-orange-50 border-orange-300' : 'border-primary/20 bg-primary/5'}`}>
                         <CardContent className="p-4">
                           <div className="space-y-4">
                             {/* Header with Type Badge */}
@@ -1408,8 +1376,7 @@ export default function GenerateSummaryScreen() {
                             
                             {/* Materials List */}
                             <div className="space-y-3">
-                              {configMat.materials.map((mat: any, matIdx: number) => (
-                                <div key={matIdx} className="space-y-2">
+                              {configMat.materials.map((mat: any, matIdx: number) => <div key={matIdx} className="space-y-2">
                                   <h4 className="text-base font-semibold text-foreground">{mat.name}</h4>
                                   <div className="flex items-baseline justify-between">
                                     <div className="flex-1">
@@ -1427,8 +1394,7 @@ export default function GenerateSummaryScreen() {
                                       <p className="text-xl font-bold text-primary">₹{mat.totalCost.toLocaleString('en-IN')}</p>
                                     </div>
                                   </div>
-                                </div>
-                              ))}
+                                </div>)}
                             </div>
                             
                             {/* Total Cost */}
@@ -1440,28 +1406,24 @@ export default function GenerateSummaryScreen() {
                             </div>
                           </div>
                         </CardContent>
-                      </Card>
-                    )})}
+                      </Card>;
+              })}
                     
                   </div>
-                </div>
-              )}
+                </div>}
 
               {/* Waterproofing Configurations */}
-              {configMaterials.filter(cm => cm.paintTypeCategory === 'Waterproofing' && cm.totalCost > 0).length > 0 && (
-                <div className="space-y-3">
+              {configMaterials.filter(cm => cm.paintTypeCategory === 'Waterproofing' && cm.totalCost > 0).length > 0 && <div className="space-y-3">
                   <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                     Waterproofing Configurations
                   </Badge>
                   <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide" style={{
-                    scrollbarWidth: 'none',
-                    msOverflowStyle: 'none'
-                  }}>
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none'
+            }}>
                     {configMaterials.filter(cm => cm.paintTypeCategory === 'Waterproofing' && cm.totalCost > 0).map((configMat, index) => {
-                      const isEnamelConfig = configMat.configLabel.toLowerCase().includes('enamel') || 
-                                            configMat.materials.some((m: any) => m.name.toLowerCase().includes('enamel'));
-                      return (
-                      <Card key={index} className={`flex-none w-72 border-2 snap-start ${isEnamelConfig ? 'bg-orange-50 border-orange-300' : 'border-primary/20 bg-primary/5'}`}>
+                const isEnamelConfig = configMat.configLabel.toLowerCase().includes('enamel') || configMat.materials.some((m: any) => m.name.toLowerCase().includes('enamel'));
+                return <Card key={index} className={`flex-none w-72 border-2 snap-start ${isEnamelConfig ? 'bg-orange-50 border-orange-300' : 'border-primary/20 bg-primary/5'}`}>
                         <CardContent className="p-4">
                           <div className="space-y-4">
                             {/* Header with Type Badge */}
@@ -1474,8 +1436,7 @@ export default function GenerateSummaryScreen() {
                             
                             {/* Materials List */}
                             <div className="space-y-3">
-                              {configMat.materials.map((mat: any, matIdx: number) => (
-                                <div key={matIdx} className="space-y-2">
+                              {configMat.materials.map((mat: any, matIdx: number) => <div key={matIdx} className="space-y-2">
                                   <h4 className="text-base font-semibold text-foreground">{mat.name}</h4>
                                   <div className="flex items-baseline justify-between">
                                     <div className="flex-1">
@@ -1493,8 +1454,7 @@ export default function GenerateSummaryScreen() {
                                       <p className="text-xl font-bold text-primary">₹{mat.totalCost.toLocaleString('en-IN')}</p>
                                     </div>
                                   </div>
-                                </div>
-                              ))}
+                                </div>)}
                             </div>
                             
                             {/* Total Cost */}
@@ -1506,14 +1466,12 @@ export default function GenerateSummaryScreen() {
                             </div>
                           </div>
                         </CardContent>
-                      </Card>
-                    )})}
+                      </Card>;
+              })}
                     
                   </div>
-                </div>
-              )}
-            </div>
-          )}
+                </div>}
+            </div>}
 
           {/* Total Material Cost Summary */}
           {configMaterials.length > 0 && <div className="p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border-2 border-primary mt-4">
@@ -1710,24 +1668,33 @@ export default function GenerateSummaryScreen() {
   // Group room areas by project type and only count selected areas
   const totalAreas = rooms.reduce((acc, room) => {
     const projectType = room.project_type || 'Interior';
-    const selectedAreas = room.selected_areas || { wall: true, floor: false, ceiling: false };
-    
+    const selectedAreas = room.selected_areas || {
+      wall: true,
+      floor: false,
+      ceiling: false
+    };
     if (!acc[projectType]) {
-      acc[projectType] = { wallArea: 0, floorArea: 0, ceilingArea: 0 };
+      acc[projectType] = {
+        wallArea: 0,
+        floorArea: 0,
+        ceilingArea: 0
+      };
     }
-    
     if (selectedAreas.wall) {
-      acc[projectType].wallArea += (room.adjusted_wall_area || room.wall_area || 0);
+      acc[projectType].wallArea += room.adjusted_wall_area || room.wall_area || 0;
     }
     if (selectedAreas.floor) {
-      acc[projectType].floorArea += (room.floor_area || 0);
+      acc[projectType].floorArea += room.floor_area || 0;
     }
     if (selectedAreas.ceiling) {
-      acc[projectType].ceilingArea += (room.ceiling_area || 0);
+      acc[projectType].ceilingArea += room.ceiling_area || 0;
     }
-    
     return acc;
-  }, {} as Record<string, { wallArea: number; floorArea: number; ceilingArea: number }>);
+  }, {} as Record<string, {
+    wallArea: number;
+    floorArea: number;
+    ceilingArea: number;
+  }>);
   const calculateTotalEstimatedCost = () => {
     // Calculate material cost directly from area configs
     let materialCost = 0;
@@ -1886,35 +1853,26 @@ export default function GenerateSummaryScreen() {
       <div className="p-4">
         {/* Category Toggle Buttons */}
         <div className="flex flex-wrap gap-3 mb-4">
-          {['Interior', 'Exterior', 'Waterproofing'].map((category) => {
-            const isActive = paintType === category;
-            return (
-              <button
-                key={category}
-                onClick={() => setPaintType(category)}
-                className="px-5 py-3 font-semibold text-sm rounded-full transition-all duration-300 cursor-pointer"
-                style={{
-                  backgroundColor: isActive ? '#e2e8f0' : '#f5f5f5',
-                  color: '#2d3748',
-                  border: '1px solid #e2e8f0',
-                  fontWeight: isActive ? 700 : 600,
-                  fontSize: '1em'
-                }}
-                onMouseEnter={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.backgroundColor = '#e9ecef';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.backgroundColor = '#f5f5f5';
-                  }
-                }}
-              >
+          {['Interior', 'Exterior', 'Waterproofing'].map(category => {
+          const isActive = paintType === category;
+          return <button key={category} onClick={() => setPaintType(category)} className="px-5 py-3 font-semibold text-sm rounded-full transition-all duration-300 cursor-pointer" style={{
+            backgroundColor: isActive ? '#e2e8f0' : '#f5f5f5',
+            color: '#2d3748',
+            border: '1px solid #e2e8f0',
+            fontWeight: isActive ? 700 : 600,
+            fontSize: '1em'
+          }} onMouseEnter={e => {
+            if (!isActive) {
+              e.currentTarget.style.backgroundColor = '#e9ecef';
+            }
+          }} onMouseLeave={e => {
+            if (!isActive) {
+              e.currentTarget.style.backgroundColor = '#f5f5f5';
+            }
+          }}>
                 {category}
-              </button>
-            );
-          })}
+              </button>;
+        })}
         </div>
 
         <Tabs defaultValue="generate" className="w-full" onValueChange={value => {
@@ -1978,30 +1936,15 @@ export default function GenerateSummaryScreen() {
                 </div>
                 <div className="flex flex-wrap gap-3">
                   <span className="text-sm text-muted-foreground font-medium mb-2 w-full">Project Type:</span>
-                  {Array.isArray(projectData?.projectTypes) && projectData.projectTypes.length > 0 ? (
-                    projectData.projectTypes.map((type: string) => (
-                      <div 
-                        key={type} 
-                        className="inline-flex items-center px-4 py-2 font-semibold text-sm rounded-full bg-gradient-to-r from-red-500 to-pink-500 text-white shadow-md transition-all duration-200 hover:shadow-lg"
-                        style={{
-                          fontFamily: '"Segoe UI", "Inter", system-ui, sans-serif'
-                        }}
-                      >
+                  {Array.isArray(projectData?.projectTypes) && projectData.projectTypes.length > 0 ? projectData.projectTypes.map((type: string) => <div key={type} style={{
+                  fontFamily: '"Segoe UI", "Inter", system-ui, sans-serif'
+                }} className="inline-flex items-center px-4 py-2 font-semibold text-sm bg-gray-100 text-gray-800 border border-gray-300 rounded-full hover:bg-gray-200 transition-all ">
                         {type}
-                      </div>
-                    ))
-                  ) : (
-                    paintType && (
-                      <div 
-                        className="inline-flex items-center px-4 py-2 font-semibold text-sm rounded-full bg-gradient-to-r from-red-500 to-pink-500 text-white shadow-md transition-all duration-200 hover:shadow-lg"
-                        style={{
-                          fontFamily: '"Segoe UI", "Inter", system-ui, sans-serif'
-                        }}
-                      >
+                      </div>) : paintType && <div className="inline-flex items-center px-4 py-2 font-semibold text-sm rounded-full bg-gradient-to-r from-red-500 to-pink-500 text-white shadow-md transition-all duration-200 hover:shadow-lg" style={{
+                  fontFamily: '"Segoe UI", "Inter", system-ui, sans-serif'
+                }}>
                         {paintType}
-                      </div>
-                    )
-                  )}
+                      </div>}
                 </div>
               </CardContent>
             </Card>
@@ -2013,49 +1956,39 @@ export default function GenerateSummaryScreen() {
               </CardHeader>
               <CardContent>
                 <div className="eca-gradient text-white rounded-lg p-4 space-y-4">
-                  {Object.entries(totalAreas).map(([projectType, areas]: [string, { wallArea: number; floorArea: number; ceilingArea: number }]) => {
-                    const hasFloor = areas.floorArea > 0;
-                    const hasWall = areas.wallArea > 0;
-                    const hasCeiling = areas.ceilingArea > 0;
-                    const activeAreas = [hasFloor, hasWall, hasCeiling].filter(Boolean).length;
-                    
-                    if (activeAreas === 0) return null;
-                    
-                    return (
-                      <div key={projectType} className="space-y-2">
+                  {Object.entries(totalAreas).map(([projectType, areas]: [string, {
+                  wallArea: number;
+                  floorArea: number;
+                  ceilingArea: number;
+                }]) => {
+                  const hasFloor = areas.floorArea > 0;
+                  const hasWall = areas.wallArea > 0;
+                  const hasCeiling = areas.ceilingArea > 0;
+                  const activeAreas = [hasFloor, hasWall, hasCeiling].filter(Boolean).length;
+                  if (activeAreas === 0) return null;
+                  return <div key={projectType} className="space-y-2">
                         <div className="text-sm font-semibold text-white/90 border-b border-white/20 pb-1">
                           {projectType}
                         </div>
-                        <div className={`grid gap-4 text-center ${
-                          activeAreas === 1 ? 'grid-cols-1' : 
-                          activeAreas === 2 ? 'grid-cols-2' : 
-                          'grid-cols-3'
-                        }`}>
-                          {hasWall && (
-                            <div>
+                        <div className={`grid gap-4 text-center ${activeAreas === 1 ? 'grid-cols-1' : activeAreas === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+                          {hasWall && <div>
                               <p className="text-white/80 text-sm">Total Wall</p>
                               <p className="text-xl font-bold">{areas.wallArea.toFixed(1)}</p>
                               <p className="text-white/80 text-xs">sq.ft</p>
-                            </div>
-                          )}
-                          {hasFloor && (
-                            <div>
+                            </div>}
+                          {hasFloor && <div>
                               <p className="text-white/80 text-sm">Total Floor</p>
                               <p className="text-xl font-bold">{areas.floorArea.toFixed(1)}</p>
                               <p className="text-white/80 text-xs">sq.ft</p>
-                            </div>
-                          )}
-                          {hasCeiling && (
-                            <div>
+                            </div>}
+                          {hasCeiling && <div>
                               <p className="text-white/80 text-sm">Total Ceiling</p>
                               <p className="text-xl font-bold">{areas.ceilingArea.toFixed(1)}</p>
                               <p className="text-white/80 text-xs">sq.ft</p>
-                            </div>
-                          )}
+                            </div>}
                         </div>
-                      </div>
-                    );
-                  })}
+                      </div>;
+                })}
                 </div>
               </CardContent>
             </Card>
@@ -2085,17 +2018,21 @@ export default function GenerateSummaryScreen() {
                     <p className="text-sm text-muted-foreground mb-1">Company Cost</p>
                     <p className="text-2xl font-bold text-foreground">
                       ₹{areaConfigs.reduce((sum, config) => {
-                        const area = Number(config.area) || 0;
-                        const rate = parseFloat(config.perSqFtRate) || 0;
-                        return sum + area * rate;
-                      }, 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                      const area = Number(config.area) || 0;
+                      const rate = parseFloat(config.perSqFtRate) || 0;
+                      return sum + area * rate;
+                    }, 0).toLocaleString('en-IN', {
+                      maximumFractionDigits: 0
+                    })}
                     </p>
                     <p className="text-xs text-muted-foreground">Total Project Cost</p>
                   </div>
                   <div className="p-3 bg-muted/30 rounded-lg border border-border text-center">
                     <p className="text-sm text-muted-foreground mb-1">Project Cost</p>
                     <p className="text-2xl font-bold text-foreground">
-                      ₹{calculateTotalEstimatedCost().toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                      ₹{calculateTotalEstimatedCost().toLocaleString('en-IN', {
+                      maximumFractionDigits: 0
+                    })}
                     </p>
                     <p className="text-xs text-muted-foreground">Actual Total</p>
                   </div>
