@@ -2003,9 +2003,9 @@ export default function GenerateSummaryScreen() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="p-3 bg-muted/30 rounded-lg border border-border text-center">
-                    <p className="text-sm text-muted-foreground mb-1">Company Cost</p>
-                    <p className="text-2xl font-bold text-foreground">
+                  <div className="p-4 bg-muted/30 rounded-lg border border-border text-center">
+                    <p className="text-sm text-muted-foreground mb-2">Company Cost</p>
+                    <p className="text-xl font-bold text-foreground break-words">
                       ₹{areaConfigs.reduce((sum, config) => {
                       const area = Number(config.area) || 0;
                       const rate = parseFloat(config.perSqFtRate) || 0;
@@ -2014,25 +2014,22 @@ export default function GenerateSummaryScreen() {
                       maximumFractionDigits: 0
                     })}
                     </p>
-                    <p className="text-xs text-muted-foreground">Total Project Cost</p>
                   </div>
-                  <div className="p-3 bg-muted/30 rounded-lg border border-border text-center">
-                    <p className="text-sm text-muted-foreground mb-1">Project Cost</p>
-                    <p className="text-2xl font-bold text-foreground">
+                  <div className="p-4 bg-muted/30 rounded-lg border border-border text-center">
+                    <p className="text-sm text-muted-foreground mb-2">Project Cost</p>
+                    <p className="text-xl font-bold text-foreground break-words">
                       ₹{calculateTotalEstimatedCost().toLocaleString('en-IN', {
                       maximumFractionDigits: 0
                     })}
                     </p>
-                    <p className="text-xs text-muted-foreground">Actual Total</p>
                   </div>
                 </div>
 
                 <div className="p-4 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 rounded-lg border border-red-200 dark:border-red-800">
-                  <p className="text-sm text-red-700 dark:text-red-300 mb-2 font-medium">Estimated Total Cost</p>
+                  <p className="text-sm text-red-700 dark:text-red-300 mb-2 font-medium">Average Value</p>
                   <p className="text-3xl font-bold text-red-700 dark:text-red-300">
                     ₹{calculateTotalEstimatedCost().toLocaleString()}
                   </p>
-                  <p className="text-xs text-red-600 dark:text-red-400 mt-1">Including material cost</p>
                 </div>
               </CardContent>
             </Card>
