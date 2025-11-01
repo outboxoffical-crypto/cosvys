@@ -10,6 +10,7 @@ import { ArrowLeft, Package, Plus, Edit, Check, X, Trash2, Search, ChevronDown }
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { asianPaintsProducts } from "@/lib/productCatalog";
 
 interface ProductPrice {
   productName: string;
@@ -403,8 +404,14 @@ export default function DealerPricingScreen() {
       </div>
 
       <div className="p-4">
-        <Tabs defaultValue={getAllCategories()[0].name} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 gap-1 mb-4 h-auto p-1">
+        <Tabs defaultValue="product-pricing" className="w-full">
+          <TabsList className="grid w-full grid-cols-4 gap-1 mb-4 h-auto p-1">
+            <TabsTrigger 
+              value="product-pricing"
+              className="text-xs p-2 data-[state=active]:bg-primary data-[state=active]:text-white"
+            >
+              Product Pricing
+            </TabsTrigger>
             {getAllCategories().slice(0, 3).map((category) => (
               <TabsTrigger 
                 key={category.name} 
@@ -441,6 +448,226 @@ export default function DealerPricingScreen() {
               Add Tab
             </Button>
           </div>
+
+          {/* Product Pricing Tab - Consolidated View */}
+          <TabsContent value="product-pricing" className="space-y-4">
+            <Card className="eca-shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Package className="mr-2 h-5 w-5 text-primary" />
+                  All Products
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {/* Header Row */}
+                  <div className="grid grid-cols-12 gap-2 pb-2 border-b font-medium text-sm">
+                    <div className="col-span-5">Product Name</div>
+                    <div className="col-span-4">Category</div>
+                    <div className="col-span-3">Price</div>
+                  </div>
+                  
+                  {/* Product Rows */}
+                  {asianPaintsProducts.map((product) => (
+                    <div key={product.productId} className="border-b">
+                      <div className="grid grid-cols-12 gap-2 items-center py-2 hover:bg-muted/50 transition-colors">
+                        <div className="col-span-5 text-sm">{product.name}</div>
+                        <div className="col-span-4">
+                          <Badge variant="outline" className="text-xs">
+                            {product.category}
+                          </Badge>
+                        </div>
+                        <div className="col-span-3">
+                          {productPrices[product.name] ? (
+                            <div className="flex items-center space-x-2">
+                              <Badge variant="outline" className="text-xs">
+                                <Check className="h-3 w-3 mr-1" />
+                                Added
+                              </Badge>
+                              <Button 
+                                size="sm" 
+                                variant="ghost"
+                                onClick={() => handleEditProduct(product.name)}
+                                className="text-xs h-7 p-1"
+                              >
+                                <Edit className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleAddProduct(product.name)}
+                              className="text-xs h-7"
+                            >
+                              <Plus className="h-3 w-3 mr-1" />
+                              Add Price
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Editing Form */}
+                      {editingProduct === product.name && (
+                        <div className="p-4 bg-muted/30 space-y-3">
+                          <div className="space-y-2">
+                            <Label className="text-xs font-medium">Available Sizes</Label>
+                            
+                            {/* Dropdown Trigger */}
+                            <div 
+                              onClick={() => setSizeDropdownOpen(!sizeDropdownOpen)}
+                              className="flex items-center justify-between p-2.5 border border-input rounded-lg bg-background hover:bg-accent cursor-pointer transition-colors shadow-sm"
+                            >
+                              <span className="text-xs text-muted-foreground">
+                                {tempSizes.length === 0 
+                                  ? "Select sizes..." 
+                                  : `${tempSizes.length} size${tempSizes.length > 1 ? 's' : ''} selected`}
+                              </span>
+                              <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${sizeDropdownOpen ? 'rotate-180' : ''}`} />
+                            </div>
+
+                            {/* Dropdown Content */}
+                            {sizeDropdownOpen && (
+                              <div className="border border-input rounded-lg bg-background shadow-md overflow-hidden">
+                                {/* Search Bar */}
+                                <div className="p-2 border-b border-border bg-muted/30">
+                                  <div className="relative">
+                                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                                    <Input
+                                      type="text"
+                                      placeholder="Search sizes..."
+                                      value={sizeSearchTerm}
+                                      onChange={(e) => setSizeSearchTerm(e.target.value)}
+                                      className="h-8 pl-8 text-xs border-input"
+                                    />
+                                  </div>
+                                </div>
+
+                                {/* Select All / Clear All */}
+                                <div className="flex items-center justify-between px-3 py-2 bg-muted/20 border-b border-border">
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => {
+                                      const filteredSizes = availableSizes.filter(size => 
+                                        size.toLowerCase().includes(sizeSearchTerm.toLowerCase())
+                                      );
+                                      filteredSizes.forEach(size => {
+                                        if (!tempSizes.includes(size)) {
+                                          handleSizeToggle(size);
+                                        }
+                                      });
+                                    }}
+                                    className="h-7 text-xs text-primary hover:text-primary hover:bg-primary/10"
+                                  >
+                                    Select All
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => {
+                                      const filteredSizes = availableSizes.filter(size => 
+                                        size.toLowerCase().includes(sizeSearchTerm.toLowerCase())
+                                      );
+                                      filteredSizes.forEach(size => {
+                                        if (tempSizes.includes(size)) {
+                                          handleSizeToggle(size);
+                                        }
+                                      });
+                                    }}
+                                    className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  >
+                                    Clear All
+                                  </Button>
+                                </div>
+
+                                {/* Size Options */}
+                                <div className="max-h-64 overflow-y-auto">
+                                  {availableSizes
+                                    .filter(size => size.toLowerCase().includes(sizeSearchTerm.toLowerCase()))
+                                    .map((size) => (
+                                      <button
+                                        key={size}
+                                        type="button"
+                                        onClick={() => handleSizeToggle(size)}
+                                        className={`
+                                          w-full px-3 py-2 text-left text-xs transition-colors border-b
+                                          ${tempSizes.includes(size)
+                                            ? 'bg-primary/10 text-primary font-medium'
+                                            : 'hover:bg-accent'
+                                          }
+                                        `}
+                                      >
+                                        <div className="flex items-center justify-between">
+                                          <span>{size}</span>
+                                          {tempSizes.includes(size) && (
+                                            <Check className="h-3 w-3" />
+                                          )}
+                                        </div>
+                                      </button>
+                                    ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Price Inputs */}
+                          {tempSizes.length > 0 && (
+                            <div className="space-y-2">
+                              <Label className="text-xs font-medium">Set Prices</Label>
+                              <div className="grid grid-cols-2 gap-2">
+                                {tempSizes.map((size) => (
+                                  <div key={size} className="space-y-1">
+                                    <Label className="text-xs text-muted-foreground">{size}</Label>
+                                    <Input
+                                      type="number"
+                                      placeholder="0"
+                                      value={tempPrices[size] || ''}
+                                      onChange={(e) => setTempPrices({ ...tempPrices, [size]: parseFloat(e.target.value) || 0 })}
+                                      className="h-8 text-xs"
+                                    />
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Action Buttons */}
+                          <div className="flex space-x-2 pt-2">
+                            <Button 
+                              size="sm" 
+                              onClick={handleSaveProduct}
+                              className="text-xs flex-1"
+                              disabled={tempSizes.length === 0}
+                            >
+                              <Check className="h-3 w-3 mr-1" />
+                              Save
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => {
+                                setEditingProduct(null);
+                                setTempPrices({});
+                                setTempSizes([]);
+                                setSizeDropdownOpen(false);
+                              }}
+                              className="text-xs"
+                            >
+                              <X className="h-3 w-3 mr-1" />
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           {getAllCategories().map((category) => (
             <TabsContent key={category.name} value={category.name} className="space-y-4">
