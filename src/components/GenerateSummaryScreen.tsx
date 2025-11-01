@@ -1886,28 +1886,35 @@ export default function GenerateSummaryScreen() {
       <div className="p-4">
         {/* Category Toggle Buttons */}
         <div className="flex flex-wrap gap-3 mb-4">
-          {['Interior', 'Exterior', 'Waterproofing'].map((category) => (
-            <button
-              key={category}
-              onClick={() => setPaintType(category)}
-              className="px-5 py-3 font-semibold text-sm rounded-full transition-all duration-300 cursor-pointer"
-              style={{
-                backgroundColor: '#f5f5f5',
-                color: '#2d3748',
-                border: '1px solid #e2e8f0',
-                fontWeight: 600,
-                fontSize: '1em'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#e9ecef';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#f5f5f5';
-              }}
-            >
-              {category}
-            </button>
-          ))}
+          {['Interior', 'Exterior', 'Waterproofing'].map((category) => {
+            const isActive = paintType === category;
+            return (
+              <button
+                key={category}
+                onClick={() => setPaintType(category)}
+                className="px-5 py-3 font-semibold text-sm rounded-full transition-all duration-300 cursor-pointer"
+                style={{
+                  backgroundColor: isActive ? '#e2e8f0' : '#f5f5f5',
+                  color: '#2d3748',
+                  border: '1px solid #e2e8f0',
+                  fontWeight: isActive ? 700 : 600,
+                  fontSize: '1em'
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.backgroundColor = '#e9ecef';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.backgroundColor = '#f5f5f5';
+                  }
+                }}
+              >
+                {category}
+              </button>
+            );
+          })}
         </div>
 
         <Tabs defaultValue="generate" className="w-full" onValueChange={value => {
