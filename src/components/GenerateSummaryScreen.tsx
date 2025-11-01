@@ -1981,7 +1981,7 @@ export default function GenerateSummaryScreen() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-4 bg-muted/30 rounded-lg border border-border text-center">
                     <p className="text-sm text-muted-foreground mb-2">Company Cost</p>
-                    <p className="text-xl font-bold text-foreground break-words">
+                    <p className="text-xl font-bold text-foreground">
                       ₹{areaConfigs.reduce((sum, config) => {
                       const area = Number(config.area) || 0;
                       const rate = parseFloat(config.perSqFtRate) || 0;
