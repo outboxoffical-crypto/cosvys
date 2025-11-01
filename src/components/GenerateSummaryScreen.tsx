@@ -1851,32 +1851,6 @@ export default function GenerateSummaryScreen() {
       </div>
 
       <div className="p-4">
-        {/* Category Toggle Buttons */}
-        <div className="flex mb-4">
-          {['Interior', 'Exterior', 'Waterproofing'].map((category, index) => {
-          const isActive = paintType === category;
-          const isFirst = index === 0;
-          const isLast = index === 2;
-          return <button key={category} onClick={() => setPaintType(category)} className={`px-5 py-3 font-semibold text-sm transition-all duration-300 cursor-pointer ${isFirst ? 'rounded-l-full' : ''} ${isLast ? 'rounded-r-full' : ''}`} style={{
-            backgroundColor: isActive ? '#e2e8f0' : '#f5f5f5',
-            color: '#2d3748',
-            border: '1px solid #e2e8f0',
-            fontWeight: isActive ? 700 : 600,
-            fontSize: '1em'
-          }} onMouseEnter={e => {
-            if (!isActive) {
-              e.currentTarget.style.backgroundColor = '#e9ecef';
-            }
-          }} onMouseLeave={e => {
-            if (!isActive) {
-              e.currentTarget.style.backgroundColor = '#f5f5f5';
-            }
-          }}>
-                {category}
-              </button>;
-        })}
-        </div>
-
         <Tabs defaultValue="generate" className="w-full" onValueChange={value => {
         if (value === "generate" && topSectionRef.current) {
           setTimeout(() => {
