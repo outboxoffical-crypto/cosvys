@@ -2002,17 +2002,6 @@ export default function GenerateSummaryScreen() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-1">Selected Product:</p>
-                    <p className="font-semibold text-foreground">
-                      {areaConfigs.length > 0 ? areaConfigs[0].paintingSystem : 'No product selected'}
-                    </p>
-                    <p className="text-sm text-muted-foreground">{paintType} Paint</p>
-                  </div>
-                  <span className="text-sm text-muted-foreground">N/A</span>
-                </div>
-
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-3 bg-muted/30 rounded-lg border border-border text-center">
                     <p className="text-sm text-muted-foreground mb-1">Company Cost</p>
