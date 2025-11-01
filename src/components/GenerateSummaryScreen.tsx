@@ -1993,12 +1993,12 @@ export default function GenerateSummaryScreen() {
               </CardContent>
             </Card>
 
-            {/* Paint & Cost Details */}
+            {/* Average Cost Details */}
             <Card className="eca-shadow">
               <CardHeader>
                 <CardTitle className="flex items-center text-lg">
                   <Palette className="mr-2 h-5 w-5 text-primary" />
-                  Paint & Cost Details
+                  Average Cost Details
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
