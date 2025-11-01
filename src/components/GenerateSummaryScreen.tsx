@@ -2017,7 +2017,7 @@ export default function GenerateSummaryScreen() {
                   </div>
                   <div className="p-4 bg-muted/30 rounded-lg border border-border text-center">
                     <p className="text-sm text-muted-foreground mb-2">Project Cost</p>
-                    <p className="text-xl font-bold text-foreground break-words">
+                    <p className="text-xl font-bold text-foreground">
                       ₹{calculateTotalEstimatedCost().toLocaleString('en-IN', {
                       maximumFractionDigits: 0
                     })}
