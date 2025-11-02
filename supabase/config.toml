@@ -5,3 +5,12 @@ verify_jwt = false
 
 [functions.calculate-paint-requirements]
 verify_jwt = false
+
+[functions.send-approval-sms]
+verify_jwt = true
+
+[functions.send-reminder-sms]
+verify_jwt = true
+
+[functions.handle-approval]
+verify_jwt = false

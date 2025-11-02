@@ -4,6 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import ProjectDetailsModal from "./ProjectDetailsModal";
 import { 
   Plus, 
   Search, 
@@ -15,87 +19,171 @@ import {
   Phone,
   MoreVertical,
   Settings,
-  Package
+  Package,
+  CheckCircle2,
+  Bell
 } from "lucide-react";
 import asianPaintsLogo from "@/assets/asian-paints-logo.png";
 
 interface Project {
   id: string;
-  customerName: string;
-  mobile: string;
-  address: string;
-  type: "Interior" | "Exterior" | "Both";
-  totalArea: number;
-  estimatedCost: number;
-  createdAt: string;
-  status: "In Progress" | "Completed" | "Quoted";
+  lead_id: string;
+  customer_name: string;
+  phone: string;
+  location: string;
+  project_type: string;
+  project_status: string;
+  quotation_value: number;
+  area_sqft: number;
+  project_date: string;
+  approval_status: string;
+  reminder_sent: boolean;
+  notification_count: number;
+  created_at: string;
 }
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [dealerInfo, setDealerInfo] = useState<any>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem('dealerInfo');
     if (stored) {
       setDealerInfo(JSON.parse(stored));
     }
+    fetchProjects();
+    
+    // Subscribe to realtime updates
+    const channel = supabase
+      .channel('projects-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, () => {
+        fetchProjects();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
-  // Mock project data
-  const [projects] = useState<Project[]>([
-    {
-      id: "1",
-      customerName: "Rajesh Kumar",
-      mobile: "9876543210",
-      address: "Sector 45, Gurgaon",
-      type: "Interior",
-      totalArea: 1200,
-      estimatedCost: 45000,
-      createdAt: "2024-01-15",
-      status: "In Progress"
-    },
-    {
-      id: "2",
-      customerName: "Priya Sharma",
-      mobile: "9876543211",
-      address: "Jayanagar, Bangalore",
-      type: "Both",
-      totalArea: 2500,
-      estimatedCost: 85000,
-      createdAt: "2024-01-10",
-      status: "Completed"
-    },
-    {
-      id: "3",
-      customerName: "Amit Singh",
-      mobile: "9876543212",
-      address: "CP, New Delhi",
-      type: "Exterior",
-      totalArea: 800,
-      estimatedCost: 32000,
-      createdAt: "2024-01-08",
-      status: "Quoted"
+  const fetchProjects = async () => {
+    setLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      setLoading(false);
+      return;
     }
-  ]);
+
+    const { data, error } = await supabase
+      .from('projects')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    if (error) {
+      console.error('Error fetching projects:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load projects",
+        variant: "destructive",
+      });
+    } else {
+      setProjects(data || []);
+    }
+    setLoading(false);
+  };
 
   const filteredProjects = projects.filter(project =>
-    project.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    project.address.toLowerCase().includes(searchQuery.toLowerCase())
+    project.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    project.location.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleApproval = async (projectId: string) => {
+    const companyName = dealerInfo?.shopName || "Asian Paints ECA Pro";
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const { error } = await supabase.functions.invoke('send-approval-sms', {
+        body: { projectId, companyName },
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Approval SMS sent successfully",
+      });
+    } catch (error: any) {
+      console.error('Error sending approval:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send approval SMS",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleReminder = async (projectId: string) => {
+    const companyName = dealerInfo?.shopName || "Asian Paints ECA Pro";
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const { error } = await supabase.functions.invoke('send-reminder-sms', {
+        body: { projectId, companyName },
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Reminder SMS sent successfully",
+      });
+    } catch (error: any) {
+      console.error('Error sending reminder:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send reminder SMS",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleViewDetails = (projectId: string) => {
+    setSelectedProjectId(projectId);
+    setDetailsModalOpen(true);
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case "In Progress": return "bg-yellow-100 text-yellow-800 border-yellow-200";
       case "Completed": return "bg-green-100 text-green-800 border-green-200";
       case "Quoted": return "bg-blue-100 text-blue-800 border-blue-200";
-      default: return "bg-gray-100 text-gray-800 border-gray-200";
+      default: return "bg-muted text-muted-foreground border-border";
     }
   };
 
+  const totalValue = projects.reduce((sum, p) => sum + p.quotation_value, 0);
+  const totalArea = projects.reduce((sum, p) => sum + p.area_sqft, 0);
+
   return (
-    <div className="min-h-screen bg-background">
+    <TooltipProvider>
+      <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="eca-gradient text-white p-4">
         <div className="flex items-center justify-between mb-4">
@@ -147,14 +235,14 @@ export default function Dashboard() {
           <Card className="text-center eca-shadow">
             <CardContent className="p-4">
               <DollarSign className="h-6 w-6 text-secondary mx-auto mb-2" />
-              <p className="text-2xl font-bold text-foreground">₹1.6L</p>
+              <p className="text-2xl font-bold text-foreground">₹{(totalValue / 100000).toFixed(1)}L</p>
               <p className="text-sm text-muted-foreground">Total Value</p>
             </CardContent>
           </Card>
           <Card className="text-center eca-shadow">
             <CardContent className="p-4">
               <Ruler className="h-6 w-6 text-accent-foreground mx-auto mb-2" />
-              <p className="text-2xl font-bold text-foreground">4.5K</p>
+              <p className="text-2xl font-bold text-foreground">{(totalArea / 1000).toFixed(1)}K</p>
               <p className="text-sm text-muted-foreground">Total Sq.Ft</p>
             </CardContent>
           </Card>
@@ -194,7 +282,11 @@ export default function Dashboard() {
             </Button>
           </div>
 
-          {filteredProjects.length === 0 ? (
+          {loading ? (
+            <div className="flex items-center justify-center p-12">
+              <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+            </div>
+          ) : filteredProjects.length === 0 ? (
             <Card className="text-center p-8 eca-shadow">
               <Home className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-foreground mb-2">No Projects Found</h3>
@@ -211,50 +303,92 @@ export default function Dashboard() {
           ) : (
             <div className="space-y-3">
               {filteredProjects.map((project) => (
-                <Card key={project.id} className="eca-shadow hover:shadow-lg transition-shadow cursor-pointer">
+                <Card key={project.id} className="eca-shadow hover:shadow-lg transition-shadow">
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1">
-                        <h3 className="font-semibold text-foreground">{project.customerName}</h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold text-foreground">{project.customer_name}</h3>
+                          {project.approval_status === 'Approved' && (
+                            <Badge className="bg-green-500 text-white">
+                              <CheckCircle2 className="h-3 w-3 mr-1" />
+                              Approved
+                            </Badge>
+                          )}
+                        </div>
                         <div className="flex items-center text-sm text-muted-foreground mt-1">
                           <Phone className="h-3 w-3 mr-1" />
-                          {project.mobile}
+                          {project.phone}
                         </div>
                         <div className="flex items-center text-sm text-muted-foreground mt-1">
                           <MapPin className="h-3 w-3 mr-1" />
-                          {project.address}
+                          {project.location}
                         </div>
                       </div>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
                     </div>
 
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center space-x-4">
-                        <Badge variant="outline" className={getStatusColor(project.status)}>
-                          {project.status}
+                        <Badge variant="outline" className={getStatusColor(project.project_status)}>
+                          {project.project_status}
                         </Badge>
-                        <span className="text-sm text-muted-foreground">{project.type}</span>
+                        <span className="text-sm text-muted-foreground">{project.project_type}</span>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-medium text-foreground">₹{project.estimatedCost.toLocaleString()}</p>
-                        <p className="text-xs text-muted-foreground">{project.totalArea} sq.ft</p>
+                        <p className="text-sm font-medium text-foreground">₹{project.quotation_value.toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground">{project.area_sqft} sq.ft</p>
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
+                    <div className="flex items-center justify-between pt-3 border-t border-border">
                       <div className="flex items-center text-xs text-muted-foreground">
                         <Calendar className="h-3 w-3 mr-1" />
-                        {new Date(project.createdAt).toLocaleDateString()}
+                        {new Date(project.project_date).toLocaleDateString()}
                       </div>
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => navigate(`/project-summary/${project.id}`)}
-                      >
-                        View Details
-                      </Button>
+                      
+                      <div className="flex items-center gap-2">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              className="h-8 px-3 bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
+                              onClick={() => handleApproval(project.id)}
+                              disabled={project.approval_status === 'Approved'}
+                            >
+                              <CheckCircle2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Send approval request</TooltipContent>
+                        </Tooltip>
+
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              className="h-8 px-3 bg-yellow-50 hover:bg-yellow-100 text-yellow-700 border-yellow-200 relative"
+                              onClick={() => handleReminder(project.id)}
+                            >
+                              <Bell className="h-3.5 w-3.5" />
+                              {project.notification_count > 0 && (
+                                <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                                  {project.notification_count}
+                                </span>
+                              )}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Send reminder</TooltipContent>
+                        </Tooltip>
+
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleViewDetails(project.id)}
+                        >
+                          View Details
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -263,6 +397,13 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      <ProjectDetailsModal 
+        projectId={selectedProjectId}
+        open={detailsModalOpen}
+        onOpenChange={setDetailsModalOpen}
+      />
     </div>
+    </TooltipProvider>
   );
 }
