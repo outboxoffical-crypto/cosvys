@@ -1833,6 +1833,71 @@ export default function GenerateSummaryScreen() {
     const url = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.open(url);
   };
+
+  const handleSaveProject = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to save projects",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Calculate total area
+      let totalArea = 0;
+      Object.values(totalAreas).forEach((areas: any) => {
+        totalArea += areas.wallArea + areas.floorArea + areas.ceilingArea;
+      });
+
+      // Calculate quotation value
+      const quotationValue = calculateTotalEstimatedCost();
+
+      // Determine project types
+      const projectTypes = Array.from(new Set(rooms.map(room => room.project_type).filter(Boolean)));
+      const projectTypeString = projectTypes.length > 0 ? projectTypes.join(', ') : (projectData?.projectTypes?.join(', ') || 'Interior');
+
+      // Insert project into database
+      const { error } = await supabase
+        .from('projects')
+        .insert({
+          user_id: user.id,
+          lead_id: projectId || Date.now().toString(),
+          customer_name: projectData?.customerName || 'Unknown',
+          phone: projectData?.mobile || '',
+          location: projectData?.address || '',
+          project_type: projectTypeString,
+          project_status: 'Quoted',
+          quotation_value: quotationValue,
+          area_sqft: totalArea,
+          project_date: new Date().toISOString(),
+          approval_status: 'Pending',
+          reminder_sent: false,
+          notification_count: 0,
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Project saved successfully!",
+      });
+
+      // Navigate to dashboard
+      navigate('/dashboard');
+    } catch (error: any) {
+      console.error('Error saving project:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save project",
+        variant: "destructive",
+      });
+    }
+  };
+
   return <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="eca-gradient text-white p-4">
@@ -2043,6 +2108,18 @@ export default function GenerateSummaryScreen() {
                 </Button>
               </CardContent>
             </Card>
+
+            {/* Save Project */}
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border">
+              <Button 
+                onClick={handleSaveProject}
+                className="w-full h-12 text-base font-medium"
+                size="lg"
+              >
+                Save Project
+              </Button>
+            </div>
+            <div className="h-20"></div>
           </TabsContent>
         </Tabs>
       </div>
