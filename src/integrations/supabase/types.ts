@@ -146,6 +146,98 @@ export type Database = {
         }
         Relationships: []
       }
+      project_activity_log: {
+        Row: {
+          activity_message: string
+          activity_type: string
+          created_at: string
+          id: string
+          project_id: string
+        }
+        Insert: {
+          activity_message: string
+          activity_type: string
+          created_at?: string
+          id?: string
+          project_id: string
+        }
+        Update: {
+          activity_message?: string
+          activity_type?: string
+          created_at?: string
+          id?: string
+          project_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_activity_log_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          approval_status: string
+          area_sqft: number
+          created_at: string
+          customer_name: string
+          feedback_message: string | null
+          id: string
+          lead_id: string
+          location: string
+          notification_count: number
+          phone: string
+          project_date: string
+          project_status: string
+          project_type: string
+          quotation_value: number
+          reminder_sent: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          approval_status?: string
+          area_sqft: number
+          created_at?: string
+          customer_name: string
+          feedback_message?: string | null
+          id?: string
+          lead_id: string
+          location: string
+          notification_count?: number
+          phone: string
+          project_date?: string
+          project_status?: string
+          project_type: string
+          quotation_value: number
+          reminder_sent?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          approval_status?: string
+          area_sqft?: number
+          created_at?: string
+          customer_name?: string
+          feedback_message?: string | null
+          id?: string
+          lead_id?: string
+          location?: string
+          notification_count?: number
+          phone?: string
+          project_date?: string
+          project_status?: string
+          project_type?: string
+          quotation_value?: number
+          reminder_sent?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       rooms: {
         Row: {
           adjusted_wall_area: number
