@@ -8,6 +8,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import ProjectDetailsModal from "./ProjectDetailsModal";
+import { MaterialTracker } from "./MaterialTracker";
 import { 
   Plus, 
   Search, 
@@ -50,6 +51,8 @@ export default function Dashboard() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [materialTrackerOpen, setMaterialTrackerOpen] = useState(false);
+  const [materialTrackerProjectId, setMaterialTrackerProjectId] = useState<string | null>(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
 
   useEffect(() => {
@@ -167,6 +170,11 @@ export default function Dashboard() {
   const handleViewDetails = (projectId: string) => {
     setSelectedProjectId(projectId);
     setDetailsModalOpen(true);
+  };
+
+  const handleOpenMaterialTracker = (projectId: string) => {
+    setMaterialTrackerProjectId(projectId);
+    setMaterialTrackerOpen(true);
   };
 
   const getStatusColor = (status: string) => {
@@ -347,39 +355,56 @@ export default function Dashboard() {
                       </div>
                       
                       <div className="flex items-center gap-2">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              className="h-8 px-3 bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
-                              onClick={() => handleApproval(project.id)}
-                              disabled={project.approval_status === 'Approved'}
-                            >
-                              <CheckCircle2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Send approval request</TooltipContent>
-                        </Tooltip>
+                        {project.approval_status !== 'Approved' ? (
+                          <>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  className="h-8 px-3 bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
+                                  onClick={() => handleApproval(project.id)}
+                                >
+                                  <CheckCircle2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Send approval request</TooltipContent>
+                            </Tooltip>
 
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              className="h-8 px-3 bg-yellow-50 hover:bg-yellow-100 text-yellow-700 border-yellow-200 relative"
-                              onClick={() => handleReminder(project.id)}
-                            >
-                              <Bell className="h-3.5 w-3.5" />
-                              {project.notification_count > 0 && (
-                                <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                                  {project.notification_count}
-                                </span>
-                              )}
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Send reminder</TooltipContent>
-                        </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  className="h-8 px-3 bg-yellow-50 hover:bg-yellow-100 text-yellow-700 border-yellow-200 relative"
+                                  onClick={() => handleReminder(project.id)}
+                                >
+                                  <Bell className="h-3.5 w-3.5" />
+                                  {project.notification_count > 0 && (
+                                    <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                                      {project.notification_count}
+                                    </span>
+                                  )}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Send reminder</TooltipContent>
+                            </Tooltip>
+                          </>
+                        ) : (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                className="h-8 px-3 bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
+                                onClick={() => handleOpenMaterialTracker(project.id)}
+                              >
+                                <Package className="h-3.5 w-3.5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Material Tracker</TooltipContent>
+                          </Tooltip>
+                        )}
 
                         <Button 
                           size="sm" 
@@ -403,6 +428,17 @@ export default function Dashboard() {
         open={detailsModalOpen}
         onOpenChange={setDetailsModalOpen}
       />
+
+      {materialTrackerProjectId && (
+        <MaterialTracker
+          projectId={materialTrackerProjectId}
+          isOpen={materialTrackerOpen}
+          onClose={() => {
+            setMaterialTrackerOpen(false);
+            setMaterialTrackerProjectId(null);
+          }}
+        />
+      )}
     </div>
     </TooltipProvider>
   );

@@ -92,6 +92,56 @@ export type Database = {
         }
         Relationships: []
       }
+      material_tracker: {
+        Row: {
+          created_at: string
+          delivery_status: string
+          id: string
+          material_name: string
+          project_id: string
+          quantity: number
+          rate: number
+          total: number | null
+          unit: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          delivery_status?: string
+          id?: string
+          material_name: string
+          project_id: string
+          quantity?: number
+          rate?: number
+          total?: number | null
+          unit?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          delivery_status?: string
+          id?: string
+          material_name?: string
+          project_id?: string
+          quantity?: number
+          rate?: number
+          total?: number | null
+          unit?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "material_tracker_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_pricing: {
         Row: {
           created_at: string | null
