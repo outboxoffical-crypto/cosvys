@@ -52,12 +52,24 @@ ${companyName}`;
     const twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN');
     const twilioPhone = Deno.env.get('TWILIO_PHONE_NUMBER');
 
+    console.log('Twilio Configuration Check:');
+    console.log('- Account SID exists:', !!twilioAccountSid);
+    console.log('- Auth Token exists:', !!twilioAuthToken);
+    console.log('- Phone Number:', twilioPhone);
+    console.log('- Recipient:', `+91${project.phone}`);
+
+    if (!twilioAccountSid || !twilioAuthToken || !twilioPhone) {
+      throw new Error('Missing Twilio credentials. Please check TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_PHONE_NUMBER secrets.');
+    }
+
     const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`;
     
     const formData = new URLSearchParams();
     formData.append('To', `+91${project.phone}`);
-    formData.append('From', twilioPhone!);
+    formData.append('From', twilioPhone);
     formData.append('Body', message);
+
+    console.log('Sending SMS via Twilio...');
 
     const twilioResponse = await fetch(twilioUrl, {
       method: 'POST',
@@ -68,10 +80,12 @@ ${companyName}`;
       body: formData.toString(),
     });
 
+    const responseText = await twilioResponse.text();
+    console.log('Twilio Response Status:', twilioResponse.status);
+    console.log('Twilio Response Body:', responseText);
+
     if (!twilioResponse.ok) {
-      const error = await twilioResponse.text();
-      console.error('Twilio error:', error);
-      throw new Error('Failed to send SMS');
+      throw new Error(`Twilio API error (${twilioResponse.status}): ${responseText}`);
     }
 
     // Update reminder_sent status
