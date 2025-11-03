@@ -406,7 +406,7 @@ export default function Dashboard() {
                               size="sm"
                               variant="ghost"
                               className="h-8 w-8 p-0 text-primary hover:bg-primary/10"
-                              onClick={() => navigate("/add-project", { state: { projectId: project.id } })}
+                              onClick={() => navigate(`/project-details?edit=${project.id}`)}
                             >
                               <Edit2 className="h-4 w-4" />
                             </Button>

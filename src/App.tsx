@@ -15,6 +15,7 @@ import ProjectSummaryScreen from "./components/ProjectSummaryScreen";
 import GenerateSummaryScreen from "./components/GenerateSummaryScreen";
 import SavedProjectsScreen from "./components/SavedProjectsScreen";
 import SettingsScreen from "./components/SettingsScreen";
+import ProjectDetailsPage from "./components/ProjectDetailsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
           <Route path="/dealer-pricing" element={<DealerPricingScreen />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/add-project" element={<AddProjectScreen />} />
+          <Route path="/project-details" element={<ProjectDetailsPage />} />
           <Route path="/room-measurement/:projectId" element={<RoomMeasurementScreen />} />
           <Route path="/paint-estimation/:projectId" element={<PaintEstimationScreen />} />
           <Route path="/project-summary/:projectId" element={<ProjectSummaryScreen />} />
