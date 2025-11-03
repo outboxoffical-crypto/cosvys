@@ -5,10 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import ProjectDetailsModal from "./ProjectDetailsModal";
 import { MaterialTracker } from "./MaterialTracker";
+import { format } from "date-fns";
 import { 
   Plus, 
   Search, 
@@ -41,6 +44,8 @@ interface Project {
   reminder_sent: boolean;
   notification_count: number;
   created_at: string;
+  start_date?: string | null;
+  end_date?: string | null;
 }
 
 export default function Dashboard() {
@@ -189,6 +194,43 @@ export default function Dashboard() {
   const handleOpenMaterialTracker = (projectId: string) => {
     setMaterialTrackerProjectId(projectId);
     setMaterialTrackerOpen(true);
+  };
+
+  const handleDateUpdate = async (projectId: string, dateField: 'start_date' | 'end_date', date: Date | undefined) => {
+    if (!date) return;
+    
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .update({ 
+          [dateField]: date.toISOString().split('T')[0],
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', projectId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `${dateField === 'start_date' ? 'Start' : 'End'} date updated successfully`,
+      });
+    } catch (error: any) {
+      console.error('Error updating date:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update date",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const calculateDuration = (startDate?: string | null, endDate?: string | null) => {
+    if (!startDate || !endDate) return null;
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffTime = Math.abs(end.getTime() - start.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
   };
 
   const getStatusColor = (status: string) => {
@@ -405,19 +447,75 @@ export default function Dashboard() {
                             </Tooltip>
                           </>
                         ) : (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                className="h-8 px-3 bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
-                                onClick={() => handleOpenMaterialTracker(project.id)}
-                              >
-                                <Package className="h-3.5 w-3.5" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Material Tracker</TooltipContent>
-                          </Tooltip>
+                          <>
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mr-2">
+                              <div className="flex items-center gap-2">
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-8 text-xs bg-[#f9f9f9] border-[#e2e8f0] hover:bg-[#f0f0f0] rounded-lg"
+                                    >
+                                      <Calendar className="h-3 w-3 mr-1" />
+                                      {project.start_date ? format(new Date(project.start_date), "MMM dd") : "Start Date"}
+                                    </Button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-auto p-0" align="start">
+                                    <CalendarComponent
+                                      mode="single"
+                                      selected={project.start_date ? new Date(project.start_date) : undefined}
+                                      onSelect={(date) => handleDateUpdate(project.id, 'start_date', date)}
+                                      initialFocus
+                                      className="pointer-events-auto"
+                                    />
+                                  </PopoverContent>
+                                </Popover>
+
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-8 text-xs bg-[#f9f9f9] border-[#e2e8f0] hover:bg-[#f0f0f0] rounded-lg"
+                                    >
+                                      <Calendar className="h-3 w-3 mr-1" />
+                                      {project.end_date ? format(new Date(project.end_date), "MMM dd") : "End Date"}
+                                    </Button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-auto p-0" align="start">
+                                    <CalendarComponent
+                                      mode="single"
+                                      selected={project.end_date ? new Date(project.end_date) : undefined}
+                                      onSelect={(date) => handleDateUpdate(project.id, 'end_date', date)}
+                                      initialFocus
+                                      className="pointer-events-auto"
+                                    />
+                                  </PopoverContent>
+                                </Popover>
+                              </div>
+
+                              {project.start_date && project.end_date && (
+                                <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                  Duration: {calculateDuration(project.start_date, project.end_date)} days
+                                </span>
+                              )}
+                            </div>
+
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  className="h-8 px-3 bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
+                                  onClick={() => handleOpenMaterialTracker(project.id)}
+                                >
+                                  <Package className="h-3.5 w-3.5" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Material Tracker</TooltipContent>
+                            </Tooltip>
+                          </>
                         )}
 
                         <Button 

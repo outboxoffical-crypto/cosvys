@@ -234,6 +234,7 @@ export type Database = {
           area_sqft: number
           created_at: string
           customer_name: string
+          end_date: string | null
           feedback_message: string | null
           id: string
           lead_id: string
@@ -245,6 +246,7 @@ export type Database = {
           project_type: string
           quotation_value: number
           reminder_sent: boolean
+          start_date: string | null
           updated_at: string
           user_id: string
         }
@@ -253,6 +255,7 @@ export type Database = {
           area_sqft: number
           created_at?: string
           customer_name: string
+          end_date?: string | null
           feedback_message?: string | null
           id?: string
           lead_id: string
@@ -264,6 +267,7 @@ export type Database = {
           project_type: string
           quotation_value: number
           reminder_sent?: boolean
+          start_date?: string | null
           updated_at?: string
           user_id: string
         }
@@ -272,6 +276,7 @@ export type Database = {
           area_sqft?: number
           created_at?: string
           customer_name?: string
+          end_date?: string | null
           feedback_message?: string | null
           id?: string
           lead_id?: string
@@ -283,6 +288,7 @@ export type Database = {
           project_type?: string
           quotation_value?: number
           reminder_sent?: boolean
+          start_date?: string | null
           updated_at?: string
           user_id?: string
         }
