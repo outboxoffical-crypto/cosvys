@@ -398,6 +398,19 @@ export default function Dashboard() {
                           {project.location}
                         </div>
                       </div>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 w-8 p-0"
+                            onClick={() => handleViewDetails(project.id)}
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>View/Edit Details</TooltipContent>
+                      </Tooltip>
                     </div>
 
                     <div className="flex items-center justify-between mb-3">
