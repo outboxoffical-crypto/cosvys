@@ -29,6 +29,8 @@ serve(async (req) => {
 
     const { projectId, companyName }: ApprovalRequest = await req.json();
 
+    console.log('Simulating approval for project:', projectId);
+
     // Fetch project details
     const { data: project, error: projectError } = await supabaseClient
       .from('projects')
@@ -40,55 +42,18 @@ serve(async (req) => {
       throw new Error('Project not found');
     }
 
-    // Create approval link (you can customize this URL)
-    const approvalLink = `${Deno.env.get('SUPABASE_URL')}/functions/v1/handle-approval?project=${projectId}&action=approve`;
+    // Update project status to Approved
+    const { error: updateError } = await supabaseClient
+      .from('projects')
+      .update({ 
+        approval_status: 'Approved',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', projectId);
 
-    const message = `Hello ${project.customer_name}, 
-Your quotation (ID: ${project.lead_id}) of ₹${project.quotation_value.toLocaleString()} has been shared for your review. 
-Please approve if you're satisfied with the budget and services.
-Approve here: ${approvalLink}
-Thank you, 
-${companyName}`;
-
-    // Send SMS using Twilio
-    const twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
-    const twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN');
-    const twilioPhone = Deno.env.get('TWILIO_PHONE_NUMBER');
-
-    console.log('Twilio Configuration Check:');
-    console.log('- Account SID exists:', !!twilioAccountSid);
-    console.log('- Auth Token exists:', !!twilioAuthToken);
-    console.log('- Phone Number:', twilioPhone);
-    console.log('- Recipient:', `+91${project.phone}`);
-
-    if (!twilioAccountSid || !twilioAuthToken || !twilioPhone) {
-      throw new Error('Missing Twilio credentials. Please check TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_PHONE_NUMBER secrets.');
-    }
-
-    const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`;
-    
-    const formData = new URLSearchParams();
-    formData.append('To', `+91${project.phone}`);
-    formData.append('From', twilioPhone);
-    formData.append('Body', message);
-
-    console.log('Sending SMS via Twilio...');
-
-    const twilioResponse = await fetch(twilioUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Basic ' + btoa(`${twilioAccountSid}:${twilioAuthToken}`),
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: formData.toString(),
-    });
-
-    const responseText = await twilioResponse.text();
-    console.log('Twilio Response Status:', twilioResponse.status);
-    console.log('Twilio Response Body:', responseText);
-
-    if (!twilioResponse.ok) {
-      throw new Error(`Twilio API error (${twilioResponse.status}): ${responseText}`);
+    if (updateError) {
+      console.error('Error updating project status:', updateError);
+      throw new Error('Failed to update project status');
     }
 
     // Log activity
@@ -96,14 +61,14 @@ ${companyName}`;
       .from('project_activity_log')
       .insert({
         project_id: projectId,
-        activity_type: 'approval_sent',
-        activity_message: `Approval SMS sent to ${project.customer_name} at ${project.phone}`,
+        activity_type: 'approval_simulated',
+        activity_message: `Customer approval simulated for ${project.customer_name}`,
       });
 
-    console.log('Approval SMS sent successfully');
+    console.log('Project status updated to Approved successfully');
 
     return new Response(
-      JSON.stringify({ success: true, message: 'Approval SMS sent successfully' }),
+      JSON.stringify({ success: true, message: 'Customer approval simulated successfully' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
   } catch (error: any) {
