@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import ProjectDetailsModal from "./ProjectDetailsModal";
 import { MaterialTracker } from "./MaterialTracker";
+import { LabourTracker } from "./LabourTracker";
 import { format } from "date-fns";
 import { 
   Plus, 
@@ -25,7 +26,8 @@ import {
   Settings,
   Package,
   CheckCircle2,
-  Bell
+  Bell,
+  Users
 } from "lucide-react";
 import asianPaintsLogo from "@/assets/asian-paints-logo.png";
 
@@ -58,6 +60,8 @@ export default function Dashboard() {
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [materialTrackerOpen, setMaterialTrackerOpen] = useState(false);
   const [materialTrackerProjectId, setMaterialTrackerProjectId] = useState<string | null>(null);
+  const [labourTrackerOpen, setLabourTrackerOpen] = useState(false);
+  const [labourTrackerProjectId, setLabourTrackerProjectId] = useState<string | null>(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
 
   useEffect(() => {
@@ -194,6 +198,11 @@ export default function Dashboard() {
   const handleOpenMaterialTracker = (projectId: string) => {
     setMaterialTrackerProjectId(projectId);
     setMaterialTrackerOpen(true);
+  };
+
+  const handleOpenLabourTracker = (projectId: string) => {
+    setLabourTrackerProjectId(projectId);
+    setLabourTrackerOpen(true);
   };
 
   const handleDateUpdate = async (projectId: string, dateField: 'start_date' | 'end_date', date: Date | undefined) => {
@@ -515,6 +524,20 @@ export default function Dashboard() {
                               </TooltipTrigger>
                               <TooltipContent>Material Tracker</TooltipContent>
                             </Tooltip>
+
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  className="h-8 px-3 bg-pink-50 hover:bg-pink-100 text-pink-700 border-pink-200"
+                                  onClick={() => handleOpenLabourTracker(project.id)}
+                                >
+                                  <Users className="h-3.5 w-3.5" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Labour Tracker</TooltipContent>
+                            </Tooltip>
                           </>
                         )}
 
@@ -548,6 +571,17 @@ export default function Dashboard() {
           onClose={() => {
             setMaterialTrackerOpen(false);
             setMaterialTrackerProjectId(null);
+          }}
+        />
+      )}
+
+      {labourTrackerProjectId && (
+        <LabourTracker
+          projectId={labourTrackerProjectId}
+          isOpen={labourTrackerOpen}
+          onClose={() => {
+            setLabourTrackerOpen(false);
+            setLabourTrackerProjectId(null);
           }}
         />
       )}

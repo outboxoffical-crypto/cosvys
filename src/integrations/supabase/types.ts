@@ -92,6 +92,39 @@ export type Database = {
         }
         Relationships: []
       }
+      labour_tracker: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          labour_count: number
+          project_id: string
+          updated_at: string
+          user_id: string
+          work_completed: string | null
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          labour_count?: number
+          project_id: string
+          updated_at?: string
+          user_id: string
+          work_completed?: string | null
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          labour_count?: number
+          project_id?: string
+          updated_at?: string
+          user_id?: string
+          work_completed?: string | null
+        }
+        Relationships: []
+      }
       material_tracker: {
         Row: {
           created_at: string
