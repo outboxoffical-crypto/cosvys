@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, memo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Save } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface Material {
@@ -23,9 +23,114 @@ interface MaterialTrackerProps {
   onClose: () => void;
 }
 
+// Memoized Material Row Component
+const MaterialRow = memo(({ 
+  material, 
+  index,
+  onUpdate, 
+  onDelete 
+}: { 
+  material: Material; 
+  index: number;
+  onUpdate: (id: string, field: string, value: any) => void;
+  onDelete: (id: string) => void;
+}) => {
+  const [localValues, setLocalValues] = useState({
+    material_name: material.material_name,
+    quantity: material.quantity,
+    rate: material.rate,
+  });
+
+  const total = localValues.quantity * localValues.rate;
+
+  const handleBlur = useCallback((field: string) => {
+    if (material.id && localValues[field as keyof typeof localValues] !== material[field as keyof Material]) {
+      onUpdate(material.id, field, localValues[field as keyof typeof localValues]);
+    }
+  }, [material.id, localValues, onUpdate]);
+
+  return (
+    <tr className="hover:bg-[#f7fafc] transition-colors">
+      <td className="border border-[#e2e8f0] px-2 py-2">
+        <Input
+          value={localValues.material_name}
+          onChange={(e) => setLocalValues(prev => ({ ...prev, material_name: e.target.value }))}
+          onBlur={() => handleBlur('material_name')}
+          placeholder="Enter material name"
+          className="border-0 text-center focus-visible:ring-1"
+        />
+      </td>
+      <td className="border border-[#e2e8f0] px-2 py-2">
+        <Input
+          type="number"
+          value={localValues.quantity}
+          onChange={(e) => setLocalValues(prev => ({ ...prev, quantity: parseFloat(e.target.value) || 0 }))}
+          onBlur={() => handleBlur('quantity')}
+          placeholder="0"
+          className="border-0 text-center focus-visible:ring-1"
+        />
+      </td>
+      <td className="border border-[#e2e8f0] px-2 py-2">
+        <Select
+          value={material.unit}
+          onValueChange={(value) => material.id && onUpdate(material.id, "unit", value)}
+        >
+          <SelectTrigger className="border-0 text-center focus:ring-1">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="kg">kg</SelectItem>
+            <SelectItem value="Ltr">Ltr</SelectItem>
+            <SelectItem value="pcs">pcs</SelectItem>
+          </SelectContent>
+        </Select>
+      </td>
+      <td className="border border-[#e2e8f0] px-2 py-2">
+        <Input
+          type="number"
+          value={localValues.rate}
+          onChange={(e) => setLocalValues(prev => ({ ...prev, rate: parseFloat(e.target.value) || 0 }))}
+          onBlur={() => handleBlur('rate')}
+          placeholder="0"
+          className="border-0 text-center focus-visible:ring-1"
+        />
+      </td>
+      <td className="border border-[#e2e8f0] px-4 py-2 text-center font-semibold text-[#2d3748]">
+        ₹{total.toFixed(2)}
+      </td>
+      <td className="border border-[#e2e8f0] px-2 py-2">
+        <Select
+          value={material.delivery_status}
+          onValueChange={(value) => material.id && onUpdate(material.id, "delivery_status", value)}
+        >
+          <SelectTrigger className="border-0 text-center focus:ring-1">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Pending">Pending</SelectItem>
+            <SelectItem value="In-Transit">In-Transit</SelectItem>
+            <SelectItem value="Delivered">Delivered</SelectItem>
+          </SelectContent>
+        </Select>
+      </td>
+      <td className="border border-[#e2e8f0] px-2 py-2 text-center">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => material.id && onDelete(material.id)}
+          className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </td>
+    </tr>
+  );
+});
+
 export const MaterialTracker = ({ projectId, isOpen, onClose }: MaterialTrackerProps) => {
   const [materials, setMaterials] = useState<Material[]>([]);
   const [loading, setLoading] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -96,27 +201,55 @@ export const MaterialTracker = ({ projectId, isOpen, onClose }: MaterialTrackerP
     }
   };
 
-  const handleUpdateMaterial = async (id: string, field: string, value: any) => {
+  const handleUpdateMaterial = useCallback((id: string, field: string, value: any) => {
+    setMaterials(prev => prev.map(m => m.id === id ? { ...m, [field]: value } : m));
+    setHasChanges(true);
+  }, []);
+
+  const handleSaveChanges = async () => {
     try {
-      const { error } = await supabase
-        .from("material_tracker")
-        .update({ [field]: value })
-        .eq("id", id);
+      setLoading(true);
+      
+      // Update all materials
+      const updates = materials.map(material => {
+        if (!material.id) return null;
+        return supabase
+          .from("material_tracker")
+          .update({
+            material_name: material.material_name,
+            quantity: material.quantity,
+            unit: material.unit,
+            rate: material.rate,
+            delivery_status: material.delivery_status,
+          })
+          .eq("id", material.id);
+      }).filter(Boolean);
 
-      if (error) throw error;
+      const results = await Promise.all(updates);
+      const errors = results.filter(result => result?.error);
 
-      setMaterials(materials.map(m => m.id === id ? { ...m, [field]: value } : m));
+      if (errors.length > 0) {
+        throw new Error("Some materials failed to update");
+      }
+
+      setHasChanges(false);
+      toast({
+        title: "Success",
+        description: "All changes saved successfully",
+      });
     } catch (error: any) {
-      console.error("Error updating material:", error);
+      console.error("Error saving changes:", error);
       toast({
         title: "Error",
-        description: "Failed to update material",
+        description: "Failed to save changes",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleDeleteMaterial = async (id: string) => {
+  const handleDeleteMaterial = useCallback(async (id: string) => {
     try {
       const { error } = await supabase
         .from("material_tracker")
@@ -125,7 +258,7 @@ export const MaterialTracker = ({ projectId, isOpen, onClose }: MaterialTrackerP
 
       if (error) throw error;
 
-      setMaterials(materials.filter(m => m.id !== id));
+      setMaterials(prev => prev.filter(m => m.id !== id));
       toast({
         title: "Success",
         description: "Material deleted",
@@ -138,15 +271,9 @@ export const MaterialTracker = ({ projectId, isOpen, onClose }: MaterialTrackerP
         variant: "destructive",
       });
     }
-  };
+  }, []);
 
-  const calculateTotal = (material: Material) => {
-    return material.quantity * material.rate;
-  };
-
-  const calculateTotalCost = () => {
-    return materials.reduce((sum, material) => sum + calculateTotal(material), 0);
-  };
+  const totalCost = materials.reduce((sum, material) => sum + (material.quantity * material.rate), 0);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -172,77 +299,13 @@ export const MaterialTracker = ({ projectId, isOpen, onClose }: MaterialTrackerP
                 </thead>
                 <tbody>
                   {materials.map((material, index) => (
-                    <tr key={material.id} className="hover:bg-[#f7fafc] transition-colors">
-                      <td className="border border-[#e2e8f0] px-2 py-2">
-                        <Input
-                          value={material.material_name}
-                          onChange={(e) => material.id && handleUpdateMaterial(material.id, "material_name", e.target.value)}
-                          placeholder="Enter material name"
-                          className="border-0 text-center focus-visible:ring-1"
-                        />
-                      </td>
-                      <td className="border border-[#e2e8f0] px-2 py-2">
-                        <Input
-                          type="number"
-                          value={material.quantity}
-                          onChange={(e) => material.id && handleUpdateMaterial(material.id, "quantity", parseFloat(e.target.value) || 0)}
-                          placeholder="0"
-                          className="border-0 text-center focus-visible:ring-1"
-                        />
-                      </td>
-                      <td className="border border-[#e2e8f0] px-2 py-2">
-                        <Select
-                          value={material.unit}
-                          onValueChange={(value) => material.id && handleUpdateMaterial(material.id, "unit", value)}
-                        >
-                          <SelectTrigger className="border-0 text-center focus:ring-1">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="kg">kg</SelectItem>
-                            <SelectItem value="Ltr">Ltr</SelectItem>
-                            <SelectItem value="pcs">pcs</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </td>
-                      <td className="border border-[#e2e8f0] px-2 py-2">
-                        <Input
-                          type="number"
-                          value={material.rate}
-                          onChange={(e) => material.id && handleUpdateMaterial(material.id, "rate", parseFloat(e.target.value) || 0)}
-                          placeholder="0"
-                          className="border-0 text-center focus-visible:ring-1"
-                        />
-                      </td>
-                      <td className="border border-[#e2e8f0] px-4 py-2 text-center font-semibold text-[#2d3748]">
-                        ₹{calculateTotal(material).toFixed(2)}
-                      </td>
-                      <td className="border border-[#e2e8f0] px-2 py-2">
-                        <Select
-                          value={material.delivery_status}
-                          onValueChange={(value) => material.id && handleUpdateMaterial(material.id, "delivery_status", value)}
-                        >
-                          <SelectTrigger className="border-0 text-center focus:ring-1">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Pending">Pending</SelectItem>
-                            <SelectItem value="In-Transit">In-Transit</SelectItem>
-                            <SelectItem value="Delivered">Delivered</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </td>
-                      <td className="border border-[#e2e8f0] px-2 py-2 text-center">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => material.id && handleDeleteMaterial(material.id)}
-                          className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </td>
-                    </tr>
+                    <MaterialRow
+                      key={material.id}
+                      material={material}
+                      index={index}
+                      onUpdate={handleUpdateMaterial}
+                      onDelete={handleDeleteMaterial}
+                    />
                   ))}
                 </tbody>
                 <tfoot>
@@ -251,7 +314,7 @@ export const MaterialTracker = ({ projectId, isOpen, onClose }: MaterialTrackerP
                       Total Material Cost:
                     </td>
                     <td className="border border-[#e2e8f0] px-4 py-3 text-center text-[#2d3748]">
-                      ₹{calculateTotalCost().toFixed(2)}
+                      ₹{totalCost.toFixed(2)}
                     </td>
                     <td colSpan={2} className="border border-[#e2e8f0]"></td>
                   </tr>
@@ -259,15 +322,27 @@ export const MaterialTracker = ({ projectId, isOpen, onClose }: MaterialTrackerP
               </table>
             </div>
 
-            <div className="mt-6 flex justify-center">
+            <div className="mt-6 flex justify-center gap-4">
               <Button
                 onClick={handleAddMaterial}
                 className="gap-2"
                 disabled={loading}
+                variant="outline"
               >
                 <Plus className="h-4 w-4" />
                 Add Material
               </Button>
+              
+              {hasChanges && (
+                <Button
+                  onClick={handleSaveChanges}
+                  className="gap-2"
+                  disabled={loading}
+                >
+                  <Save className="h-4 w-4" />
+                  Save Changes
+                </Button>
+              )}
             </div>
           </div>
         </ScrollArea>
