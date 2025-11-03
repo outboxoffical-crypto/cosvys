@@ -110,29 +110,43 @@ export default function Dashboard() {
   );
 
   const handleApproval = async (projectId: string) => {
-    const companyName = dealerInfo?.shopName || "Asian Paints ECA Pro";
-    
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      const { error } = await supabase.functions.invoke('send-approval-sms', {
-        body: { projectId, companyName },
-        headers: {
-          Authorization: `Bearer ${session?.access_token}`,
-        },
-      });
+      // Get the project to log activity
+      const { data: project } = await supabase
+        .from('projects')
+        .select('customer_name')
+        .eq('id', projectId)
+        .single();
 
-      if (error) throw error;
+      // Update project status to Approved
+      const { error: updateError } = await supabase
+        .from('projects')
+        .update({ 
+          approval_status: 'Approved',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', projectId);
+
+      if (updateError) throw updateError;
+
+      // Log activity
+      await supabase
+        .from('project_activity_log')
+        .insert({
+          project_id: projectId,
+          activity_type: 'approval_simulated',
+          activity_message: `Project approved for ${project?.customer_name || 'customer'}`,
+        });
 
       toast({
         title: "Success",
-        description: "Approval SMS sent successfully",
+        description: "Project Approved Successfully",
       });
     } catch (error: any) {
-      console.error('Error sending approval:', error);
+      console.error('Error approving project:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to send approval SMS",
+        description: error.message || "Failed to approve project",
         variant: "destructive",
       });
     }
