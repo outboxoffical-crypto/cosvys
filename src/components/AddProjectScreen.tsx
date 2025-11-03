@@ -1,67 +1,139 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, User, Phone, MapPin, Home } from "lucide-react";
+import { ArrowLeft, User, Phone, MapPin, Home, DollarSign, Ruler, Calendar as CalendarIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { projectSchema } from "@/lib/validations";
 
 export default function AddProjectScreen() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
+  const projectId = location.state?.projectId;
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     customerName: "",
     mobile: "",
     address: "",
-    projectTypes: [] as string[]
+    projectTypes: [] as string[],
+    quotationValue: "",
+    areaSqft: "",
+    projectDate: "",
+    leadId: ""
   });
 
   useEffect(() => {
-    // Check if user is logged in
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         navigate("/");
+        return;
+      }
+      
+      // If editing, load project data
+      if (projectId) {
+        await loadProjectData();
       }
     };
     checkAuth();
-  }, [navigate]);
+  }, [navigate, projectId]);
+
+  const loadProjectData = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('id', projectId)
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        setFormData({
+          customerName: data.customer_name || "",
+          mobile: data.phone || "",
+          address: data.location || "",
+          projectTypes: data.project_type ? data.project_type.split(',').map((t: string) => t.trim()) : [],
+          quotationValue: data.quotation_value?.toString() || "",
+          areaSqft: data.area_sqft?.toString() || "",
+          projectDate: data.project_date ? new Date(data.project_date).toISOString().split('T')[0] : "",
+          leadId: data.lead_id || ""
+        });
+      }
+    } catch (error: any) {
+      console.error('Error loading project:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load project data",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
-      // Validate form data
-      const validated = projectSchema.parse(formData);
-
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         throw new Error("You must be logged in");
       }
 
-      // Store project data in localStorage for now (legacy support)
-      const projectId = Date.now().toString();
-      localStorage.setItem(`project_${projectId}`, JSON.stringify({
-        ...validated,
-        id: projectId,
-        createdAt: new Date().toISOString(),
-        status: "In Progress"
-      }));
-      
-      toast({
-        title: "Success",
-        description: "Project created successfully!",
-      });
+      if (projectId) {
+        // Update existing project
+        const { error } = await supabase
+          .from('projects')
+          .update({
+            customer_name: formData.customerName,
+            phone: formData.mobile,
+            location: formData.address,
+            project_type: formData.projectTypes.join(', '),
+            quotation_value: parseFloat(formData.quotationValue) || 0,
+            area_sqft: parseFloat(formData.areaSqft) || 0,
+            project_date: formData.projectDate || new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', projectId);
 
-      navigate(`/room-measurement/${projectId}`);
+        if (error) throw error;
+
+        toast({
+          title: "Success",
+          description: "Project updated successfully!",
+        });
+
+        navigate('/dashboard');
+      } else {
+        // Create new project
+        const validated = projectSchema.parse(formData);
+        const newProjectId = Date.now().toString();
+        
+        localStorage.setItem(`project_${newProjectId}`, JSON.stringify({
+          ...validated,
+          id: newProjectId,
+          createdAt: new Date().toISOString(),
+          status: "In Progress"
+        }));
+        
+        toast({
+          title: "Success",
+          description: "Project created successfully!",
+        });
+
+        navigate(`/room-measurement/${newProjectId}`);
+      }
     } catch (error: any) {
       toast({
-        title: "Validation Error",
+        title: "Error",
         description: error.message || "Please check your inputs and try again.",
         variant: "destructive",
       });
@@ -79,6 +151,14 @@ export default function AddProjectScreen() {
 
   const isFormValid = formData.customerName && formData.mobile.length === 10 && formData.address && formData.projectTypes.length > 0;
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -93,8 +173,8 @@ export default function AddProjectScreen() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-xl font-semibold">New Project</h1>
-            <p className="text-white/80 text-sm">Add customer details</p>
+            <h1 className="text-xl font-semibold">{projectId ? 'Edit Project' : 'New Project'}</h1>
+            <p className="text-white/80 text-sm">{projectId ? 'Update project details' : 'Add customer details'}</p>
           </div>
         </div>
       </div>
@@ -216,6 +296,80 @@ export default function AddProjectScreen() {
             </CardContent>
           </Card>
 
+          {/* Additional Details (shown when editing) */}
+          {projectId && (
+            <>
+              <Card className="eca-shadow">
+                <CardHeader>
+                  <CardTitle className="flex items-center text-lg">
+                    <DollarSign className="mr-2 h-5 w-5 text-primary" />
+                    Project Details
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="leadId" className="text-sm font-medium">
+                      Lead ID
+                    </Label>
+                    <Input
+                      id="leadId"
+                      value={formData.leadId}
+                      disabled
+                      className="bg-muted"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="quotationValue" className="text-sm font-medium">
+                      Quotation Value (₹)
+                    </Label>
+                    <Input
+                      id="quotationValue"
+                      type="number"
+                      placeholder="Enter quotation value"
+                      value={formData.quotationValue}
+                      onChange={(e) => setFormData(prev => ({ ...prev, quotationValue: e.target.value }))}
+                      className="h-12"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="areaSqft" className="text-sm font-medium">
+                      Area (Sq.ft)
+                    </Label>
+                    <div className="relative">
+                      <Ruler className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                      <Input
+                        id="areaSqft"
+                        type="number"
+                        placeholder="Enter area in sq.ft"
+                        value={formData.areaSqft}
+                        onChange={(e) => setFormData(prev => ({ ...prev, areaSqft: e.target.value }))}
+                        className="pl-10 h-12"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="projectDate" className="text-sm font-medium">
+                      Project Date
+                    </Label>
+                    <div className="relative">
+                      <CalendarIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                      <Input
+                        id="projectDate"
+                        type="date"
+                        value={formData.projectDate}
+                        onChange={(e) => setFormData(prev => ({ ...prev, projectDate: e.target.value }))}
+                        className="pl-10 h-12"
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
+
           {/* Submit Button */}
           <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border">
             <Button 
@@ -223,7 +377,7 @@ export default function AddProjectScreen() {
               className="w-full h-12 text-base font-medium"
               disabled={!isFormValid}
             >
-              Continue to Measurements
+              {projectId ? 'Save Changes' : 'Continue to Measurements'}
             </Button>
           </div>
         </form>

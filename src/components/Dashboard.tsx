@@ -27,7 +27,8 @@ import {
   Package,
   CheckCircle2,
   Bell,
-  Users
+  Users,
+  Edit2
 } from "lucide-react";
 import asianPaintsLogo from "@/assets/asian-paints-logo.png";
 
@@ -398,19 +399,34 @@ export default function Dashboard() {
                           {project.location}
                         </div>
                       </div>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-8 w-8 p-0"
-                            onClick={() => handleViewDetails(project.id)}
-                          >
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>View/Edit Details</TooltipContent>
-                      </Tooltip>
+                      <div className="flex gap-2">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 w-8 p-0 text-primary hover:bg-primary/10"
+                              onClick={() => navigate("/add-project", { state: { projectId: project.id } })}
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Edit Project</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 w-8 p-0"
+                              onClick={() => handleViewDetails(project.id)}
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>View Details</TooltipContent>
+                        </Tooltip>
+                      </div>
                     </div>
 
                     <div className="flex items-center justify-between mb-3">
