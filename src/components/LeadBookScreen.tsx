@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, Trash2, Edit, BookOpen, TrendingUp, TrendingDown, Clock } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -28,12 +28,7 @@ interface Lead {
   approved_by: string | null;
 }
 
-interface LeadBookScreenProps {
-  embedded?: boolean;
-  onLeadsUpdate?: () => void;
-}
-
-const LeadBookScreen = ({ embedded = false, onLeadsUpdate }: LeadBookScreenProps) => {
+const LeadBookScreen = () => {
   const navigate = useNavigate();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -75,7 +70,6 @@ const LeadBookScreen = ({ embedded = false, onLeadsUpdate }: LeadBookScreenProps
 
       if (error) throw error;
       setLeads(data || []);
-      if (onLeadsUpdate) onLeadsUpdate();
     } catch (error: any) {
       toast.error("Failed to fetch leads: " + error.message);
     } finally {
@@ -179,72 +173,25 @@ const LeadBookScreen = ({ embedded = false, onLeadsUpdate }: LeadBookScreenProps
     });
   };
 
-  const totalLeads = leads.length;
-  const convertedLeads = leads.filter(l => l.status === 'Converted').length;
-  const droppedLeads = leads.filter(l => l.status === 'Dropped').length;
-  const pendingApprovals = leads.filter(l => l.approval_status === 'Pending').length;
-
   return (
-    <div className={`${embedded ? '' : 'min-h-screen'} bg-background p-4`}>
+    <div className="min-h-screen bg-background p-4">
       <div className="max-w-7xl mx-auto">
-        {!embedded && (
-          <div className="flex items-center justify-between mb-6">
-            <Button variant="ghost" onClick={() => navigate("/dashboard")}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Dashboard
-            </Button>
-            <h1 className="text-2xl font-bold">Lead Summary</h1>
-            <div className="w-24" />
-          </div>
-        )}
-
-        {/* Summary Stats Bar */}
-        <div className="grid grid-cols-4 gap-4 mb-6">
-          <Card className="bg-blue-50 border-blue-200">
-            <CardContent className="p-4 text-center">
-              <BookOpen className="h-6 w-6 text-blue-600 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-blue-600">{totalLeads}</p>
-              <p className="text-xs text-muted-foreground">Total Leads</p>
-            </CardContent>
-          </Card>
-          <Card className="bg-green-50 border-green-200">
-            <CardContent className="p-4 text-center">
-              <TrendingUp className="h-6 w-6 text-green-600 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-green-600">{convertedLeads}</p>
-              <p className="text-xs text-muted-foreground">Converted</p>
-            </CardContent>
-          </Card>
-          <Card className="bg-red-50 border-red-200">
-            <CardContent className="p-4 text-center">
-              <TrendingDown className="h-6 w-6 text-red-600 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-red-600">{droppedLeads}</p>
-              <p className="text-xs text-muted-foreground">Dropped</p>
-            </CardContent>
-          </Card>
-          <Card className="bg-yellow-50 border-yellow-200">
-            <CardContent className="p-4 text-center">
-              <Clock className="h-6 w-6 text-yellow-600 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-yellow-600">{pendingApprovals}</p>
-              <p className="text-xs text-muted-foreground">Pending Approvals</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Lead Tracker Box */}
-        <Card className="eca-shadow mb-6">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg font-semibold">Lead Tracker</CardTitle>
-              <Dialog open={isDialogOpen} onOpenChange={(open) => {
-                setIsDialogOpen(open);
-                if (!open) resetForm();
-              }}>
-                <DialogTrigger asChild>
-                  <Button>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Lead
-                  </Button>
-                </DialogTrigger>
+        <div className="flex items-center justify-between mb-6">
+          <Button variant="ghost" onClick={() => navigate("/dashboard")}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Dashboard
+          </Button>
+          <h1 className="text-2xl font-bold">Lead Book</h1>
+          <Dialog open={isDialogOpen} onOpenChange={(open) => {
+            setIsDialogOpen(open);
+            if (!open) resetForm();
+          }}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Lead
+              </Button>
+            </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{editingLead ? "Edit Lead" : "Add New Lead"}</DialogTitle>
@@ -393,17 +340,17 @@ const LeadBookScreen = ({ embedded = false, onLeadsUpdate }: LeadBookScreenProps
                 </div>
               </form>
             </DialogContent>
-              </Dialog>
+          </Dialog>
+        </div>
+
+        <Card className="p-6">
+          {loading ? (
+            <div className="text-center py-8">Loading leads...</div>
+          ) : leads.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No leads found. Add your first lead to get started.
             </div>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="text-center py-8">Loading leads...</div>
-            ) : leads.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                No leads found. Click "+ Add Lead" to get started.
-              </div>
-            ) : (
+          ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -478,9 +425,8 @@ const LeadBookScreen = ({ embedded = false, onLeadsUpdate }: LeadBookScreenProps
                   ))}
                 </TableBody>
               </Table>
-              </div>
-            )}
-          </CardContent>
+            </div>
+          )}
         </Card>
       </div>
     </div>

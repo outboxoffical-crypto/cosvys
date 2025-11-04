@@ -7,13 +7,11 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import ProjectDetailsModal from "./ProjectDetailsModal";
 import { MaterialTracker } from "./MaterialTracker";
 import { LabourTracker } from "./LabourTracker";
-import LeadBookScreen from "./LeadBookScreen";
 import { format } from "date-fns";
 import { 
   Plus, 
@@ -60,7 +58,6 @@ interface Project {
 export default function Dashboard() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
   const [dealerInfo, setDealerInfo] = useState<any>(null);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -316,156 +313,150 @@ export default function Dashboard() {
           </Button>
         </div>
 
-        {/* Search Bar - Only show on dashboard tab */}
-        {activeTab === "dashboard" && (
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/70 h-4 w-4" />
-            <Input
-              placeholder="Search projects..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 bg-white/20 border-white/30 text-white placeholder:text-white/70 focus:bg-white/30"
-            />
-          </div>
-        )}
-      </div>
-      
-      {/* Tab Navigation */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="sticky top-0 z-10 bg-background border-b">
-          <TabsList className="w-full h-14 bg-background rounded-none border-b grid grid-cols-4">
-            <TabsTrigger value="dashboard" className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
-              <Home className="h-4 w-4 mr-2" />
-              Dashboard
-            </TabsTrigger>
-            <TabsTrigger value="lead-summary" className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
-              <BookOpen className="h-4 w-4 mr-2" />
-              Lead Summary
-            </TabsTrigger>
-            <TabsTrigger value="new-project" className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary" onClick={() => navigate("/add-project")}>
-              <Plus className="h-4 w-4 mr-2" />
-              New Project
-            </TabsTrigger>
-            <TabsTrigger value="pricing" className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary" onClick={() => navigate("/dealer-pricing")}>
-              <Package className="h-4 w-4 mr-2" />
-              Pricing
-            </TabsTrigger>
-          </TabsList>
+        {/* Search Bar */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/70 h-4 w-4" />
+          <Input
+            placeholder="Search projects..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 bg-white/20 border-white/30 text-white placeholder:text-white/70 focus:bg-white/30"
+          />
         </div>
+      </div>
 
-        <TabsContent value="dashboard" className="mt-0">
-
-        <div className="p-4 space-y-6">
-          {/* Quick Stats */}
-          <div className="grid grid-cols-3 gap-4">
-            <Card className="text-center eca-shadow">
-              <CardContent className="p-4">
-                <Home className="h-6 w-6 text-primary mx-auto mb-2" />
-                <p className="text-2xl font-bold text-foreground">{projects.length}</p>
-                <p className="text-sm text-muted-foreground">Total Projects</p>
-              </CardContent>
-            </Card>
-            <Card className="text-center eca-shadow">
-              <CardContent className="p-4">
-                <DollarSign className="h-6 w-6 text-secondary mx-auto mb-2" />
-                <p className="text-2xl font-bold text-foreground">₹{(totalValue / 100000).toFixed(1)}L</p>
-                <p className="text-sm text-muted-foreground">Total Value</p>
-              </CardContent>
-            </Card>
-            <Card className="text-center eca-shadow">
-              <CardContent className="p-4">
-                <Ruler className="h-6 w-6 text-accent-foreground mx-auto mb-2" />
-                <p className="text-2xl font-bold text-foreground">{(totalArea / 1000).toFixed(1)}K</p>
-                <p className="text-sm text-muted-foreground">Total Sq.Ft</p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Lead Summary Widget */}
-          <Card className="eca-shadow">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base font-semibold flex items-center gap-2">
-                  <BookOpen className="h-5 w-5 text-primary" />
-                  Lead Summary Quick View
-                </CardTitle>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => setActiveTab("lead-summary")}
-                >
-                  View All
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-blue-50 p-3 rounded-lg">
-                  <div className="flex items-center gap-2 mb-1">
-                    <BookOpen className="h-4 w-4 text-blue-600" />
-                    <p className="text-xs text-muted-foreground">Total Leads</p>
-                  </div>
-                  <p className="text-2xl font-bold text-blue-600">{leadStats.total}</p>
-                </div>
-                <div className="bg-green-50 p-3 rounded-lg">
-                  <div className="flex items-center gap-2 mb-1">
-                    <TrendingUp className="h-4 w-4 text-green-600" />
-                    <p className="text-xs text-muted-foreground">Converted</p>
-                  </div>
-                  <p className="text-2xl font-bold text-green-600">{leadStats.converted}</p>
-                </div>
-                <div className="bg-red-50 p-3 rounded-lg">
-                  <div className="flex items-center gap-2 mb-1">
-                    <TrendingDown className="h-4 w-4 text-red-600" />
-                    <p className="text-xs text-muted-foreground">Dropped</p>
-                  </div>
-                  <p className="text-2xl font-bold text-red-600">{leadStats.dropped}</p>
-                </div>
-                <div className="bg-yellow-50 p-3 rounded-lg">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Clock className="h-4 w-4 text-yellow-600" />
-                    <p className="text-xs text-muted-foreground">Pending Approval</p>
-                  </div>
-                  <p className="text-2xl font-bold text-yellow-600">{leadStats.pending}</p>
-                </div>
-              </div>
+      <div className="p-4 space-y-6">
+        {/* Quick Stats */}
+        <div className="grid grid-cols-3 gap-4">
+          <Card className="text-center eca-shadow">
+            <CardContent className="p-4">
+              <Home className="h-6 w-6 text-primary mx-auto mb-2" />
+              <p className="text-2xl font-bold text-foreground">{projects.length}</p>
+              <p className="text-sm text-muted-foreground">Total Projects</p>
             </CardContent>
           </Card>
+          <Card className="text-center eca-shadow">
+            <CardContent className="p-4">
+              <DollarSign className="h-6 w-6 text-secondary mx-auto mb-2" />
+              <p className="text-2xl font-bold text-foreground">₹{(totalValue / 100000).toFixed(1)}L</p>
+              <p className="text-sm text-muted-foreground">Total Value</p>
+            </CardContent>
+          </Card>
+          <Card className="text-center eca-shadow">
+            <CardContent className="p-4">
+              <Ruler className="h-6 w-6 text-accent-foreground mx-auto mb-2" />
+              <p className="text-2xl font-bold text-foreground">{(totalArea / 1000).toFixed(1)}K</p>
+              <p className="text-sm text-muted-foreground">Total Sq.Ft</p>
+            </CardContent>
+          </Card>
+        </div>
 
-          {/* Projects List */}
-          <div className="space-y-4">
+        {/* Lead Summary Widget */}
+        <Card className="eca-shadow">
+          <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-foreground">Recent Projects</h2>
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <BookOpen className="h-5 w-5 text-primary" />
+                Lead Summary
+              </CardTitle>
               <Button 
                 variant="ghost" 
                 size="sm"
-                onClick={() => navigate("/saved-projects")}
+                onClick={() => navigate("/lead-book")}
               >
                 View All
               </Button>
             </div>
-
-            {loading ? (
-              <div className="flex items-center justify-center p-12">
-                <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-blue-50 p-3 rounded-lg">
+                <div className="flex items-center gap-2 mb-1">
+                  <BookOpen className="h-4 w-4 text-blue-600" />
+                  <p className="text-xs text-muted-foreground">Total Leads</p>
+                </div>
+                <p className="text-2xl font-bold text-blue-600">{leadStats.total}</p>
               </div>
-            ) : filteredProjects.length === 0 ? (
-              <Card className="text-center p-8 eca-shadow">
-                <Home className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-foreground mb-2">No Projects Found</h3>
-                <p className="text-muted-foreground mb-4">
-                  {searchQuery ? "Try a different search term" : "Create your first project to get started"}
-                </p>
-                {!searchQuery && (
-                  <Button onClick={() => navigate("/add-project")}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create Project
-                  </Button>
-                )}
-              </Card>
-            ) : (
-              <div className="space-y-3">
-                {filteredProjects.map((project) => (
+              <div className="bg-green-50 p-3 rounded-lg">
+                <div className="flex items-center gap-2 mb-1">
+                  <TrendingUp className="h-4 w-4 text-green-600" />
+                  <p className="text-xs text-muted-foreground">Converted</p>
+                </div>
+                <p className="text-2xl font-bold text-green-600">{leadStats.converted}</p>
+              </div>
+              <div className="bg-red-50 p-3 rounded-lg">
+                <div className="flex items-center gap-2 mb-1">
+                  <TrendingDown className="h-4 w-4 text-red-600" />
+                  <p className="text-xs text-muted-foreground">Dropped</p>
+                </div>
+                <p className="text-2xl font-bold text-red-600">{leadStats.dropped}</p>
+              </div>
+              <div className="bg-yellow-50 p-3 rounded-lg">
+                <div className="flex items-center gap-2 mb-1">
+                  <Clock className="h-4 w-4 text-yellow-600" />
+                  <p className="text-xs text-muted-foreground">Pending Approval</p>
+                </div>
+                <p className="text-2xl font-bold text-yellow-600">{leadStats.pending}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          <Button 
+            onClick={() => navigate("/add-project")}
+            className="h-14 text-base font-medium eca-shadow"
+            size="lg"
+          >
+            <Plus className="mr-2 h-5 w-5" />
+            New Project
+          </Button>
+          <Button 
+            onClick={() => navigate("/dealer-pricing")}
+            variant="outline"
+            className="h-14 text-base font-medium eca-shadow"
+            size="lg"
+          >
+            <Package className="mr-2 h-5 w-5" />
+            Manage Pricing
+          </Button>
+        </div>
+
+        {/* Projects List */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-foreground">Recent Projects</h2>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => navigate("/saved-projects")}
+            >
+              View All
+            </Button>
+          </div>
+
+          {loading ? (
+            <div className="flex items-center justify-center p-12">
+              <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+            </div>
+          ) : filteredProjects.length === 0 ? (
+            <Card className="text-center p-8 eca-shadow">
+              <Home className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">No Projects Found</h3>
+              <p className="text-muted-foreground mb-4">
+                {searchQuery ? "Try a different search term" : "Create your first project to get started"}
+              </p>
+              {!searchQuery && (
+                <Button onClick={() => navigate("/add-project")}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Project
+                </Button>
+              )}
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {filteredProjects.map((project) => (
                 <Card key={project.id} className="eca-shadow hover:shadow-lg transition-shadow">
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between mb-3">
@@ -669,18 +660,12 @@ export default function Dashboard() {
                       </div>
                     </div>
                   </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
-        </TabsContent>
-
-        <TabsContent value="lead-summary" className="mt-0">
-          <LeadBookScreen embedded onLeadsUpdate={fetchLeadStats} />
-        </TabsContent>
-      </Tabs>
+      </div>
 
       <ProjectDetailsModal 
         projectId={selectedProjectId}
