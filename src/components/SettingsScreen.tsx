@@ -17,7 +17,8 @@ import {
   User,
   Phone,
   MapPin,
-  LogOut
+  LogOut,
+  BookOpen
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -215,6 +216,36 @@ export default function SettingsScreen() {
                 <p className="font-medium">{productCount} Products Configured</p>
                 <p className="text-sm text-muted-foreground">
                   Custom pricing for dealer-specific products
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Lead Book */}
+        <Card className="eca-shadow">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between text-lg">
+              <div className="flex items-center">
+                <BookOpen className="mr-2 h-5 w-5 text-primary" />
+                Lead Book
+              </div>
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => navigate("/lead-book")}
+              >
+                <Edit className="h-3 w-3 mr-1" />
+                Manage
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">Lead Management</p>
+                <p className="text-sm text-muted-foreground">
+                  Track leads, conversions, and dealer approvals
                 </p>
               </div>
             </div>

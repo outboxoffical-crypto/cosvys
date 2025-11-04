@@ -125,6 +125,66 @@ export type Database = {
         }
         Relationships: []
       }
+      leads: {
+        Row: {
+          approval_status: string
+          approved_by: string | null
+          central_local: string
+          created_at: string
+          date: string
+          drop_reason_remarks: string | null
+          id: string
+          lead_id: string
+          name: string
+          nps: number | null
+          phone_number: string
+          project_id: string | null
+          quotation_value: number
+          status: string
+          town_area: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          approval_status?: string
+          approved_by?: string | null
+          central_local?: string
+          created_at?: string
+          date?: string
+          drop_reason_remarks?: string | null
+          id?: string
+          lead_id: string
+          name: string
+          nps?: number | null
+          phone_number: string
+          project_id?: string | null
+          quotation_value?: number
+          status?: string
+          town_area: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          approval_status?: string
+          approved_by?: string | null
+          central_local?: string
+          created_at?: string
+          date?: string
+          drop_reason_remarks?: string | null
+          id?: string
+          lead_id?: string
+          name?: string
+          nps?: number | null
+          phone_number?: string
+          project_id?: string | null
+          quotation_value?: number
+          status?: string
+          town_area?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       material_tracker: {
         Row: {
           created_at: string

@@ -16,6 +16,7 @@ import GenerateSummaryScreen from "./components/GenerateSummaryScreen";
 import SavedProjectsScreen from "./components/SavedProjectsScreen";
 import SettingsScreen from "./components/SettingsScreen";
 import ProjectDetailsPage from "./components/ProjectDetailsPage";
+import LeadBookScreen from "./components/LeadBookScreen";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,6 +40,7 @@ const App = () => (
           <Route path="/project-summary/:projectId" element={<ProjectSummaryScreen />} />
           <Route path="/generate-summary/:projectId" element={<GenerateSummaryScreen />} />
           <Route path="/saved-projects" element={<SavedProjectsScreen />} />
+          <Route path="/lead-book" element={<LeadBookScreen />} />
           <Route path="/settings" element={<SettingsScreen />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
