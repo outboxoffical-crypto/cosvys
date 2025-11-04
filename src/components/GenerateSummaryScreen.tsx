@@ -1098,7 +1098,7 @@ export default function GenerateSummaryScreen() {
       return { 
         combination: [], 
         totalCost: 0, 
-        error: "Pack combination not found for full quantity" 
+        error: "⚠️ Pack combination not found for full quantity." 
       };
     }
 
@@ -1152,7 +1152,7 @@ export default function GenerateSummaryScreen() {
         // Show error if product not found in pricing
         toast({
           title: "Product name mismatch",
-          description: `Product "${material}" not found in Product Pricing tab. Please configure pricing first.`,
+          description: `Product "${material}" not found in Product Pricing tab. Please check Product Pricing tab.`,
           variant: "destructive",
         });
         return {
@@ -1165,7 +1165,7 @@ export default function GenerateSummaryScreen() {
           packCombination: 'N/A',
           totalCost: 0,
           rate: 0,
-          error: "Product not found in pricing"
+          error: "⚠️ Price data unavailable — please update Product Pricing tab."
         };
       }
 
@@ -1342,16 +1342,6 @@ export default function GenerateSummaryScreen() {
                                       <p className="text-sm text-muted-foreground mt-1">
                                         Coverage: <span className="font-medium text-foreground">{getMaterialCoverage(mat.name, mat.type)}</span>
                                       </p>
-                                      <p className="text-sm text-muted-foreground mt-1">
-                                        Packs: <span className="font-medium text-foreground">{mat.packCombination}</span>
-                                      </p>
-                                      {mat.combination && mat.combination.length > 0 && (
-                                        <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
-                                          {mat.combination.map((c: any, i: number) => (
-                                            <div key={i}>{c.count} × {c.size} @ ₹{c.price.toLocaleString('en-IN')}</div>
-                                          ))}
-                                        </div>
-                                      )}
                                     </div>
                                     <div className="text-right">
                                       <p className="text-xl font-bold text-[#EA384C]">₹{mat.totalCost.toLocaleString('en-IN')}</p>
@@ -1417,16 +1407,6 @@ export default function GenerateSummaryScreen() {
                                       <p className="text-sm text-muted-foreground mt-1">
                                         Coverage: <span className="font-medium text-foreground">{getMaterialCoverage(mat.name, mat.type)}</span>
                                       </p>
-                                      <p className="text-sm text-muted-foreground mt-1">
-                                        Packs: <span className="font-medium text-foreground">{mat.packCombination}</span>
-                                      </p>
-                                      {mat.combination && mat.combination.length > 0 && (
-                                        <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
-                                          {mat.combination.map((c: any, i: number) => (
-                                            <div key={i}>{c.count} × {c.size} @ ₹{c.price.toLocaleString('en-IN')}</div>
-                                          ))}
-                                        </div>
-                                      )}
                                     </div>
                                     <div className="text-right">
                                       <p className="text-xl font-bold text-[#EA384C]">₹{mat.totalCost.toLocaleString('en-IN')}</p>
@@ -1492,16 +1472,6 @@ export default function GenerateSummaryScreen() {
                                       <p className="text-sm text-muted-foreground mt-1">
                                         Coverage: <span className="font-medium text-foreground">{getMaterialCoverage(mat.name, mat.type)}</span>
                                       </p>
-                                      <p className="text-sm text-muted-foreground mt-1">
-                                        Packs: <span className="font-medium text-foreground">{mat.packCombination}</span>
-                                      </p>
-                                      {mat.combination && mat.combination.length > 0 && (
-                                        <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
-                                          {mat.combination.map((c: any, i: number) => (
-                                            <div key={i}>{c.count} × {c.size} @ ₹{c.price.toLocaleString('en-IN')}</div>
-                                          ))}
-                                        </div>
-                                      )}
                                     </div>
                                     <div className="text-right">
                                       <p className="text-xl font-bold text-[#EA384C]">₹{mat.totalCost.toLocaleString('en-IN')}</p>
