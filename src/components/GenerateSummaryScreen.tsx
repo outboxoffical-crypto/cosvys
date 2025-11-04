@@ -1549,11 +1549,8 @@ export default function GenerateSummaryScreen() {
 
   // Section 6: Estimated Total Cost
   const renderTotalCost = () => {
-    const materialCost = areaConfigs.reduce((sum, config) => {
-      const area = Number(config.area) || 0;
-      const rate = parseFloat(config.perSqFtRate) || 0;
-      return sum + area * rate;
-    }, 0);
+    // Use material cost from Material Requirements section (same as Total Material Cost)
+    const materialCost = totalMaterialCostRef.current;
 
     // Use exact same labour calculation as Labour Section
     const workingHours = 7;
