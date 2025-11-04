@@ -1022,122 +1022,91 @@ export default function GenerateSummaryScreen() {
       </Card>;
   };
 
-  // Helper function to extract product name and size from material string
-  const extractProductNameAndSize = (materialName: string): {
-    productName: string;
-    size: string;
-  } => {
-    // Extract size pattern (e.g., "20L", "10kg", "1L", etc.)
-    const sizePattern = /(\d+(?:\.\d+)?)(kg|L|g|ml|pack)$/i;
-    const match = materialName.match(sizePattern);
-    if (match) {
-      const size = match[0]; // e.g., "20L"
-      const productName = materialName.replace(size, '').trim(); // e.g., "Damp Sheath Exterior"
-      return {
-        productName,
-        size
-      };
-    }
-    return {
-      productName: materialName,
-      size: ''
-    };
-  };
-
-  // Helper function to get price for a specific material and size
-  const getMaterialPrice = (materialName: string): number => {
-    const {
-      productName,
-      size
-    } = extractProductNameAndSize(materialName);
-    const productKey = productName.toLowerCase();
-    if (productPricing[productKey] && size) {
-      const price = productPricing[productKey][size];
-      if (price && typeof price === 'number') {
-        return price;
+  // Helper function to get product pricing from database
+  const getProductPricingFromDB = (productName: string): { sizes: { [key: string]: number }, unit: string } | null => {
+    // Normalize product name for matching
+    const normalizedName = productName.trim().toLowerCase();
+    
+    // Try exact match first
+    let pricing = productPricing[normalizedName];
+    
+    // If no exact match, try partial match
+    if (!pricing) {
+      const matchKey = Object.keys(productPricing).find(key => 
+        normalizedName.includes(key) || key.includes(normalizedName)
+      );
+      if (matchKey) {
+        pricing = productPricing[matchKey];
       }
     }
-    return 0; // Return 0 if no price found
+    
+    if (pricing && typeof pricing === 'object') {
+      // Determine unit based on product type
+      let unit = 'L';
+      if (productName.toLowerCase().includes('putty') || productName.toLowerCase().includes('polymer')) {
+        unit = 'kg';
+      }
+      return { sizes: pricing as { [key: string]: number }, unit };
+    }
+    return null;
+  };
+
+  // Helper function to calculate optimal pack combination for maximum quantity
+  const calculateOptimalPackCombination = (
+    availableSizes: { size: string, price: number }[], 
+    maxQuantity: number,
+    unit: string
+  ): { combination: { size: string, count: number, price: number }[], totalCost: number, error?: string } => {
+    // Sort sizes in descending order
+    const sortedSizes = [...availableSizes].sort((a, b) => {
+      const sizeA = parseFloat(a.size.replace(/[^\d.]/g, ''));
+      const sizeB = parseFloat(b.size.replace(/[^\d.]/g, ''));
+      return sizeB - sizeA;
+    });
+
+    let remaining = maxQuantity;
+    const combination: { size: string, count: number, price: number }[] = [];
+    
+    // Greedy algorithm: use largest packs first
+    for (const pack of sortedSizes) {
+      const packSize = parseFloat(pack.size.replace(/[^\d.]/g, ''));
+      if (remaining >= packSize) {
+        const count = Math.floor(remaining / packSize);
+        if (count > 0) {
+          combination.push({ size: pack.size, count, price: pack.price });
+          remaining -= count * packSize;
+        }
+      }
+    }
+
+    // If there's remaining quantity, add one more of the smallest available pack
+    if (remaining > 0.01 && sortedSizes.length > 0) {
+      const smallestPack = sortedSizes[sortedSizes.length - 1];
+      const existing = combination.find(c => c.size === smallestPack.size);
+      if (existing) {
+        existing.count += 1;
+      } else {
+        combination.push({ size: smallestPack.size, count: 1, price: smallestPack.price });
+      }
+    }
+
+    // Calculate total cost
+    const totalCost = combination.reduce((sum, c) => sum + (c.count * c.price), 0);
+
+    // Check if we couldn't satisfy the quantity
+    if (combination.length === 0 && maxQuantity > 0) {
+      return { 
+        combination: [], 
+        totalCost: 0, 
+        error: "Pack combination not found for full quantity" 
+      };
+    }
+
+    return { combination, totalCost };
   };
 
   // Section 4: Material Section
   const renderMaterialSection = () => {
-    // Material pack sizes and prices (example prices - adjust as needed)
-    const materialPricing: any = {
-      'Putty': {
-        packSize: 40,
-        unit: 'kg',
-        pricePerPack: 800
-      },
-      'Primer': {
-        packSize: 20,
-        unit: 'L',
-        pricePerPack: 1200
-      },
-      'Emulsion': {
-        packSize: 20,
-        unit: 'L',
-        pricePerPack: 2500
-      },
-      'Enamel': {
-        packSize: 4,
-        unit: 'L',
-        pricePerPack: 600
-      }
-    };
-
-    // Available pack sizes for each material type
-    const availablePackSizes: any = {
-      'Putty': [40, 20, 5, 1],
-      // Kg
-      'Primer': [20, 10, 4, 1],
-      // Liters
-      'Emulsion': [20, 10, 4, 1],
-      // Liters
-      'Enamel': [20, 10, 4, 1] // Liters
-    };
-
-    // Helper function to calculate optimal pack combination
-    const calculateOptimalPacks = (materialKey: string, quantity: number) => {
-      const packSizes = availablePackSizes[materialKey] || [20, 10, 4, 1];
-      let remaining = quantity;
-      const packCombination: {
-        size: number;
-        count: number;
-      }[] = [];
-
-      // Greedy algorithm: start with largest pack size
-      for (const packSize of packSizes) {
-        if (remaining >= packSize) {
-          const count = Math.floor(remaining / packSize);
-          if (count > 0) {
-            packCombination.push({
-              size: packSize,
-              count
-            });
-            remaining = remaining - count * packSize;
-          }
-        }
-      }
-
-      // If there's still remaining quantity, add one pack of the smallest size
-      if (remaining > 0 && packSizes.length > 0) {
-        const smallestPack = packSizes[packSizes.length - 1];
-        const existingSmallest = packCombination.find(p => p.size === smallestPack);
-        if (existingSmallest) {
-          existingSmallest.count += 1;
-        } else {
-          packCombination.push({
-            size: smallestPack,
-            count: 1
-          });
-        }
-      }
-
-      // Format as "Pack: (40/2)(1/4)"
-      const packString = packCombination.map(p => `(${p.size}/${p.count})`).join('');
-      return packString;
-    };
 
     // Helper function to get correct coverage data for a material
     const getMaterialCoverage = (materialName: string, materialType: string) => {
@@ -1176,31 +1145,70 @@ export default function GenerateSummaryScreen() {
 
     // Helper function to calculate material requirements and cost
     const calculateMaterial = (material: string, quantity: number) => {
-      let materialKey = 'Emulsion';
-      if (material.toLowerCase().includes('putty')) materialKey = 'Putty';else if (material.toLowerCase().includes('primer')) materialKey = 'Primer';else if (material.toLowerCase().includes('enamel')) materialKey = 'Enamel';
-      const pricing = materialPricing[materialKey];
+      // Get pricing from database
+      const pricingData = getProductPricingFromDB(material);
+      
+      if (!pricingData) {
+        // Show error if product not found in pricing
+        toast({
+          title: "Product name mismatch",
+          description: `Product "${material}" not found in Product Pricing tab. Please configure pricing first.`,
+          variant: "destructive",
+        });
+        return {
+          quantity: quantity.toFixed(2),
+          minQuantity: Math.ceil(quantity),
+          maxQuantity: Math.ceil(quantity * 1.25),
+          unit: material.toLowerCase().includes('putty') ? 'kg' : 'L',
+          packsNeeded: 0,
+          packSize: 0,
+          packCombination: 'N/A',
+          totalCost: 0,
+          rate: 0,
+          error: "Product not found in pricing"
+        };
+      }
 
+      const { sizes, unit } = pricingData;
+      
+      // Determine material type for quantity calculation
+      const isPutty = material.toLowerCase().includes('putty');
+      
       // Calculate min and max quantities based on coverage variations
-      const minQuantity = Math.ceil(quantity); // Best coverage (smooth surface)
+      const minQuantity = Math.ceil(quantity);
       // For putty, add fixed 10kg; for others, add 25%
-      const maxQuantity = materialKey === 'Putty' ? Math.ceil(quantity + 10) : Math.ceil(quantity * 1.25);
-      const packsNeeded = Math.ceil(maxQuantity / pricing.packSize);
+      const maxQuantity = isPutty ? Math.ceil(quantity + 10) : Math.ceil(quantity * 1.25);
 
-      // Get price from database or fallback to hardcoded pricing
-      const dbPrice = getMaterialPrice(material);
-      const pricePerPack = dbPrice > 0 ? dbPrice : pricing.pricePerPack;
-      const totalCost = packsNeeded * pricePerPack;
-      const packCombination = calculateOptimalPacks(materialKey, maxQuantity);
+      // Prepare available pack sizes with prices
+      const availablePacks = Object.entries(sizes).map(([size, price]) => ({
+        size,
+        price: price as number
+      }));
+
+      // Calculate optimal pack combination for MAX quantity
+      const { combination, totalCost, error } = calculateOptimalPackCombination(
+        availablePacks,
+        maxQuantity,
+        unit
+      );
+
+      // Format pack combination string
+      const packCombination = combination.length > 0
+        ? combination.map(c => `(${c.size}/${c.count})`).join('')
+        : 'N/A';
+
       return {
         quantity: quantity.toFixed(2),
-        minQuantity: minQuantity,
-        maxQuantity: maxQuantity,
-        unit: pricing.unit,
-        packsNeeded,
-        packSize: pricing.packSize,
+        minQuantity,
+        maxQuantity,
+        unit,
+        packsNeeded: combination.reduce((sum, c) => sum + c.count, 0),
+        packSize: combination.length > 0 ? combination[0].size : 'N/A',
         packCombination,
         totalCost,
-        rate: pricePerPack
+        rate: combination.length > 0 ? combination[0].price : 0,
+        error,
+        combination // Keep detailed combination for display
       };
     };
 
@@ -1318,20 +1326,35 @@ export default function GenerateSummaryScreen() {
                             <div className="space-y-3">
                               {configMat.materials.map((mat: any, matIdx: number) => <div key={matIdx} className="space-y-2">
                                   <h4 className="text-base font-semibold text-foreground">{mat.name}</h4>
+                                  {mat.error && (
+                                    <div className="text-xs text-destructive bg-destructive/10 p-2 rounded">
+                                      ⚠️ {mat.error}
+                                    </div>
+                                  )}
                                   <div className="flex items-baseline justify-between">
                                     <div className="flex-1">
                                       <p className="text-sm text-muted-foreground">
-                                        Quantity: <span className="font-medium text-foreground">{mat.minQuantity} to {mat.maxQuantity} {mat.unit}</span>
+                                        Quantity: <span className="font-medium text-foreground">{mat.minQuantity} to <strong>{mat.maxQuantity}</strong> {mat.unit}</span>
+                                      </p>
+                                      <p className="text-xs text-muted-foreground mt-0.5">
+                                        (Cost calculated for max: {mat.maxQuantity} {mat.unit})
                                       </p>
                                       <p className="text-sm text-muted-foreground mt-1">
                                         Coverage: <span className="font-medium text-foreground">{getMaterialCoverage(mat.name, mat.type)}</span>
                                       </p>
                                       <p className="text-sm text-muted-foreground mt-1">
-                                        Rate: <span className="font-medium text-foreground">{mat.rate > 0 ? `₹${mat.rate.toLocaleString('en-IN')}` : '₹0'}</span>
+                                        Packs: <span className="font-medium text-foreground">{mat.packCombination}</span>
                                       </p>
+                                      {mat.combination && mat.combination.length > 0 && (
+                                        <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
+                                          {mat.combination.map((c: any, i: number) => (
+                                            <div key={i}>{c.count} × {c.size} @ ₹{c.price.toLocaleString('en-IN')}</div>
+                                          ))}
+                                        </div>
+                                      )}
                                     </div>
                                     <div className="text-right">
-                                      <p className="text-xl font-bold text-primary">₹{mat.totalCost.toLocaleString('en-IN')}</p>
+                                      <p className="text-xl font-bold text-[#EA384C]">₹{mat.totalCost.toLocaleString('en-IN')}</p>
                                     </div>
                                   </div>
                                 </div>)}
@@ -1378,20 +1401,35 @@ export default function GenerateSummaryScreen() {
                             <div className="space-y-3">
                               {configMat.materials.map((mat: any, matIdx: number) => <div key={matIdx} className="space-y-2">
                                   <h4 className="text-base font-semibold text-foreground">{mat.name}</h4>
+                                  {mat.error && (
+                                    <div className="text-xs text-destructive bg-destructive/10 p-2 rounded">
+                                      ⚠️ {mat.error}
+                                    </div>
+                                  )}
                                   <div className="flex items-baseline justify-between">
                                     <div className="flex-1">
                                       <p className="text-sm text-muted-foreground">
-                                        Quantity: <span className="font-medium text-foreground">{mat.minQuantity} to {mat.maxQuantity} {mat.unit}</span>
+                                        Quantity: <span className="font-medium text-foreground">{mat.minQuantity} to <strong>{mat.maxQuantity}</strong> {mat.unit}</span>
+                                      </p>
+                                      <p className="text-xs text-muted-foreground mt-0.5">
+                                        (Cost calculated for max: {mat.maxQuantity} {mat.unit})
                                       </p>
                                       <p className="text-sm text-muted-foreground mt-1">
                                         Coverage: <span className="font-medium text-foreground">{getMaterialCoverage(mat.name, mat.type)}</span>
                                       </p>
                                       <p className="text-sm text-muted-foreground mt-1">
-                                        Rate: <span className="font-medium text-foreground">{mat.rate > 0 ? `₹${mat.rate.toLocaleString('en-IN')}` : '₹0'}</span>
+                                        Packs: <span className="font-medium text-foreground">{mat.packCombination}</span>
                                       </p>
+                                      {mat.combination && mat.combination.length > 0 && (
+                                        <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
+                                          {mat.combination.map((c: any, i: number) => (
+                                            <div key={i}>{c.count} × {c.size} @ ₹{c.price.toLocaleString('en-IN')}</div>
+                                          ))}
+                                        </div>
+                                      )}
                                     </div>
                                     <div className="text-right">
-                                      <p className="text-xl font-bold text-primary">₹{mat.totalCost.toLocaleString('en-IN')}</p>
+                                      <p className="text-xl font-bold text-[#EA384C]">₹{mat.totalCost.toLocaleString('en-IN')}</p>
                                     </div>
                                   </div>
                                 </div>)}
@@ -1438,20 +1476,35 @@ export default function GenerateSummaryScreen() {
                             <div className="space-y-3">
                               {configMat.materials.map((mat: any, matIdx: number) => <div key={matIdx} className="space-y-2">
                                   <h4 className="text-base font-semibold text-foreground">{mat.name}</h4>
+                                  {mat.error && (
+                                    <div className="text-xs text-destructive bg-destructive/10 p-2 rounded">
+                                      ⚠️ {mat.error}
+                                    </div>
+                                  )}
                                   <div className="flex items-baseline justify-between">
                                     <div className="flex-1">
                                       <p className="text-sm text-muted-foreground">
-                                        Quantity: <span className="font-medium text-foreground">{mat.minQuantity} to {mat.maxQuantity} {mat.unit}</span>
+                                        Quantity: <span className="font-medium text-foreground">{mat.minQuantity} to <strong>{mat.maxQuantity}</strong> {mat.unit}</span>
+                                      </p>
+                                      <p className="text-xs text-muted-foreground mt-0.5">
+                                        (Cost calculated for max: {mat.maxQuantity} {mat.unit})
                                       </p>
                                       <p className="text-sm text-muted-foreground mt-1">
                                         Coverage: <span className="font-medium text-foreground">{getMaterialCoverage(mat.name, mat.type)}</span>
                                       </p>
                                       <p className="text-sm text-muted-foreground mt-1">
-                                        Rate: <span className="font-medium text-foreground">{mat.rate > 0 ? `₹${mat.rate.toLocaleString('en-IN')}` : '₹0'}</span>
+                                        Packs: <span className="font-medium text-foreground">{mat.packCombination}</span>
                                       </p>
+                                      {mat.combination && mat.combination.length > 0 && (
+                                        <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
+                                          {mat.combination.map((c: any, i: number) => (
+                                            <div key={i}>{c.count} × {c.size} @ ₹{c.price.toLocaleString('en-IN')}</div>
+                                          ))}
+                                        </div>
+                                      )}
                                     </div>
                                     <div className="text-right">
-                                      <p className="text-xl font-bold text-primary">₹{mat.totalCost.toLocaleString('en-IN')}</p>
+                                      <p className="text-xl font-bold text-[#EA384C]">₹{mat.totalCost.toLocaleString('en-IN')}</p>
                                     </div>
                                   </div>
                                 </div>)}
