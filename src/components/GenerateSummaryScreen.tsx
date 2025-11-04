@@ -1515,11 +1515,8 @@ export default function GenerateSummaryScreen() {
 
   // Section 5: Dealer Margin
   const renderDealerMargin = () => {
-    const totalMaterialCost = areaConfigs.reduce((sum, config) => {
-      const area = Number(config.area) || 0;
-      const rate = parseFloat(config.perSqFtRate) || 0;
-      return sum + area * rate;
-    }, 0);
+    // Use material cost from Material Requirements section (same as Total Material Cost)
+    const totalMaterialCost = totalMaterialCostRef.current;
     const marginCost = totalMaterialCost * dealerMargin / 100;
     return <Card className="eca-shadow">
         <CardHeader className="pb-3">
