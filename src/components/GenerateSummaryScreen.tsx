@@ -54,6 +54,7 @@ export default function GenerateSummaryScreen() {
   const [activeConfigIndex, setActiveConfigIndex] = useState(0);
   const paintConfigRef = useRef<HTMLDivElement>(null);
   const topSectionRef = useRef<HTMLDivElement>(null);
+  const totalMaterialCostRef = useRef<number>(0); // Store total material cost for access across sections
   const perDayLabourCost = 1100; // Fixed per day labour cost in rupees
   const [projectData, setProjectData] = useState<any>(null);
   const [coverageData, setCoverageData] = useState<any>({});
@@ -1289,6 +1290,9 @@ export default function GenerateSummaryScreen() {
         totalCost
       });
     });
+    
+    // Update ref with total material cost for use in other sections
+    totalMaterialCostRef.current = configMaterials.reduce((sum, cm) => sum + cm.totalCost, 0);
     return <Card className="eca-shadow">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg font-semibold">
@@ -1719,66 +1723,8 @@ export default function GenerateSummaryScreen() {
     ceilingArea: number;
   }>);
   const calculateTotalEstimatedCost = () => {
-    // Calculate material cost directly from area configs
-    let materialCost = 0;
-    const materialPricing: any = {
-      'Putty': {
-        packSize: 40,
-        unit: 'kg',
-        pricePerPack: 800
-      },
-      'Primer': {
-        packSize: 20,
-        unit: 'L',
-        pricePerPack: 1200
-      },
-      'Emulsion': {
-        packSize: 20,
-        unit: 'L',
-        pricePerPack: 2500
-      },
-      'Enamel': {
-        packSize: 4,
-        unit: 'L',
-        pricePerPack: 600
-      }
-    };
-    areaConfigs.forEach(config => {
-      const area = Number(config.area) || 0;
-      const isFresh = config.paintingSystem === 'Fresh Painting';
-      if (isFresh) {
-        if (config.selectedMaterials?.putty && config.coatConfiguration?.putty > 0) {
-          const kgNeeded = area / 20 * config.coatConfiguration.putty;
-          const packsNeeded = Math.ceil(kgNeeded / materialPricing.Putty.packSize);
-          materialCost += packsNeeded * materialPricing.Putty.pricePerPack;
-        }
-        if (config.selectedMaterials?.primer && config.coatConfiguration?.primer > 0) {
-          const litersNeeded = area / 120 * config.coatConfiguration.primer;
-          const packsNeeded = Math.ceil(litersNeeded / materialPricing.Primer.packSize);
-          materialCost += packsNeeded * materialPricing.Primer.pricePerPack;
-        }
-        if (config.selectedMaterials?.emulsion && config.coatConfiguration?.emulsion > 0) {
-          const litersNeeded = area / 120 * config.coatConfiguration.emulsion;
-          const isEnamel = config.selectedMaterials.emulsion.toLowerCase().includes('enamel');
-          const key = isEnamel ? 'Enamel' : 'Emulsion';
-          const packsNeeded = Math.ceil(litersNeeded / materialPricing[key].packSize);
-          materialCost += packsNeeded * materialPricing[key].pricePerPack;
-        }
-      } else {
-        if (config.selectedMaterials?.primer && config.repaintingConfiguration?.primer && config.repaintingConfiguration.primer > 0) {
-          const litersNeeded = area / 120 * config.repaintingConfiguration.primer;
-          const packsNeeded = Math.ceil(litersNeeded / materialPricing.Primer.packSize);
-          materialCost += packsNeeded * materialPricing.Primer.pricePerPack;
-        }
-        if (config.selectedMaterials?.emulsion && config.repaintingConfiguration?.emulsion && config.repaintingConfiguration.emulsion > 0) {
-          const litersNeeded = area / 120 * config.repaintingConfiguration.emulsion;
-          const isEnamel = config.selectedMaterials.emulsion.toLowerCase().includes('enamel');
-          const key = isEnamel ? 'Enamel' : 'Emulsion';
-          const packsNeeded = Math.ceil(litersNeeded / materialPricing[key].packSize);
-          materialCost += packsNeeded * materialPricing[key].pricePerPack;
-        }
-      }
-    });
+    // Use material cost from Material Requirements section (stored in ref)
+    const materialCost = totalMaterialCostRef.current;
 
     // Calculate labour cost based on current mode
     let labourCost = 0;
