@@ -101,6 +101,9 @@ export default function RoomMeasurementScreen() {
   const [newExtraSurface, setNewExtraSurface] = useState({ height: "", width: "", quantity: "" });
   const [tempOpeningAreas, setTempOpeningAreas] = useState<OpeningArea[]>([]);
   const [tempExtraSurfaces, setTempExtraSurfaces] = useState<ExtraSurface[]>([]);
+  // Track opening areas and extra surfaces per room
+  const [roomOpeningInputs, setRoomOpeningInputs] = useState<Record<string, { height: string; width: string; quantity: string }>>({});
+  const [roomExtraSurfaceInputs, setRoomExtraSurfaceInputs] = useState<Record<string, { height: string; width: string; quantity: string }>>({});
   const [newDoorWindowGrill, setNewDoorWindowGrill] = useState<Record<string, {
     name: string;
     height: string;
@@ -582,80 +585,128 @@ export default function RoomMeasurementScreen() {
   }, [projectId]);
 
   const addOpeningAreaToRoom = useCallback(async (roomId: string) => {
-    const openingArea = addOpeningArea();
-    if (openingArea) {
-      const targetRoom = rooms.find(r => r.id === roomId);
-      if (!targetRoom) return;
-
-      const updatedOpeningAreas = [...targetRoom.openingAreas, openingArea];
-      const areas = calculateAreas(
-        targetRoom.length, 
-        targetRoom.width, 
-        targetRoom.height, 
-        updatedOpeningAreas, 
-        targetRoom.extraSurfaces, 
-        targetRoom.doorWindowGrills
-      );
-
-      // Update state immediately for instant UI response
-      setRooms(prev => prev.map(room => 
-        room.id === roomId 
-          ? { ...room, openingAreas: updatedOpeningAreas, ...areas }
-          : room
-      ));
-      setNewOpeningArea({ height: "", width: "", quantity: "1" });
-
-      // Save to database in background
-      try {
-        await supabase.from('rooms').update({
-          opening_areas: updatedOpeningAreas as any,
-          total_opening_area: areas.totalOpeningArea,
-          adjusted_wall_area: areas.adjustedWallArea
-        }).eq('room_id', roomId).eq('project_id', projectId!);
-      } catch (error) {
-        console.error('Error:', error);
-        toast.error('Failed to save changes');
-      }
+    const roomInput = roomOpeningInputs[roomId] || { height: "", width: "", quantity: "" };
+    
+    if (!roomInput.height || !roomInput.width) {
+      toast.error('Please enter height and width');
+      return;
     }
-  }, [rooms, projectId, calculateAreas]);
+
+    const height = safeParseFloat(roomInput.height);
+    const width = safeParseFloat(roomInput.width);
+    const quantity = safeParseFloat(roomInput.quantity, 1);
+    const area = height * width * quantity;
+    
+    const openingArea: OpeningArea = {
+      id: `opening-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      height,
+      width,
+      quantity,
+      area
+    };
+
+    const targetRoom = rooms.find(r => r.id === roomId);
+    if (!targetRoom) return;
+
+    const updatedOpeningAreas = [...targetRoom.openingAreas, openingArea];
+    const areas = calculateAreas(
+      targetRoom.length, 
+      targetRoom.width, 
+      targetRoom.height, 
+      updatedOpeningAreas, 
+      targetRoom.extraSurfaces, 
+      targetRoom.doorWindowGrills
+    );
+
+    // Update state immediately for instant UI response
+    setRooms(prev => prev.map(room => 
+      room.id === roomId 
+        ? { ...room, openingAreas: updatedOpeningAreas, ...areas }
+        : room
+    ));
+    
+    // Clear inputs for this room
+    setRoomOpeningInputs(prev => ({
+      ...prev,
+      [roomId]: { height: "", width: "", quantity: "" }
+    }));
+
+    toast.success('Opening area added');
+
+    // Save to database in background
+    try {
+      await supabase.from('rooms').update({
+        opening_areas: updatedOpeningAreas as any,
+        total_opening_area: areas.totalOpeningArea,
+        adjusted_wall_area: areas.adjustedWallArea
+      }).eq('room_id', roomId).eq('project_id', projectId!);
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Failed to save changes');
+    }
+  }, [rooms, projectId, calculateAreas, roomOpeningInputs]);
 
   const addExtraSurfaceToRoom = useCallback(async (roomId: string) => {
-    const extraSurface = addExtraSurface();
-    if (extraSurface) {
-      const targetRoom = rooms.find(r => r.id === roomId);
-      if (!targetRoom) return;
-
-      const updatedExtraSurfaces = [...targetRoom.extraSurfaces, extraSurface];
-      const areas = calculateAreas(
-        targetRoom.length, 
-        targetRoom.width, 
-        targetRoom.height, 
-        targetRoom.openingAreas, 
-        updatedExtraSurfaces, 
-        targetRoom.doorWindowGrills
-      );
-
-      // Update state immediately
-      setRooms(prev => prev.map(room => 
-        room.id === roomId 
-          ? { ...room, extraSurfaces: updatedExtraSurfaces, ...areas }
-          : room
-      ));
-      setNewExtraSurface({ height: "", width: "", quantity: "1" });
-
-      // Save in background
-      try {
-        await supabase.from('rooms').update({
-          extra_surfaces: updatedExtraSurfaces as any,
-          total_extra_surface: areas.totalExtraSurface,
-          adjusted_wall_area: areas.adjustedWallArea
-        }).eq('room_id', roomId).eq('project_id', projectId!);
-      } catch (error) {
-        console.error('Error:', error);
-        toast.error('Failed to save changes');
-      }
+    const roomInput = roomExtraSurfaceInputs[roomId] || { height: "", width: "", quantity: "" };
+    
+    if (!roomInput.height || !roomInput.width) {
+      toast.error('Please enter height and width');
+      return;
     }
-  }, [rooms, projectId, calculateAreas]);
+
+    const height = safeParseFloat(roomInput.height);
+    const width = safeParseFloat(roomInput.width);
+    const quantity = safeParseFloat(roomInput.quantity, 1);
+    const area = height * width * quantity;
+    
+    const extraSurface: ExtraSurface = {
+      id: `extra-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      height,
+      width,
+      quantity,
+      area
+    };
+
+    const targetRoom = rooms.find(r => r.id === roomId);
+    if (!targetRoom) return;
+
+    const updatedExtraSurfaces = [...targetRoom.extraSurfaces, extraSurface];
+    const areas = calculateAreas(
+      targetRoom.length, 
+      targetRoom.width, 
+      targetRoom.height, 
+      targetRoom.openingAreas, 
+      updatedExtraSurfaces, 
+      targetRoom.doorWindowGrills
+    );
+
+    // Update state immediately
+    setRooms(prev => prev.map(room => 
+      room.id === roomId 
+        ? { ...room, extraSurfaces: updatedExtraSurfaces, ...areas }
+        : room
+    ));
+    
+    // Clear inputs for this room
+    setRoomExtraSurfaceInputs(prev => ({
+      ...prev,
+      [roomId]: { height: "", width: "", quantity: "" }
+    }));
+
+    toast.success('Extra surface added');
+
+    // Save in background
+    try {
+      await supabase.from('rooms').update({
+        extra_surfaces: updatedExtraSurfaces as any,
+        total_extra_surface: areas.totalExtraSurface,
+        adjusted_wall_area: areas.adjustedWallArea
+      }).eq('room_id', roomId).eq('project_id', projectId!);
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Failed to save changes');
+    }
+  }, [rooms, projectId, calculateAreas, roomExtraSurfaceInputs]);
 
   const addDoorWindowGrillToRoom = async (roomId: string) => {
     const doorWindowGrill = addDoorWindowGrill(roomId);
@@ -1577,24 +1628,33 @@ export default function RoomMeasurementScreen() {
                               <Input
                                 type="number"
                                 placeholder="Height"
-                                value={newOpeningArea.height}
-                                onChange={(e) => setNewOpeningArea(prev => ({ ...prev, height: e.target.value }))}
+                                value={roomOpeningInputs[room.id]?.height || ""}
+                                onChange={(e) => setRoomOpeningInputs(prev => ({ 
+                                  ...prev, 
+                                  [room.id]: { ...(prev[room.id] || { height: "", width: "", quantity: "" }), height: e.target.value } 
+                                }))}
                                 className="h-9"
                                 step="0.1"
                               />
                               <Input
                                 type="number"
                                 placeholder="Width"
-                                value={newOpeningArea.width}
-                                onChange={(e) => setNewOpeningArea(prev => ({ ...prev, width: e.target.value }))}
+                                value={roomOpeningInputs[room.id]?.width || ""}
+                                onChange={(e) => setRoomOpeningInputs(prev => ({ 
+                                  ...prev, 
+                                  [room.id]: { ...(prev[room.id] || { height: "", width: "", quantity: "" }), width: e.target.value } 
+                                }))}
                                 className="h-9"
                                 step="0.1"
                               />
                               <Input
                                 type="number"
                                 placeholder="Qty"
-                                value={newOpeningArea.quantity}
-                                onChange={(e) => setNewOpeningArea(prev => ({ ...prev, quantity: e.target.value }))}
+                                value={roomOpeningInputs[room.id]?.quantity || ""}
+                                onChange={(e) => setRoomOpeningInputs(prev => ({ 
+                                  ...prev, 
+                                  [room.id]: { ...(prev[room.id] || { height: "", width: "", quantity: "" }), quantity: e.target.value } 
+                                }))}
                                 className="h-9"
                                 step="1"
                               />
@@ -1603,7 +1663,7 @@ export default function RoomMeasurementScreen() {
                               variant="outline"
                               size="sm"
                               onClick={() => addOpeningAreaToRoom(room.id)}
-                              disabled={!newOpeningArea.height || !newOpeningArea.width}
+                              disabled={!roomOpeningInputs[room.id]?.height || !roomOpeningInputs[room.id]?.width}
                               className="w-full"
                             >
                               <Plus className="mr-1 h-3 w-3" />
@@ -1635,24 +1695,33 @@ export default function RoomMeasurementScreen() {
                               <Input
                                 type="number"
                                 placeholder="Height"
-                                value={newExtraSurface.height}
-                                onChange={(e) => setNewExtraSurface(prev => ({ ...prev, height: e.target.value }))}
+                                value={roomExtraSurfaceInputs[room.id]?.height || ""}
+                                onChange={(e) => setRoomExtraSurfaceInputs(prev => ({ 
+                                  ...prev, 
+                                  [room.id]: { ...(prev[room.id] || { height: "", width: "", quantity: "" }), height: e.target.value } 
+                                }))}
                                 className="h-9"
                                 step="0.1"
                               />
                               <Input
                                 type="number"
                                 placeholder="Width"
-                                value={newExtraSurface.width}
-                                onChange={(e) => setNewExtraSurface(prev => ({ ...prev, width: e.target.value }))}
+                                value={roomExtraSurfaceInputs[room.id]?.width || ""}
+                                onChange={(e) => setRoomExtraSurfaceInputs(prev => ({ 
+                                  ...prev, 
+                                  [room.id]: { ...(prev[room.id] || { height: "", width: "", quantity: "" }), width: e.target.value } 
+                                }))}
                                 className="h-9"
                                 step="0.1"
                               />
                               <Input
                                 type="number"
                                 placeholder="Qty"
-                                value={newExtraSurface.quantity}
-                                onChange={(e) => setNewExtraSurface(prev => ({ ...prev, quantity: e.target.value }))}
+                                value={roomExtraSurfaceInputs[room.id]?.quantity || ""}
+                                onChange={(e) => setRoomExtraSurfaceInputs(prev => ({ 
+                                  ...prev, 
+                                  [room.id]: { ...(prev[room.id] || { height: "", width: "", quantity: "" }), quantity: e.target.value } 
+                                }))}
                                 className="h-9"
                                 step="1"
                               />
@@ -1661,7 +1730,7 @@ export default function RoomMeasurementScreen() {
                               variant="outline"
                               size="sm"
                               onClick={() => addExtraSurfaceToRoom(room.id)}
-                              disabled={!newExtraSurface.height || !newExtraSurface.width}
+                              disabled={!roomExtraSurfaceInputs[room.id]?.height || !roomExtraSurfaceInputs[room.id]?.width}
                               className="w-full"
                             >
                               <Plus className="mr-1 h-3 w-3" />
