@@ -406,27 +406,32 @@ export default function Dashboard() {
         {/* Quick Actions - Horizontal Scroll */}
         <div className="overflow-x-auto -mx-4 px-4">
           <div className="flex gap-4 mb-6 min-w-min">
-            <Card className="eca-shadow min-w-[320px] max-w-[320px] cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate("/add-project")}>
-              <CardContent className="p-6 flex flex-col items-center justify-center h-[400px]">
-                <div className="bg-primary/10 p-4 rounded-full mb-4">
-                  <Plus className="h-8 w-8 text-primary" />
+            <Card className="eca-shadow min-w-[280px] max-w-[280px] cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate("/add-project")}>
+              <CardContent className="p-5 flex flex-col items-center justify-center h-[180px]">
+                <div className="bg-primary/10 p-3 rounded-full mb-3">
+                  <Plus className="h-6 w-6 text-primary" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">New Project</h3>
-                <p className="text-sm text-muted-foreground text-center">Create a new estimation project</p>
+                <h3 className="text-base font-semibold">New Project</h3>
               </CardContent>
             </Card>
             
-            <Card className="eca-shadow min-w-[320px] max-w-[320px] cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate("/dealer-pricing")}>
-              <CardContent className="p-6 flex flex-col items-center justify-center h-[400px]">
-                <div className="bg-secondary/10 p-4 rounded-full mb-4">
-                  <Package className="h-8 w-8 text-secondary" />
+            <Card className="eca-shadow min-w-[280px] max-w-[280px] cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate("/dealer-pricing")}>
+              <CardContent className="p-5 flex flex-col items-center justify-center h-[180px]">
+                <div className="bg-secondary/10 p-3 rounded-full mb-3">
+                  <Package className="h-6 w-6 text-secondary" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Manage Pricing</h3>
-                <p className="text-sm text-muted-foreground text-center">Update product prices and margins</p>
+                <h3 className="text-base font-semibold">Manage Pricing</h3>
               </CardContent>
             </Card>
 
-            <LeadSummaryBox />
+            <Card className="eca-shadow min-w-[280px] max-w-[280px] cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate("/lead-book")}>
+              <CardContent className="p-5 flex flex-col items-center justify-center h-[180px]">
+                <div className="bg-accent/10 p-3 rounded-full mb-3">
+                  <BookOpen className="h-6 w-6 text-accent-foreground" />
+                </div>
+                <h3 className="text-base font-semibold">Lead Summary</h3>
+              </CardContent>
+            </Card>
           </div>
         </div>
 
