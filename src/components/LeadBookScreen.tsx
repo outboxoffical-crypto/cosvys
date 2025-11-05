@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, Trash2, Edit } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Edit, BookOpen, TrendingUp, TrendingDown, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -34,6 +34,7 @@ const LeadBookScreen = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [loading, setLoading] = useState(true);
+  const [leadStats, setLeadStats] = useState({ total: 0, converted: 0, dropped: 0, pending: 0 });
   
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -52,7 +53,33 @@ const LeadBookScreen = () => {
 
   useEffect(() => {
     fetchLeads();
+    fetchLeadStats();
   }, []);
+
+  const fetchLeadStats = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: leadsData, error } = await supabase
+        .from("leads")
+        .select("status, approval_status")
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+
+      const stats = {
+        total: leadsData?.length || 0,
+        converted: leadsData?.filter(l => l.status === "Converted").length || 0,
+        dropped: leadsData?.filter(l => l.status === "Dropped").length || 0,
+        pending: leadsData?.filter(l => l.approval_status === "Pending").length || 0,
+      };
+
+      setLeadStats(stats);
+    } catch (error: any) {
+      console.error("Failed to fetch lead stats:", error.message);
+    }
+  };
 
   const fetchLeads = async () => {
     try {
@@ -114,6 +141,7 @@ const LeadBookScreen = () => {
       setIsDialogOpen(false);
       resetForm();
       fetchLeads();
+      fetchLeadStats();
     } catch (error: any) {
       toast.error("Failed to save lead: " + error.message);
     }
@@ -131,6 +159,7 @@ const LeadBookScreen = () => {
       if (error) throw error;
       toast.success("Lead deleted successfully");
       fetchLeads();
+      fetchLeadStats();
     } catch (error: any) {
       toast.error("Failed to delete lead: " + error.message);
     }
@@ -342,6 +371,48 @@ const LeadBookScreen = () => {
             </DialogContent>
           </Dialog>
         </div>
+
+        {/* Lead Summary Statistics */}
+        <Card className="eca-shadow mb-6">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-semibold flex items-center gap-2">
+              <BookOpen className="h-5 w-5 text-primary" />
+              Lead Summary
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-blue-50 p-3 rounded-lg">
+                <div className="flex items-center gap-2 mb-1">
+                  <BookOpen className="h-4 w-4 text-blue-600" />
+                  <p className="text-xs text-muted-foreground">Total Leads</p>
+                </div>
+                <p className="text-2xl font-bold text-blue-600">{leadStats.total}</p>
+              </div>
+              <div className="bg-green-50 p-3 rounded-lg">
+                <div className="flex items-center gap-2 mb-1">
+                  <TrendingUp className="h-4 w-4 text-green-600" />
+                  <p className="text-xs text-muted-foreground">Converted</p>
+                </div>
+                <p className="text-2xl font-bold text-green-600">{leadStats.converted}</p>
+              </div>
+              <div className="bg-red-50 p-3 rounded-lg">
+                <div className="flex items-center gap-2 mb-1">
+                  <TrendingDown className="h-4 w-4 text-red-600" />
+                  <p className="text-xs text-muted-foreground">Dropped</p>
+                </div>
+                <p className="text-2xl font-bold text-red-600">{leadStats.dropped}</p>
+              </div>
+              <div className="bg-yellow-50 p-3 rounded-lg">
+                <div className="flex items-center gap-2 mb-1">
+                  <Clock className="h-4 w-4 text-yellow-600" />
+                  <p className="text-xs text-muted-foreground">Pending Approval</p>
+                </div>
+                <p className="text-2xl font-bold text-yellow-600">{leadStats.pending}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <Card className="p-6">
           {loading ? (
