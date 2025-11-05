@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import ProjectDetailsModal from "./ProjectDetailsModal";
 import { MaterialTracker } from "./MaterialTracker";
 import { LabourTracker } from "./LabourTracker";
+import { LeadSummaryBox } from "./LeadSummaryBox";
 import { format } from "date-fns";
 import { 
   Plus, 
@@ -402,25 +403,31 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <Button 
-            onClick={() => navigate("/add-project")}
-            className="h-14 text-base font-medium eca-shadow"
-            size="lg"
-          >
-            <Plus className="mr-2 h-5 w-5" />
-            New Project
-          </Button>
-          <Button 
-            onClick={() => navigate("/dealer-pricing")}
-            variant="outline"
-            className="h-14 text-base font-medium eca-shadow"
-            size="lg"
-          >
-            <Package className="mr-2 h-5 w-5" />
-            Manage Pricing
-          </Button>
+        {/* Quick Actions - Horizontal Scroll */}
+        <div className="overflow-x-auto -mx-4 px-4">
+          <div className="flex gap-4 mb-6 min-w-min">
+            <Card className="eca-shadow min-w-[320px] max-w-[320px] cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate("/add-project")}>
+              <CardContent className="p-6 flex flex-col items-center justify-center h-[400px]">
+                <div className="bg-primary/10 p-4 rounded-full mb-4">
+                  <Plus className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">New Project</h3>
+                <p className="text-sm text-muted-foreground text-center">Create a new estimation project</p>
+              </CardContent>
+            </Card>
+            
+            <Card className="eca-shadow min-w-[320px] max-w-[320px] cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate("/dealer-pricing")}>
+              <CardContent className="p-6 flex flex-col items-center justify-center h-[400px]">
+                <div className="bg-secondary/10 p-4 rounded-full mb-4">
+                  <Package className="h-8 w-8 text-secondary" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Manage Pricing</h3>
+                <p className="text-sm text-muted-foreground text-center">Update product prices and margins</p>
+              </CardContent>
+            </Card>
+
+            <LeadSummaryBox />
+          </div>
         </div>
 
         {/* Projects List */}
