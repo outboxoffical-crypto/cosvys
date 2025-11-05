@@ -356,29 +356,29 @@ export default function Dashboard() {
         {/* Quick Actions Grid */}
         <div className="grid grid-cols-3 gap-3 mb-6">
           <Card className="eca-shadow cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate("/add-project")}>
-            <CardContent className="p-4 flex flex-col items-center justify-center aspect-square">
-              <div className="bg-primary/10 p-3 rounded-full mb-2">
-                <Plus className="h-5 w-5 text-primary" />
+            <CardContent className="p-3 flex flex-col items-center justify-center h-[120px]">
+              <div className="bg-primary/10 p-2 rounded-full mb-1.5">
+                <Plus className="h-4 w-4 text-primary" />
               </div>
-              <h3 className="text-sm font-semibold text-center">New Project</h3>
+              <h3 className="text-xs font-semibold text-center">New Project</h3>
             </CardContent>
           </Card>
           
           <Card className="eca-shadow cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate("/dealer-pricing")}>
-            <CardContent className="p-4 flex flex-col items-center justify-center aspect-square">
-              <div className="bg-secondary/10 p-3 rounded-full mb-2">
-                <Package className="h-5 w-5 text-secondary" />
+            <CardContent className="p-3 flex flex-col items-center justify-center h-[120px]">
+              <div className="bg-secondary/10 p-2 rounded-full mb-1.5">
+                <Package className="h-4 w-4 text-secondary" />
               </div>
-              <h3 className="text-sm font-semibold text-center">Manage Pricing</h3>
+              <h3 className="text-xs font-semibold text-center">Manage Pricing</h3>
             </CardContent>
           </Card>
 
           <Card className="eca-shadow cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate("/lead-book")}>
-            <CardContent className="p-4 flex flex-col items-center justify-center aspect-square">
-              <div className="bg-accent/10 p-3 rounded-full mb-2">
-                <BookOpen className="h-5 w-5 text-accent-foreground" />
+            <CardContent className="p-3 flex flex-col items-center justify-center h-[120px]">
+              <div className="bg-accent/10 p-2 rounded-full mb-1.5">
+                <BookOpen className="h-4 w-4 text-accent-foreground" />
               </div>
-              <h3 className="text-sm font-semibold text-center">Lead Summary</h3>
+              <h3 className="text-xs font-semibold text-center">Lead Summary</h3>
             </CardContent>
           </Card>
         </div>
