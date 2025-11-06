@@ -482,15 +482,16 @@ export default function Dashboard() {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between pt-3 border-t border-border">
-                      <div className="flex items-center text-xs text-muted-foreground">
-                        <Calendar className="h-3 w-3 mr-1" />
-                        {new Date(project.project_date).toLocaleDateString()}
-                      </div>
-                      
-                      <div className="flex flex-wrap items-center gap-2">
-                        {project.approval_status !== 'Approved' ? (
-                          <>
+                    {/* Action Buttons Section */}
+                    <div className="pt-3 border-t border-border space-y-2">
+                      {project.approval_status !== 'Approved' ? (
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center text-xs text-muted-foreground">
+                            <Calendar className="h-3 w-3 mr-1" />
+                            {format(new Date(project.project_date), "dd MMM yyyy")}
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button 
@@ -523,19 +524,33 @@ export default function Dashboard() {
                               </TooltipTrigger>
                               <TooltipContent>Send reminder</TooltipContent>
                             </Tooltip>
-                          </>
-                        ) : (
-                          <>
-                            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              className="h-8 px-3 rounded-md"
+                              onClick={() => handleViewDetails(project.id)}
+                            >
+                              <span className="text-xs whitespace-nowrap">View Details</span>
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          {/* First Row: Start/End Date buttons (left) | View Details (right) */}
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
                               <Popover>
                                 <PopoverTrigger asChild>
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    className="h-8 px-3 text-xs bg-[#f9f9f9] border-[#e2e8f0] hover:bg-[#f0f0f0] rounded-md"
+                                    className="h-8 px-3 text-xs rounded-md"
                                   >
                                     <Calendar className="h-3 w-3 mr-1" />
-                                    <span className="whitespace-nowrap">{project.start_date ? format(new Date(project.start_date), "MMM dd") : "Start Date"}</span>
+                                    <span className="whitespace-nowrap">
+                                      {project.start_date ? format(new Date(project.start_date), "dd MMM") : "Start Date"}
+                                    </span>
                                   </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-auto p-0" align="start">
@@ -554,10 +569,12 @@ export default function Dashboard() {
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    className="h-8 px-3 text-xs bg-[#f9f9f9] border-[#e2e8f0] hover:bg-[#f0f0f0] rounded-md"
+                                    className="h-8 px-3 text-xs rounded-md"
                                   >
                                     <Calendar className="h-3 w-3 mr-1" />
-                                    <span className="whitespace-nowrap">{project.end_date ? format(new Date(project.end_date), "MMM dd") : "End Date"}</span>
+                                    <span className="whitespace-nowrap">
+                                      {project.end_date ? format(new Date(project.end_date), "dd MMM") : "End Date"}
+                                    </span>
                                   </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-auto p-0" align="start">
@@ -570,55 +587,64 @@ export default function Dashboard() {
                                   />
                                 </PopoverContent>
                               </Popover>
+                            </div>
 
+                            <Button 
+                              size="sm" 
+                              variant="default"
+                              className="h-8 px-3 text-xs whitespace-nowrap rounded-md"
+                              onClick={() => handleViewDetails(project.id)}
+                            >
+                              View Details
+                            </Button>
+                          </div>
+
+                          {/* Second Row: Project Date (left) | Labour & Material Icons (right) */}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center text-xs text-muted-foreground">
+                                <Calendar className="h-3 w-3 mr-1" />
+                                {format(new Date(project.project_date), "dd MMM yyyy")}
+                              </div>
                               {project.start_date && project.end_date && (
-                                <span className="text-xs text-muted-foreground whitespace-nowrap">
-                                  Duration: {calculateDuration(project.start_date, project.end_date)} days
+                                <span className="text-xs text-muted-foreground">
+                                  • {calculateDuration(project.start_date, project.end_date)} days
                                 </span>
                               )}
                             </div>
 
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button 
-                                  size="sm" 
-                                  variant="outline"
-                                  className="h-8 px-3 bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 rounded-md"
-                                  onClick={() => handleOpenMaterialTracker(project.id)}
-                                >
-                                  <Package className="h-3.5 w-3.5 sm:mr-1" />
-                                  <span className="hidden sm:inline text-xs">Material</span>
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Material Tracker</TooltipContent>
-                            </Tooltip>
+                            <div className="flex items-center gap-2">
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost"
+                                    className="h-8 w-8 p-0 rounded-md hover:bg-blue-50"
+                                    onClick={() => handleOpenLabourTracker(project.id)}
+                                  >
+                                    <Users className="h-4 w-4 text-pink-600" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Labour Tracker</TooltipContent>
+                              </Tooltip>
 
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button 
-                                  size="sm" 
-                                  variant="outline"
-                                  className="h-8 px-3 bg-pink-50 hover:bg-pink-100 text-pink-700 border-pink-200 rounded-md"
-                                  onClick={() => handleOpenLabourTracker(project.id)}
-                                >
-                                  <Users className="h-3.5 w-3.5 sm:mr-1" />
-                                  <span className="hidden sm:inline text-xs">Labour</span>
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Labour Tracker</TooltipContent>
-                            </Tooltip>
-                          </>
-                        )}
-
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          className="h-8 px-3 rounded-md"
-                          onClick={() => handleViewDetails(project.id)}
-                        >
-                          <span className="text-xs whitespace-nowrap">View Details</span>
-                        </Button>
-                      </div>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost"
+                                    className="h-8 w-8 p-0 rounded-md hover:bg-blue-50"
+                                    onClick={() => handleOpenMaterialTracker(project.id)}
+                                  >
+                                    <Package className="h-4 w-4 text-blue-600" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Material Tracker</TooltipContent>
+                              </Tooltip>
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
