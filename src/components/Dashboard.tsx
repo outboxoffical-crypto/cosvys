@@ -354,33 +354,38 @@ export default function Dashboard() {
 
 
         {/* Quick Actions Grid */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
-          <Card className="eca-shadow cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate("/add-project")}>
-            <CardContent className="p-3 flex flex-col items-center justify-center h-[120px]">
-              <div className="bg-primary/10 p-2 rounded-full mb-1.5">
-                <Plus className="h-4 w-4 text-primary" />
-              </div>
-              <h3 className="text-xs font-semibold text-center">New Project</h3>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+          <Button 
+            onClick={() => navigate("/add-project")}
+            className="h-16 bg-primary hover:bg-primary-hover text-primary-foreground eca-shadow hover:shadow-lg transition-all rounded-lg"
+          >
+            <div className="flex items-center gap-3 w-full">
+              <Plus className="h-5 w-5 flex-shrink-0" />
+              <span className="font-semibold text-sm">New Project</span>
+            </div>
+          </Button>
           
-          <Card className="eca-shadow cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate("/dealer-pricing")}>
-            <CardContent className="p-3 flex flex-col items-center justify-center h-[120px]">
-              <div className="bg-secondary/10 p-2 rounded-full mb-1.5">
-                <Package className="h-4 w-4 text-secondary" />
-              </div>
-              <h3 className="text-xs font-semibold text-center">Manage Pricing</h3>
-            </CardContent>
-          </Card>
+          <Button 
+            onClick={() => navigate("/dealer-pricing")}
+            variant="outline"
+            className="h-16 bg-card hover:bg-muted text-foreground eca-shadow hover:shadow-lg transition-all rounded-lg border-border"
+          >
+            <div className="flex items-center gap-3 w-full">
+              <Package className="h-5 w-5 flex-shrink-0 text-foreground" />
+              <span className="font-semibold text-sm">Manage Pricing</span>
+            </div>
+          </Button>
 
-          <Card className="eca-shadow cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate("/lead-book")}>
-            <CardContent className="p-3 flex flex-col items-center justify-center h-[120px]">
-              <div className="bg-accent/10 p-2 rounded-full mb-1.5">
-                <BookOpen className="h-4 w-4 text-accent-foreground" />
-              </div>
-              <h3 className="text-xs font-semibold text-center">Lead Summary</h3>
-            </CardContent>
-          </Card>
+          <Button 
+            onClick={() => navigate("/lead-book")}
+            variant="outline"
+            className="h-16 bg-card hover:bg-muted text-foreground eca-shadow hover:shadow-lg transition-all rounded-lg border-border"
+          >
+            <div className="flex items-center gap-3 w-full">
+              <BookOpen className="h-5 w-5 flex-shrink-0 text-foreground" />
+              <span className="font-semibold text-sm">Lead Summary</span>
+            </div>
+          </Button>
         </div>
 
         {/* Projects List */}
@@ -485,19 +490,19 @@ export default function Dashboard() {
                     {/* Action Buttons Section */}
                     <div className="pt-3 border-t border-border space-y-2">
                       {project.approval_status !== 'Approved' ? (
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                           <div className="flex items-center text-xs text-muted-foreground">
-                            <Calendar className="h-3 w-3 mr-1" />
+                            <Calendar className="h-3 w-3 mr-1 flex-shrink-0" />
                             {format(new Date(project.project_date), "dd MMM yyyy")}
                           </div>
                           
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button 
                                   size="sm" 
                                   variant="outline"
-                                  className="h-8 px-3 bg-green-50 hover:bg-green-100 text-green-700 border-green-200 rounded-md"
+                                  className="h-8 px-2.5 bg-green-50 hover:bg-green-100 text-green-700 border-green-200 rounded-md"
                                   onClick={() => handleApproval(project.id)}
                                 >
                                   <CheckCircle2 className="h-3.5 w-3.5" />
@@ -511,7 +516,7 @@ export default function Dashboard() {
                                 <Button 
                                   size="sm" 
                                   variant="outline"
-                                  className="h-8 px-3 bg-yellow-50 hover:bg-yellow-100 text-yellow-700 border-yellow-200 rounded-md relative"
+                                  className="h-8 px-2.5 bg-yellow-50 hover:bg-yellow-100 text-yellow-700 border-yellow-200 rounded-md relative"
                                   onClick={() => handleReminder(project.id)}
                                 >
                                   <Bell className="h-3.5 w-3.5" />
@@ -528,24 +533,24 @@ export default function Dashboard() {
                             <Button 
                               size="sm" 
                               variant="outline"
-                              className="h-8 px-3 rounded-md"
+                              className="h-8 px-2.5 rounded-md text-xs whitespace-nowrap"
                               onClick={() => handleViewDetails(project.id)}
                             >
-                              <span className="text-xs whitespace-nowrap">View Details</span>
+                              View Details
                             </Button>
                           </div>
                         </div>
                       ) : (
                         <>
                           {/* First Row: Start/End Date buttons (left) | View Details (right) */}
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2">
+                          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <Popover>
                                 <PopoverTrigger asChild>
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    className="h-8 px-3 text-xs rounded-md"
+                                    className="h-8 px-2.5 text-xs rounded-md flex-shrink-0"
                                   >
                                     <Calendar className="h-3 w-3 mr-1" />
                                     <span className="whitespace-nowrap">
@@ -569,7 +574,7 @@ export default function Dashboard() {
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    className="h-8 px-3 text-xs rounded-md"
+                                    className="h-8 px-2.5 text-xs rounded-md flex-shrink-0"
                                   >
                                     <Calendar className="h-3 w-3 mr-1" />
                                     <span className="whitespace-nowrap">
@@ -592,7 +597,7 @@ export default function Dashboard() {
                             <Button 
                               size="sm" 
                               variant="default"
-                              className="h-8 px-3 text-xs whitespace-nowrap rounded-md"
+                              className="h-8 px-2.5 text-xs whitespace-nowrap rounded-md flex-shrink-0"
                               onClick={() => handleViewDetails(project.id)}
                             >
                               View Details
@@ -600,14 +605,14 @@ export default function Dashboard() {
                           </div>
 
                           {/* Second Row: Project Date (left) | Labour & Material Icons (right) */}
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <div className="flex items-center text-xs text-muted-foreground">
-                                <Calendar className="h-3 w-3 mr-1" />
+                                <Calendar className="h-3 w-3 mr-1 flex-shrink-0" />
                                 {format(new Date(project.project_date), "dd MMM yyyy")}
                               </div>
                               {project.start_date && project.end_date && (
-                                <span className="text-xs text-muted-foreground">
+                                <span className="text-xs text-muted-foreground whitespace-nowrap">
                                   • {calculateDuration(project.start_date, project.end_date)} days
                                 </span>
                               )}
@@ -619,10 +624,10 @@ export default function Dashboard() {
                                   <Button 
                                     size="sm" 
                                     variant="ghost"
-                                    className="h-8 w-8 p-0 rounded-md hover:bg-blue-50"
+                                    className="h-8 w-8 p-0 rounded-md hover:bg-muted flex-shrink-0"
                                     onClick={() => handleOpenLabourTracker(project.id)}
                                   >
-                                    <Users className="h-4 w-4 text-pink-600" />
+                                    <Users className="h-4 w-4 text-primary" />
                                   </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>Labour Tracker</TooltipContent>
@@ -633,10 +638,10 @@ export default function Dashboard() {
                                   <Button 
                                     size="sm" 
                                     variant="ghost"
-                                    className="h-8 w-8 p-0 rounded-md hover:bg-blue-50"
+                                    className="h-8 w-8 p-0 rounded-md hover:bg-muted flex-shrink-0"
                                     onClick={() => handleOpenMaterialTracker(project.id)}
                                   >
-                                    <Package className="h-4 w-4 text-blue-600" />
+                                    <Package className="h-4 w-4 text-secondary" />
                                   </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>Material Tracker</TooltipContent>
