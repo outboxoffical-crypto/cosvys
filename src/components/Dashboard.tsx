@@ -488,7 +488,7 @@ export default function Dashboard() {
                         {new Date(project.project_date).toLocaleDateString()}
                       </div>
                       
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         {project.approval_status !== 'Approved' ? (
                           <>
                             <Tooltip>
@@ -496,7 +496,7 @@ export default function Dashboard() {
                                 <Button 
                                   size="sm" 
                                   variant="outline"
-                                  className="h-8 px-3 bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
+                                  className="h-8 px-3 bg-green-50 hover:bg-green-100 text-green-700 border-green-200 rounded-md"
                                   onClick={() => handleApproval(project.id)}
                                 >
                                   <CheckCircle2 className="h-3.5 w-3.5" />
@@ -510,7 +510,7 @@ export default function Dashboard() {
                                 <Button 
                                   size="sm" 
                                   variant="outline"
-                                  className="h-8 px-3 bg-yellow-50 hover:bg-yellow-100 text-yellow-700 border-yellow-200 relative"
+                                  className="h-8 px-3 bg-yellow-50 hover:bg-yellow-100 text-yellow-700 border-yellow-200 rounded-md relative"
                                   onClick={() => handleReminder(project.id)}
                                 >
                                   <Bell className="h-3.5 w-3.5" />
@@ -526,52 +526,50 @@ export default function Dashboard() {
                           </>
                         ) : (
                           <>
-                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mr-2">
-                              <div className="flex items-center gap-2">
-                                <Popover>
-                                  <PopoverTrigger asChild>
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      className="h-8 text-xs bg-[#f9f9f9] border-[#e2e8f0] hover:bg-[#f0f0f0] rounded-lg"
-                                    >
-                                      <Calendar className="h-3 w-3 mr-1" />
-                                      {project.start_date ? format(new Date(project.start_date), "MMM dd") : "Start Date"}
-                                    </Button>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="w-auto p-0" align="start">
-                                    <CalendarComponent
-                                      mode="single"
-                                      selected={project.start_date ? new Date(project.start_date) : undefined}
-                                      onSelect={(date) => handleDateUpdate(project.id, 'start_date', date)}
-                                      initialFocus
-                                      className="pointer-events-auto"
-                                    />
-                                  </PopoverContent>
-                                </Popover>
+                            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-8 px-3 text-xs bg-[#f9f9f9] border-[#e2e8f0] hover:bg-[#f0f0f0] rounded-md"
+                                  >
+                                    <Calendar className="h-3 w-3 mr-1" />
+                                    <span className="whitespace-nowrap">{project.start_date ? format(new Date(project.start_date), "MMM dd") : "Start Date"}</span>
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                  <CalendarComponent
+                                    mode="single"
+                                    selected={project.start_date ? new Date(project.start_date) : undefined}
+                                    onSelect={(date) => handleDateUpdate(project.id, 'start_date', date)}
+                                    initialFocus
+                                    className="pointer-events-auto"
+                                  />
+                                </PopoverContent>
+                              </Popover>
 
-                                <Popover>
-                                  <PopoverTrigger asChild>
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      className="h-8 text-xs bg-[#f9f9f9] border-[#e2e8f0] hover:bg-[#f0f0f0] rounded-lg"
-                                    >
-                                      <Calendar className="h-3 w-3 mr-1" />
-                                      {project.end_date ? format(new Date(project.end_date), "MMM dd") : "End Date"}
-                                    </Button>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="w-auto p-0" align="start">
-                                    <CalendarComponent
-                                      mode="single"
-                                      selected={project.end_date ? new Date(project.end_date) : undefined}
-                                      onSelect={(date) => handleDateUpdate(project.id, 'end_date', date)}
-                                      initialFocus
-                                      className="pointer-events-auto"
-                                    />
-                                  </PopoverContent>
-                                </Popover>
-                              </div>
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-8 px-3 text-xs bg-[#f9f9f9] border-[#e2e8f0] hover:bg-[#f0f0f0] rounded-md"
+                                  >
+                                    <Calendar className="h-3 w-3 mr-1" />
+                                    <span className="whitespace-nowrap">{project.end_date ? format(new Date(project.end_date), "MMM dd") : "End Date"}</span>
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                  <CalendarComponent
+                                    mode="single"
+                                    selected={project.end_date ? new Date(project.end_date) : undefined}
+                                    onSelect={(date) => handleDateUpdate(project.id, 'end_date', date)}
+                                    initialFocus
+                                    className="pointer-events-auto"
+                                  />
+                                </PopoverContent>
+                              </Popover>
 
                               {project.start_date && project.end_date && (
                                 <span className="text-xs text-muted-foreground whitespace-nowrap">
@@ -585,10 +583,11 @@ export default function Dashboard() {
                                 <Button 
                                   size="sm" 
                                   variant="outline"
-                                  className="h-8 px-3 bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
+                                  className="h-8 px-3 bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 rounded-md"
                                   onClick={() => handleOpenMaterialTracker(project.id)}
                                 >
-                                  <Package className="h-3.5 w-3.5" />
+                                  <Package className="h-3.5 w-3.5 sm:mr-1" />
+                                  <span className="hidden sm:inline text-xs">Material</span>
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>Material Tracker</TooltipContent>
@@ -599,10 +598,11 @@ export default function Dashboard() {
                                 <Button 
                                   size="sm" 
                                   variant="outline"
-                                  className="h-8 px-3 bg-pink-50 hover:bg-pink-100 text-pink-700 border-pink-200"
+                                  className="h-8 px-3 bg-pink-50 hover:bg-pink-100 text-pink-700 border-pink-200 rounded-md"
                                   onClick={() => handleOpenLabourTracker(project.id)}
                                 >
-                                  <Users className="h-3.5 w-3.5" />
+                                  <Users className="h-3.5 w-3.5 sm:mr-1" />
+                                  <span className="hidden sm:inline text-xs">Labour</span>
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>Labour Tracker</TooltipContent>
@@ -613,9 +613,10 @@ export default function Dashboard() {
                         <Button 
                           size="sm" 
                           variant="outline"
+                          className="h-8 px-3 rounded-md"
                           onClick={() => handleViewDetails(project.id)}
                         >
-                          View Details
+                          <span className="text-xs whitespace-nowrap">View Details</span>
                         </Button>
                       </div>
                     </div>
