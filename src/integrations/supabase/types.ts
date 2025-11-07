@@ -188,6 +188,7 @@ export type Database = {
       material_tracker: {
         Row: {
           created_at: string
+          delivery_date: string | null
           delivery_status: string
           id: string
           material_name: string
@@ -201,6 +202,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          delivery_date?: string | null
           delivery_status?: string
           id?: string
           material_name: string
@@ -214,6 +216,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          delivery_date?: string | null
           delivery_status?: string
           id?: string
           material_name?: string
