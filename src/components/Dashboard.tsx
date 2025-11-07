@@ -354,36 +354,36 @@ export default function Dashboard() {
 
 
         {/* Quick Actions Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+        <div className="flex flex-nowrap gap-2 sm:gap-3 mb-6 justify-center">
           <Button 
             onClick={() => navigate("/add-project")}
-            className="h-16 bg-primary hover:bg-primary-hover text-primary-foreground eca-shadow hover:shadow-lg transition-all rounded-lg"
+            className="flex-1 min-w-0 h-14 sm:h-16 bg-primary hover:bg-primary-hover text-primary-foreground eca-shadow hover:shadow-lg transition-all rounded-lg"
           >
-            <div className="flex items-center gap-3 w-full">
-              <Plus className="h-5 w-5 flex-shrink-0" />
-              <span className="font-semibold text-sm">New Project</span>
+            <div className="flex items-center gap-2 sm:gap-3 w-full justify-center">
+              <Plus className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+              <span className="font-semibold text-xs sm:text-sm truncate">New Project</span>
             </div>
           </Button>
           
           <Button 
             onClick={() => navigate("/dealer-pricing")}
             variant="outline"
-            className="h-16 bg-card hover:bg-muted text-foreground eca-shadow hover:shadow-lg transition-all rounded-lg border-border"
+            className="flex-1 min-w-0 h-14 sm:h-16 bg-card hover:bg-muted text-foreground eca-shadow hover:shadow-lg transition-all rounded-lg border-border"
           >
-            <div className="flex items-center gap-3 w-full">
-              <Package className="h-5 w-5 flex-shrink-0 text-foreground" />
-              <span className="font-semibold text-sm">Manage Pricing</span>
+            <div className="flex items-center gap-2 sm:gap-3 w-full justify-center">
+              <Package className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 text-foreground" />
+              <span className="font-semibold text-xs sm:text-sm truncate">Manage Pricing</span>
             </div>
           </Button>
 
           <Button 
             onClick={() => navigate("/lead-book")}
             variant="outline"
-            className="h-16 bg-card hover:bg-muted text-foreground eca-shadow hover:shadow-lg transition-all rounded-lg border-border"
+            className="flex-1 min-w-0 h-14 sm:h-16 bg-card hover:bg-muted text-foreground eca-shadow hover:shadow-lg transition-all rounded-lg border-border"
           >
-            <div className="flex items-center gap-3 w-full">
-              <BookOpen className="h-5 w-5 flex-shrink-0 text-foreground" />
-              <span className="font-semibold text-sm">Lead Summary</span>
+            <div className="flex items-center gap-2 sm:gap-3 w-full justify-center">
+              <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 text-foreground" />
+              <span className="font-semibold text-xs sm:text-sm truncate">Lead Summary</span>
             </div>
           </Button>
         </div>
