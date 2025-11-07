@@ -1515,28 +1515,91 @@ export default function GenerateSummaryScreen() {
 
   // Section 5: Dealer Margin
   const renderDealerMargin = () => {
-    // Use material cost from Material Requirements section (same as Total Material Cost)
+    // Calculate Total Project Cost (Material + Labour) first
     const totalMaterialCost = totalMaterialCostRef.current;
-    const marginCost = totalMaterialCost * dealerMargin / 100;
+    
+    // Calculate labour cost
+    const workingHours = 7;
+    const standardHours = 8;
+    const configTasks: any[] = [];
+    areaConfigs.forEach(config => {
+      const area = Number(config.area) || 0;
+      const isFresh = config.paintingSystem === 'Fresh Painting';
+      const isOilBased = config.selectedMaterials.emulsion?.toLowerCase().includes('enamel') || config.selectedMaterials.primer?.toLowerCase().includes('oxide');
+      const coverageRates = { waterBased: { putty: 800, primer: 1050, emulsion: 1050 }, oilBased: { redOxide: 350, enamelTop: 200 } };
+      const tasks: any[] = [];
+      
+      if (isFresh) {
+        if (config.coatConfiguration.putty > 0) {
+          const totalWork = area * config.coatConfiguration.putty;
+          const adjustedCoverage = coverageRates.waterBased.putty * (workingHours / standardHours);
+          tasks.push({ daysRequired: Math.ceil(totalWork / adjustedCoverage) });
+        }
+        if (config.coatConfiguration.primer > 0) {
+          const totalWork = area * config.coatConfiguration.primer;
+          const coverage = isOilBased ? coverageRates.oilBased.redOxide : coverageRates.waterBased.primer;
+          const adjustedCoverage = coverage * (workingHours / standardHours);
+          tasks.push({ daysRequired: Math.ceil(totalWork / adjustedCoverage) });
+        }
+        if (config.coatConfiguration.emulsion > 0) {
+          const totalWork = area * config.coatConfiguration.emulsion;
+          const coverage = isOilBased ? coverageRates.oilBased.enamelTop : coverageRates.waterBased.emulsion;
+          const adjustedCoverage = coverage * (workingHours / standardHours);
+          tasks.push({ daysRequired: Math.ceil(totalWork / adjustedCoverage) });
+        }
+      } else {
+        if (config.repaintingConfiguration?.primer > 0) {
+          const totalWork = area * config.repaintingConfiguration.primer;
+          const coverage = isOilBased ? coverageRates.oilBased.redOxide : coverageRates.waterBased.primer;
+          const adjustedCoverage = coverage * (workingHours / standardHours);
+          tasks.push({ daysRequired: Math.ceil(totalWork / adjustedCoverage) });
+        }
+        if (config.repaintingConfiguration?.emulsion > 0) {
+          const totalWork = area * config.repaintingConfiguration.emulsion;
+          const coverage = isOilBased ? coverageRates.oilBased.enamelTop : coverageRates.waterBased.emulsion;
+          const adjustedCoverage = coverage * (workingHours / standardHours);
+          tasks.push({ daysRequired: Math.ceil(totalWork / adjustedCoverage) });
+        }
+      }
+      
+      configTasks.push({ tasks, totalDays: tasks.reduce((sum, task) => sum + task.daysRequired, 0) });
+    });
+    
+    const totalDays = configTasks.reduce((sum, ct) => sum + ct.totalDays, 0);
+    const displayDays = labourMode === 'auto' ? Math.ceil(totalDays / autoLabourPerDay) : manualDays;
+    const displayLabours = labourMode === 'auto' ? autoLabourPerDay : Math.ceil(totalDays / manualDays);
+    const labourCost = perDayLabourCost * displayLabours * displayDays;
+    
+    // Total Project Cost = Material + Labour
+    const totalProjectCost = totalMaterialCost + labourCost;
+    
+    // Margin Cost = 10% of Total Project Cost
+    const marginCost = totalProjectCost * 0.1;
     return <Card className="eca-shadow">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg font-semibold">
             <TrendingUp className="h-5 w-5 text-primary" />
-            Dealer Margin
+            Dealer Margin (10% of Project Cost)
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
             <div className="p-3 bg-muted/30 rounded-lg border border-border">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Dealer Margin</span>
-                <span className="text-lg font-semibold text-foreground">{dealerMargin}%</span>
+                <span className="text-sm text-muted-foreground">Total Project Cost</span>
+                <span className="text-lg font-semibold text-foreground">₹{Math.round(totalProjectCost).toLocaleString('en-IN')}</span>
               </div>
             </div>
             <div className="p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border-2 border-primary">
               <div className="flex justify-between items-center">
-                <span className="text-base font-semibold text-slate-950">Margin Cost</span>
+                <span className="text-base font-semibold text-slate-950">Margin Cost (10%)</span>
                 <span className="text-2xl font-bold text-primary">₹{Math.round(marginCost).toLocaleString('en-IN')}</span>
+              </div>
+            </div>
+            <div className="p-4 bg-gradient-to-r from-secondary/10 to-accent/10 rounded-lg border-2 border-secondary">
+              <div className="flex justify-between items-center">
+                <span className="text-base font-semibold text-slate-950">Dealer Margin (Actual Total)</span>
+                <span className="text-2xl font-bold text-secondary">₹{Math.round(marginCost).toLocaleString('en-IN')}</span>
               </div>
             </div>
           </div>

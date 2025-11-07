@@ -56,15 +56,15 @@ const LabourRow = memo(({
 
   return (
     <tr className="border-b border-[#e2e8f0] hover:bg-gray-50/50">
-      <td className="p-3">
+      <td className="p-2 md:p-3">
         <Popover>
           <PopoverTrigger asChild>
             <Button
               variant="outline"
-              className="w-full justify-start text-left font-normal bg-[#f9f9f9] border-[#e2e8f0] hover:bg-[#f0f0f0] rounded-lg"
+              className="w-full justify-start text-left font-normal bg-[#f9f9f9] border-[#e2e8f0] hover:bg-[#f0f0f0] rounded-lg text-xs md:text-sm"
             >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {localDate ? format(new Date(localDate), "MMM dd, yyyy") : "Pick date"}
+              <CalendarIcon className="mr-1 md:mr-2 h-3 w-3 md:h-4 md:w-4" />
+              <span className="truncate">{localDate ? format(new Date(localDate), "MMM dd, yyyy") : "Pick date"}</span>
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="start">
@@ -78,33 +78,33 @@ const LabourRow = memo(({
           </PopoverContent>
         </Popover>
       </td>
-      <td className="p-3">
+      <td className="p-2 md:p-3">
         <Input
           type="number"
           value={localLabourCount}
           onChange={(e) => setLocalLabourCount(e.target.value)}
           onBlur={handleLabourCountBlur}
-          className="bg-[#f9f9f9] border-[#e2e8f0] rounded-lg text-[#2d3748]"
+          className="bg-[#f9f9f9] border-[#e2e8f0] rounded-lg text-[#2d3748] text-xs md:text-sm"
           min="0"
         />
       </td>
-      <td className="p-3">
+      <td className="p-2 md:p-3">
         <Textarea
           value={localWorkCompleted}
           onChange={(e) => setLocalWorkCompleted(e.target.value)}
           onBlur={handleWorkCompletedBlur}
-          className="bg-[#f9f9f9] border-[#e2e8f0] rounded-lg text-[#2d3748] min-h-[60px]"
+          className="bg-[#f9f9f9] border-[#e2e8f0] rounded-lg text-[#2d3748] min-h-[50px] md:min-h-[60px] text-xs md:text-sm"
           placeholder="Describe work completed..."
         />
       </td>
-      <td className="p-3 text-center">
+      <td className="p-2 md:p-3 text-center relative">
         <Button
           variant="ghost"
           size="icon"
           onClick={() => onDelete(entry.id)}
-          className="hover:bg-red-50 hover:text-red-600"
+          className="hover:bg-red-50 hover:text-red-600 h-7 w-7 md:h-8 md:w-8 absolute top-1 right-1 md:static"
         >
-          <Trash2 className="h-4 w-4" />
+          <Trash2 className="h-3 w-3 md:h-4 md:w-4" />
         </Button>
       </td>
     </tr>
@@ -247,27 +247,27 @@ export function LabourTracker({ projectId, isOpen, onClose }: LabourTrackerProps
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full border-collapse bg-white rounded-lg overflow-hidden">
+              <table className="w-full border-collapse bg-white rounded-lg overflow-hidden min-w-[600px]">
                 <thead>
                   <tr className="bg-[#fff0f5]">
-                    <th className="p-3 text-left font-bold text-[#2d3748] border-b border-[#e2e8f0]">
+                    <th className="p-2 md:p-3 text-left font-bold text-[#2d3748] border-b border-[#e2e8f0] text-xs md:text-sm">
                       Date
                     </th>
-                    <th className="p-3 text-left font-bold text-[#2d3748] border-b border-[#e2e8f0]">
+                    <th className="p-2 md:p-3 text-left font-bold text-[#2d3748] border-b border-[#e2e8f0] text-xs md:text-sm">
                       No. of Labour
                     </th>
-                    <th className="p-3 text-left font-bold text-[#2d3748] border-b border-[#e2e8f0]">
+                    <th className="p-2 md:p-3 text-left font-bold text-[#2d3748] border-b border-[#e2e8f0] text-xs md:text-sm">
                       Work Completed
                     </th>
-                    <th className="p-3 text-center font-bold text-[#2d3748] border-b border-[#e2e8f0] w-20">
-                      Actions
+                    <th className="p-2 md:p-3 text-center font-bold text-[#2d3748] border-b border-[#e2e8f0] w-16 md:w-20 text-xs md:text-sm">
+                      Delete
                     </th>
                   </tr>
                 </thead>
                 <tbody>
                   {entries.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="p-8 text-center text-muted-foreground">
+                      <td colSpan={4} className="p-6 md:p-8 text-center text-muted-foreground text-xs md:text-sm">
                         No entries yet. Click "Add Entry" to get started.
                       </td>
                     </tr>

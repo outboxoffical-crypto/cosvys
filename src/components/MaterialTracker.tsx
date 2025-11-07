@@ -15,6 +15,7 @@ interface Material {
   unit: string;
   rate: number;
   delivery_status: string;
+  delivery_date?: string;
 }
 
 interface MaterialTrackerProps {
@@ -40,6 +41,7 @@ const MaterialRow = memo(({
     quantity: material.quantity,
     rate: material.rate,
   });
+  const [showDatePicker, setShowDatePicker] = useState(material.delivery_status === 'Delivered');
 
   const total = localValues.quantity * localValues.rate;
 
@@ -63,7 +65,7 @@ const MaterialRow = memo(({
       <td className="border border-[#e2e8f0] px-2 py-2">
         <Input
           type="number"
-          value={localValues.quantity}
+          value={localValues.quantity === 0 ? '' : localValues.quantity}
           onChange={(e) => setLocalValues(prev => ({ ...prev, quantity: parseFloat(e.target.value) || 0 }))}
           onBlur={() => handleBlur('quantity')}
           placeholder="0"
@@ -80,38 +82,56 @@ const MaterialRow = memo(({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="kg">kg</SelectItem>
+            <SelectItem value="g">g</SelectItem>
             <SelectItem value="Ltr">Ltr</SelectItem>
+            <SelectItem value="ml">ml</SelectItem>
             <SelectItem value="pcs">pcs</SelectItem>
           </SelectContent>
         </Select>
       </td>
       <td className="border border-[#e2e8f0] px-2 py-2">
-        <Input
-          type="number"
-          value={localValues.rate}
-          onChange={(e) => setLocalValues(prev => ({ ...prev, rate: parseFloat(e.target.value) || 0 }))}
-          onBlur={() => handleBlur('rate')}
-          placeholder="0"
-          className="border-0 text-center focus-visible:ring-1"
-        />
-      </td>
-      <td className="border border-[#e2e8f0] px-4 py-2 text-center font-semibold text-[#2d3748]">
-        ₹{total.toFixed(2)}
+        <div className="space-y-1">
+          <p className="text-xs text-muted-foreground text-center">Rate × Qty</p>
+          <Input
+            type="number"
+            value={localValues.rate}
+            onChange={(e) => setLocalValues(prev => ({ ...prev, rate: parseFloat(e.target.value) || 0 }))}
+            onBlur={() => handleBlur('rate')}
+            placeholder="₹ 0"
+            className="border-0 text-center focus-visible:ring-1"
+          />
+          <p className="text-center font-semibold text-sm text-primary">₹{total.toFixed(2)}</p>
+        </div>
       </td>
       <td className="border border-[#e2e8f0] px-2 py-2">
-        <Select
-          value={material.delivery_status}
-          onValueChange={(value) => material.id && onUpdate(material.id, "delivery_status", value)}
-        >
-          <SelectTrigger className="border-0 text-center focus:ring-1">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Pending">Pending</SelectItem>
-            <SelectItem value="In-Transit">In-Transit</SelectItem>
-            <SelectItem value="Delivered">Delivered</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="space-y-2">
+          <Select
+            value={material.delivery_status}
+            onValueChange={(value) => {
+              if (material.id) {
+                onUpdate(material.id, "delivery_status", value);
+                setShowDatePicker(value === 'Delivered');
+              }
+            }}
+          >
+            <SelectTrigger className="border-0 text-center focus:ring-1">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Pending">Pending</SelectItem>
+              <SelectItem value="In-Transit">In-Transit</SelectItem>
+              <SelectItem value="Delivered">Delivered</SelectItem>
+            </SelectContent>
+          </Select>
+          {showDatePicker && (
+            <Input
+              type="date"
+              value={material.delivery_date || ''}
+              onChange={(e) => material.id && onUpdate(material.id, "delivery_date", e.target.value)}
+              className="border-0 text-center text-xs focus-visible:ring-1"
+            />
+          )}
+        </div>
       </td>
       <td className="border border-[#e2e8f0] px-2 py-2 text-center">
         <Button
@@ -172,6 +192,7 @@ export const MaterialTracker = ({ projectId, isOpen, onClose }: MaterialTrackerP
         unit: "kg",
         rate: 0,
         delivery_status: "Pending",
+        delivery_date: undefined,
       };
 
       const { data, error } = await supabase
@@ -221,6 +242,7 @@ export const MaterialTracker = ({ projectId, isOpen, onClose }: MaterialTrackerP
             unit: material.unit,
             rate: material.rate,
             delivery_status: material.delivery_status,
+            delivery_date: material.delivery_date,
           })
           .eq("id", material.id);
       }).filter(Boolean);
@@ -285,16 +307,15 @@ export const MaterialTracker = ({ projectId, isOpen, onClose }: MaterialTrackerP
         <ScrollArea className="h-[calc(90vh-120px)]">
           <div className="p-6">
             <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
+              <table className="w-full border-collapse min-w-[800px]">
                 <thead>
                   <tr className="bg-[#fff0f5]">
-                    <th className="border border-[#e2e8f0] px-4 py-3 text-center text-sm font-semibold text-[#2d3748] rounded-tl-lg">Material Name</th>
-                    <th className="border border-[#e2e8f0] px-4 py-3 text-center text-sm font-semibold text-[#2d3748]">Quantity</th>
-                    <th className="border border-[#e2e8f0] px-4 py-3 text-center text-sm font-semibold text-[#2d3748]">Unit</th>
-                    <th className="border border-[#e2e8f0] px-4 py-3 text-center text-sm font-semibold text-[#2d3748]">Rate (₹)</th>
-                    <th className="border border-[#e2e8f0] px-4 py-3 text-center text-sm font-semibold text-[#2d3748]">Total (₹)</th>
-                    <th className="border border-[#e2e8f0] px-4 py-3 text-center text-sm font-semibold text-[#2d3748]">Delivery Status</th>
-                    <th className="border border-[#e2e8f0] px-4 py-3 text-center text-sm font-semibold text-[#2d3748] rounded-tr-lg">Action</th>
+                    <th className="border border-[#e2e8f0] px-2 md:px-4 py-2 md:py-3 text-center text-xs md:text-sm font-semibold text-[#2d3748] rounded-tl-lg">Material Name</th>
+                    <th className="border border-[#e2e8f0] px-2 md:px-4 py-2 md:py-3 text-center text-xs md:text-sm font-semibold text-[#2d3748]">Quantity</th>
+                    <th className="border border-[#e2e8f0] px-2 md:px-4 py-2 md:py-3 text-center text-xs md:text-sm font-semibold text-[#2d3748]">Unit</th>
+                    <th className="border border-[#e2e8f0] px-2 md:px-4 py-2 md:py-3 text-center text-xs md:text-sm font-semibold text-[#2d3748]">Total Material Cost</th>
+                    <th className="border border-[#e2e8f0] px-2 md:px-4 py-2 md:py-3 text-center text-xs md:text-sm font-semibold text-[#2d3748]">Delivery Status</th>
+                    <th className="border border-[#e2e8f0] px-2 md:px-4 py-2 md:py-3 text-center text-xs md:text-sm font-semibold text-[#2d3748] rounded-tr-lg">Delete</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -310,10 +331,10 @@ export const MaterialTracker = ({ projectId, isOpen, onClose }: MaterialTrackerP
                 </tbody>
                 <tfoot>
                   <tr className="bg-[#fff0f5] font-bold">
-                    <td colSpan={4} className="border border-[#e2e8f0] px-4 py-3 text-right text-[#2d3748]">
+                    <td colSpan={3} className="border border-[#e2e8f0] px-2 md:px-4 py-2 md:py-3 text-right text-[#2d3748] text-xs md:text-sm">
                       Total Material Cost:
                     </td>
-                    <td className="border border-[#e2e8f0] px-4 py-3 text-center text-[#2d3748]">
+                    <td className="border border-[#e2e8f0] px-2 md:px-4 py-2 md:py-3 text-center text-[#2d3748] text-sm md:text-base">
                       ₹{totalCost.toFixed(2)}
                     </td>
                     <td colSpan={2} className="border border-[#e2e8f0]"></td>

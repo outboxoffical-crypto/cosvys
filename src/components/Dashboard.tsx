@@ -240,15 +240,24 @@ export default function Dashboard() {
     if (!date) return;
     
     try {
+      // Format date properly to avoid timezone issues
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const formattedDate = `${year}-${month}-${day}`;
+      
       const { error } = await supabase
         .from('projects')
         .update({ 
-          [dateField]: date.toISOString().split('T')[0],
+          [dateField]: formattedDate,
           updated_at: new Date().toISOString()
         })
         .eq('id', projectId);
 
       if (error) throw error;
+
+      // Refresh projects to show updated date
+      await fetchProjects();
 
       toast({
         title: "Success",
@@ -451,7 +460,7 @@ export default function Dashboard() {
                               size="sm"
                               variant="ghost"
                               className="h-8 w-8 p-0 text-primary hover:bg-primary/10"
-                              onClick={() => navigate(`/project-details?edit=${project.id}`)}
+                              onClick={() => navigate(`/add-project?edit=${project.id}`)}
                             >
                               <Edit2 className="h-4 w-4" />
                             </Button>

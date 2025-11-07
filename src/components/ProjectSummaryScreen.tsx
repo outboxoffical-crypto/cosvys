@@ -20,7 +20,7 @@ export default function ProjectSummaryScreen() {
 
   useEffect(() => {
     const loadData = async () => {
-      // Load project data
+      // Load project data - all synchronously without delays
       const project = localStorage.getItem(`project_${projectId}`);
       const estimationData = localStorage.getItem(`estimation_${projectId}`);
       const areaConfigsData = localStorage.getItem(`areaConfigurations_${projectId}`);
@@ -29,24 +29,16 @@ export default function ProjectSummaryScreen() {
       if (estimationData) setEstimation(JSON.parse(estimationData));
       if (areaConfigsData) setAreaConfigurations(JSON.parse(areaConfigsData));
 
-      // Load rooms from database
+      // Load rooms and dealer info in parallel
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        const { data: roomsData } = await supabase
-          .from('rooms')
-          .select('*')
-          .eq('project_id', projectId);
+        const [roomsResult, dealerResult] = await Promise.all([
+          supabase.from('rooms').select('*').eq('project_id', projectId),
+          supabase.from('dealer_info').select('*').eq('user_id', session.user.id).maybeSingle()
+        ]);
         
-        if (roomsData) setRooms(roomsData);
-
-        // Load dealer info
-        const { data: dealerData } = await supabase
-          .from('dealer_info')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .maybeSingle();
-        
-        if (dealerData) setDealerInfo(dealerData);
+        if (roomsResult.data) setRooms(roomsResult.data);
+        if (dealerResult.data) setDealerInfo(dealerResult.data);
       }
     };
 
