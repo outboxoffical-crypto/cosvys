@@ -329,7 +329,7 @@ export const MaterialTracker = ({ projectId, isOpen, onClose }: MaterialTrackerP
                     <th className="border border-[#e2e8f0] px-2 md:px-4 py-2 md:py-3 text-center text-xs md:text-sm font-semibold text-[#2d3748] rounded-tl-lg">Material Name</th>
                     <th className="border border-[#e2e8f0] px-2 md:px-4 py-2 md:py-3 text-center text-xs md:text-sm font-semibold text-[#2d3748]">Quantity</th>
                     <th className="border border-[#e2e8f0] px-2 md:px-4 py-2 md:py-3 text-center text-xs md:text-sm font-semibold text-[#2d3748]">Unit</th>
-                    <th className="border border-[#e2e8f0] px-2 md:px-4 py-2 md:py-3 text-center text-xs md:text-sm font-semibold text-[#2d3748]">Total Material Cost</th>
+                    <th className="border border-[#e2e8f0] px-2 md:px-4 py-2 md:py-3 text-center text-xs md:text-sm font-semibold text-[#2d3748]">Material Cost</th>
                     <th className="border border-[#e2e8f0] px-2 md:px-4 py-2 md:py-3 text-center text-xs md:text-sm font-semibold text-[#2d3748]">Delivery Status</th>
                     <th className="border border-[#e2e8f0] px-2 md:px-4 py-2 md:py-3 text-center text-xs md:text-sm font-semibold text-[#2d3748] rounded-tr-lg">Delete</th>
                   </tr>
