@@ -2,9 +2,9 @@ import { useState, useEffect, useCallback, memo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Trash2, Calendar as CalendarIcon, Users } from "lucide-react";
@@ -60,13 +60,13 @@ const LabourRow = memo(({
   };
 
   return (
-    <tr className="border-b border-[#e2e8f0] hover:bg-gray-50/50 relative">
-      <td className="p-2 md:p-3 w-1/5">
+    <tr className="hover:bg-[#f7fafc] transition-colors relative">
+      <td className="border border-[#e2e8f0] px-2 py-2">
         <Popover>
           <PopoverTrigger asChild>
             <Button
               variant="outline"
-              className="w-full justify-start text-left font-normal bg-[#f9f9f9] border-[#e2e8f0] hover:bg-[#f0f0f0] rounded-lg text-xs md:text-sm"
+              className="w-full justify-start text-left font-normal border-0 bg-transparent hover:bg-[#f0f0f0] text-xs md:text-sm"
             >
               <CalendarIcon className="mr-1 md:mr-2 h-3 w-3 md:h-4 md:w-4" />
               <span className="truncate">{localDate ? format(new Date(localDate), "MMM dd, yyyy") : "Pick date"}</span>
@@ -83,42 +83,42 @@ const LabourRow = memo(({
           </PopoverContent>
         </Popover>
       </td>
-      <td className="p-2 md:p-3 w-1/6">
+      <td className="border border-[#e2e8f0] px-2 py-2">
         <Input
           type="number"
           value={localLabourCount}
           onChange={(e) => setLocalLabourCount(e.target.value)}
           onBlur={handleLabourCountBlur}
-          className="bg-[#f9f9f9] border-[#e2e8f0] rounded-lg text-[#2d3748] text-xs md:text-sm"
+          className="border-0 text-center focus-visible:ring-1"
           min="0"
         />
       </td>
-      <td className="p-2 md:p-3 w-1/3">
+      <td className="border border-[#e2e8f0] px-2 py-2">
         <Input
           type="text"
           value={localWorkPlan}
           onChange={(e) => setLocalWorkPlan(e.target.value)}
           onBlur={handleWorkPlanBlur}
           placeholder="Work plan..."
-          className="bg-[#f9f9f9] border-[#e2e8f0] rounded-lg text-[#2d3748] text-xs md:text-sm"
+          className="border-0 text-center focus-visible:ring-1"
         />
       </td>
-      <td className="p-2 md:p-3 w-1/3 pr-12">
+      <td className="border border-[#e2e8f0] px-2 py-2 relative">
         <Input
           type="text"
           value={localWorkCompleted}
           onChange={(e) => setLocalWorkCompleted(e.target.value)}
           onBlur={handleWorkCompletedBlur}
           placeholder="Work completed..."
-          className="bg-[#f9f9f9] border-[#e2e8f0] rounded-lg text-[#2d3748] text-xs md:text-sm"
+          className="border-0 text-center focus-visible:ring-1"
         />
         <Button
           variant="ghost"
           size="icon"
           onClick={() => onDelete(entry.id)}
-          className="hover:bg-red-50 hover:text-red-600 h-6 w-6 md:h-7 md:w-7 absolute top-2 right-2"
+          className="h-6 w-6 text-destructive hover:text-destructive hover:bg-destructive/10 absolute -top-1 -right-1"
         >
-          <Trash2 className="h-3 w-3 md:h-3.5 md:w-3.5" />
+          <Trash2 className="h-3.5 w-3.5" />
         </Button>
       </td>
     </tr>
@@ -246,77 +246,79 @@ export function LabourTracker({ projectId, isOpen, onClose }: LabourTrackerProps
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+      <DialogContent className="max-w-6xl max-h-[90vh] p-0">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b">
+          <DialogTitle className="text-2xl font-semibold text-[#2d3748] flex items-center gap-2">
             <Users className="h-5 w-5" />
             Labour Tracker
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 overflow-auto">
-          {loading ? (
-            <div className="flex items-center justify-center p-12">
-              <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse bg-white rounded-lg overflow-hidden">
-                <thead>
-                  <tr className="bg-[#fff0f5]">
-                    <th className="p-2 md:p-3 text-left font-bold text-[#2d3748] border-b border-[#e2e8f0] text-xs md:text-sm w-1/5">
-                      Date
-                    </th>
-                    <th className="p-2 md:p-3 text-left font-bold text-[#2d3748] border-b border-[#e2e8f0] text-xs md:text-sm w-1/6">
-                      No. of Labour
-                    </th>
-                    <th className="p-2 md:p-3 text-left font-bold text-[#2d3748] border-b border-[#e2e8f0] text-xs md:text-sm w-1/3">
-                      Work Plan
-                    </th>
-                    <th className="p-2 md:p-3 text-left font-bold text-[#2d3748] border-b border-[#e2e8f0] text-xs md:text-sm w-1/3">
-                      Work Completed
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {entries.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className="p-6 md:p-8 text-center text-muted-foreground text-xs md:text-sm">
-                        No entries yet. Click "Add Entry" to get started.
-                      </td>
+        <ScrollArea className="h-[calc(90vh-120px)]">
+          <div className="p-6">
+            {loading ? (
+              <div className="flex items-center justify-center p-12">
+                <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+              </div>
+            ) : (
+              <div className="overflow-x-auto -mx-6 px-6">
+                <table className="w-full border-collapse min-w-[800px]">
+                  <thead>
+                    <tr className="bg-[#fff0f5]">
+                      <th className="border border-[#e2e8f0] px-2 md:px-4 py-2 md:py-3 text-center text-xs md:text-sm font-semibold text-[#2d3748] rounded-tl-lg">
+                        Date
+                      </th>
+                      <th className="border border-[#e2e8f0] px-2 md:px-4 py-2 md:py-3 text-center text-xs md:text-sm font-semibold text-[#2d3748]">
+                        No. of Labour
+                      </th>
+                      <th className="border border-[#e2e8f0] px-2 md:px-4 py-2 md:py-3 text-center text-xs md:text-sm font-semibold text-[#2d3748]">
+                        Work Plan
+                      </th>
+                      <th className="border border-[#e2e8f0] px-2 md:px-4 py-2 md:py-3 text-center text-xs md:text-sm font-semibold text-[#2d3748] rounded-tr-lg">
+                        Work Completed
+                      </th>
                     </tr>
-                  ) : (
-                    entries.map((entry) => (
-                      <LabourRow
-                        key={entry.id}
-                        entry={entry}
-                        onUpdate={handleUpdateEntry}
-                        onDelete={handleDeleteEntry}
-                      />
-                    ))
-                  )}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {entries.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="border border-[#e2e8f0] p-6 md:p-8 text-center text-muted-foreground text-xs md:text-sm">
+                          No entries yet. Click "Add Entry" to get started.
+                        </td>
+                      </tr>
+                    ) : (
+                      entries.map((entry) => (
+                        <LabourRow
+                          key={entry.id}
+                          entry={entry}
+                          onUpdate={handleUpdateEntry}
+                          onDelete={handleDeleteEntry}
+                        />
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            <div className="mt-6 space-y-4">
+              <div className="flex items-center justify-between bg-[#fff0f5] p-4 rounded-lg border border-[#e2e8f0]">
+                <span className="font-bold text-[#2d3748]">Total Labour Count:</span>
+                <span className="text-2xl font-bold text-primary">{totalLabourCount}</span>
+              </div>
+
+              <div className="flex justify-center gap-4">
+                <Button onClick={handleAddEntry} className="gap-2" variant="outline">
+                  <Plus className="h-4 w-4" />
+                  Add Entry
+                </Button>
+                <Button variant="outline" onClick={onClose}>
+                  Close
+                </Button>
+              </div>
             </div>
-          )}
-        </div>
-
-        <div className="border-t pt-4 space-y-4">
-          <div className="flex items-center justify-between bg-[#fff0f5] p-4 rounded-lg">
-            <span className="font-bold text-[#2d3748]">Total Labour Count:</span>
-            <span className="text-2xl font-bold text-primary">{totalLabourCount}</span>
           </div>
-
-          <div className="flex justify-between">
-            <Button onClick={handleAddEntry} className="gap-2">
-              <Plus className="h-4 w-4" />
-              Add Entry
-            </Button>
-            <Button variant="outline" onClick={onClose}>
-              Close
-            </Button>
-          </div>
-        </div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );
