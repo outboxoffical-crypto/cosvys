@@ -35,7 +35,8 @@ const LabourRow = memo(({
 }) => {
   const [localDate, setLocalDate] = useState(entry.date);
   const [localLabourCount, setLocalLabourCount] = useState(entry.labour_count.toString());
-  const [localWorkCompleted, setLocalWorkCompleted] = useState(entry.work_completed);
+  const [localWorkPlan, setLocalWorkPlan] = useState(entry.work_completed || '');
+  const [localWorkCompleted, setLocalWorkCompleted] = useState(entry.work_completed || '');
 
   const handleDateChange = (date: Date | undefined) => {
     if (date) {
@@ -50,13 +51,17 @@ const LabourRow = memo(({
     onUpdate(entry.id, "labour_count", count);
   };
 
+  const handleWorkPlanBlur = () => {
+    onUpdate(entry.id, "work_completed", localWorkPlan);
+  };
+
   const handleWorkCompletedBlur = () => {
     onUpdate(entry.id, "work_completed", localWorkCompleted);
   };
 
   return (
-    <tr className="border-b border-[#e2e8f0] hover:bg-gray-50/50">
-      <td className="p-2 md:p-3">
+    <tr className="border-b border-[#e2e8f0] hover:bg-gray-50/50 relative">
+      <td className="p-2 md:p-3 w-1/5">
         <Popover>
           <PopoverTrigger asChild>
             <Button
@@ -78,7 +83,7 @@ const LabourRow = memo(({
           </PopoverContent>
         </Popover>
       </td>
-      <td className="p-2 md:p-3">
+      <td className="p-2 md:p-3 w-1/6">
         <Input
           type="number"
           value={localLabourCount}
@@ -88,23 +93,32 @@ const LabourRow = memo(({
           min="0"
         />
       </td>
-      <td className="p-2 md:p-3">
-        <Textarea
+      <td className="p-2 md:p-3 w-1/3">
+        <Input
+          type="text"
+          value={localWorkPlan}
+          onChange={(e) => setLocalWorkPlan(e.target.value)}
+          onBlur={handleWorkPlanBlur}
+          placeholder="Work plan..."
+          className="bg-[#f9f9f9] border-[#e2e8f0] rounded-lg text-[#2d3748] text-xs md:text-sm"
+        />
+      </td>
+      <td className="p-2 md:p-3 w-1/3 pr-12">
+        <Input
+          type="text"
           value={localWorkCompleted}
           onChange={(e) => setLocalWorkCompleted(e.target.value)}
           onBlur={handleWorkCompletedBlur}
-          className="bg-[#f9f9f9] border-[#e2e8f0] rounded-lg text-[#2d3748] min-h-[50px] md:min-h-[60px] text-xs md:text-sm"
-          placeholder="Describe work completed..."
+          placeholder="Work completed..."
+          className="bg-[#f9f9f9] border-[#e2e8f0] rounded-lg text-[#2d3748] text-xs md:text-sm"
         />
-      </td>
-      <td className="p-2 md:p-3 text-center relative">
         <Button
           variant="ghost"
           size="icon"
           onClick={() => onDelete(entry.id)}
-          className="hover:bg-red-50 hover:text-red-600 h-7 w-7 md:h-8 md:w-8 absolute top-1 right-1 md:static"
+          className="hover:bg-red-50 hover:text-red-600 h-6 w-6 md:h-7 md:w-7 absolute top-2 right-2"
         >
-          <Trash2 className="h-3 w-3 md:h-4 md:w-4" />
+          <Trash2 className="h-3 w-3 md:h-3.5 md:w-3.5" />
         </Button>
       </td>
     </tr>
@@ -247,20 +261,20 @@ export function LabourTracker({ projectId, isOpen, onClose }: LabourTrackerProps
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full border-collapse bg-white rounded-lg overflow-hidden min-w-[600px]">
+              <table className="w-full border-collapse bg-white rounded-lg overflow-hidden">
                 <thead>
                   <tr className="bg-[#fff0f5]">
-                    <th className="p-2 md:p-3 text-left font-bold text-[#2d3748] border-b border-[#e2e8f0] text-xs md:text-sm">
+                    <th className="p-2 md:p-3 text-left font-bold text-[#2d3748] border-b border-[#e2e8f0] text-xs md:text-sm w-1/5">
                       Date
                     </th>
-                    <th className="p-2 md:p-3 text-left font-bold text-[#2d3748] border-b border-[#e2e8f0] text-xs md:text-sm">
+                    <th className="p-2 md:p-3 text-left font-bold text-[#2d3748] border-b border-[#e2e8f0] text-xs md:text-sm w-1/6">
                       No. of Labour
                     </th>
-                    <th className="p-2 md:p-3 text-left font-bold text-[#2d3748] border-b border-[#e2e8f0] text-xs md:text-sm">
-                      Work Completed
+                    <th className="p-2 md:p-3 text-left font-bold text-[#2d3748] border-b border-[#e2e8f0] text-xs md:text-sm w-1/3">
+                      Work Plan
                     </th>
-                    <th className="p-2 md:p-3 text-center font-bold text-[#2d3748] border-b border-[#e2e8f0] w-16 md:w-20 text-xs md:text-sm">
-                      Delete
+                    <th className="p-2 md:p-3 text-left font-bold text-[#2d3748] border-b border-[#e2e8f0] text-xs md:text-sm w-1/3">
+                      Work Completed
                     </th>
                   </tr>
                 </thead>

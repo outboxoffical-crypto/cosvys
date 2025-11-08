@@ -226,6 +226,11 @@ export default function Dashboard() {
     setDetailsModalOpen(true);
   };
 
+  const handleEditProject = (projectId: string) => {
+    // Navigate to Room Measurements for full project edit flow
+    navigate(`/room-measurement/${projectId}`);
+  };
+
   const handleOpenMaterialTracker = (projectId: string) => {
     setMaterialTrackerProjectId(projectId);
     setMaterialTrackerOpen(true);
@@ -460,7 +465,7 @@ export default function Dashboard() {
                               size="sm"
                               variant="ghost"
                               className="h-8 w-8 p-0 text-primary hover:bg-primary/10"
-                              onClick={() => navigate(`/add-project?edit=${project.id}`)}
+                              onClick={() => handleEditProject(project.id)}
                             >
                               <Edit2 className="h-4 w-4" />
                             </Button>

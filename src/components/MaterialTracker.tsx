@@ -13,7 +13,7 @@ interface Material {
   material_name: string;
   quantity: number;
   unit: string;
-  rate: number;
+  total_cost: number; // Changed from rate to manual total_cost
   delivery_status: string;
   delivery_date?: string;
 }
@@ -39,11 +39,9 @@ const MaterialRow = memo(({
   const [localValues, setLocalValues] = useState({
     material_name: material.material_name,
     quantity: material.quantity,
-    rate: material.rate,
+    total_cost: material.total_cost,
   });
   const [showDatePicker, setShowDatePicker] = useState(material.delivery_status === 'Delivered');
-
-  const total = localValues.quantity * localValues.rate;
 
   const handleBlur = useCallback((field: string) => {
     if (material.id && localValues[field as keyof typeof localValues] !== material[field as keyof Material]) {
@@ -90,17 +88,17 @@ const MaterialRow = memo(({
         </Select>
       </td>
       <td className="border border-[#e2e8f0] px-2 py-2">
-        <div className="space-y-1">
-          <p className="text-xs text-muted-foreground text-center">Rate × Qty</p>
+        <div className="flex items-center gap-1">
+          <span className="text-muted-foreground text-sm">₹</span>
           <Input
             type="number"
-            value={localValues.rate}
-            onChange={(e) => setLocalValues(prev => ({ ...prev, rate: parseFloat(e.target.value) || 0 }))}
-            onBlur={() => handleBlur('rate')}
-            placeholder="₹ 0"
+            value={localValues.total_cost === 0 ? '' : localValues.total_cost}
+            onChange={(e) => setLocalValues(prev => ({ ...prev, total_cost: parseFloat(e.target.value) || 0 }))}
+            onBlur={() => handleBlur('total_cost')}
+            placeholder="0"
             className="border-0 text-center focus-visible:ring-1"
+            step="0.01"
           />
-          <p className="text-center font-semibold text-sm text-primary">₹{total.toFixed(2)}</p>
         </div>
       </td>
       <td className="border border-[#e2e8f0] px-2 py-2">
@@ -168,7 +166,14 @@ export const MaterialTracker = ({ projectId, isOpen, onClose }: MaterialTrackerP
         .order("created_at", { ascending: true });
 
       if (error) throw error;
-      setMaterials(data || []);
+      
+      // Map existing data to new structure (rate becomes total_cost)
+      const mappedData = (data || []).map(item => ({
+        ...item,
+        total_cost: item.rate || 0,
+      }));
+      
+      setMaterials(mappedData);
     } catch (error: any) {
       console.error("Error fetching materials:", error);
       toast({
@@ -190,7 +195,7 @@ export const MaterialTracker = ({ projectId, isOpen, onClose }: MaterialTrackerP
         material_name: "",
         quantity: 0,
         unit: "kg",
-        rate: 0,
+        total_cost: 0,
         delivery_status: "Pending",
         delivery_date: undefined,
       };
@@ -207,7 +212,18 @@ export const MaterialTracker = ({ projectId, isOpen, onClose }: MaterialTrackerP
 
       if (error) throw error;
 
-      setMaterials([...materials, data]);
+      // Map the response to Material type
+      const mappedMaterial: Material = {
+        id: data.id,
+        material_name: data.material_name,
+        quantity: data.quantity,
+        unit: data.unit,
+        total_cost: data.rate || 0,
+        delivery_status: data.delivery_status,
+        delivery_date: data.delivery_date,
+      };
+
+      setMaterials([...materials, mappedMaterial]);
       toast({
         title: "Success",
         description: "Material row added",
@@ -240,7 +256,7 @@ export const MaterialTracker = ({ projectId, isOpen, onClose }: MaterialTrackerP
             material_name: material.material_name,
             quantity: material.quantity,
             unit: material.unit,
-            rate: material.rate,
+            rate: material.total_cost, // Store as rate for backward compatibility
             delivery_status: material.delivery_status,
             delivery_date: material.delivery_date,
           })
@@ -295,7 +311,7 @@ export const MaterialTracker = ({ projectId, isOpen, onClose }: MaterialTrackerP
     }
   }, []);
 
-  const totalCost = materials.reduce((sum, material) => sum + (material.quantity * material.rate), 0);
+  const totalCost = materials.reduce((sum, material) => sum + (material.total_cost || 0), 0);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -306,8 +322,8 @@ export const MaterialTracker = ({ projectId, isOpen, onClose }: MaterialTrackerP
         
         <ScrollArea className="h-[calc(90vh-120px)]">
           <div className="p-6">
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse min-w-[800px]">
+            <div className="overflow-x-auto -mx-6 px-6">
+              <table className="w-full border-collapse min-w-[700px]">
                 <thead>
                   <tr className="bg-[#fff0f5]">
                     <th className="border border-[#e2e8f0] px-2 md:px-4 py-2 md:py-3 text-center text-xs md:text-sm font-semibold text-[#2d3748] rounded-tl-lg">Material Name</th>
@@ -332,7 +348,7 @@ export const MaterialTracker = ({ projectId, isOpen, onClose }: MaterialTrackerP
                 <tfoot>
                   <tr className="bg-[#fff0f5] font-bold">
                     <td colSpan={3} className="border border-[#e2e8f0] px-2 md:px-4 py-2 md:py-3 text-right text-[#2d3748] text-xs md:text-sm">
-                      Total Material Cost:
+                      Total Material Cost (Summary):
                     </td>
                     <td className="border border-[#e2e8f0] px-2 md:px-4 py-2 md:py-3 text-center text-[#2d3748] text-sm md:text-base">
                       ₹{totalCost.toFixed(2)}
