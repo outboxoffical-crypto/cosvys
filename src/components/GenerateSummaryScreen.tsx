@@ -1596,12 +1596,6 @@ export default function GenerateSummaryScreen() {
                 <span className="text-2xl font-bold text-primary">₹{Math.round(marginCost).toLocaleString('en-IN')}</span>
               </div>
             </div>
-            <div className="p-4 bg-gradient-to-r from-secondary/10 to-accent/10 rounded-lg border-2 border-secondary">
-              <div className="flex justify-between items-center">
-                <span className="text-base font-semibold text-slate-950">Dealer Margin (Actual Total)</span>
-                <span className="text-2xl font-bold text-secondary">₹{Math.round(marginCost).toLocaleString('en-IN')}</span>
-              </div>
-            </div>
           </div>
         </CardContent>
       </Card>;
