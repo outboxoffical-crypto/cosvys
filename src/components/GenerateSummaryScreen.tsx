@@ -1650,7 +1650,15 @@ export default function GenerateSummaryScreen() {
       displayLabours = laboursNeeded;
       labourCost = perDayLabourCost * displayLabours * displayDays;
     }
-    const marginCost = materialCost * dealerMargin / 100;
+    
+    // Calculate margin cost from Paint Configuration Details (same as Dealer Margin section)
+    const totalProjectCostFromConfig = areaConfigs.reduce((sum, config) => {
+      const area = Number(config.area) || 0;
+      const rate = parseFloat(config.perSqFtRate) || 0;
+      return sum + area * rate;
+    }, 0);
+    const marginCost = totalProjectCostFromConfig * 0.1;
+    
     const totalCost = materialCost + marginCost + labourCost;
     return <Card className="eca-shadow bg-card border-primary/20">
         <CardHeader className="pb-3">
