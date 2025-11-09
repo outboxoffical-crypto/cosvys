@@ -60,15 +60,15 @@ const LabourRow = memo(({
   };
 
   return (
-    <tr className="hover:bg-[#f7fafc] transition-colors relative">
-      <td className="border border-[#e2e8f0] px-2 py-2">
+    <tr className="hover:bg-[#f7fafc] transition-colors relative group">
+      <td className="border border-[#e2e8f0] px-2 py-2 min-w-[140px] md:min-w-0">
         <Popover>
           <PopoverTrigger asChild>
             <Button
               variant="outline"
-              className="w-full justify-start text-left font-normal border-0 bg-transparent hover:bg-[#f0f0f0] text-xs md:text-sm"
+              className="w-full justify-start text-left font-normal border-0 bg-transparent hover:bg-[#f0f0f0] text-xs md:text-sm touch-manipulation"
             >
-              <CalendarIcon className="mr-1 md:mr-2 h-3 w-3 md:h-4 md:w-4" />
+              <CalendarIcon className="mr-1 md:mr-2 h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
               <span className="truncate">{localDate ? format(new Date(localDate), "MMM dd, yyyy") : "Pick date"}</span>
             </Button>
           </PopoverTrigger>
@@ -83,42 +83,42 @@ const LabourRow = memo(({
           </PopoverContent>
         </Popover>
       </td>
-      <td className="border border-[#e2e8f0] px-2 py-2">
+      <td className="border border-[#e2e8f0] px-2 py-2 min-w-[100px] md:min-w-0">
         <Input
           type="number"
           value={localLabourCount}
           onChange={(e) => setLocalLabourCount(e.target.value)}
           onBlur={handleLabourCountBlur}
-          className="border-0 text-center focus-visible:ring-1"
+          className="border-0 text-center focus-visible:ring-2 focus-visible:ring-primary touch-manipulation text-base md:text-sm min-h-[44px] md:min-h-0"
           min="0"
         />
       </td>
-      <td className="border border-[#e2e8f0] px-2 py-2">
+      <td className="border border-[#e2e8f0] px-2 py-2 min-w-[150px] md:min-w-0">
         <Input
           type="text"
           value={localWorkPlan}
           onChange={(e) => setLocalWorkPlan(e.target.value)}
           onBlur={handleWorkPlanBlur}
           placeholder="Work plan..."
-          className="border-0 text-center focus-visible:ring-1"
+          className="border-0 text-center focus-visible:ring-2 focus-visible:ring-primary touch-manipulation text-base md:text-sm min-h-[44px] md:min-h-0"
         />
       </td>
-      <td className="border border-[#e2e8f0] px-2 py-2 relative">
+      <td className="border border-[#e2e8f0] px-2 py-2 relative min-w-[150px] md:min-w-0">
         <Input
           type="text"
           value={localWorkCompleted}
           onChange={(e) => setLocalWorkCompleted(e.target.value)}
           onBlur={handleWorkCompletedBlur}
           placeholder="Work completed..."
-          className="border-0 text-center focus-visible:ring-1"
+          className="border-0 text-center focus-visible:ring-2 focus-visible:ring-primary touch-manipulation text-base md:text-sm min-h-[44px] md:min-h-0 pr-10"
         />
         <Button
           variant="ghost"
           size="icon"
           onClick={() => onDelete(entry.id)}
-          className="h-6 w-6 text-destructive hover:text-destructive hover:bg-destructive/10 absolute -top-1 -right-1"
+          className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 absolute top-1/2 -translate-y-1/2 right-1 touch-manipulation"
         >
-          <Trash2 className="h-3.5 w-3.5" />
+          <Trash2 className="h-4 w-4" />
         </Button>
       </td>
     </tr>
@@ -261,43 +261,45 @@ export function LabourTracker({ projectId, isOpen, onClose }: LabourTrackerProps
                 <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
               </div>
             ) : (
-              <div className="overflow-x-auto -mx-6 px-6">
-                <table className="w-full border-collapse min-w-[800px]">
-                  <thead>
-                    <tr className="bg-[#fff0f5]">
-                      <th className="border border-[#e2e8f0] px-2 md:px-4 py-2 md:py-3 text-center text-xs md:text-sm font-semibold text-[#2d3748] rounded-tl-lg">
-                        Date
-                      </th>
-                      <th className="border border-[#e2e8f0] px-2 md:px-4 py-2 md:py-3 text-center text-xs md:text-sm font-semibold text-[#2d3748]">
-                        No. of Labour
-                      </th>
-                      <th className="border border-[#e2e8f0] px-2 md:px-4 py-2 md:py-3 text-center text-xs md:text-sm font-semibold text-[#2d3748]">
-                        Work Plan
-                      </th>
-                      <th className="border border-[#e2e8f0] px-2 md:px-4 py-2 md:py-3 text-center text-xs md:text-sm font-semibold text-[#2d3748] rounded-tr-lg">
-                        Work Completed
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {entries.length === 0 ? (
-                      <tr>
-                        <td colSpan={4} className="border border-[#e2e8f0] p-6 md:p-8 text-center text-muted-foreground text-xs md:text-sm">
-                          No entries yet. Click "Add Entry" to get started.
-                        </td>
+              <div className="overflow-x-auto -mx-6 px-6 touch-pan-x">
+                <div className="inline-block min-w-full align-middle">
+                  <table className="w-full border-collapse min-w-[600px] md:min-w-[800px]">
+                    <thead>
+                      <tr className="bg-[#fff0f5]">
+                        <th className="border border-[#e2e8f0] px-2 md:px-4 py-3 text-center text-xs md:text-sm font-semibold text-[#2d3748] rounded-tl-lg sticky left-0 bg-[#fff0f5] z-10">
+                          Date
+                        </th>
+                        <th className="border border-[#e2e8f0] px-2 md:px-4 py-3 text-center text-xs md:text-sm font-semibold text-[#2d3748]">
+                          No. of Labour
+                        </th>
+                        <th className="border border-[#e2e8f0] px-2 md:px-4 py-3 text-center text-xs md:text-sm font-semibold text-[#2d3748]">
+                          Work Plan
+                        </th>
+                        <th className="border border-[#e2e8f0] px-2 md:px-4 py-3 text-center text-xs md:text-sm font-semibold text-[#2d3748] rounded-tr-lg">
+                          Work Completed
+                        </th>
                       </tr>
-                    ) : (
-                      entries.map((entry) => (
-                        <LabourRow
-                          key={entry.id}
-                          entry={entry}
-                          onUpdate={handleUpdateEntry}
-                          onDelete={handleDeleteEntry}
-                        />
-                      ))
-                    )}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {entries.length === 0 ? (
+                        <tr>
+                          <td colSpan={4} className="border border-[#e2e8f0] p-6 md:p-8 text-center text-muted-foreground text-xs md:text-sm">
+                            No entries yet. Click "Add Entry" to get started.
+                          </td>
+                        </tr>
+                      ) : (
+                        entries.map((entry) => (
+                          <LabourRow
+                            key={entry.id}
+                            entry={entry}
+                            onUpdate={handleUpdateEntry}
+                            onDelete={handleDeleteEntry}
+                          />
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
 

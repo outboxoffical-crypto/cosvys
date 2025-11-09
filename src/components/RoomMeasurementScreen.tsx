@@ -146,7 +146,7 @@ export default function RoomMeasurementScreen() {
         setActiveProjectType(data.projectTypes[0] || "");
       }
       
-      // Load existing rooms from Supabase
+      // Load existing rooms from Supabase - CRITICAL: Load ALL rooms for this project
       try {
         const { data: roomsData, error } = await supabase
           .from('rooms')
@@ -161,13 +161,14 @@ export default function RoomMeasurementScreen() {
         }
         
         if (roomsData && roomsData.length > 0) {
+          // IMPORTANT: Store ALL rooms with their project_type - filtering happens in UI only
           const formattedRooms: Room[] = roomsData.map(room => ({
             id: room.room_id,
             name: room.name,
             length: Number(room.length),
             width: Number(room.width),
             height: Number(room.height),
-            projectType: room.project_type,
+            projectType: room.project_type, // Preserve original project type
             pictures: Array.isArray(room.pictures) ? room.pictures as string[] : [],
             openingAreas: Array.isArray(room.opening_areas) ? room.opening_areas as unknown as OpeningArea[] : [],
             extraSurfaces: Array.isArray(room.extra_surfaces) ? room.extra_surfaces as unknown as ExtraSurface[] : [],
@@ -183,6 +184,7 @@ export default function RoomMeasurementScreen() {
               room.selected_areas as { floor: boolean; wall: boolean; ceiling: boolean } : 
               { floor: true, wall: true, ceiling: false }
           }));
+          // Store ALL rooms - DO NOT filter by project type here
           setRooms(formattedRooms);
         }
       } catch (error) {
@@ -1064,9 +1066,48 @@ export default function RoomMeasurementScreen() {
     }, { floor: 0, wall: 0, ceiling: 0 });
   }, []);
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (rooms.length > 0) {
-      navigate(`/paint-estimation/${projectId}`);
+      // Save all room data before navigating to ensure persistence
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          toast.error('Please log in to continue');
+          return;
+        }
+
+        // Batch update all rooms to ensure all data is saved
+        const updatePromises = rooms.map(room => 
+          supabase.from('rooms').upsert({
+            user_id: session.user.id,
+            project_id: projectId!,
+            room_id: room.id,
+            name: room.name,
+            length: room.length,
+            width: room.width,
+            height: room.height,
+            project_type: room.projectType, // Ensure project type is saved
+            pictures: room.pictures as any,
+            opening_areas: room.openingAreas as any,
+            extra_surfaces: room.extraSurfaces as any,
+            door_window_grills: room.doorWindowGrills as any,
+            floor_area: room.floorArea,
+            wall_area: room.wallArea,
+            ceiling_area: room.ceilingArea,
+            adjusted_wall_area: room.adjustedWallArea,
+            total_opening_area: room.totalOpeningArea,
+            total_extra_surface: room.totalExtraSurface,
+            total_door_window_grill_area: room.totalDoorWindowGrillArea,
+            selected_areas: room.selectedAreas as any
+          }, { onConflict: 'room_id,project_id' })
+        );
+
+        await Promise.all(updatePromises);
+        navigate(`/paint-estimation/${projectId}`);
+      } catch (error) {
+        console.error('Error saving rooms before navigation:', error);
+        toast.error('Failed to save room data');
+      }
     }
   };
 

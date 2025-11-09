@@ -50,32 +50,32 @@ const MaterialRow = memo(({
   }, [material.id, localValues, onUpdate]);
 
   return (
-    <tr className="hover:bg-[#f7fafc] transition-colors">
-      <td className="border border-[#e2e8f0] px-2 py-2">
+    <tr className="hover:bg-[#f7fafc] transition-colors group">
+      <td className="border border-[#e2e8f0] px-2 py-2 min-w-[150px] md:min-w-0">
         <Input
           value={localValues.material_name}
           onChange={(e) => setLocalValues(prev => ({ ...prev, material_name: e.target.value }))}
           onBlur={() => handleBlur('material_name')}
           placeholder="Enter material name"
-          className="border-0 text-center focus-visible:ring-1"
+          className="border-0 text-center focus-visible:ring-2 focus-visible:ring-primary touch-manipulation text-base md:text-sm min-h-[44px] md:min-h-0"
         />
       </td>
-      <td className="border border-[#e2e8f0] px-2 py-2">
+      <td className="border border-[#e2e8f0] px-2 py-2 min-w-[100px] md:min-w-0">
         <Input
           type="number"
           value={localValues.quantity === 0 ? '' : localValues.quantity}
           onChange={(e) => setLocalValues(prev => ({ ...prev, quantity: parseFloat(e.target.value) || 0 }))}
           onBlur={() => handleBlur('quantity')}
           placeholder="0"
-          className="border-0 text-center focus-visible:ring-1"
+          className="border-0 text-center focus-visible:ring-2 focus-visible:ring-primary touch-manipulation text-base md:text-sm min-h-[44px] md:min-h-0"
         />
       </td>
-      <td className="border border-[#e2e8f0] px-2 py-2">
+      <td className="border border-[#e2e8f0] px-2 py-2 min-w-[80px] md:min-w-0">
         <Select
           value={material.unit}
           onValueChange={(value) => material.id && onUpdate(material.id, "unit", value)}
         >
-          <SelectTrigger className="border-0 text-center focus:ring-1">
+          <SelectTrigger className="border-0 text-center focus:ring-2 focus:ring-primary touch-manipulation min-h-[44px] md:min-h-0">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -87,21 +87,21 @@ const MaterialRow = memo(({
           </SelectContent>
         </Select>
       </td>
-      <td className="border border-[#e2e8f0] px-2 py-2">
+      <td className="border border-[#e2e8f0] px-2 py-2 min-w-[120px] md:min-w-0">
         <div className="flex items-center gap-1">
-          <span className="text-muted-foreground text-sm">₹</span>
+          <span className="text-muted-foreground text-sm flex-shrink-0">₹</span>
           <Input
             type="number"
             value={localValues.total_cost === 0 ? '' : localValues.total_cost}
             onChange={(e) => setLocalValues(prev => ({ ...prev, total_cost: parseFloat(e.target.value) || 0 }))}
             onBlur={() => handleBlur('total_cost')}
             placeholder="0"
-            className="border-0 text-center focus-visible:ring-1"
+            className="border-0 text-center focus-visible:ring-2 focus-visible:ring-primary touch-manipulation text-base md:text-sm min-h-[44px] md:min-h-0"
             step="0.01"
           />
         </div>
       </td>
-      <td className="border border-[#e2e8f0] px-2 py-2">
+      <td className="border border-[#e2e8f0] px-2 py-2 min-w-[150px] md:min-w-0">
         <div className="space-y-2">
           <Select
             value={material.delivery_status}
@@ -112,7 +112,7 @@ const MaterialRow = memo(({
               }
             }}
           >
-            <SelectTrigger className="border-0 text-center focus:ring-1">
+            <SelectTrigger className="border-0 text-center focus:ring-2 focus:ring-primary touch-manipulation min-h-[44px] md:min-h-0">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -126,17 +126,17 @@ const MaterialRow = memo(({
               type="date"
               value={material.delivery_date || ''}
               onChange={(e) => material.id && onUpdate(material.id, "delivery_date", e.target.value)}
-              className="border-0 text-center text-xs focus-visible:ring-1"
+              className="border-0 text-center text-xs focus-visible:ring-2 focus-visible:ring-primary touch-manipulation min-h-[44px] md:min-h-0"
             />
           )}
         </div>
       </td>
-      <td className="border border-[#e2e8f0] px-2 py-2 text-center">
+      <td className="border border-[#e2e8f0] px-2 py-2 text-center min-w-[80px] md:min-w-0">
         <Button
           variant="ghost"
           size="icon"
           onClick={() => material.id && onDelete(material.id)}
-          className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+          className="h-10 w-10 md:h-8 md:w-8 text-destructive hover:text-destructive hover:bg-destructive/10 touch-manipulation"
         >
           <Trash2 className="h-4 w-4" />
         </Button>
@@ -322,41 +322,43 @@ export const MaterialTracker = ({ projectId, isOpen, onClose }: MaterialTrackerP
         
         <ScrollArea className="h-[calc(90vh-120px)]">
           <div className="p-6">
-            <div className="overflow-x-auto -mx-6 px-6">
-              <table className="w-full border-collapse min-w-[700px]">
-                <thead>
-                  <tr className="bg-[#fff0f5]">
-                    <th className="border border-[#e2e8f0] px-2 md:px-4 py-2 md:py-3 text-center text-xs md:text-sm font-semibold text-[#2d3748] rounded-tl-lg">Material Name</th>
-                    <th className="border border-[#e2e8f0] px-2 md:px-4 py-2 md:py-3 text-center text-xs md:text-sm font-semibold text-[#2d3748]">Quantity</th>
-                    <th className="border border-[#e2e8f0] px-2 md:px-4 py-2 md:py-3 text-center text-xs md:text-sm font-semibold text-[#2d3748]">Unit</th>
-                    <th className="border border-[#e2e8f0] px-2 md:px-4 py-2 md:py-3 text-center text-xs md:text-sm font-semibold text-[#2d3748]">Material Cost</th>
-                    <th className="border border-[#e2e8f0] px-2 md:px-4 py-2 md:py-3 text-center text-xs md:text-sm font-semibold text-[#2d3748]">Delivery Status</th>
-                    <th className="border border-[#e2e8f0] px-2 md:px-4 py-2 md:py-3 text-center text-xs md:text-sm font-semibold text-[#2d3748] rounded-tr-lg">Delete</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {materials.map((material, index) => (
-                    <MaterialRow
-                      key={material.id}
-                      material={material}
-                      index={index}
-                      onUpdate={handleUpdateMaterial}
-                      onDelete={handleDeleteMaterial}
-                    />
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr className="bg-[#fff0f5] font-bold">
-                    <td colSpan={3} className="border border-[#e2e8f0] px-2 md:px-4 py-2 md:py-3 text-right text-[#2d3748] text-xs md:text-sm">
-                      Total Material Cost (Summary):
-                    </td>
-                    <td className="border border-[#e2e8f0] px-2 md:px-4 py-2 md:py-3 text-center text-[#2d3748] text-sm md:text-base">
-                      ₹{totalCost.toFixed(2)}
-                    </td>
-                    <td colSpan={2} className="border border-[#e2e8f0]"></td>
-                  </tr>
-                </tfoot>
-              </table>
+            <div className="overflow-x-auto -mx-6 px-6 touch-pan-x">
+              <div className="inline-block min-w-full align-middle">
+                <table className="w-full border-collapse min-w-[700px] md:min-w-[800px]">
+                  <thead>
+                    <tr className="bg-[#fff0f5]">
+                      <th className="border border-[#e2e8f0] px-2 md:px-4 py-3 text-center text-xs md:text-sm font-semibold text-[#2d3748] rounded-tl-lg sticky left-0 bg-[#fff0f5] z-10">Material Name</th>
+                      <th className="border border-[#e2e8f0] px-2 md:px-4 py-3 text-center text-xs md:text-sm font-semibold text-[#2d3748]">Quantity</th>
+                      <th className="border border-[#e2e8f0] px-2 md:px-4 py-3 text-center text-xs md:text-sm font-semibold text-[#2d3748]">Unit</th>
+                      <th className="border border-[#e2e8f0] px-2 md:px-4 py-3 text-center text-xs md:text-sm font-semibold text-[#2d3748]">Material Cost</th>
+                      <th className="border border-[#e2e8f0] px-2 md:px-4 py-3 text-center text-xs md:text-sm font-semibold text-[#2d3748]">Delivery Status</th>
+                      <th className="border border-[#e2e8f0] px-2 md:px-4 py-3 text-center text-xs md:text-sm font-semibold text-[#2d3748] rounded-tr-lg">Delete</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {materials.map((material, index) => (
+                      <MaterialRow
+                        key={material.id}
+                        material={material}
+                        index={index}
+                        onUpdate={handleUpdateMaterial}
+                        onDelete={handleDeleteMaterial}
+                      />
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="bg-[#fff0f5] font-bold">
+                      <td colSpan={3} className="border border-[#e2e8f0] px-2 md:px-4 py-2 md:py-3 text-right text-[#2d3748] text-xs md:text-sm">
+                        Total Material Cost (Summary):
+                      </td>
+                      <td className="border border-[#e2e8f0] px-2 md:px-4 py-2 md:py-3 text-center text-[#2d3748] text-sm md:text-base">
+                        ₹{totalCost.toFixed(2)}
+                      </td>
+                      <td colSpan={2} className="border border-[#e2e8f0]"></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
             </div>
 
             <div className="mt-6 flex justify-center gap-4">
