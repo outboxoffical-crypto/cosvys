@@ -60,7 +60,7 @@ const LabourRow = memo(({
   };
 
   return (
-    <tr className="hover:bg-[#f7fafc] transition-colors relative group focus-within:bg-accent/30 md:focus-within:bg-transparent focus-within:scale-[1.01] md:focus-within:scale-100">
+    <tr className="hover:bg-[#f7fafc] transition-colors relative group focus-within:bg-accent/30 md:focus-within:bg-transparent focus-within:scale-[1.03] md:focus-within:scale-100 transition-transform">
       <td className="border border-[#e2e8f0] px-2 py-2 min-w-[140px] md:min-w-0">
         <Popover>
           <PopoverTrigger asChild>
@@ -91,7 +91,7 @@ const LabourRow = memo(({
           onChange={(e) => setLocalLabourCount(e.target.value)}
           onFocus={(e) => { e.currentTarget.select(); e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' }); }}
           onBlur={handleLabourCountBlur}
-          className="border-0 text-center focus-visible:ring-2 focus-visible:ring-primary touch-manipulation text-base md:text-sm min-h-[44px] md:min-h-0"
+          className="border-0 text-center focus-visible:ring-2 focus-visible:ring-primary touch-manipulation text-base md:text-sm min-h-[44px] md:min-h-0 scroll-mt-24"
           min="0"
           inputMode="decimal"
         />
@@ -104,7 +104,7 @@ const LabourRow = memo(({
           onFocus={(e) => { e.currentTarget.select(); e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' }); }}
           onBlur={handleWorkPlanBlur}
           placeholder="Work plan..."
-          className="border-0 text-center focus-visible:ring-2 focus-visible:ring-primary touch-manipulation text-base md:text-sm min-h-[44px] md:min-h-0"
+          className="border-0 text-center focus-visible:ring-2 focus-visible:ring-primary touch-manipulation text-base md:text-sm min-h-[44px] md:min-h-0 scroll-mt-24"
         />
       </td>
       <td className="border border-[#e2e8f0] px-2 py-2 relative min-w-[150px] md:min-w-0">
@@ -115,7 +115,7 @@ const LabourRow = memo(({
           onFocus={(e) => { e.currentTarget.select(); e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' }); }}
           onBlur={handleWorkCompletedBlur}
           placeholder="Work completed..."
-          className="border-0 text-center focus-visible:ring-2 focus-visible:ring-primary touch-manipulation text-base md:text-sm min-h-[44px] md:min-h-0 pr-10"
+          className="border-0 text-center focus-visible:ring-2 focus-visible:ring-primary touch-manipulation text-base md:text-sm min-h-[44px] md:min-h-0 pr-10 scroll-mt-24"
         />
         <Button
           variant="ghost"
@@ -251,7 +251,7 @@ export function LabourTracker({ projectId, isOpen, onClose }: LabourTrackerProps
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="p-0 w-[100vw] h-[100dvh] max-w-none max-h-none rounded-none flex flex-col md:max-w-6xl md:max-h-[90vh] md:rounded-lg">
+      <DialogContent className="fixed inset-0 left-0 top-0 translate-x-0 translate-y-0 p-0 w-[100vw] h-[100dvh] max-w-none max-h-none rounded-none flex flex-col md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:max-w-6xl md:max-h-[90vh] md:rounded-lg">
         <DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
           <DialogTitle className="text-2xl font-semibold text-[#2d3748] flex items-center gap-2">
             <Users className="h-5 w-5" />
@@ -259,14 +259,14 @@ export function LabourTracker({ projectId, isOpen, onClose }: LabourTrackerProps
           </DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 overscroll-contain">
+        <ScrollArea className="flex-1 overscroll-contain" onClick={(e) => { const t = e.target as HTMLElement; const tag = t?.tagName?.toLowerCase(); if (!['input','textarea','select','button'].includes(tag)) { (document.activeElement as HTMLElement | null)?.blur(); } }}>
           <div className="p-6">
             {loading ? (
               <div className="flex items-center justify-center p-12">
                 <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
               </div>
             ) : (
-              <div className="overflow-x-auto -mx-6 px-6 touch-pan-x touch-pan-y">
+              <div className="overflow-x-auto -mx-6 px-6 touch-pan-x touch-pan-y" style={{ touchAction: 'pan-x pan-y pinch-zoom' }}>
                 <div className="inline-block min-w-full align-middle">
                   <table className="w-full border-collapse min-w-[600px] md:min-w-[800px]">
                     <thead>
