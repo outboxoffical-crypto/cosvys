@@ -50,11 +50,12 @@ const MaterialRow = memo(({
   }, [material.id, localValues, onUpdate]);
 
   return (
-    <tr className="hover:bg-[#f7fafc] transition-colors group">
+    <tr className="hover:bg-[#f7fafc] transition-colors group focus-within:bg-accent/30 md:focus-within:bg-transparent focus-within:scale-[1.01] md:focus-within:scale-100">
       <td className="border border-[#e2e8f0] px-2 py-2 min-w-[150px] md:min-w-0">
         <Input
           value={localValues.material_name}
           onChange={(e) => setLocalValues(prev => ({ ...prev, material_name: e.target.value }))}
+          onFocus={(e) => { e.currentTarget.select(); e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' }); }}
           onBlur={() => handleBlur('material_name')}
           placeholder="Enter material name"
           className="border-0 text-center focus-visible:ring-2 focus-visible:ring-primary touch-manipulation text-base md:text-sm min-h-[44px] md:min-h-0"
@@ -65,9 +66,11 @@ const MaterialRow = memo(({
           type="number"
           value={localValues.quantity === 0 ? '' : localValues.quantity}
           onChange={(e) => setLocalValues(prev => ({ ...prev, quantity: parseFloat(e.target.value) || 0 }))}
+          onFocus={(e) => { e.currentTarget.select(); e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' }); }}
           onBlur={() => handleBlur('quantity')}
           placeholder="0"
           className="border-0 text-center focus-visible:ring-2 focus-visible:ring-primary touch-manipulation text-base md:text-sm min-h-[44px] md:min-h-0"
+          inputMode="decimal"
         />
       </td>
       <td className="border border-[#e2e8f0] px-2 py-2 min-w-[80px] md:min-w-0">
@@ -75,7 +78,7 @@ const MaterialRow = memo(({
           value={material.unit}
           onValueChange={(value) => material.id && onUpdate(material.id, "unit", value)}
         >
-          <SelectTrigger className="border-0 text-center focus:ring-2 focus:ring-primary touch-manipulation min-h-[44px] md:min-h-0">
+          <SelectTrigger className="border-0 text-center focus:ring-2 focus:ring-primary touch-manipulation min-h-[44px] md:min-h-0" onFocus={(e) => { e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' }); }}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -94,10 +97,12 @@ const MaterialRow = memo(({
             type="number"
             value={localValues.total_cost === 0 ? '' : localValues.total_cost}
             onChange={(e) => setLocalValues(prev => ({ ...prev, total_cost: parseFloat(e.target.value) || 0 }))}
+            onFocus={(e) => { e.currentTarget.select(); e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' }); }}
             onBlur={() => handleBlur('total_cost')}
             placeholder="0"
             className="border-0 text-center focus-visible:ring-2 focus-visible:ring-primary touch-manipulation text-base md:text-sm min-h-[44px] md:min-h-0"
             step="0.01"
+            inputMode="decimal"
           />
         </div>
       </td>
@@ -112,7 +117,7 @@ const MaterialRow = memo(({
               }
             }}
           >
-            <SelectTrigger className="border-0 text-center focus:ring-2 focus:ring-primary touch-manipulation min-h-[44px] md:min-h-0">
+            <SelectTrigger className="border-0 text-center focus:ring-2 focus:ring-primary touch-manipulation min-h-[44px] md:min-h-0" onFocus={(e) => { e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' }); }}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -126,6 +131,7 @@ const MaterialRow = memo(({
               type="date"
               value={material.delivery_date || ''}
               onChange={(e) => material.id && onUpdate(material.id, "delivery_date", e.target.value)}
+              onFocus={(e) => { e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' }); }}
               className="border-0 text-center text-xs focus-visible:ring-2 focus-visible:ring-primary touch-manipulation min-h-[44px] md:min-h-0"
             />
           )}
@@ -315,14 +321,14 @@ export const MaterialTracker = ({ projectId, isOpen, onClose }: MaterialTrackerP
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] p-0">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b">
+      <DialogContent className="p-0 w-[100vw] h-[100dvh] max-w-none max-h-none rounded-none flex flex-col md:max-w-6xl md:max-h-[90vh] md:rounded-lg">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
           <DialogTitle className="text-2xl font-semibold text-[#2d3748]">Material Tracker</DialogTitle>
         </DialogHeader>
         
-        <ScrollArea className="h-[calc(90vh-120px)]">
+        <ScrollArea className="flex-1 overscroll-contain">
           <div className="p-6">
-            <div className="overflow-x-auto -mx-6 px-6 touch-pan-x">
+            <div className="overflow-x-auto -mx-6 px-6 touch-pan-x touch-pan-y">
               <div className="inline-block min-w-full align-middle">
                 <table className="w-full border-collapse min-w-[700px] md:min-w-[800px]">
                   <thead>

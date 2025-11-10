@@ -60,13 +60,14 @@ const LabourRow = memo(({
   };
 
   return (
-    <tr className="hover:bg-[#f7fafc] transition-colors relative group">
+    <tr className="hover:bg-[#f7fafc] transition-colors relative group focus-within:bg-accent/30 md:focus-within:bg-transparent focus-within:scale-[1.01] md:focus-within:scale-100">
       <td className="border border-[#e2e8f0] px-2 py-2 min-w-[140px] md:min-w-0">
         <Popover>
           <PopoverTrigger asChild>
             <Button
               variant="outline"
               className="w-full justify-start text-left font-normal border-0 bg-transparent hover:bg-[#f0f0f0] text-xs md:text-sm touch-manipulation"
+              onFocus={(e) => { e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' }); }}
             >
               <CalendarIcon className="mr-1 md:mr-2 h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
               <span className="truncate">{localDate ? format(new Date(localDate), "MMM dd, yyyy") : "Pick date"}</span>
@@ -88,9 +89,11 @@ const LabourRow = memo(({
           type="number"
           value={localLabourCount}
           onChange={(e) => setLocalLabourCount(e.target.value)}
+          onFocus={(e) => { e.currentTarget.select(); e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' }); }}
           onBlur={handleLabourCountBlur}
           className="border-0 text-center focus-visible:ring-2 focus-visible:ring-primary touch-manipulation text-base md:text-sm min-h-[44px] md:min-h-0"
           min="0"
+          inputMode="decimal"
         />
       </td>
       <td className="border border-[#e2e8f0] px-2 py-2 min-w-[150px] md:min-w-0">
@@ -98,6 +101,7 @@ const LabourRow = memo(({
           type="text"
           value={localWorkPlan}
           onChange={(e) => setLocalWorkPlan(e.target.value)}
+          onFocus={(e) => { e.currentTarget.select(); e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' }); }}
           onBlur={handleWorkPlanBlur}
           placeholder="Work plan..."
           className="border-0 text-center focus-visible:ring-2 focus-visible:ring-primary touch-manipulation text-base md:text-sm min-h-[44px] md:min-h-0"
@@ -108,6 +112,7 @@ const LabourRow = memo(({
           type="text"
           value={localWorkCompleted}
           onChange={(e) => setLocalWorkCompleted(e.target.value)}
+          onFocus={(e) => { e.currentTarget.select(); e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' }); }}
           onBlur={handleWorkCompletedBlur}
           placeholder="Work completed..."
           className="border-0 text-center focus-visible:ring-2 focus-visible:ring-primary touch-manipulation text-base md:text-sm min-h-[44px] md:min-h-0 pr-10"
@@ -246,22 +251,22 @@ export function LabourTracker({ projectId, isOpen, onClose }: LabourTrackerProps
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] p-0">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b">
+      <DialogContent className="p-0 w-[100vw] h-[100dvh] max-w-none max-h-none rounded-none flex flex-col md:max-w-6xl md:max-h-[90vh] md:rounded-lg">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
           <DialogTitle className="text-2xl font-semibold text-[#2d3748] flex items-center gap-2">
             <Users className="h-5 w-5" />
             Labour Tracker
           </DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="h-[calc(90vh-120px)]">
+        <ScrollArea className="flex-1 overscroll-contain">
           <div className="p-6">
             {loading ? (
               <div className="flex items-center justify-center p-12">
                 <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
               </div>
             ) : (
-              <div className="overflow-x-auto -mx-6 px-6 touch-pan-x">
+              <div className="overflow-x-auto -mx-6 px-6 touch-pan-x touch-pan-y">
                 <div className="inline-block min-w-full align-middle">
                   <table className="w-full border-collapse min-w-[600px] md:min-w-[800px]">
                     <thead>
