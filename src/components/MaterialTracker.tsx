@@ -328,12 +328,16 @@ export const MaterialTracker = ({ projectId, isOpen, onClose }: MaterialTrackerP
         
         <ScrollArea className="flex-1 overscroll-contain" onClick={(e) => { const t = e.target as HTMLElement; const tag = t?.tagName?.toLowerCase(); if (!['input','textarea','select','button'].includes(tag)) { (document.activeElement as HTMLElement | null)?.blur(); } }}>
           <div className="p-6">
-            <div className="overflow-x-auto -mx-6 px-6 touch-pan-x touch-pan-y" style={{ touchAction: 'pan-x pan-y pinch-zoom' }}>
+            <div
+              data-grid-mobile
+              className="overflow-x-auto overflow-y-auto -mx-6 px-6 whitespace-nowrap touch-pan-x touch-pan-y md:whitespace-normal"
+              style={{ touchAction: 'pan-x pan-y pinch-zoom', WebkitOverflowScrolling: 'touch' }}
+            >
               <div className="inline-block min-w-full align-middle">
                 <table className="w-full border-collapse min-w-[700px] md:min-w-[800px]">
                   <thead>
                     <tr className="bg-[#fff0f5]">
-                      <th className="border border-[#e2e8f0] px-2 md:px-4 py-3 text-center text-xs md:text-sm font-semibold text-[#2d3748] rounded-tl-lg sticky left-0 bg-[#fff0f5] z-10">Material Name</th>
+                      <th className="border border-[#e2e8f0] px-2 md:px-4 py-3 text-center text-xs md:text-sm font-semibold text-[#2d3748] rounded-tl-lg md:sticky md:left-0 bg-[#fff0f5] z-10">Material Name</th>
                       <th className="border border-[#e2e8f0] px-2 md:px-4 py-3 text-center text-xs md:text-sm font-semibold text-[#2d3748]">Quantity</th>
                       <th className="border border-[#e2e8f0] px-2 md:px-4 py-3 text-center text-xs md:text-sm font-semibold text-[#2d3748]">Unit</th>
                       <th className="border border-[#e2e8f0] px-2 md:px-4 py-3 text-center text-xs md:text-sm font-semibold text-[#2d3748]">Material Cost</th>
