@@ -249,7 +249,7 @@ export function LabourTracker({ projectId, isOpen, onClose }: LabourTrackerProps
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[95vw] max-h-[95vh] md:max-w-6xl p-0 overflow-hidden">
+      <DialogContent className="max-w-[100vw] max-h-[100vh] h-[100vh] w-[100vw] md:max-w-6xl md:max-h-[95vh] md:h-auto md:w-auto p-0 overflow-hidden">
         <DialogHeader className="px-6 pt-6 pb-4 border-b">
           <DialogTitle className="text-2xl font-semibold flex items-center gap-2">
             <Users className="h-5 w-5" />
@@ -257,7 +257,7 @@ export function LabourTracker({ projectId, isOpen, onClose }: LabourTrackerProps
           </DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="h-[calc(95vh-140px)]">
+        <ScrollArea className="h-[calc(100vh-140px)] md:h-[calc(95vh-140px)]">
           <div className="p-6">
             {loading ? (
               <div className="flex items-center justify-center p-12">

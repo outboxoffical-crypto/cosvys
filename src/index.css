@@ -106,20 +106,21 @@
 /* Mobile tracker container - enables full scrolling and zoom */
 @media (max-width: 768px) {
   .mobile-tracker-container {
+    height: 100vh !important;
+    width: 100vw !important;
     overflow-x: auto !important;
     overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch;
-    touch-action: pan-x pan-y pinch-zoom;
-    width: 100%;
-    max-height: calc(100vh - 300px);
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-x pan-y pinch-zoom !important;
   }
   
   .mobile-tracker-container table {
+    white-space: nowrap;
     touch-action: pan-x pan-y pinch-zoom;
   }
   
   .mobile-tracker-container input:focus,
   .mobile-tracker-container button:focus {
-    scroll-margin: 100px;
+    scroll-margin: 120px;
   }
 }

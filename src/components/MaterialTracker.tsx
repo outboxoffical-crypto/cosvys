@@ -50,15 +50,7 @@ const MaterialRow = memo(({
   };
 
   const handleBlur = (field: string, value: any) => {
-    if (field === "quantity" || field === "rate") {
-      const qty = field === "quantity" ? parseFloat(value) || 0 : material.quantity;
-      const rate = field === "rate" ? parseFloat(value) || 0 : material.rate;
-      const total = calculateTotal(qty, rate);
-      onUpdate(material.id, field, parseFloat(value) || 0);
-      onUpdate(material.id, "total", total);
-    } else {
-      onUpdate(material.id, field, value);
-    }
+    onUpdate(material.id, field, field === "quantity" || field === "rate" ? parseFloat(value) || 0 : value);
   };
 
   const handleDateChange = (date: Date | undefined) => {
@@ -115,9 +107,6 @@ const MaterialRow = memo(({
           min="0"
           step="0.01"
         />
-      </td>
-      <td className="border border-border p-2 text-center font-semibold">
-        ₹{material.total.toFixed(2)}
       </td>
       <td className="border border-border p-2">
         <Popover>
@@ -218,7 +207,6 @@ export const MaterialTracker = ({ projectId, isOpen, onClose }: MaterialTrackerP
       quantity: 0,
       unit: "kg",
       rate: 0,
-      total: 0,
       delivery_status: "Pending",
     };
 
@@ -289,11 +277,11 @@ export const MaterialTracker = ({ projectId, isOpen, onClose }: MaterialTrackerP
     }
   }, [materials, toast]);
 
-  const totalMaterialCost = materials.reduce((sum, material) => sum + material.total, 0);
+  const totalMaterialCost = materials.reduce((sum, material) => sum + (material.quantity * material.rate), 0);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[95vw] max-h-[95vh] md:max-w-7xl p-0 overflow-hidden">
+      <DialogContent className="max-w-[100vw] max-h-[100vh] h-[100vh] w-[100vw] md:max-w-7xl md:max-h-[95vh] md:h-auto md:w-auto p-0 overflow-hidden">
         <DialogHeader className="px-6 pt-6 pb-4 border-b">
           <DialogTitle className="text-2xl font-semibold flex items-center gap-2">
             <Package className="h-5 w-5" />
@@ -301,7 +289,7 @@ export const MaterialTracker = ({ projectId, isOpen, onClose }: MaterialTrackerP
           </DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="h-[calc(95vh-140px)]">
+        <ScrollArea className="h-[calc(100vh-140px)] md:h-[calc(95vh-140px)]">
           <div className="p-6">
             {loading ? (
               <div className="flex items-center justify-center p-12">
@@ -316,7 +304,6 @@ export const MaterialTracker = ({ projectId, isOpen, onClose }: MaterialTrackerP
                       <th className="border border-border px-4 py-3 text-left font-semibold">Quantity</th>
                       <th className="border border-border px-4 py-3 text-left font-semibold">Unit</th>
                       <th className="border border-border px-4 py-3 text-left font-semibold">Rate (₹)</th>
-                      <th className="border border-border px-4 py-3 text-left font-semibold">Total (₹)</th>
                       <th className="border border-border px-4 py-3 text-left font-semibold">Delivery Date</th>
                       <th className="border border-border px-4 py-3 text-left font-semibold">Delivery Status</th>
                       <th className="border border-border px-4 py-3 text-center font-semibold">Delete</th>
@@ -325,7 +312,7 @@ export const MaterialTracker = ({ projectId, isOpen, onClose }: MaterialTrackerP
                   <tbody>
                     {materials.length === 0 ? (
                       <tr>
-                        <td colSpan={8} className="border border-border p-8 text-center text-muted-foreground">
+                        <td colSpan={7} className="border border-border p-8 text-center text-muted-foreground">
                           No materials yet. Click "Add Material" to get started.
                         </td>
                       </tr>
