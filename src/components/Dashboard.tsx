@@ -10,6 +10,8 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import ProjectDetailsModal from "./ProjectDetailsModal";
+import { MaterialTracker } from "./MaterialTracker";
+import { LabourTracker } from "./LabourTracker";
 import { LeadSummaryBox } from "./LeadSummaryBox";
 import { format } from "date-fns";
 import { 
@@ -26,6 +28,7 @@ import {
   Package,
   CheckCircle2,
   Bell,
+  Users,
   Edit2,
   BookOpen,
   TrendingUp,
@@ -61,6 +64,10 @@ export default function Dashboard() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [materialTrackerOpen, setMaterialTrackerOpen] = useState(false);
+  const [materialTrackerProjectId, setMaterialTrackerProjectId] = useState<string | null>(null);
+  const [labourTrackerOpen, setLabourTrackerOpen] = useState(false);
+  const [labourTrackerProjectId, setLabourTrackerProjectId] = useState<string | null>(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [leadStats, setLeadStats] = useState({ total: 0, converted: 0, dropped: 0, pending: 0 });
 
@@ -224,6 +231,16 @@ export default function Dashboard() {
     navigate(`/room-measurement/${projectId}`);
   };
 
+
+  const handleOpenMaterialTracker = (projectId: string) => {
+    setMaterialTrackerProjectId(projectId);
+    setMaterialTrackerOpen(true);
+  };
+
+  const handleOpenLabourTracker = (projectId: string) => {
+    setLabourTrackerProjectId(projectId);
+    setLabourTrackerOpen(true);
+  };
 
   const handleDateUpdate = async (projectId: string, dateField: 'start_date' | 'end_date', date: Date | undefined) => {
     if (!date) return;
@@ -616,6 +633,27 @@ export default function Dashboard() {
                               )}
                             </div>
 
+                            <div className="flex items-center gap-2">
+                              <Button 
+                                size="sm" 
+                                variant="ghost"
+                                className="h-8 w-8 p-0 rounded-md hover:bg-muted"
+                                onClick={() => handleOpenLabourTracker(project.id)}
+                                title="Labour Tracker"
+                              >
+                                <Users className="h-4 w-4 text-red-500" />
+                              </Button>
+
+                              <Button 
+                                size="sm" 
+                                variant="ghost"
+                                className="h-8 w-8 p-0 rounded-md hover:bg-muted"
+                                onClick={() => handleOpenMaterialTracker(project.id)}
+                                title="Material Tracker"
+                              >
+                                <Package className="h-4 w-4 text-purple-500" />
+                              </Button>
+                            </div>
                           </div>
                         </>
                       )}
@@ -633,6 +671,28 @@ export default function Dashboard() {
         open={detailsModalOpen}
         onOpenChange={setDetailsModalOpen}
       />
+
+      {materialTrackerProjectId && (
+        <MaterialTracker
+          projectId={materialTrackerProjectId}
+          isOpen={materialTrackerOpen}
+          onClose={() => {
+            setMaterialTrackerOpen(false);
+            setMaterialTrackerProjectId(null);
+          }}
+        />
+      )}
+
+      {labourTrackerProjectId && (
+        <LabourTracker
+          projectId={labourTrackerProjectId}
+          isOpen={labourTrackerOpen}
+          onClose={() => {
+            setLabourTrackerOpen(false);
+            setLabourTrackerProjectId(null);
+          }}
+        />
+      )}
 
     </div>
     </TooltipProvider>
