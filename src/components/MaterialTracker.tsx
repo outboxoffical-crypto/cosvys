@@ -1,12 +1,16 @@
 import { useState, useEffect, useCallback, memo } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, Package, X } from "lucide-react";
+import { Plus, Trash2, Package, Calendar as CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface Material {
   id: string;
@@ -14,6 +18,7 @@ interface Material {
   quantity: number;
   unit: string;
   rate: number;
+  total: number;
   delivery_status: string;
   delivery_date?: string;
 }
@@ -38,82 +43,115 @@ const MaterialRow = memo(({
   const [localUnit, setLocalUnit] = useState(material.unit);
   const [localRate, setLocalRate] = useState(material.rate.toString());
   const [localDeliveryStatus, setLocalDeliveryStatus] = useState(material.delivery_status);
+  const [localDeliveryDate, setLocalDeliveryDate] = useState(material.delivery_date || "");
+
+  const calculateTotal = (qty: number, rate: number) => {
+    return qty * rate;
+  };
 
   const handleBlur = (field: string, value: any) => {
     onUpdate(material.id, field, field === "quantity" || field === "rate" ? parseFloat(value) || 0 : value);
   };
 
+  const handleDateChange = (date: Date | undefined) => {
+    if (date) {
+      const formattedDate = format(date, "yyyy-MM-dd");
+      setLocalDeliveryDate(formattedDate);
+      onUpdate(material.id, "delivery_date", formattedDate);
+    }
+  };
+
   return (
-    <tr className="hover:bg-rose-50/50 transition-colors">
-      <td className="border border-border p-1 bg-rose-50/30" style={{ width: '80px', minWidth: '80px' }}>
-        <Textarea
+    <tr className="hover:bg-muted/50 transition-colors">
+      <td className="border border-border p-2">
+        <Input
+          type="text"
           value={localName}
           onChange={(e) => setLocalName(e.target.value)}
           onBlur={() => handleBlur("material_name", localName)}
-          placeholder="Material..."
-          className="min-h-[32px] h-auto text-xs p-1 resize-none bg-white"
-          rows={2}
+          placeholder="Material name..."
         />
       </td>
-      <td className="border border-border p-1" style={{ width: '48px', minWidth: '48px' }}>
+      <td className="border border-border p-2">
         <Input
           type="number"
           value={localQuantity}
           onChange={(e) => setLocalQuantity(e.target.value)}
           onBlur={() => handleBlur("quantity", localQuantity)}
-          className="text-center h-8 text-xs p-1"
+          className="text-center"
           min="0"
           step="0.01"
         />
       </td>
-      <td className="border border-border p-1" style={{ width: '48px', minWidth: '48px' }}>
+      <td className="border border-border p-2">
         <Select value={localUnit} onValueChange={(value) => { setLocalUnit(value); handleBlur("unit", value); }}>
-          <SelectTrigger className="h-8 text-xs">
+          <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="kg">kg</SelectItem>
-            <SelectItem value="ml">ml</SelectItem>
-            <SelectItem value="ltr">ltr</SelectItem>
-            <SelectItem value="pcs">pcs</SelectItem>
-            <SelectItem value="pack">pack</SelectItem>
+            <SelectItem value="litre">litre</SelectItem>
+            <SelectItem value="piece">piece</SelectItem>
+            <SelectItem value="box">box</SelectItem>
+            <SelectItem value="bag">bag</SelectItem>
           </SelectContent>
         </Select>
       </td>
-      <td className="border border-border p-1" style={{ width: '64px', minWidth: '64px' }}>
-        <div className="flex items-center">
-          <span className="text-xs mr-1">₹</span>
-          <Input
-            type="number"
-            value={localRate}
-            onChange={(e) => setLocalRate(e.target.value)}
-            onBlur={() => handleBlur("rate", localRate)}
-            className="text-center h-8 text-xs p-1"
-            min="0"
-            step="0.01"
-          />
-        </div>
+      <td className="border border-border p-2">
+        <Input
+          type="number"
+          value={localRate}
+          onChange={(e) => setLocalRate(e.target.value)}
+          onBlur={() => handleBlur("rate", localRate)}
+          className="text-center"
+          min="0"
+          step="0.01"
+        />
       </td>
-      <td className="border border-border p-1" style={{ width: '64px', minWidth: '64px' }}>
+      <td className="border border-border p-2">
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                "w-full justify-start text-left font-normal",
+                !localDeliveryDate && "text-muted-foreground"
+              )}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {localDeliveryDate ? format(new Date(localDeliveryDate), "PPP") : "Pick date"}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={localDeliveryDate ? new Date(localDeliveryDate) : undefined}
+              onSelect={handleDateChange}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
+      </td>
+      <td className="border border-border p-2">
         <Select value={localDeliveryStatus} onValueChange={(value) => { setLocalDeliveryStatus(value); handleBlur("delivery_status", value); }}>
-          <SelectTrigger className="h-8 text-xs">
+          <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="Pending">Pending</SelectItem>
             <SelectItem value="Delivered">Delivered</SelectItem>
-            <SelectItem value="Transit">Transit</SelectItem>
+            <SelectItem value="Cancelled">Cancelled</SelectItem>
           </SelectContent>
         </Select>
       </td>
-      <td className="border border-border p-1 text-center" style={{ width: '40px', minWidth: '40px' }}>
+      <td className="border border-border p-2 text-center">
         <Button
           variant="ghost"
           size="icon"
           onClick={() => onDelete(material.id)}
-          className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+          className="text-destructive hover:text-destructive hover:bg-destructive/10"
         >
-          <Trash2 className="h-3 w-3" />
+          <Trash2 className="h-4 w-4" />
         </Button>
       </td>
     </tr>
@@ -243,94 +281,74 @@ export const MaterialTracker = ({ projectId, isOpen, onClose }: MaterialTrackerP
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="p-0 max-w-full max-h-full h-screen w-screen m-0 rounded-none md:max-w-5xl md:max-h-[90vh] md:h-auto md:rounded-lg mobile-tracker-dialog">
-        {/* Sticky Header */}
-        <div className="sticky top-0 z-10 bg-card border-b px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Package className="h-5 w-5 text-purple-500" />
-            <h2 className="text-lg font-semibold">Material Tracker</h2>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="h-8 w-8"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
+      <DialogContent className="max-w-[100vw] max-h-[100vh] h-[100vh] w-[100vw] md:max-w-7xl md:max-h-[95vh] md:h-auto md:w-auto p-0 overflow-hidden">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b">
+          <DialogTitle className="text-2xl font-semibold flex items-center gap-2">
+            <Package className="h-5 w-5" />
+            Material Tracker
+          </DialogTitle>
+        </DialogHeader>
 
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-auto p-4 excel-tracker-container">
-          {loading ? (
-            <div className="flex items-center justify-center p-12">
-              <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse" style={{ minWidth: '450px' }}>
-                <thead className="sticky top-0 bg-rose-100 z-5">
-                  <tr>
-                    <th className="border border-border px-2 py-2 text-left text-xs font-semibold" style={{ width: '80px' }}>
-                      Material Name
-                    </th>
-                    <th className="border border-border px-2 py-2 text-center text-xs font-semibold" style={{ width: '48px' }}>
-                      Quantity
-                    </th>
-                    <th className="border border-border px-2 py-2 text-center text-xs font-semibold" style={{ width: '48px' }}>
-                      Unit
-                    </th>
-                    <th className="border border-border px-2 py-2 text-center text-xs font-semibold" style={{ width: '64px' }}>
-                      Material Cost
-                    </th>
-                    <th className="border border-border px-2 py-2 text-center text-xs font-semibold" style={{ width: '64px' }}>
-                      Delivery Status
-                    </th>
-                    <th className="border border-border px-2 py-2 text-center text-xs font-semibold" style={{ width: '40px' }}>
-                      Delete
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {materials.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="border border-border p-8 text-center text-muted-foreground text-sm">
-                        No materials yet. Click "+ Add Material" to get started.
-                      </td>
+        <ScrollArea className="h-[calc(100vh-140px)] md:h-[calc(95vh-140px)]">
+          <div className="p-6">
+            {loading ? (
+              <div className="flex items-center justify-center p-12">
+                <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+              </div>
+            ) : (
+              <div className="overflow-x-auto overflow-y-auto mobile-tracker-container">
+                <table className="w-full border-collapse min-w-[1000px]">
+                  <thead>
+                    <tr className="bg-muted">
+                      <th className="border border-border px-4 py-3 text-left font-semibold">Material Name</th>
+                      <th className="border border-border px-4 py-3 text-left font-semibold">Quantity</th>
+                      <th className="border border-border px-4 py-3 text-left font-semibold">Unit</th>
+                      <th className="border border-border px-4 py-3 text-left font-semibold">Rate (₹)</th>
+                      <th className="border border-border px-4 py-3 text-left font-semibold">Delivery Date</th>
+                      <th className="border border-border px-4 py-3 text-left font-semibold">Delivery Status</th>
+                      <th className="border border-border px-4 py-3 text-center font-semibold">Delete</th>
                     </tr>
-                  ) : (
-                    materials.map((material) => (
-                      <MaterialRow
-                        key={material.id}
-                        material={material}
-                        onUpdate={handleUpdateMaterial}
-                        onDelete={handleDeleteMaterial}
-                      />
-                    ))
-                  )}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {materials.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className="border border-border p-8 text-center text-muted-foreground">
+                          No materials yet. Click "Add Material" to get started.
+                        </td>
+                      </tr>
+                    ) : (
+                      materials.map((material) => (
+                        <MaterialRow
+                          key={material.id}
+                          material={material}
+                          onUpdate={handleUpdateMaterial}
+                          onDelete={handleDeleteMaterial}
+                        />
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            <div className="mt-6 space-y-4">
+              <div className="flex items-center justify-between bg-muted p-4 rounded-lg border">
+                <span className="font-semibold">Total Material Cost:</span>
+                <span className="text-2xl font-bold text-primary">₹{totalMaterialCost.toFixed(2)}</span>
+              </div>
+
+              <div className="flex justify-center gap-4">
+                <Button onClick={handleAddMaterial} className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Add Material
+                </Button>
+                <Button variant="outline" onClick={onClose}>
+                  Close
+                </Button>
+              </div>
             </div>
-          )}
-        </div>
-
-        {/* Sticky Footer */}
-        <div className="sticky bottom-0 z-10 bg-card border-t px-4 py-3 space-y-3">
-          <div className="flex items-center justify-between bg-purple-50 p-3 rounded-lg border border-purple-200">
-            <span className="font-semibold text-sm">Total Material Cost:</span>
-            <span className="text-xl font-bold text-purple-600">₹{totalMaterialCost.toFixed(2)}</span>
           </div>
-
-          <div className="flex justify-center gap-3">
-            <Button onClick={handleAddMaterial} variant="outline" className="gap-2">
-              <Plus className="h-4 w-4" />
-              Add Material
-            </Button>
-            <Button variant="outline" onClick={onClose}>
-              Close
-            </Button>
-          </div>
-        </div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );

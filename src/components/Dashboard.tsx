@@ -436,110 +436,231 @@ export default function Dashboard() {
             </Card>
           ) : (
             <div className="space-y-3">
-              {filteredProjects.map((project) => {
-                const duration = calculateDuration(project.start_date, project.end_date);
-                return (
-                  <Card key={project.id} className="eca-shadow hover:shadow-lg transition-shadow bg-card rounded-xl">
-                    <CardContent className="p-4">
-                      {/* Date Fields Row */}
-                      <div className="flex gap-3 mb-4">
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              className="flex-1 h-12 justify-start text-left font-normal border-2"
-                            >
-                              <Calendar className="mr-2 h-4 w-4 text-primary" />
-                              <span className="text-sm font-medium">
-                                {project.start_date 
-                                  ? format(new Date(project.start_date), "dd MMM")
-                                  : "Start Date"}
-                              </span>
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <CalendarComponent
-                              mode="single"
-                              selected={project.start_date ? new Date(project.start_date) : undefined}
-                              onSelect={(date) => handleDateUpdate(project.id, 'start_date', date)}
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
-
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              className="flex-1 h-12 justify-start text-left font-normal border-2"
-                            >
-                              <Calendar className="mr-2 h-4 w-4 text-destructive" />
-                              <span className="text-sm font-medium">
-                                {project.end_date 
-                                  ? format(new Date(project.end_date), "dd MMM")
-                                  : "End Date"}
-                              </span>
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <CalendarComponent
-                              mode="single"
-                              selected={project.end_date ? new Date(project.end_date) : undefined}
-                              onSelect={(date) => handleDateUpdate(project.id, 'end_date', date)}
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
+              {filteredProjects.map((project) => (
+                <Card key={project.id} className="eca-shadow hover:shadow-lg transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold text-foreground">{project.customer_name}</h3>
+                          {project.approval_status === 'Approved' && (
+                            <Badge className="bg-green-500 text-white">
+                              <CheckCircle2 className="h-3 w-3 mr-1" />
+                              Approved
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center text-sm text-muted-foreground mt-1">
+                          <Phone className="h-3 w-3 mr-1" />
+                          {project.phone}
+                        </div>
+                        <div className="flex items-center text-sm text-muted-foreground mt-1">
+                          <MapPin className="h-3 w-3 mr-1" />
+                          {project.location}
+                        </div>
                       </div>
-
-                      {/* View Details Button */}
-                      <Button 
-                        onClick={() => handleViewDetails(project.id)}
-                        className="w-full h-12 bg-destructive hover:bg-destructive/90 text-white rounded-lg font-semibold mb-3"
-                      >
-                        View Details
-                      </Button>
-
-                      {/* Date Info Text */}
-                      <p className="text-sm text-muted-foreground text-center mb-4">
-                        {project.created_at && format(new Date(project.created_at), "dd MMM yyyy")}
-                        {duration && ` • ${duration} days`}
-                      </p>
-
-                      {/* Tracker Icons Row */}
-                      <div className="flex gap-3 justify-center">
+                      <div className="flex gap-2">
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
-                              size="lg"
-                              variant="outline"
-                              className="h-14 w-14 p-0 rounded-lg border-2 border-destructive hover:bg-destructive/10"
-                              onClick={() => handleOpenLabourTracker(project.id)}
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 w-8 p-0 text-primary hover:bg-primary/10"
+                              onClick={() => handleEditProject(project.id)}
                             >
-                              <Users className="h-6 w-6 text-destructive" />
+                              <Edit2 className="h-4 w-4" />
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent>Labour Tracker</TooltipContent>
+                          <TooltipContent>Edit Project</TooltipContent>
                         </Tooltip>
-
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
-                              size="lg"
-                              variant="outline"
-                              className="h-14 w-14 p-0 rounded-lg border-2 border-purple-500 hover:bg-purple-50"
-                              onClick={() => handleOpenMaterialTracker(project.id)}
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 w-8 p-0"
+                              onClick={() => handleViewDetails(project.id)}
                             >
-                              <Package className="h-6 w-6 text-purple-500" />
+                              <MoreVertical className="h-4 w-4" />
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent>Material Tracker</TooltipContent>
+                          <TooltipContent>View Details</TooltipContent>
                         </Tooltip>
                       </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+                    </div>
+
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center space-x-4">
+                        <Badge variant="outline" className={getStatusColor(project.project_status)}>
+                          {project.project_status}
+                        </Badge>
+                        <span className="text-sm text-muted-foreground">{project.project_type}</span>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-medium text-foreground">₹{project.quotation_value.toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground">{project.area_sqft} sq.ft</p>
+                      </div>
+                    </div>
+
+                    {/* Action Buttons Section */}
+                    <div className="pt-3 border-t border-border space-y-2">
+                      {project.approval_status !== 'Approved' ? (
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                          <div className="flex items-center text-xs text-muted-foreground">
+                            <Calendar className="h-3 w-3 mr-1 flex-shrink-0" />
+                            {format(new Date(project.project_date), "dd MMM yyyy")}
+                          </div>
+                          
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  className="h-8 px-2.5 bg-green-50 hover:bg-green-100 text-green-700 border-green-200 rounded-md"
+                                  onClick={() => handleApproval(project.id)}
+                                >
+                                  <CheckCircle2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Send approval request</TooltipContent>
+                            </Tooltip>
+
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  className="h-8 px-2.5 bg-yellow-50 hover:bg-yellow-100 text-yellow-700 border-yellow-200 rounded-md relative"
+                                  onClick={() => handleReminder(project.id)}
+                                >
+                                  <Bell className="h-3.5 w-3.5" />
+                                  {project.notification_count > 0 && (
+                                    <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                                      {project.notification_count}
+                                    </span>
+                                  )}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Send reminder</TooltipContent>
+                            </Tooltip>
+
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              className="h-8 px-2.5 rounded-md text-xs whitespace-nowrap"
+                              onClick={() => handleViewDetails(project.id)}
+                            >
+                              View Details
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          {/* First Row: Start/End Date buttons (left) | View Details (right) */}
+                          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-8 px-2.5 text-xs rounded-md flex-shrink-0"
+                                  >
+                                    <Calendar className="h-3 w-3 mr-1" />
+                                    <span className="whitespace-nowrap">
+                                      {project.start_date ? format(new Date(project.start_date), "dd MMM") : "Start Date"}
+                                    </span>
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                  <CalendarComponent
+                                    mode="single"
+                                    selected={project.start_date ? new Date(project.start_date) : undefined}
+                                    onSelect={(date) => handleDateUpdate(project.id, 'start_date', date)}
+                                    initialFocus
+                                    className="pointer-events-auto"
+                                  />
+                                </PopoverContent>
+                              </Popover>
+
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-8 px-2.5 text-xs rounded-md flex-shrink-0"
+                                  >
+                                    <Calendar className="h-3 w-3 mr-1" />
+                                    <span className="whitespace-nowrap">
+                                      {project.end_date ? format(new Date(project.end_date), "dd MMM") : "End Date"}
+                                    </span>
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                  <CalendarComponent
+                                    mode="single"
+                                    selected={project.end_date ? new Date(project.end_date) : undefined}
+                                    onSelect={(date) => handleDateUpdate(project.id, 'end_date', date)}
+                                    initialFocus
+                                    className="pointer-events-auto"
+                                  />
+                                </PopoverContent>
+                              </Popover>
+                            </div>
+
+                            <Button 
+                              size="sm" 
+                              variant="default"
+                              className="h-8 px-2.5 text-xs whitespace-nowrap rounded-md flex-shrink-0"
+                              onClick={() => handleViewDetails(project.id)}
+                            >
+                              View Details
+                            </Button>
+                          </div>
+
+                          {/* Second Row: Project Date (left) | Labour & Material Icons (right) */}
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <div className="flex items-center text-xs text-muted-foreground">
+                                <Calendar className="h-3 w-3 mr-1 flex-shrink-0" />
+                                {format(new Date(project.project_date), "dd MMM yyyy")}
+                              </div>
+                              {project.start_date && project.end_date && (
+                                <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                  • {calculateDuration(project.start_date, project.end_date)} days
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <Button 
+                                size="sm" 
+                                variant="ghost"
+                                className="h-8 w-8 p-0 rounded-md hover:bg-muted"
+                                onClick={() => handleOpenLabourTracker(project.id)}
+                                title="Labour Tracker"
+                              >
+                                <Users className="h-4 w-4 text-red-500" />
+                              </Button>
+
+                              <Button 
+                                size="sm" 
+                                variant="ghost"
+                                className="h-8 w-8 p-0 rounded-md hover:bg-muted"
+                                onClick={() => handleOpenMaterialTracker(project.id)}
+                                title="Material Tracker"
+                              >
+                                <Package className="h-4 w-4 text-purple-500" />
+                              </Button>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           )}
         </div>
