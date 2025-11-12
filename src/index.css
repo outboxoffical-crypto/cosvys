@@ -103,24 +103,47 @@
   }
 }
 
-/* Mobile tracker container - enables full scrolling and zoom */
+/* Excel-like tracker styles for mobile */
 @media (max-width: 768px) {
-  .mobile-tracker-container {
+  .mobile-tracker-dialog {
+    border-radius: 0 !important;
+    max-width: 100vw !important;
+    max-height: 100vh !important;
     height: 100vh !important;
     width: 100vw !important;
+    margin: 0 !important;
+  }
+
+  .excel-tracker-container {
+    width: 100% !important;
+    height: 100% !important;
     overflow-x: auto !important;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
     touch-action: pan-x pan-y pinch-zoom !important;
+    white-space: nowrap !important;
+    zoom: 0.9;
+    transform-origin: 0 0;
   }
-  
-  .mobile-tracker-container table {
+
+  .excel-tracker-container table {
     white-space: nowrap;
-    touch-action: pan-x pan-y pinch-zoom;
+    table-layout: fixed;
   }
-  
-  .mobile-tracker-container input:focus,
-  .mobile-tracker-container button:focus {
+
+  .excel-tracker-container input:focus,
+  .excel-tracker-container textarea:focus,
+  .excel-tracker-container select:focus {
     scroll-margin: 120px;
+    position: relative;
+    z-index: 100;
+  }
+}
+
+/* Desktop/tablet styles - no zoom */
+@media (min-width: 769px) {
+  .excel-tracker-container {
+    zoom: 1 !important;
+    overflow: visible;
   }
 }

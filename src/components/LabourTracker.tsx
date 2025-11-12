@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback, memo } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, Calendar as CalendarIcon, Users } from "lucide-react";
+import { Plus, Trash2, Calendar as CalendarIcon, Users, X } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
@@ -61,18 +61,19 @@ const LabourRow = memo(({
 
   return (
     <tr className="hover:bg-muted/50 transition-colors">
-      <td className="border border-border p-2">
+      <td className="border border-border p-1" style={{ width: '80px', minWidth: '80px' }}>
         <Popover>
           <PopoverTrigger asChild>
             <Button
               variant="outline"
+              size="sm"
               className={cn(
-                "w-full justify-start text-left font-normal",
+                "w-full h-8 justify-start text-left font-normal text-xs px-2",
                 !localDate && "text-muted-foreground"
               )}
             >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {localDate ? format(new Date(localDate), "PPP") : "Pick date"}
+              <CalendarIcon className="mr-1 h-3 w-3" />
+              {localDate ? format(new Date(localDate), "dd/MM") : "Date"}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="start">
@@ -85,44 +86,45 @@ const LabourRow = memo(({
           </PopoverContent>
         </Popover>
       </td>
-      <td className="border border-border p-2">
+      <td className="border border-border p-1" style={{ width: '48px', minWidth: '48px' }}>
         <Input
           type="number"
           value={localLabourCount}
           onChange={(e) => setLocalLabourCount(e.target.value)}
           onBlur={handleLabourCountBlur}
-          className="text-center"
+          className="text-center h-8 text-xs p-1"
           min="0"
         />
       </td>
-      <td className="border border-border p-2">
-        <Input
-          type="text"
+      <td className="border border-border p-1" style={{ width: '96px', minWidth: '96px' }}>
+        <Textarea
           value={localWorkPlan}
           onChange={(e) => setLocalWorkPlan(e.target.value)}
           onBlur={handleWorkPlanBlur}
-          placeholder="Enter work plan..."
+          placeholder="Work plan..."
+          className="min-h-[32px] h-auto text-xs p-1 resize-none"
+          rows={2}
         />
       </td>
-      <td className="border border-border p-2 relative">
-        <div className="flex items-center gap-2">
-          <Input
-            type="text"
-            value={localWorkCompleted}
-            onChange={(e) => setLocalWorkCompleted(e.target.value)}
-            onBlur={handleWorkCompletedBlur}
-            placeholder="Enter work completed..."
-            className="flex-1"
-          />
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onDelete(entry.id)}
-            className="text-destructive hover:text-destructive hover:bg-destructive/10"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
+      <td className="border border-border p-1" style={{ width: '96px', minWidth: '96px' }}>
+        <Textarea
+          value={localWorkCompleted}
+          onChange={(e) => setLocalWorkCompleted(e.target.value)}
+          onBlur={handleWorkCompletedBlur}
+          placeholder="Work completed..."
+          className="min-h-[32px] h-auto text-xs p-1 resize-none"
+          rows={2}
+        />
+      </td>
+      <td className="border border-border p-1 text-center" style={{ width: '40px', minWidth: '40px' }}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+          onClick={() => onDelete(entry.id)}
+        >
+          <Trash2 className="h-3 w-3" />
+        </Button>
       </td>
     </tr>
   );
@@ -249,79 +251,91 @@ export function LabourTracker({ projectId, isOpen, onClose }: LabourTrackerProps
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[100vw] max-h-[100vh] h-[100vh] w-[100vw] md:max-w-6xl md:max-h-[95vh] md:h-auto md:w-auto p-0 overflow-hidden">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b">
-          <DialogTitle className="text-2xl font-semibold flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Labour Tracker
-          </DialogTitle>
-        </DialogHeader>
-
-        <ScrollArea className="h-[calc(100vh-140px)] md:h-[calc(95vh-140px)]">
-          <div className="p-6">
-            {loading ? (
-              <div className="flex items-center justify-center p-12">
-                <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
-              </div>
-            ) : (
-              <div className="overflow-x-auto overflow-y-auto mobile-tracker-container">
-                <table className="w-full border-collapse min-w-[800px]">
-                  <thead>
-                    <tr className="bg-muted">
-                      <th className="border border-border px-4 py-3 text-left font-semibold">
-                        Date
-                      </th>
-                      <th className="border border-border px-4 py-3 text-left font-semibold">
-                        No. of Labour
-                      </th>
-                      <th className="border border-border px-4 py-3 text-left font-semibold">
-                        Work Plan
-                      </th>
-                      <th className="border border-border px-4 py-3 text-left font-semibold">
-                        Work Completed
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {entries.length === 0 ? (
-                      <tr>
-                        <td colSpan={4} className="border border-border p-8 text-center text-muted-foreground">
-                          No entries yet. Click "Add Entry" to get started.
-                        </td>
-                      </tr>
-                    ) : (
-                      entries.map((entry) => (
-                        <LabourRow
-                          key={entry.id}
-                          entry={entry}
-                          onUpdate={handleUpdateEntry}
-                          onDelete={handleDeleteEntry}
-                        />
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            <div className="mt-6 space-y-4">
-              <div className="flex items-center justify-between bg-muted p-4 rounded-lg border">
-                <span className="font-semibold">Total Labour Count:</span>
-                <span className="text-2xl font-bold text-primary">{totalLabourCount}</span>
-              </div>
-
-              <div className="flex justify-center gap-4">
-                <Button onClick={handleAddEntry} className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  Add Entry
-                </Button>
-                <Button variant="outline" onClick={onClose}>
-                  Close
-                </Button>
-              </div>
-            </div>
+      <DialogContent className="p-0 max-w-full max-h-full h-screen w-screen m-0 rounded-none md:max-w-4xl md:max-h-[90vh] md:h-auto md:rounded-lg mobile-tracker-dialog">
+        {/* Sticky Header */}
+        <div className="sticky top-0 z-10 bg-card border-b px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Users className="h-5 w-5 text-destructive" />
+            <h2 className="text-lg font-semibold">Labour Tracker</h2>
           </div>
-        </ScrollArea>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="h-8 w-8"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-auto p-4 excel-tracker-container">
+          {loading ? (
+            <div className="flex items-center justify-center p-12">
+              <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse" style={{ minWidth: '400px' }}>
+                <thead className="sticky top-0 bg-muted z-5">
+                  <tr>
+                    <th className="border border-border px-2 py-2 text-left text-xs font-semibold" style={{ width: '80px' }}>
+                      Date
+                    </th>
+                    <th className="border border-border px-2 py-2 text-center text-xs font-semibold" style={{ width: '48px' }}>
+                      No. of Labour
+                    </th>
+                    <th className="border border-border px-2 py-2 text-left text-xs font-semibold" style={{ width: '96px' }}>
+                      Work Plan
+                    </th>
+                    <th className="border border-border px-2 py-2 text-left text-xs font-semibold" style={{ width: '96px' }}>
+                      Work Completed
+                    </th>
+                    <th className="border border-border px-2 py-2 text-center text-xs font-semibold" style={{ width: '40px' }}>
+                      Delete
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {entries.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="border border-border p-8 text-center text-muted-foreground text-sm">
+                        No entries yet. Click "+ Add Entry" to get started.
+                      </td>
+                    </tr>
+                  ) : (
+                    entries.map((entry) => (
+                      <LabourRow
+                        key={entry.id}
+                        entry={entry}
+                        onUpdate={handleUpdateEntry}
+                        onDelete={handleDeleteEntry}
+                      />
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Sticky Footer */}
+        <div className="sticky bottom-0 z-10 bg-card border-t px-4 py-3 space-y-3">
+          <div className="flex items-center justify-between bg-destructive/10 p-3 rounded-lg border border-destructive/20">
+            <span className="font-semibold text-sm">Total Labour Count:</span>
+            <span className="text-xl font-bold text-destructive">{totalLabourCount}</span>
+          </div>
+
+          <div className="flex justify-center gap-3">
+            <Button onClick={handleAddEntry} className="bg-destructive hover:bg-destructive/90 gap-2">
+              <Plus className="h-4 w-4" />
+              Add Entry
+            </Button>
+            <Button variant="outline" onClick={onClose}>
+              Close
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
