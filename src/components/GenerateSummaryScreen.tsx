@@ -1550,6 +1550,105 @@ export default function GenerateSummaryScreen() {
       </Card>;
   };
 
+  // Calculate actual total project cost (used in both Generate Summary and Project Summary tabs)
+  const calculateActualTotalCost = () => {
+    const materialCost = totalMaterialCostRef.current;
+    
+    // Calculate labour cost using same logic as renderTotalCost
+    const workingHours = 7;
+    const standardHours = 8;
+    const numberOfLabours = 1;
+    const coverageRates = {
+      waterBased: {
+        putty: 800,
+        primer: 1050,
+        emulsion: 1050
+      },
+      oilBased: {
+        redOxide: 350,
+        enamelBase: 250,
+        enamelTop: 200,
+        full3Coat: 275
+      }
+    };
+    const configTasks: any[] = [];
+    areaConfigs.forEach(config => {
+      const area = Number(config.area) || 0;
+      const isFresh = config.paintingSystem === 'Fresh Painting';
+      const isOilBased = config.selectedMaterials.emulsion?.toLowerCase().includes('enamel') || 
+                        config.selectedMaterials.primer?.toLowerCase().includes('oxide') || 
+                        config.selectedMaterials.emulsion?.toLowerCase().includes('oil');
+      const tasks: any[] = [];
+      if (isFresh) {
+        if (config.coatConfiguration.putty > 0) {
+          const totalWork = area * config.coatConfiguration.putty;
+          const adjustedCoverage = coverageRates.waterBased.putty * (workingHours / standardHours);
+          const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
+          tasks.push({ daysRequired });
+        }
+        if (config.coatConfiguration.primer > 0) {
+          const totalWork = area * config.coatConfiguration.primer;
+          const coverage = isOilBased ? coverageRates.oilBased.redOxide : coverageRates.waterBased.primer;
+          const adjustedCoverage = coverage * (workingHours / standardHours);
+          const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
+          tasks.push({ daysRequired });
+        }
+        if (config.coatConfiguration.emulsion > 0) {
+          const totalWork = area * config.coatConfiguration.emulsion;
+          const coverage = isOilBased ? coverageRates.oilBased.enamelTop : coverageRates.waterBased.emulsion;
+          const adjustedCoverage = coverage * (workingHours / standardHours);
+          const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
+          tasks.push({ daysRequired });
+        }
+      } else {
+        if (config.repaintingConfiguration?.primer && config.repaintingConfiguration.primer > 0) {
+          const totalWork = area * config.repaintingConfiguration.primer;
+          const coverage = isOilBased ? coverageRates.oilBased.redOxide : coverageRates.waterBased.primer;
+          const adjustedCoverage = coverage * (workingHours / standardHours);
+          const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
+          tasks.push({ daysRequired });
+        }
+        if (config.repaintingConfiguration?.emulsion && config.repaintingConfiguration.emulsion > 0) {
+          const totalWork = area * config.repaintingConfiguration.emulsion;
+          const coverage = isOilBased ? coverageRates.oilBased.enamelTop : coverageRates.waterBased.emulsion;
+          const adjustedCoverage = coverage * (workingHours / standardHours);
+          const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
+          tasks.push({ daysRequired });
+        }
+      }
+      configTasks.push({
+        tasks,
+        totalDays: tasks.reduce((sum, task) => sum + task.daysRequired, 0)
+      });
+    });
+    
+    const totalDays = configTasks.reduce((sum, ct) => sum + ct.totalDays, 0);
+    const allTasks = configTasks.flatMap(ct => ct.tasks);
+    const totalWorkAllTasks = allTasks.reduce((sum, task) => sum + task.daysRequired, 0);
+    const laboursNeeded = manualDays > 0 ? Math.ceil(totalWorkAllTasks / manualDays) : 1;
+
+    let labourCost = 0;
+    if (labourMode === 'auto') {
+      const displayDays = Math.ceil(totalDays / autoLabourPerDay);
+      const displayLabours = autoLabourPerDay;
+      labourCost = perDayLabourCost * displayLabours * displayDays;
+    } else {
+      const displayDays = manualDays;
+      const displayLabours = laboursNeeded;
+      labourCost = perDayLabourCost * displayLabours * displayDays;
+    }
+    
+    // Calculate margin cost from Paint Configuration Details (10% of Paint Configuration Total)
+    const totalProjectCostFromConfig = areaConfigs.reduce((sum, config) => {
+      const area = Number(config.area) || 0;
+      const rate = parseFloat(config.perSqFtRate) || 0;
+      return sum + area * rate;
+    }, 0);
+    const marginCost = totalProjectCostFromConfig * 0.1;
+    
+    return materialCost + marginCost + labourCost;
+  };
+
   // Section 6: Estimated Total Cost
   const renderTotalCost = () => {
     // Use material cost from Material Requirements section (same as Total Material Cost)
@@ -1659,7 +1758,7 @@ export default function GenerateSummaryScreen() {
     }, 0);
     const marginCost = totalProjectCostFromConfig * 0.1;
     
-    const totalCost = materialCost + marginCost + labourCost;
+    const totalCost = calculateActualTotalCost();
     return <Card className="eca-shadow bg-card border-primary/20">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg font-semibold">
@@ -1796,7 +1895,7 @@ export default function GenerateSummaryScreen() {
     Object.values(totalAreas).forEach((areas: any) => {
       totalArea += areas.wallArea + areas.floorArea + areas.ceilingArea;
     });
-    const message = `ECA Pro Project Summary\n\nCustomer: ${projectData?.customerName}\nTotal Area: ${totalArea.toFixed(1)} sq.ft\nEstimated Cost: ₹${calculateTotalEstimatedCost().toLocaleString()}\n\nGenerated by Asian Paints ECA Pro`;
+    const message = `ECA Pro Project Summary\n\nCustomer: ${projectData?.customerName}\nTotal Area: ${totalArea.toFixed(1)} sq.ft\nEstimated Cost: ₹${Math.round(calculateActualTotalCost()).toLocaleString()}\n\nGenerated by Asian Paints ECA Pro`;
     const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
   };
@@ -1806,7 +1905,7 @@ export default function GenerateSummaryScreen() {
       totalArea += areas.wallArea + areas.floorArea + areas.ceilingArea;
     });
     const subject = `Project Summary - ${projectData?.customerName}`;
-    const body = `Please find the project summary for ${projectData?.customerName}.\n\nTotal Area: ${totalArea.toFixed(1)} sq.ft\nEstimated Cost: ₹${calculateTotalEstimatedCost().toLocaleString()}\n\nGenerated by Asian Paints ECA Pro`;
+    const body = `Please find the project summary for ${projectData?.customerName}.\n\nTotal Area: ${totalArea.toFixed(1)} sq.ft\nEstimated Cost: ₹${Math.round(calculateActualTotalCost()).toLocaleString()}\n\nGenerated by Asian Paints ECA Pro`;
     const url = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.open(url);
   };
@@ -1831,7 +1930,7 @@ export default function GenerateSummaryScreen() {
       });
 
       // Calculate quotation value
-      const quotationValue = calculateTotalEstimatedCost();
+      const quotationValue = calculateActualTotalCost();
 
       // Determine project types
       const projectTypes = Array.from(new Set(rooms.map(room => room.project_type).filter(Boolean)));
@@ -2036,9 +2135,7 @@ export default function GenerateSummaryScreen() {
                   <div className="p-4 bg-muted/30 rounded-lg border border-border text-center">
                     <p className="text-sm text-muted-foreground mb-2">Actual Project Cost</p>
                     <p className="text-xl font-bold text-foreground">
-                      ₹{calculateTotalEstimatedCost().toLocaleString('en-IN', {
-                      maximumFractionDigits: 0
-                    })}
+                      ₹{Math.round(calculateActualTotalCost()).toLocaleString('en-IN')}
                     </p>
                   </div>
                 </div>
@@ -2051,7 +2148,7 @@ export default function GenerateSummaryScreen() {
                         const area = Number(config.area) || 0;
                         const rate = parseFloat(config.perSqFtRate) || 0;
                         return sum + area * rate;
-                      }, 0) - calculateTotalEstimatedCost()
+                      }, 0) - calculateActualTotalCost()
                     ).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                   </p>
                 </div>
