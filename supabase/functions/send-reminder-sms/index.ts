@@ -48,9 +48,9 @@ Thank you,
 ${companyName}`;
 
     // Send SMS using Twilio
-    const twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
-    const twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN');
-    const twilioPhone = Deno.env.get('TWILIO_PHONE_NUMBER');
+    const twilioAccountSid = Deno.env.get('AccountSID');
+    const twilioAuthToken = Deno.env.get('AuthToken');
+    const twilioPhone = Deno.env.get('Twiliophonenumber');
 
     console.log('Twilio Configuration Check:');
     console.log('- Account SID exists:', !!twilioAccountSid);
@@ -59,7 +59,7 @@ ${companyName}`;
     console.log('- Recipient:', `+91${project.phone}`);
 
     if (!twilioAccountSid || !twilioAuthToken || !twilioPhone) {
-      throw new Error('Missing Twilio credentials. Please check TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_PHONE_NUMBER secrets.');
+      throw new Error('Missing Twilio credentials. Please check AccountSID, AuthToken, and Twiliophonenumber secrets.');
     }
 
     const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`;
