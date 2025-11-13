@@ -111,16 +111,21 @@
     overflow-x: auto !important;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
-    touch-action: pan-x pan-y pinch-zoom !important;
+    touch-action: manipulation !important;
   }
   
   .mobile-tracker-container table {
+    transform: scale(0.85);
+    transform-origin: top left;
+    width: 117.65%; /* Compensate for 0.85 scale (100/0.85) */
     white-space: nowrap;
-    touch-action: pan-x pan-y pinch-zoom;
+    touch-action: manipulation;
+    border-collapse: collapse;
   }
   
   .mobile-tracker-container input:focus,
-  .mobile-tracker-container button:focus {
+  .mobile-tracker-container button:focus,
+  .mobile-tracker-container textarea:focus {
     scroll-margin: 120px;
   }
 }
