@@ -625,7 +625,7 @@ export default function GenerateSummaryScreen() {
           const adjustedCoverage = coverageRates.waterBased.putty * (workingHours / standardHours);
           const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
           tasks.push({
-            name: 'Putty',
+            name: config.selectedMaterials.putty || 'Putty',
             area,
             coats: config.coatConfiguration.putty,
             totalWork,
@@ -643,7 +643,7 @@ export default function GenerateSummaryScreen() {
           const adjustedCoverage = coverage * (workingHours / standardHours);
           const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
           tasks.push({
-            name: isEnamel ? 'Enamel Primer' : 'Primer',
+            name: config.selectedMaterials.primer || 'Primer',
             area,
             coats: config.coatConfiguration.primer,
             totalWork,
@@ -660,7 +660,7 @@ export default function GenerateSummaryScreen() {
           const adjustedCoverage = coverage * (workingHours / standardHours);
           const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
           tasks.push({
-            name: isEnamel ? 'Enamel' : isOilBased ? 'Enamel' : 'Emulsion',
+            name: config.selectedMaterials.emulsion || 'Emulsion',
             area,
             coats: config.coatConfiguration.emulsion,
             totalWork,
@@ -676,7 +676,7 @@ export default function GenerateSummaryScreen() {
           const adjustedCoverage = coverage * (workingHours / standardHours);
           const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
           tasks.push({
-            name: 'Primer',
+            name: config.selectedMaterials.primer || 'Primer',
             area,
             coats: config.repaintingConfiguration.primer,
             totalWork,
@@ -690,7 +690,7 @@ export default function GenerateSummaryScreen() {
           const adjustedCoverage = coverage * (workingHours / standardHours);
           const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
           tasks.push({
-            name: isOilBased ? 'Enamel' : 'Emulsion',
+            name: config.selectedMaterials.emulsion || 'Emulsion',
             area,
             coats: config.repaintingConfiguration.emulsion,
             totalWork,
