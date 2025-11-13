@@ -237,7 +237,6 @@ const LeadBookScreen = () => {
                     type="date"
                     value={formData.date}
                     onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                    required
                   />
                 </div>
                 <div>
@@ -246,7 +245,7 @@ const LeadBookScreen = () => {
                     id="lead_id"
                     value={formData.lead_id}
                     onChange={(e) => setFormData({ ...formData, lead_id: e.target.value })}
-                    required
+                    placeholder="Optional"
                   />
                 </div>
                 <div>
@@ -255,7 +254,6 @@ const LeadBookScreen = () => {
                     id="name"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    required
                   />
                 </div>
                 <div>
@@ -264,7 +262,6 @@ const LeadBookScreen = () => {
                     id="phone_number"
                     value={formData.phone_number}
                     onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
-                    required
                   />
                 </div>
                 <div>
@@ -273,7 +270,6 @@ const LeadBookScreen = () => {
                     id="town_area"
                     value={formData.town_area}
                     onChange={(e) => setFormData({ ...formData, town_area: e.target.value })}
-                    required
                   />
                 </div>
                 <div>
@@ -314,7 +310,6 @@ const LeadBookScreen = () => {
                     type="number"
                     value={formData.quotation_value}
                     onChange={(e) => setFormData({ ...formData, quotation_value: parseFloat(e.target.value) || 0 })}
-                    required
                   />
                 </div>
                 <div>
