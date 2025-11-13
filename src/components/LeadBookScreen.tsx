@@ -424,12 +424,10 @@ const LeadBookScreen = () => {
               <p className="text-muted-foreground mb-4">
                 No leads found. Add your first lead to get started.
               </p>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Lead
-                </Button>
-              </DialogTrigger>
+              <Button onClick={() => setIsDialogOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Lead
+              </Button>
             </div>
           ) : (
             <div className="overflow-x-auto">
