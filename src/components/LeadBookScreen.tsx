@@ -34,6 +34,7 @@ const LeadBookScreen = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [leadStats, setLeadStats] = useState({ total: 0, converted: 0, dropped: 0, pending: 0 });
   
   const [formData, setFormData] = useState({
@@ -107,6 +108,9 @@ const LeadBookScreen = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (submitting) return; // Prevent duplicate submissions
+    setSubmitting(true);
+    
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -144,6 +148,8 @@ const LeadBookScreen = () => {
       fetchLeadStats();
     } catch (error: any) {
       toast.error("Failed to save lead: " + error.message);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -211,166 +217,162 @@ const LeadBookScreen = () => {
             Back to Dashboard
           </Button>
           <h1 className="text-2xl font-bold">Lead Book</h1>
-          <Dialog open={isDialogOpen} onOpenChange={(open) => {
-            setIsDialogOpen(open);
-            if (!open) resetForm();
-          }}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Lead
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>{editingLead ? "Edit Lead" : "Add New Lead"}</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="date">Date</Label>
-                    <Input
-                      id="date"
-                      type="date"
-                      value={formData.date}
-                      onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="lead_id">Lead ID</Label>
-                    <Input
-                      id="lead_id"
-                      value={formData.lead_id}
-                      onChange={(e) => setFormData({ ...formData, lead_id: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="name">Name</Label>
-                    <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="phone_number">Phone Number</Label>
-                    <Input
-                      id="phone_number"
-                      value={formData.phone_number}
-                      onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="town_area">Town / Area</Label>
-                    <Input
-                      id="town_area"
-                      value={formData.town_area}
-                      onChange={(e) => setFormData({ ...formData, town_area: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="central_local">Central / Local</Label>
-                    <Select
-                      value={formData.central_local}
-                      onValueChange={(value) => setFormData({ ...formData, central_local: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Central">Central</SelectItem>
-                        <SelectItem value="Local">Local</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="status">Converted / Dropped</Label>
-                    <Select
-                      value={formData.status}
-                      onValueChange={(value) => setFormData({ ...formData, status: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Pending">Pending</SelectItem>
-                        <SelectItem value="Converted">Converted</SelectItem>
-                        <SelectItem value="Dropped">Dropped</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="quotation_value">Quotation Value</Label>
-                    <Input
-                      id="quotation_value"
-                      type="number"
-                      value={formData.quotation_value}
-                      onChange={(e) => setFormData({ ...formData, quotation_value: parseFloat(e.target.value) || 0 })}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="nps">NPS (1-10)</Label>
-                    <Input
-                      id="nps"
-                      type="number"
-                      min="1"
-                      max="10"
-                      value={formData.nps || ""}
-                      onChange={(e) => setFormData({ ...formData, nps: e.target.value ? parseInt(e.target.value) : null })}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="approval_status">Approval Status</Label>
-                    <Select
-                      value={formData.approval_status}
-                      onValueChange={(value) => setFormData({ ...formData, approval_status: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Pending">⏳ Pending</SelectItem>
-                        <SelectItem value="Approved">✅ Approved</SelectItem>
-                        <SelectItem value="Rejected">❌ Rejected</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="approved_by">Approved By</Label>
-                    <Input
-                      id="approved_by"
-                      value={formData.approved_by}
-                      onChange={(e) => setFormData({ ...formData, approved_by: e.target.value })}
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <Label htmlFor="drop_reason_remarks">Drop Reason / Remarks</Label>
-                    <Textarea
-                      id="drop_reason_remarks"
-                      value={formData.drop_reason_remarks}
-                      onChange={(e) => setFormData({ ...formData, drop_reason_remarks: e.target.value })}
-                      rows={3}
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-end gap-2">
-                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button type="submit">
-                    {editingLead ? "Update Lead" : "Add Lead"}
-                  </Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
+          <div className="w-[100px]"></div>
         </div>
+        
+        <Dialog open={isDialogOpen} onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) resetForm();
+        }}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{editingLead ? "Edit Lead" : "Add New Lead"}</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="date">Date</Label>
+                  <Input
+                    id="date"
+                    type="date"
+                    value={formData.date}
+                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="lead_id">Lead ID</Label>
+                  <Input
+                    id="lead_id"
+                    value={formData.lead_id}
+                    onChange={(e) => setFormData({ ...formData, lead_id: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="name">Name</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="phone_number">Phone Number</Label>
+                  <Input
+                    id="phone_number"
+                    value={formData.phone_number}
+                    onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="town_area">Town / Area</Label>
+                  <Input
+                    id="town_area"
+                    value={formData.town_area}
+                    onChange={(e) => setFormData({ ...formData, town_area: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="central_local">Central / Local</Label>
+                  <Select
+                    value={formData.central_local}
+                    onValueChange={(value) => setFormData({ ...formData, central_local: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Central">Central</SelectItem>
+                      <SelectItem value="Local">Local</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="status">Converted / Dropped</Label>
+                  <Select
+                    value={formData.status}
+                    onValueChange={(value) => setFormData({ ...formData, status: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Pending">Pending</SelectItem>
+                      <SelectItem value="Converted">Converted</SelectItem>
+                      <SelectItem value="Dropped">Dropped</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="quotation_value">Quotation Value</Label>
+                  <Input
+                    id="quotation_value"
+                    type="number"
+                    value={formData.quotation_value}
+                    onChange={(e) => setFormData({ ...formData, quotation_value: parseFloat(e.target.value) || 0 })}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="nps">NPS (1-10)</Label>
+                  <Input
+                    id="nps"
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={formData.nps || ""}
+                    onChange={(e) => setFormData({ ...formData, nps: e.target.value ? parseInt(e.target.value) : null })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="approval_status">Approval Status</Label>
+                  <Select
+                    value={formData.approval_status}
+                    onValueChange={(value) => setFormData({ ...formData, approval_status: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Pending">⏳ Pending</SelectItem>
+                      <SelectItem value="Approved">✅ Approved</SelectItem>
+                      <SelectItem value="Rejected">❌ Rejected</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="approved_by">Approved By</Label>
+                  <Input
+                    id="approved_by"
+                    value={formData.approved_by}
+                    onChange={(e) => setFormData({ ...formData, approved_by: e.target.value })}
+                  />
+                </div>
+                <div className="col-span-2">
+                  <Label htmlFor="drop_reason_remarks">Drop Reason / Remarks</Label>
+                  <Textarea
+                    id="drop_reason_remarks"
+                    value={formData.drop_reason_remarks}
+                    onChange={(e) => setFormData({ ...formData, drop_reason_remarks: e.target.value })}
+                    rows={3}
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={submitting}>
+                  {submitting ? "Saving..." : editingLead ? "Update Lead" : "Add Lead"}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
 
         {/* Lead Summary Statistics */}
         <Card className="eca-shadow mb-6">
@@ -418,8 +420,16 @@ const LeadBookScreen = () => {
           {loading ? (
             <div className="text-center py-8">Loading leads...</div>
           ) : leads.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No leads found. Add your first lead to get started.
+            <div className="text-center py-12">
+              <p className="text-muted-foreground mb-4">
+                No leads found. Add your first lead to get started.
+              </p>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Lead
+                </Button>
+              </DialogTrigger>
             </div>
           ) : (
             <div className="overflow-x-auto">
