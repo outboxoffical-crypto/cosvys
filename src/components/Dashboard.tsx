@@ -310,7 +310,7 @@ export default function Dashboard() {
             <img 
               src={cosvysLogo} 
               alt="Cosvys" 
-              className="h-8 w-auto object-contain"
+              className="h-8 w-auto object-contain brightness-0 invert"
             />
             <div>
               <h1 className="text-xl font-semibold">ECA Pro</h1>
