@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Store, User, Phone, MapPin, Mail, Percent } from "lucide-react";
-import asianPaintsLogo from "@/assets/asian-paints-logo.png";
+import cosvysLogo from "@/assets/cosvys-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { dealerInfoSchema } from "@/lib/validations";
@@ -141,8 +141,8 @@ export default function DealerInfoScreen() {
       <div className="eca-gradient text-white p-4">
         <div className="flex items-center space-x-3 mb-4">
           <img 
-            src={asianPaintsLogo} 
-            alt="Asian Paints" 
+            src={cosvysLogo} 
+            alt="Cosvys" 
             className="h-8 w-auto object-contain"
           />
           <div>

@@ -35,7 +35,7 @@ import {
   TrendingDown,
   Clock
 } from "lucide-react";
-import asianPaintsLogo from "@/assets/asian-paints-logo.png";
+import cosvysLogo from "@/assets/cosvys-logo.png";
 
 interface Project {
   id: string;
@@ -308,8 +308,8 @@ export default function Dashboard() {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-3">
             <img 
-              src={asianPaintsLogo} 
-              alt="Asian Paints" 
+              src={cosvysLogo} 
+              alt="Cosvys" 
               className="h-8 w-auto object-contain"
             />
             <div>

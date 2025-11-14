@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Smartphone } from "lucide-react";
-import asianPaintsLogo from "@/assets/asian-paints-logo.png";
+import cosvysLogo from "@/assets/cosvys-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
@@ -137,8 +137,8 @@ export default function LoginScreen() {
       {/* Logo */}
       <div className="mb-8">
         <img 
-          src={asianPaintsLogo} 
-          alt="Asian Paints" 
+          src={cosvysLogo} 
+          alt="Cosvys" 
           className="h-16 w-auto object-contain"
         />
       </div>
