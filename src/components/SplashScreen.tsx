@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import asianPaintsLogo from "@/assets/asian-paints-logo.png";
+import cosvysLogo from "@/assets/cosvys-logo.png";
 
 export default function SplashScreen() {
   const navigate = useNavigate();
@@ -28,8 +28,8 @@ export default function SplashScreen() {
         {/* Logo */}
         <div className={`transform transition-all duration-1000 ${isLoading ? 'scale-100 opacity-100' : 'scale-110 opacity-90'}`}>
           <img 
-            src={asianPaintsLogo} 
-            alt="Asian Paints" 
+            src={cosvysLogo} 
+            alt="Cosvys" 
             className="h-24 w-auto object-contain"
           />
         </div>
