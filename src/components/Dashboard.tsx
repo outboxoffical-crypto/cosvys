@@ -309,11 +309,11 @@ export default function Dashboard() {
           <div className="flex items-center space-x-3">
             <img 
               src={cosvysLogo} 
-              alt="Cosvy" 
-              className="h-8 w-auto object-contain"
+              alt="Cosvys" 
+              className="h-8 w-auto object-contain brightness-0 invert"
             />
             <div>
-              <h1 className="text-xl font-semibold">Cosvy</h1>
+              <h1 className="text-xl font-semibold">ECA Pro</h1>
               <p className="text-white/80 text-sm">
                 {dealerInfo ? `${dealerInfo.shopName} • ${dealerInfo.dealerName}` : 'Welcome back, User!'}
               </p>
