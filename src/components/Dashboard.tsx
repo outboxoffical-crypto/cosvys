@@ -193,7 +193,7 @@ export default function Dashboard() {
   };
 
   const handleReminder = async (projectId: string) => {
-    const companyName = dealerInfo?.shopName || "Asian Paints ECA Pro";
+    const companyName = dealerInfo?.shopName || "Cosvys";
     
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -313,7 +313,7 @@ export default function Dashboard() {
               className="h-8 w-auto object-contain brightness-0 invert"
             />
             <div>
-              <h1 className="text-xl font-semibold">ECA Pro</h1>
+              <h1 className="text-xl font-semibold">Cosvys</h1>
               <p className="text-white/80 text-sm">
                 {dealerInfo ? `${dealerInfo.shopName} • ${dealerInfo.dealerName}` : 'Welcome back, User!'}
               </p>

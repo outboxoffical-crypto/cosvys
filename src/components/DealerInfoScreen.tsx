@@ -146,7 +146,7 @@ export default function DealerInfoScreen() {
             className="h-8 w-auto object-contain"
           />
           <div>
-            <h1 className="text-xl font-semibold">{isEditMode ? 'Edit Dealer Info' : 'ECA Pro Setup'}</h1>
+            <h1 className="text-xl font-semibold">{isEditMode ? 'Edit Dealer Info' : 'Cosvys Setup'}</h1>
             <p className="text-white/80 text-sm">Dealer Information</p>
           </div>
         </div>

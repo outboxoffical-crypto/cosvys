@@ -139,7 +139,7 @@ export default function SettingsScreen() {
           </Button>
           <div>
             <h1 className="text-xl font-semibold">Settings</h1>
-            <p className="text-white/80 text-sm">Manage your ECA Pro preferences</p>
+            <p className="text-white/80 text-sm">Manage your Cosvys preferences</p>
           </div>
         </div>
       </div>
