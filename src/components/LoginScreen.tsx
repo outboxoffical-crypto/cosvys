@@ -135,11 +135,11 @@ export default function LoginScreen() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted flex flex-col items-center justify-center p-4">
       {/* Logo */}
-      <div className="mb-8">
+      <div className="mb-8 bg-white p-4 rounded-2xl shadow-md">
         <img 
           src={cosvysLogo} 
           alt="Cosvys" 
-          className="h-16 w-auto object-contain"
+          className="h-20 w-20 object-contain"
         />
       </div>
 
