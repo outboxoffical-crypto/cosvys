@@ -146,7 +146,7 @@ export default function LoginScreen() {
       <Card className="w-full max-w-md eca-shadow-medium">
         <CardHeader className="text-center pb-4">
           <CardTitle className="text-2xl font-semibold text-foreground">
-            {isLogin ? "Login to ECA Pro" : "Create Account"}
+            {isLogin ? "Login to Cosvys" : "Create Account"}
           </CardTitle>
           <p className="text-muted-foreground">
             {isLogin 
