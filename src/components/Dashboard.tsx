@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import ProjectDetailsModal from "./ProjectDetailsModal";
@@ -36,6 +35,7 @@ import {
   TrendingDown,
   Clock
 } from "lucide-react";
+import cosvysLogo from "@/assets/cosvys-logo.png";
 
 interface Project {
   id: string;
@@ -307,15 +307,15 @@ export default function Dashboard() {
       <div className="eca-gradient text-white p-4">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-3">
-            <Avatar className="h-12 w-12">
-              <AvatarImage src="" alt="Profile" />
-              <AvatarFallback className="bg-white/20 text-white">
-                {dealerInfo?.dealerName?.charAt(0).toUpperCase() || 'U'}
-              </AvatarFallback>
-            </Avatar>
+            <img 
+              src={cosvysLogo} 
+              alt="Cosvys" 
+              className="h-8 w-auto object-contain brightness-0 invert"
+            />
             <div>
-              <p className="text-white text-base">
-                Welcome back, {dealerInfo?.dealerName || 'User'}
+              <h1 className="text-xl font-semibold">Cosvys</h1>
+              <p className="text-white/80 text-sm">
+                {dealerInfo ? `${dealerInfo.shopName} • ${dealerInfo.dealerName}` : 'Welcome back, User!'}
               </p>
             </div>
           </div>
