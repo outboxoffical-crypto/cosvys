@@ -17,8 +17,8 @@ export default defineConfig(({ mode }) => ({
       registerType: "autoUpdate",
       includeAssets: ["pwa-192x192.png", "pwa-512x512.png", "pwa-maskable-512x512.png"],
       manifest: {
-        name: "ECA Pro - Asian Paints Professional Tool",
-        short_name: "ECA Pro",
+        name: "Cosvys",
+        short_name: "Cosvys",
         description: "Professional room measurement, paint calculation, and cost estimation tool for Easy Colour Associates",
         theme_color: "#E63946",
         background_color: "#FAFAFA",
