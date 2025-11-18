@@ -1,6 +1,7 @@
 /**
  * Asian Paints Product Catalog
  * Complete structured data mapping for all products across categories
+ * Total: 44 products organized in 5 categories
  */
 
 export interface Product {
@@ -20,62 +21,27 @@ export interface ProductCategory {
   products: Product[];
 }
 
-// Complete Asian Paints Product Catalog
+// Complete Asian Paints Product Catalog - 44 Products
 export const asianPaintsProducts: Product[] = [
-  // Essential & Other Category (IDs: 1-7)
+  // Putty Category (IDs: 1-2)
   {
     productId: 1,
-    name: "AP SmartCare Repair Polymer",
-    category: "Essential & Other",
-    unit: "kg",
-    description: "High-quality repair polymer for crack filling"
-  },
-  {
-    productId: 2,
-    name: "AP SmartCare Vitalia Neo",
-    category: "Essential & Other",
-    unit: "L",
-    description: "Advanced wall care solution"
-  },
-  {
-    productId: 3,
-    name: "AP TruCare Masking Kit",
-    category: "Essential & Other",
-    unit: "pack",
-    description: "Complete masking kit for painting projects"
-  },
-  {
-    productId: 4,
     name: "AP TruCare Wall Putty",
-    category: "Essential & Other",
+    category: "Putty",
     unit: "kg",
     description: "High-quality wall putty for smooth finishing"
   },
   {
-    productId: 5,
+    productId: 2,
     name: "AP SmartCare Waterproof Wall Putty",
-    category: "Essential & Other",
+    category: "Putty",
     unit: "kg",
     description: "Waterproof wall putty for durable protection"
   },
-  {
-    productId: 6,
-    name: "AP TruCare Acrylic Wall Putty",
-    category: "Essential & Other",
-    unit: "kg",
-    description: "Acrylic-based wall putty for superior finish"
-  },
-  {
-    productId: 7,
-    name: "AP SmartCare Crack Seal",
-    category: "Essential & Other",
-    unit: "kg",
-    description: "Professional crack sealing compound"
-  },
 
-  // Primer Category (IDs: 8-13)
+  // Primer Category (IDs: 3-8)
   {
-    productId: 8,
+    productId: 3,
     name: "AP TruCare Interior Wall Primer",
     category: "Primer",
     variant: "Interior",
@@ -83,7 +49,7 @@ export const asianPaintsProducts: Product[] = [
     description: "Interior wall primer for smooth paint application"
   },
   {
-    productId: 9,
+    productId: 4,
     name: "AP TruCare Exterior Wall Primer",
     category: "Primer",
     variant: "Exterior",
@@ -91,7 +57,7 @@ export const asianPaintsProducts: Product[] = [
     description: "Exterior wall primer for weather protection"
   },
   {
-    productId: 10,
+    productId: 5,
     name: "AP SmartCare Damp Sheath Interior Primer",
     category: "Primer",
     variant: "Interior",
@@ -99,7 +65,7 @@ export const asianPaintsProducts: Product[] = [
     description: "Damp-proof interior primer"
   },
   {
-    productId: 11,
+    productId: 6,
     name: "AP SmartCare Damp Sheath Exterior Primer",
     category: "Primer",
     variant: "Exterior",
@@ -107,25 +73,25 @@ export const asianPaintsProducts: Product[] = [
     description: "Damp-proof exterior primer"
   },
   {
-    productId: 12,
+    productId: 7,
     name: "AP Apex Utima Protek Base Coat",
     category: "Primer",
-    variant: "Premium",
+    variant: "Exterior",
     unit: "L",
     description: "Premium base coat for ultimate protection"
   },
   {
-    productId: 13,
+    productId: 8,
     name: "AP Apex Utima Protek Duralife Base Coat",
     category: "Primer",
-    variant: "Premium",
+    variant: "Exterior",
     unit: "L",
     description: "Long-lasting premium base coat"
   },
 
-  // Interior Emulsion Category (IDs: 14-30)
+  // Interior Emulsion Category (IDs: 9-25)
   {
-    productId: 14,
+    productId: 9,
     name: "AP Tractor Sparc Emulsion",
     category: "Interior Emulsion",
     variant: "Tractor Series",
@@ -133,7 +99,7 @@ export const asianPaintsProducts: Product[] = [
     description: "Economy range interior emulsion"
   },
   {
-    productId: 15,
+    productId: 10,
     name: "AP Tractor UNO Emulsion",
     category: "Interior Emulsion",
     variant: "Tractor Series",
@@ -141,7 +107,7 @@ export const asianPaintsProducts: Product[] = [
     description: "Single coat coverage emulsion"
   },
   {
-    productId: 16,
+    productId: 11,
     name: "AP Tractor Emulsion",
     category: "Interior Emulsion",
     variant: "Tractor Series",
@@ -149,95 +115,95 @@ export const asianPaintsProducts: Product[] = [
     description: "Standard interior emulsion"
   },
   {
-    productId: 17,
+    productId: 12,
     name: "AP Tractor Advance",
     category: "Interior Emulsion",
     variant: "Tractor Series",
     unit: "L",
-    description: "Advanced interior emulsion with better coverage"
+    description: "Advanced formula for better coverage"
   },
   {
-    productId: 18,
+    productId: 13,
     name: "AP Tractor Shyne",
     category: "Interior Emulsion",
     variant: "Tractor Series",
     unit: "L",
-    description: "Shiny finish interior emulsion"
+    description: "Sheen finish interior emulsion"
   },
   {
-    productId: 19,
+    productId: 14,
     name: "AP Tractor Shyne Advance",
     category: "Interior Emulsion",
     variant: "Tractor Series",
     unit: "L",
-    description: "Advanced shiny finish emulsion"
+    description: "Advanced sheen finish emulsion"
   },
   {
-    productId: 20,
+    productId: 15,
     name: "AP Apcolite Premium Emulsion",
     category: "Interior Emulsion",
     variant: "Apcolite Series",
     unit: "L",
-    description: "Premium quality interior emulsion"
+    description: "Premium interior emulsion"
   },
   {
-    productId: 21,
+    productId: 16,
     name: "AP Apcolite Premium Advance",
     category: "Interior Emulsion",
     variant: "Apcolite Series",
     unit: "L",
-    description: "Advanced premium emulsion"
+    description: "Premium advanced formula"
   },
   {
-    productId: 22,
+    productId: 17,
     name: "AP Apcolite Premium Advance Shyne",
     category: "Interior Emulsion",
     variant: "Apcolite Series",
     unit: "L",
-    description: "Premium emulsion with shiny finish"
+    description: "Premium advanced sheen finish"
   },
   {
-    productId: 23,
+    productId: 18,
     name: "AP Apcolite All Protek Shyne",
     category: "Interior Emulsion",
     variant: "Apcolite Series",
     unit: "L",
-    description: "All-round protection with shiny finish"
+    description: "All-surface protection with sheen"
   },
   {
-    productId: 24,
+    productId: 19,
     name: "AP Apcolite All Protek Matt",
     category: "Interior Emulsion",
     variant: "Apcolite Series",
     unit: "L",
-    description: "All-round protection with matt finish"
+    description: "All-surface protection with matt finish"
   },
   {
-    productId: 25,
+    productId: 20,
     name: "AP Royale Luxury Emulsion",
     category: "Interior Emulsion",
     variant: "Royale Series",
     unit: "L",
-    description: "Luxury range interior emulsion"
+    description: "Luxury interior emulsion"
   },
   {
-    productId: 26,
+    productId: 21,
     name: "AP Royale Matt",
     category: "Interior Emulsion",
     variant: "Royale Series",
     unit: "L",
-    description: "Premium matt finish emulsion"
+    description: "Matt finish luxury emulsion"
   },
   {
-    productId: 27,
+    productId: 22,
     name: "AP Royale Shyne",
     category: "Interior Emulsion",
     variant: "Royale Series",
     unit: "L",
-    description: "Premium shiny finish emulsion"
+    description: "Sheen finish luxury emulsion"
   },
   {
-    productId: 28,
+    productId: 23,
     name: "AP Royale Atomos",
     category: "Interior Emulsion",
     variant: "Royale Series",
@@ -245,7 +211,7 @@ export const asianPaintsProducts: Product[] = [
     description: "Advanced air-purifying emulsion"
   },
   {
-    productId: 29,
+    productId: 24,
     name: "AP Royale Glitz",
     category: "Interior Emulsion",
     variant: "Royale Series",
@@ -253,17 +219,17 @@ export const asianPaintsProducts: Product[] = [
     description: "Metallic finish luxury emulsion"
   },
   {
-    productId: 30,
+    productId: 25,
     name: "AP Royale Aspira",
     category: "Interior Emulsion",
     variant: "Royale Series",
     unit: "L",
-    description: "Premium designer finish emulsion"
+    description: "Premium air-purifying formula"
   },
 
-  // Exterior Emulsion Category (IDs: 31-42)
+  // Exterior Emulsion Category (IDs: 26-37)
   {
-    productId: 31,
+    productId: 26,
     name: "AP Ace Emulsion",
     category: "Exterior Emulsion",
     variant: "Ace Series",
@@ -271,31 +237,31 @@ export const asianPaintsProducts: Product[] = [
     description: "Standard exterior emulsion"
   },
   {
-    productId: 32,
+    productId: 27,
     name: "AP Ace Advance",
     category: "Exterior Emulsion",
     variant: "Ace Series",
     unit: "L",
-    description: "Advanced exterior emulsion"
+    description: "Advanced exterior formula"
   },
   {
-    productId: 33,
+    productId: 28,
     name: "AP Ace Shyne",
     category: "Exterior Emulsion",
     variant: "Ace Series",
     unit: "L",
-    description: "Shiny finish exterior emulsion"
+    description: "Sheen finish exterior emulsion"
   },
   {
-    productId: 34,
+    productId: 29,
     name: "AP Ace Shyne Advance",
     category: "Exterior Emulsion",
     variant: "Ace Series",
     unit: "L",
-    description: "Advanced shiny exterior finish"
+    description: "Advanced sheen finish for exterior"
   },
   {
-    productId: 35,
+    productId: 30,
     name: "AP Apex Emulsion",
     category: "Exterior Emulsion",
     variant: "Apex Series",
@@ -303,81 +269,81 @@ export const asianPaintsProducts: Product[] = [
     description: "Premium exterior emulsion"
   },
   {
-    productId: 36,
+    productId: 31,
     name: "AP Apex Advance",
     category: "Exterior Emulsion",
     variant: "Apex Series",
     unit: "L",
-    description: "Advanced premium exterior emulsion"
+    description: "Premium advanced exterior formula"
   },
   {
-    productId: 37,
+    productId: 32,
     name: "AP Apex Shyne",
     category: "Exterior Emulsion",
     variant: "Apex Series",
     unit: "L",
-    description: "Premium shiny exterior finish"
+    description: "Premium sheen finish for exterior"
   },
   {
-    productId: 38,
+    productId: 33,
     name: "AP Apex Shyne Advance",
     category: "Exterior Emulsion",
     variant: "Apex Series",
     unit: "L",
-    description: "Advanced premium shiny finish"
+    description: "Premium advanced sheen exterior"
   },
   {
-    productId: 39,
+    productId: 34,
     name: "AP Apex Ultima",
     category: "Exterior Emulsion",
-    variant: "Apex Series",
+    variant: "Apex Ultima Series",
     unit: "L",
-    description: "Ultimate weather protection"
+    description: "Ultimate exterior protection"
   },
   {
-    productId: 40,
+    productId: 35,
     name: "AP Apex Ultima Stretch",
     category: "Exterior Emulsion",
-    variant: "Apex Series",
+    variant: "Apex Ultima Series",
     unit: "L",
-    description: "Stretchable crack-resistant coating"
+    description: "Elastic ultimate exterior paint"
   },
   {
-    productId: 41,
+    productId: 36,
     name: "AP Apex Ultima Protek",
     category: "Exterior Emulsion",
-    variant: "Apex Series",
+    variant: "Apex Ultima Series",
     unit: "L",
-    description: "Maximum protection exterior coating"
+    description: "Ultimate protection exterior"
   },
   {
-    productId: 42,
+    productId: 37,
     name: "AP Apex Ultima Protek Duralife",
     category: "Exterior Emulsion",
-    variant: "Apex Series",
+    variant: "Apex Ultima Series",
     unit: "L",
     description: "Long-lasting ultimate protection"
   },
 
-  // Waterproofing Category (IDs: 43-49)
+  // Waterproofing Category (IDs: 38-44)
   {
-    productId: 43,
+    productId: 38,
     name: "AP SmartCare Damp Proof",
     category: "Waterproofing",
     variant: "Damp Proof Series",
     unit: "L",
-    description: "Basic waterproofing solution"
+    description: "Standard waterproofing solution"
   },
   {
-    productId: 44,
+    productId: 39,
     name: "AP SmartCare Damp Proof Advance",
     category: "Waterproofing",
     variant: "Damp Proof Series",
     unit: "L",
-    description: "Advanced waterproofing solution"
+    description: "Advanced waterproofing formula"
   },
   {
-    productId: 45,
+    productId: 40,
     name: "AP SmartCare Damp Proof Xtreme",
     category: "Waterproofing",
     variant: "Damp Proof Series",
@@ -385,45 +351,45 @@ export const asianPaintsProducts: Product[] = [
     description: "Extreme waterproofing protection"
   },
   {
-    productId: 46,
+    productId: 41,
     name: "AP SmartCare Damp Proof Ultra",
     category: "Waterproofing",
     variant: "Damp Proof Series",
     unit: "L",
-    description: "Ultra-strong waterproofing"
+    description: "Ultra waterproofing solution"
   },
   {
-    productId: 47,
+    productId: 42,
     name: "AP SmartCare Hydrolac Xtreme",
     category: "Waterproofing",
-    variant: "Specialty",
+    variant: "Hydrolac Series",
     unit: "L",
-    description: "Advanced hydrophobic coating"
+    description: "Extreme hydrophobic protection"
   },
   {
-    productId: 48,
+    productId: 43,
     name: "AP SmartCare Damp Block 2k",
     category: "Waterproofing",
-    variant: "Specialty",
+    variant: "Two-Component Series",
     unit: "kg",
-    description: "Two-component waterproofing system"
+    description: "Two-component waterproofing"
   },
   {
-    productId: 49,
+    productId: 44,
     name: "AP SmartCare Epoxy TriBlock 2k",
     category: "Waterproofing",
-    variant: "Specialty",
+    variant: "Two-Component Series",
     unit: "kg",
-    description: "Three-layer epoxy waterproofing system"
+    description: "Three-layer epoxy waterproofing"
   }
 ];
 
 // Organize products by category
 export const productsByCategory: ProductCategory[] = [
   {
-    id: "essential-other",
-    name: "Essential & Other",
-    products: asianPaintsProducts.filter(p => p.category === "Essential & Other")
+    id: "putty",
+    name: "Putty",
+    products: asianPaintsProducts.filter(p => p.category === "Putty")
   },
   {
     id: "primer",
@@ -447,7 +413,7 @@ export const productsByCategory: ProductCategory[] = [
   }
 ];
 
-// Helper functions
+// Helper functions for product retrieval
 export const getProductById = (id: number): Product | undefined => {
   return asianPaintsProducts.find(p => p.productId === id);
 };
@@ -461,28 +427,28 @@ export const getProductsByVariant = (variant: string): Product[] => {
 };
 
 export const getAllCategories = (): string[] => {
-  return Array.from(new Set(asianPaintsProducts.map(p => p.category)));
+  return [...new Set(asianPaintsProducts.map(p => p.category))];
 };
 
 export const getAllVariants = (): string[] => {
-  return Array.from(new Set(asianPaintsProducts.map(p => p.variant).filter(Boolean) as string[]));
+  return [...new Set(asianPaintsProducts.filter(p => p.variant).map(p => p.variant!))];
 };
 
-// Export for CSV/JSON usage
+// Data export functions
 export const productsToCSV = (): string => {
-  const headers = ["ProductID", "Name", "Category", "Variant", "Price", "StockQuantity", "Unit", "Description"];
+  const headers = ['ProductID', 'Name', 'Category', 'Variant', 'Price', 'StockQuantity', 'Unit', 'Description'];
   const rows = asianPaintsProducts.map(p => [
     p.productId,
     p.name,
     p.category,
-    p.variant || "",
-    p.price || "",
-    p.stockQuantity || "",
-    p.unit || "",
-    p.description || ""
+    p.variant || '',
+    p.price || '',
+    p.stockQuantity || '',
+    p.unit || '',
+    p.description || ''
   ]);
   
-  return [headers, ...rows].map(row => row.join(",")).join("\n");
+  return [headers, ...rows].map(row => row.join(',')).join('\n');
 };
 
 export const productsToJSON = (): string => {

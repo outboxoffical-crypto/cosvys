@@ -1740,10 +1740,27 @@ export default function PaintEstimationScreen() {
                           .map(item => item.product_name)
                           .filter((value, index, self) => self.indexOf(value) === index)
                           .filter(primerName => {
-                            // These primers should only show for Exterior Paint
-                            const exteriorOnlyPrimers = ['Ultima Protek (Base Coat)', 'Ultima Protek Durolife (Base Coat)', 'Ultima Protek Durolife'];
-                            if (exteriorOnlyPrimers.includes(primerName)) {
-                              return selectedPaintType === "Exterior";
+                            // Filter primers based on paint type
+                            // Exterior-only primers
+                            const exteriorOnlyPrimers = [
+                              'AP Apex Utima Protek Base Coat',
+                              'AP Apex Utima Protek Duralife Base Coat',
+                              'AP SmartCare Damp Sheath Exterior Primer',
+                              'AP TruCare Exterior Wall Primer'
+                            ];
+                            // Interior-only primers
+                            const interiorOnlyPrimers = [
+                              'AP SmartCare Damp Sheath Interior Primer',
+                              'AP TruCare Interior Wall Primer'
+                            ];
+                            
+                            if (selectedPaintType === "Exterior") {
+                              return exteriorOnlyPrimers.includes(primerName);
+                            } else if (selectedPaintType === "Interior") {
+                              return interiorOnlyPrimers.includes(primerName);
+                            } else if (selectedPaintType === "Waterproofing") {
+                              // For waterproofing, show relevant primers
+                              return interiorOnlyPrimers.includes(primerName) || exteriorOnlyPrimers.includes(primerName);
                             }
                             return true;
                           })
@@ -1812,9 +1829,10 @@ export default function PaintEstimationScreen() {
                               {sortProductNames(
                                 coverageData
                                 .filter(item => {
-                                  const category = selectedPaintType === "Interior" ? "Interior Paint" :
-                                                 selectedPaintType === "Exterior" ? "Exterior Paint" : 
-                                                 selectedPaintType;
+                                  // Map paint type to correct category names in database
+                                  const category = selectedPaintType === "Interior" ? "Interior Emulsion" :
+                                                 selectedPaintType === "Exterior" ? "Exterior Emulsion" : 
+                                                 "Waterproofing";
                                   return item.category === category;
                                 })
                                 .map(item => item.product_name)
@@ -1907,10 +1925,27 @@ export default function PaintEstimationScreen() {
                           .map(item => item.product_name)
                           .filter((value, index, self) => self.indexOf(value) === index)
                           .filter(primerName => {
-                            // These primers should only show for Exterior Paint
-                            const exteriorOnlyPrimers = ['Ultima Protek (Base Coat)', 'Ultima Protek Durolife (Top Coat)', 'Ultima Protek Durolife', 'Ultima Protek Durolife (Base Coat)'];
-                            if (exteriorOnlyPrimers.includes(primerName)) {
-                              return selectedPaintType === "Exterior";
+                            // Filter primers based on paint type
+                            // Exterior-only primers
+                            const exteriorOnlyPrimers = [
+                              'AP Apex Utima Protek Base Coat',
+                              'AP Apex Utima Protek Duralife Base Coat',
+                              'AP SmartCare Damp Sheath Exterior Primer',
+                              'AP TruCare Exterior Wall Primer'
+                            ];
+                            // Interior-only primers
+                            const interiorOnlyPrimers = [
+                              'AP SmartCare Damp Sheath Interior Primer',
+                              'AP TruCare Interior Wall Primer'
+                            ];
+                            
+                            if (selectedPaintType === "Exterior") {
+                              return exteriorOnlyPrimers.includes(primerName);
+                            } else if (selectedPaintType === "Interior") {
+                              return interiorOnlyPrimers.includes(primerName);
+                            } else if (selectedPaintType === "Waterproofing") {
+                              // For waterproofing, show relevant primers
+                              return interiorOnlyPrimers.includes(primerName) || exteriorOnlyPrimers.includes(primerName);
                             }
                             return true;
                           })
@@ -1979,9 +2014,10 @@ export default function PaintEstimationScreen() {
                                 {sortProductNames(
                                 coverageData
                                 .filter(item => {
-                                  const category = selectedPaintType === "Interior" ? "Interior Paint" :
-                                                 selectedPaintType === "Exterior" ? "Exterior Paint" : 
-                                                 selectedPaintType;
+                                  // Map paint type to correct category names in database
+                                  const category = selectedPaintType === "Interior" ? "Interior Emulsion" :
+                                                 selectedPaintType === "Exterior" ? "Exterior Emulsion" : 
+                                                 "Waterproofing";
                                   return item.category === category;
                                 })
                                 .map(item => item.product_name)
