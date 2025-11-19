@@ -7,6 +7,7 @@ import SplashScreen from "./components/SplashScreen";
 import LoginScreen from "./components/LoginScreen";
 import DealerInfoScreen from "./components/DealerInfoScreen";
 import DealerPricingScreen from "./components/DealerPricingScreen";
+import CoverageDataScreen from "./components/CoverageDataScreen";
 import Dashboard from "./components/Dashboard";
 import AddProjectScreen from "./components/AddProjectScreen";
 import RoomMeasurementScreen from "./components/RoomMeasurementScreen";
@@ -41,6 +42,7 @@ const App = () => (
           <Route path="/generate-summary/:projectId" element={<GenerateSummaryScreen />} />
           <Route path="/saved-projects" element={<SavedProjectsScreen />} />
           <Route path="/lead-book" element={<LeadBookScreen />} />
+          <Route path="/coverage-data" element={<CoverageDataScreen />} />
           <Route path="/settings" element={<SettingsScreen />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
