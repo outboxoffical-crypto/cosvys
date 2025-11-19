@@ -2133,7 +2133,9 @@ export default function GenerateSummaryScreen() {
                     </p>
                   </div>
                   <div className="p-4 bg-muted/30 rounded-lg border border-border text-center">
-                    <p className="text-sm text-muted-foreground mb-2">Actual Project Cost</p>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Actual<br />Project Cost
+                    </p>
                     <p className="text-xl font-bold text-foreground">
                       ₹{Math.round(calculateActualTotalCost()).toLocaleString('en-IN')}
                     </p>
