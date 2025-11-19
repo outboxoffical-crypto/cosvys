@@ -1609,7 +1609,7 @@ export default function RoomMeasurementScreen() {
                               <Button
                                 variant="default"
                                 size="sm"
-                                className="h-9"
+                                className="h-9 hidden"
                                 onClick={() => completeRoom(room.id)}
                               >
                                 <Calculator className="h-4 w-4 mr-1" />
