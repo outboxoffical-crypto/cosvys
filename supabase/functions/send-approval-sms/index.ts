@@ -27,19 +27,27 @@ serve(async (req) => {
       }
     );
 
+    // Get authenticated user
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    
+    if (userError || !user) {
+      throw new Error('Unauthorized');
+    }
+
     const { projectId, companyName }: ApprovalRequest = await req.json();
 
     console.log('Simulating approval for project:', projectId);
 
-    // Fetch project details
+    // Fetch project details with ownership verification
     const { data: project, error: projectError } = await supabaseClient
       .from('projects')
       .select('*')
       .eq('id', projectId)
+      .eq('user_id', user.id)
       .single();
 
     if (projectError || !project) {
-      throw new Error('Project not found');
+      throw new Error('Project not found or access denied');
     }
 
     // Update project status to Approved

@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      approval_tokens: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          project_id: string
+          token: string
+          used_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          project_id: string
+          token?: string
+          used_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          project_id?: string
+          token?: string
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "approval_tokens_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coverage_data: {
         Row: {
           category: string
@@ -413,7 +448,7 @@ export type Database = {
           total_extra_surface: number | null
           total_opening_area: number | null
           updated_at: string | null
-          user_id: string | null
+          user_id: string
           wall_area: number
           width: number
         }
@@ -439,7 +474,7 @@ export type Database = {
           total_extra_surface?: number | null
           total_opening_area?: number | null
           updated_at?: string | null
-          user_id?: string | null
+          user_id: string
           wall_area: number
           width: number
         }
@@ -465,7 +500,7 @@ export type Database = {
           total_extra_surface?: number | null
           total_opening_area?: number | null
           updated_at?: string | null
-          user_id?: string | null
+          user_id?: string
           wall_area?: number
           width?: number
         }

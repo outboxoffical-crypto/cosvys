@@ -27,17 +27,25 @@ serve(async (req) => {
       }
     );
 
+    // Get authenticated user
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    
+    if (userError || !user) {
+      throw new Error('Unauthorized');
+    }
+
     const { projectId, companyName }: ReminderRequest = await req.json();
 
-    // Fetch project details
+    // Fetch project details with ownership verification
     const { data: project, error: projectError } = await supabaseClient
       .from('projects')
       .select('*')
       .eq('id', projectId)
+      .eq('user_id', user.id)
       .single();
 
     if (projectError || !project) {
-      throw new Error('Project not found');
+      throw new Error('Project not found or access denied');
     }
 
     const message = `Hello ${project.customer_name}, 
