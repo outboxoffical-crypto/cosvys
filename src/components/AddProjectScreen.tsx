@@ -113,23 +113,34 @@ export default function AddProjectScreen() {
 
         navigate('/dashboard');
       } else {
-        // Create new project
+        // Create new project in Supabase
         const validated = projectSchema.parse(formData);
-        const newProjectId = Date.now().toString();
         
-        localStorage.setItem(`project_${newProjectId}`, JSON.stringify({
-          ...validated,
-          id: newProjectId,
-          createdAt: new Date().toISOString(),
-          status: "In Progress"
-        }));
-        
+        const { data: newProject, error } = await supabase
+          .from('projects')
+          .insert({
+            user_id: session.user.id,
+            lead_id: `LEAD-${Date.now()}`,
+            customer_name: formData.customerName,
+            phone: formData.mobile,
+            location: formData.address,
+            project_type: formData.projectTypes.join(', '),
+            quotation_value: 0,
+            area_sqft: 0,
+            project_status: 'In Progress',
+            approval_status: 'Pending'
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+
         toast({
           title: "Success",
           description: "Project created successfully!",
         });
 
-        navigate(`/room-measurement/${newProjectId}`);
+        navigate(`/room-measurement/${newProject.id}`);
       }
     } catch (error: any) {
       toast({
