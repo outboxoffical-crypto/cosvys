@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -71,6 +72,8 @@ export default function Dashboard() {
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [leadStats, setLeadStats] = useState({ total: 0, converted: 0, dropped: 0, pending: 0 });
   const [userName, setUserName] = useState<string>("");
+  const [avatarUrl, setAvatarUrl] = useState<string>("");
+  const [userInitials, setUserInitials] = useState<string>("");
 
   useEffect(() => {
     const stored = localStorage.getItem('dealerInfo');
@@ -100,13 +103,67 @@ export default function Dashboard() {
     if (user) {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('full_name')
+        .select('full_name, avatar_url')
         .eq('id', user.id)
         .single();
       
       if (profile?.full_name) {
         setUserName(profile.full_name);
+        const initials = profile.full_name
+          .split(' ')
+          .map((n) => n[0])
+          .join('')
+          .toUpperCase()
+          .slice(0, 2);
+        setUserInitials(initials);
       }
+      
+      if (profile?.avatar_url) {
+        setAvatarUrl(profile.avatar_url);
+      }
+    }
+  };
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${user.id}/avatar.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+
+      setAvatarUrl(publicUrl);
+      toast({
+        title: "Success",
+        description: "Profile picture updated!",
+      });
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      toast({
+        title: "Error",
+        description: "Failed to upload profile picture",
+        variant: "destructive",
+      });
     }
   };
 
@@ -324,11 +381,21 @@ export default function Dashboard() {
       {/* Header */}
       <div className="eca-gradient text-white p-4">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-3">
-            <img 
-              src={cosvysLogo} 
-              alt="Cosvys" 
-              className="h-8 w-auto object-contain brightness-0 invert"
+          <div className="flex items-center gap-3">
+            <label htmlFor="avatar-upload" className="cursor-pointer">
+              <Avatar className="h-12 w-12 border-2 border-white/20 hover:border-white/40 transition-all">
+                <AvatarImage src={avatarUrl} alt={userName || 'User'} />
+                <AvatarFallback className="bg-white/10 text-white font-semibold">
+                  {userInitials || 'U'}
+                </AvatarFallback>
+              </Avatar>
+            </label>
+            <input
+              id="avatar-upload"
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleAvatarUpload}
             />
             <div>
               <h1 className="text-xl font-semibold">{userName || 'User'}</h1>
