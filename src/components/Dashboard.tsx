@@ -439,7 +439,11 @@ export default function Dashboard() {
           <Card className="text-center eca-shadow">
             <CardContent className="p-4">
               <DollarSign className="h-6 w-6 text-secondary mx-auto mb-2" />
-              <p className="text-2xl font-bold text-foreground">₹{(totalValue / 100000).toFixed(1)}L</p>
+              <p className="text-2xl font-bold text-foreground">
+                ₹{totalValue >= 100000 
+                  ? `${(totalValue / 100000).toFixed(1)}L` 
+                  : `${(totalValue / 1000).toFixed(0)}K`}
+              </p>
               <p className="text-sm text-muted-foreground">Total Value</p>
             </CardContent>
           </Card>
