@@ -70,6 +70,7 @@ export default function Dashboard() {
   const [labourTrackerProjectId, setLabourTrackerProjectId] = useState<string | null>(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [leadStats, setLeadStats] = useState({ total: 0, converted: 0, dropped: 0, pending: 0 });
+  const [userName, setUserName] = useState<string>("");
 
   useEffect(() => {
     const stored = localStorage.getItem('dealerInfo');
@@ -78,6 +79,7 @@ export default function Dashboard() {
     }
     fetchProjects();
     fetchLeadStats();
+    fetchUserProfile();
     
     // Subscribe to realtime updates
     const channel = supabase
@@ -91,6 +93,22 @@ export default function Dashboard() {
       supabase.removeChannel(channel);
     };
   }, []);
+
+  const fetchUserProfile = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user.id)
+        .single();
+      
+      if (profile?.full_name) {
+        setUserName(profile.full_name);
+      }
+    }
+  };
 
   const fetchProjects = async () => {
     setLoading(true);
@@ -313,9 +331,9 @@ export default function Dashboard() {
               className="h-8 w-auto object-contain brightness-0 invert"
             />
             <div>
-              <h1 className="text-xl font-semibold">Cosvys</h1>
+              <h1 className="text-xl font-semibold">{userName || 'User'}</h1>
               <p className="text-white/80 text-sm">
-                {dealerInfo ? `${dealerInfo.shopName} • ${dealerInfo.dealerName}` : 'Welcome back, User!'}
+                {dealerInfo ? `${dealerInfo.shopName} • ${dealerInfo.dealerName}` : 'Welcome back!'}
               </p>
             </div>
           </div>
