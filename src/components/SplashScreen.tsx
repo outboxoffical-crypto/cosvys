@@ -34,13 +34,6 @@ export default function SplashScreen() {
           />
         </div>
 
-        {/* Slogan */}
-        <div className={`mb-3 mt-4 transform transition-all duration-1000 delay-150 ${isLoading ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-90'}`}>
-          <p className="text-center font-['Poppins'] font-semibold text-lg md:text-xl" style={{ color: '#EB3C3C' }}>
-            Minutes to measure. Seconds to estimate.
-          </p>
-        </div>
-
         {/* App Title */}
         <div className={`text-center transform transition-all duration-1000 delay-300 ${isLoading ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-90'}`}>
           <h1 className="text-4xl font-bold text-white mb-2">Cosvys</h1>

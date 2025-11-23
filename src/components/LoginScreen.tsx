@@ -135,19 +135,12 @@ export default function LoginScreen() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted flex flex-col items-center justify-center p-4">
       {/* Logo */}
-      <div className="mb-3">
+      <div className="mb-8">
         <img 
           src={cosvysLogo} 
           alt="Cosvys" 
           className="h-16 w-auto object-contain"
         />
-      </div>
-
-      {/* Slogan */}
-      <div className="mb-4">
-        <p className="text-center font-['Poppins'] font-semibold text-lg md:text-xl" style={{ color: '#EB3C3C' }}>
-          Minutes to measure. Seconds to estimate.
-        </p>
       </div>
 
       <Card className="w-full max-w-md eca-shadow-medium">
