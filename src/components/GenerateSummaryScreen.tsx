@@ -75,31 +75,35 @@ export default function GenerateSummaryScreen() {
   const loadData = async () => {
     try {
       // Load coverage data from database
-      const {
-        data: coverageResults
-      } = await supabase.from('coverage_data').select('product_name, coverage_range');
-      if (coverageResults) {
+      const { data: coverageResults } = await supabase
+        .from('coverage_data')
+        .select('product_name, coverage_range');
+      
+      if (coverageResults && Array.isArray(coverageResults)) {
         const coverageMap: any = {};
         coverageResults.forEach(item => {
-          coverageMap[item.product_name.toLowerCase()] = item.coverage_range;
+          if (item?.product_name && item?.coverage_range) {
+            coverageMap[item.product_name.toLowerCase()] = item.coverage_range;
+          }
         });
         setCoverageData(coverageMap);
       }
 
       // Load product pricing from database
-      const {
-        data: {
-          user: currentUser
-        }
-      } = await supabase.auth.getUser();
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      
       if (currentUser) {
-        const {
-          data: pricingData
-        } = await supabase.from('product_pricing').select('product_name, sizes').eq('user_id', currentUser.id);
-        if (pricingData) {
+        const { data: pricingData } = await supabase
+          .from('product_pricing')
+          .select('product_name, sizes')
+          .eq('user_id', currentUser.id);
+        
+        if (pricingData && Array.isArray(pricingData)) {
           const pricingMap: any = {};
           pricingData.forEach(item => {
-            pricingMap[item.product_name.toLowerCase()] = item.sizes;
+            if (item?.product_name && item?.sizes) {
+              pricingMap[item.product_name.toLowerCase()] = item.sizes;
+            }
           });
           setProductPricing(pricingMap);
         }
@@ -177,95 +181,92 @@ export default function GenerateSummaryScreen() {
       }
 
       // Load rooms from backend
-      const {
-        data: roomsData
-      } = await supabase.from('rooms').select('*').eq('project_id', projectId);
-      if (roomsData) {
-        setRooms(roomsData);
+      const { data: roomsData } = await supabase
+        .from('rooms')
+        .select('*')
+        .eq('project_id', projectId);
+      
+      const rooms = roomsData ?? [];
+      setRooms(rooms);
 
-        // Create enamel configurations from door/window/grill areas for calculations only
-        const enamelConfigs: AreaConfig[] = [];
-        roomsData.forEach(room => {
-          const enamelArea = Number(room.total_door_window_grill_area || 0);
-          if (enamelArea > 0) {
-            enamelConfigs.push({
-              id: `enamel_${room.id}`,
-              areaType: 'Door & Window',
-              paintingSystem: 'Fresh Painting',
-              area: enamelArea,
-              perSqFtRate: '0',
-              label: `${room.name} - Door & Window`,
-              paintTypeCategory: room.project_type as 'Interior' | 'Exterior' | 'Waterproofing',
-              selectedMaterials: {
-                putty: '',
-                primer: 'Enamel Primer',
-                emulsion: 'Enamel Paint'
-              },
-              coatConfiguration: {
-                putty: 0,
-                primer: 1,
-                emulsion: 2
-              }
-            });
-          }
-        });
+      // Create enamel configurations from door/window/grill areas for calculations only
+      const enamelConfigs: AreaConfig[] = [];
+      rooms.forEach(room => {
+        const enamelArea = Number(room?.total_door_window_grill_area ?? 0);
+        if (enamelArea > 0) {
+          enamelConfigs.push({
+            id: `enamel_${room.id}`,
+            areaType: 'Door & Window',
+            paintingSystem: 'Fresh Painting',
+            area: enamelArea,
+            perSqFtRate: '0',
+            label: `${room?.name ?? 'Room'} - Door & Window`,
+            paintTypeCategory: (room?.project_type as 'Interior' | 'Exterior' | 'Waterproofing') ?? 'Interior',
+            selectedMaterials: {
+              putty: '',
+              primer: 'Enamel Primer',
+              emulsion: 'Enamel Paint'
+            },
+            coatConfiguration: {
+              putty: 0,
+              primer: 1,
+              emulsion: 2
+            }
+          });
+        }
+      });
 
-        // Before setting, filter out area types that have 0 selected area in Room Measurements
-        const selectedTotalsByType: Record<string, {
-          floor: number;
-          wall: number;
-          ceiling: number;
-        }> = {};
-        ['Interior', 'Exterior', 'Waterproofing'].forEach(t => {
-          selectedTotalsByType[t] = {
-            floor: 0,
-            wall: 0,
-            ceiling: 0
-          };
-        });
-        roomsData.forEach(room => {
-          const sel = typeof room.selected_areas === 'object' && room.selected_areas !== null && !Array.isArray(room.selected_areas) ? room.selected_areas as any : {
-            floor: false,
-            wall: true,
-            ceiling: false
-          };
-          const type = room.project_type || 'Interior';
-          if (!selectedTotalsByType[type]) selectedTotalsByType[type] = {
-            floor: 0,
-            wall: 0,
-            ceiling: 0
-          };
-          if (sel.floor) selectedTotalsByType[type].floor += Number(room.floor_area || 0);
-          if (sel.wall) selectedTotalsByType[type].wall += Number(room.adjusted_wall_area || room.wall_area || 0);
-          if (sel.ceiling) selectedTotalsByType[type].ceiling += Number(room.ceiling_area || 0);
-        });
-        const filteredPaintConfigs = (paintEstimationConfigs || []).filter(cfg => {
-          const type = cfg.paintTypeCategory || 'Interior';
-          if (cfg.areaType === 'Floor') return (selectedTotalsByType[type]?.floor || 0) > 0;
-          if (cfg.areaType === 'Wall') return (selectedTotalsByType[type]?.wall || 0) > 0;
-          if (cfg.areaType === 'Ceiling') return (selectedTotalsByType[type]?.ceiling || 0) > 0;
-          return true;
-        });
+      // Before setting, filter out area types that have 0 selected area in Room Measurements
+      const selectedTotalsByType: Record<string, {
+        floor: number;
+        wall: number;
+        ceiling: number;
+      }> = {};
+      ['Interior', 'Exterior', 'Waterproofing'].forEach(t => {
+        selectedTotalsByType[t] = {
+          floor: 0,
+          wall: 0,
+          ceiling: 0
+        };
+      });
+      rooms.forEach(room => {
+        const sel = typeof room?.selected_areas === 'object' && room.selected_areas !== null && !Array.isArray(room.selected_areas) ? room.selected_areas as any : {
+          floor: false,
+          wall: true,
+          ceiling: false
+        };
+        const type = room?.project_type ?? 'Interior';
+        if (!selectedTotalsByType[type]) selectedTotalsByType[type] = {
+          floor: 0,
+          wall: 0,
+          ceiling: 0
+        };
+        if (sel.floor) selectedTotalsByType[type].floor += Number(room?.floor_area ?? 0);
+        if (sel.wall) selectedTotalsByType[type].wall += Number(room?.adjusted_wall_area ?? room?.wall_area ?? 0);
+        if (sel.ceiling) selectedTotalsByType[type].ceiling += Number(room?.ceiling_area ?? 0);
+      });
+      const filteredPaintConfigs = (paintEstimationConfigs || []).filter(cfg => {
+        const type = cfg?.paintTypeCategory ?? 'Interior';
+        if (cfg.areaType === 'Floor') return (selectedTotalsByType[type]?.floor ?? 0) > 0;
+        if (cfg.areaType === 'Wall') return (selectedTotalsByType[type]?.wall ?? 0) > 0;
+        if (cfg.areaType === 'Ceiling') return (selectedTotalsByType[type]?.ceiling ?? 0) > 0;
+        return true;
+      });
 
-        // Update both areaConfigs and calculationConfigs with filtered list
-        setAreaConfigs(filteredPaintConfigs);
-        setCalculationConfigs([...filteredPaintConfigs, ...enamelConfigs]);
-      } else {
-        // If no rooms data, just use paint estimation configs
-        setCalculationConfigs(paintEstimationConfigs);
-      }
+      // Update both areaConfigs and calculationConfigs with filtered list
+      setAreaConfigs(filteredPaintConfigs);
+      setCalculationConfigs([...filteredPaintConfigs, ...enamelConfigs]);
 
       // Load dealer info
-      const {
-        data: {
-          user
-        }
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const {
-          data: dealerData
-        } = await supabase.from('dealer_info').select('margin').eq('user_id', user.id).single();
-        if (dealerData) setDealerMargin(Number(dealerData.margin) || 0);
+        const { data: dealerData } = await supabase
+          .from('dealer_info')
+          .select('margin')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        setDealerMargin(Number(dealerData?.margin ?? 0));
       }
     } catch (error) {
       console.error('Error loading data:', error);

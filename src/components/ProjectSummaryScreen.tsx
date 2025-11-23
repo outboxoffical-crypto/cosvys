@@ -37,8 +37,8 @@ export default function ProjectSummaryScreen() {
           supabase.from('dealer_info').select('*').eq('user_id', session.user.id).maybeSingle()
         ]);
         
-        if (roomsResult.data) setRooms(roomsResult.data);
-        if (dealerResult.data) setDealerInfo(dealerResult.data);
+        setRooms(roomsResult.data ?? []);
+        setDealerInfo(dealerResult.data ?? null);
       }
     };
 
