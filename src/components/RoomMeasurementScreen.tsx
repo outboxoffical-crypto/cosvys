@@ -157,31 +157,30 @@ export default function RoomMeasurementScreen() {
         
         if (error) {
           console.error('Error loading rooms:', error);
-          toast.error('Failed to load rooms');
-          return;
         }
         
-        if (roomsData && roomsData.length > 0) {
+        const rooms = roomsData ?? [];
+        if (rooms.length > 0) {
           // IMPORTANT: Store ALL rooms with their project_type - filtering happens in UI only
-          const formattedRooms: Room[] = roomsData.map(room => ({
-            id: room.room_id,
-            name: room.name,
-            length: Number(room.length),
-            width: Number(room.width),
-            height: Number(room.height),
-            projectType: room.project_type, // Preserve original project type
-            pictures: Array.isArray(room.pictures) ? room.pictures as string[] : [],
-            openingAreas: Array.isArray(room.opening_areas) ? room.opening_areas as unknown as OpeningArea[] : [],
-            extraSurfaces: Array.isArray(room.extra_surfaces) ? room.extra_surfaces as unknown as ExtraSurface[] : [],
-            doorWindowGrills: Array.isArray(room.door_window_grills) ? room.door_window_grills as unknown as DoorWindowGrill[] : [],
-            floorArea: Number(room.floor_area),
-            wallArea: Number(room.wall_area),
-            ceilingArea: Number(room.ceiling_area),
-            adjustedWallArea: Number(room.adjusted_wall_area),
-            totalOpeningArea: Number(room.total_opening_area),
-            totalExtraSurface: Number(room.total_extra_surface),
-            totalDoorWindowGrillArea: Number(room.total_door_window_grill_area),
-            selectedAreas: (typeof room.selected_areas === 'object' && room.selected_areas !== null) ? 
+          const formattedRooms: Room[] = rooms.map(room => ({
+            id: room?.room_id ?? '',
+            name: room?.name ?? '',
+            length: Number(room?.length ?? 0),
+            width: Number(room?.width ?? 0),
+            height: Number(room?.height ?? 0),
+            projectType: room?.project_type ?? '', // Preserve original project type
+            pictures: Array.isArray(room?.pictures) ? room.pictures as string[] : [],
+            openingAreas: Array.isArray(room?.opening_areas) ? room.opening_areas as unknown as OpeningArea[] : [],
+            extraSurfaces: Array.isArray(room?.extra_surfaces) ? room.extra_surfaces as unknown as ExtraSurface[] : [],
+            doorWindowGrills: Array.isArray(room?.door_window_grills) ? room.door_window_grills as unknown as DoorWindowGrill[] : [],
+            floorArea: Number(room?.floor_area ?? 0),
+            wallArea: Number(room?.wall_area ?? 0),
+            ceilingArea: Number(room?.ceiling_area ?? 0),
+            adjustedWallArea: Number(room?.adjusted_wall_area ?? 0),
+            totalOpeningArea: Number(room?.total_opening_area ?? 0),
+            totalExtraSurface: Number(room?.total_extra_surface ?? 0),
+            totalDoorWindowGrillArea: Number(room?.total_door_window_grill_area ?? 0),
+            selectedAreas: (typeof room?.selected_areas === 'object' && room.selected_areas !== null) ? 
               room.selected_areas as { floor: boolean; wall: boolean; ceiling: boolean } : 
               { floor: true, wall: true, ceiling: false }
           }));
@@ -190,7 +189,6 @@ export default function RoomMeasurementScreen() {
         }
       } catch (error) {
         console.error('Error:', error);
-        toast.error('Failed to load rooms');
       }
     };
     

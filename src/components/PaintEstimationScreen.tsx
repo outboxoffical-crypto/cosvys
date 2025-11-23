@@ -199,12 +199,12 @@ export default function PaintEstimationScreen() {
       
       if (error) {
         console.error('Error fetching coverage data:', error);
-        return;
       }
       
-      setCoverageData(data || []);
+      setCoverageData(data ?? []);
     } catch (error) {
       console.error('Error:', error);
+      setCoverageData([]);
     }
   };
 
@@ -220,15 +220,12 @@ export default function PaintEstimationScreen() {
         
         if (error) {
           console.error('Error loading rooms:', error);
-          setIsLoading(false);
-          return;
         }
         
-        if (roomsData) {
-          setRooms(roomsData);
-          initializeConfigurations(roomsData);
-          setIsLoading(false);
-        }
+        const rooms = roomsData ?? [];
+        setRooms(rooms);
+        initializeConfigurations(rooms);
+        setIsLoading(false);
       } catch (error) {
         console.error('Error:', error);
         setIsLoading(false);

@@ -173,27 +173,36 @@ export const MaterialTracker = ({ projectId, isOpen, onClose }: MaterialTrackerP
 
   const fetchMaterials = async () => {
     setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setLoading(false);
+        return;
+      }
 
-    const { data, error } = await supabase
-      .from("material_tracker")
-      .select("*")
-      .eq("project_id", projectId)
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
+      const { data, error } = await supabase
+        .from("material_tracker")
+        .select("*")
+        .eq("project_id", projectId)
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
 
-    if (error) {
+      if (error) {
+        console.error("Error fetching materials:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load materials",
+          variant: "destructive",
+        });
+      }
+      
+      setMaterials(data ?? []);
+    } catch (error) {
       console.error("Error fetching materials:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load materials",
-        variant: "destructive",
-      });
-    } else {
-      setMaterials(data || []);
+      setMaterials([]);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleAddMaterial = async () => {

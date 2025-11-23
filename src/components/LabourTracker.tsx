@@ -143,27 +143,36 @@ export function LabourTracker({ projectId, isOpen, onClose }: LabourTrackerProps
 
   const fetchEntries = async () => {
     setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setLoading(false);
+        return;
+      }
 
-    const { data, error } = await supabase
-      .from("labour_tracker")
-      .select("*")
-      .eq("project_id", projectId)
-      .eq("user_id", user.id)
-      .order("date", { ascending: false });
+      const { data, error } = await supabase
+        .from("labour_tracker")
+        .select("*")
+        .eq("project_id", projectId)
+        .eq("user_id", user.id)
+        .order("date", { ascending: false });
 
-    if (error) {
+      if (error) {
+        console.error("Error fetching labour entries:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load labour entries",
+          variant: "destructive",
+        });
+      }
+      
+      setEntries(data ?? []);
+    } catch (error) {
       console.error("Error fetching labour entries:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load labour entries",
-        variant: "destructive",
-      });
-    } else {
-      setEntries(data || []);
+      setEntries([]);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleAddEntry = async () => {

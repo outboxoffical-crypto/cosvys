@@ -52,14 +52,21 @@ export default function ProjectDetailsModal({ projectId, open, onOpenChange }: P
     if (!projectId) return;
     
     setLoading(true);
-    const { data, error } = await supabase
-      .from('projects')
-      .select('*')
-      .eq('id', projectId)
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('id', projectId)
+        .maybeSingle();
 
-    if (!error && data) {
-      setProject(data);
+      setProject(data ?? null);
+      
+      if (error) {
+        console.error('Error fetching project:', error);
+      }
+    } catch (error) {
+      console.error('Error fetching project:', error);
+      setProject(null);
     }
     setLoading(false);
   };
@@ -67,41 +74,62 @@ export default function ProjectDetailsModal({ projectId, open, onOpenChange }: P
   const fetchActivityLog = async () => {
     if (!projectId) return;
 
-    const { data, error } = await supabase
-      .from('project_activity_log')
-      .select('*')
-      .eq('project_id', projectId)
-      .order('created_at', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('project_activity_log')
+        .select('*')
+        .eq('project_id', projectId)
+        .order('created_at', { ascending: false });
 
-    if (!error && data) {
-      setActivityLog(data);
+      setActivityLog(data ?? []);
+      
+      if (error) {
+        console.error('Error fetching activity log:', error);
+      }
+    } catch (error) {
+      console.error('Error fetching activity log:', error);
+      setActivityLog([]);
     }
   };
 
   const fetchLabourData = async () => {
     if (!projectId) return;
 
-    const { data, error } = await supabase
-      .from('labour_tracker')
-      .select('*')
-      .eq('project_id', projectId)
-      .order('date', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('labour_tracker')
+        .select('*')
+        .eq('project_id', projectId)
+        .order('date', { ascending: false });
 
-    if (!error && data) {
-      setLabourData(data);
+      setLabourData(data ?? []);
+      
+      if (error) {
+        console.error('Error fetching labour data:', error);
+      }
+    } catch (error) {
+      console.error('Error fetching labour data:', error);
+      setLabourData([]);
     }
   };
 
   const fetchMaterialData = async () => {
     if (!projectId) return;
 
-    const { data, error } = await supabase
-      .from('material_tracker')
-      .select('*')
-      .eq('project_id', projectId);
+    try {
+      const { data, error } = await supabase
+        .from('material_tracker')
+        .select('*')
+        .eq('project_id', projectId);
 
-    if (!error && data) {
-      setMaterialData(data);
+      setMaterialData(data ?? []);
+      
+      if (error) {
+        console.error('Error fetching material data:', error);
+      }
+    } catch (error) {
+      console.error('Error fetching material data:', error);
+      setMaterialData([]);
     }
   };
 
