@@ -278,8 +278,10 @@ export type Database = {
       }
       product_pricing: {
         Row: {
+          category: string | null
           created_at: string | null
           id: string
+          is_visible: boolean | null
           margin: number | null
           product_name: string
           sizes: Json
@@ -287,8 +289,10 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          category?: string | null
           created_at?: string | null
           id?: string
+          is_visible?: boolean | null
           margin?: number | null
           product_name: string
           sizes?: Json
@@ -296,8 +300,10 @@ export type Database = {
           user_id: string
         }
         Update: {
+          category?: string | null
           created_at?: string | null
           id?: string
+          is_visible?: boolean | null
           margin?: number | null
           product_name?: string
           sizes?: Json
