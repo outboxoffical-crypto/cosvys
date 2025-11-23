@@ -461,33 +461,33 @@ export default function Dashboard() {
         <div className="flex flex-nowrap gap-2 sm:gap-3 mb-6 justify-center">
           <Button 
             onClick={() => navigate("/add-project")}
-            className="flex-1 min-w-0 h-14 sm:h-16 bg-primary hover:bg-primary-hover text-primary-foreground eca-shadow hover:shadow-lg transition-all rounded-lg"
+            className="flex-1 min-w-[100px] h-14 sm:h-16 bg-primary hover:bg-primary-hover text-primary-foreground eca-shadow hover:shadow-lg transition-all rounded-lg"
           >
-            <div className="flex items-center gap-2 sm:gap-3 w-full justify-center">
+            <div className="flex items-center gap-1.5 sm:gap-2 w-full justify-center px-1">
               <Plus className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-              <span className="font-semibold text-xs sm:text-sm truncate">New Project</span>
+              <span className="font-semibold text-[11px] sm:text-sm whitespace-nowrap">New Project</span>
             </div>
           </Button>
           
           <Button 
             onClick={() => navigate("/dealer-pricing")}
             variant="outline"
-            className="flex-1 min-w-0 h-14 sm:h-16 bg-card hover:bg-muted text-foreground eca-shadow hover:shadow-lg transition-all rounded-lg border-border"
+            className="flex-1 min-w-[100px] h-14 sm:h-16 bg-card hover:bg-muted text-foreground eca-shadow hover:shadow-lg transition-all rounded-lg border-border"
           >
-            <div className="flex items-center gap-2 sm:gap-3 w-full justify-center">
+            <div className="flex items-center gap-1.5 sm:gap-2 w-full justify-center px-1">
               <Package className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 text-foreground" />
-              <span className="font-semibold text-xs sm:text-sm truncate">Manage Pricing</span>
+              <span className="font-semibold text-[11px] sm:text-sm whitespace-nowrap">Manage Pricing</span>
             </div>
           </Button>
 
           <Button 
             onClick={() => navigate("/lead-book")}
             variant="outline"
-            className="flex-1 min-w-0 h-14 sm:h-16 bg-card hover:bg-muted text-foreground eca-shadow hover:shadow-lg transition-all rounded-lg border-border"
+            className="flex-1 min-w-[100px] h-14 sm:h-16 bg-card hover:bg-muted text-foreground eca-shadow hover:shadow-lg transition-all rounded-lg border-border"
           >
-            <div className="flex items-center gap-2 sm:gap-3 w-full justify-center">
+            <div className="flex items-center gap-1.5 sm:gap-2 w-full justify-center px-1">
               <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 text-foreground" />
-              <span className="font-semibold text-xs sm:text-sm truncate">Lead Summary</span>
+              <span className="font-semibold text-[11px] sm:text-sm whitespace-nowrap">Lead Summary</span>
             </div>
           </Button>
         </div>
