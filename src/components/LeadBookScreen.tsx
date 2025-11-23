@@ -67,22 +67,18 @@ const LeadBookScreen = () => {
         .select("status, approval_status")
         .eq("user_id", user.id);
 
-      if (error) {
-        console.error("Error fetching lead stats:", error);
-      }
+      if (error) throw error;
 
-      const leads = leadsData ?? [];
       const stats = {
-        total: leads.length,
-        converted: leads.filter(l => l?.status === "Converted").length,
-        dropped: leads.filter(l => l?.status === "Dropped").length,
-        pending: leads.filter(l => l?.approval_status === "Pending").length,
+        total: leadsData?.length || 0,
+        converted: leadsData?.filter(l => l.status === "Converted").length || 0,
+        dropped: leadsData?.filter(l => l.status === "Dropped").length || 0,
+        pending: leadsData?.filter(l => l.approval_status === "Pending").length || 0,
       };
 
       setLeadStats(stats);
     } catch (error: any) {
       console.error("Failed to fetch lead stats:", error.message);
-      setLeadStats({ total: 0, converted: 0, dropped: 0, pending: 0 });
     }
   };
 
@@ -100,14 +96,9 @@ const LeadBookScreen = () => {
         .eq("user_id", user.id)
         .order("date", { ascending: false });
 
-      if (error) {
-        console.error("Error fetching leads:", error);
-      }
-      
-      setLeads(data ?? []);
+      if (error) throw error;
+      setLeads(data || []);
     } catch (error: any) {
-      console.error("Failed to fetch leads:", error);
-      setLeads([]);
       toast.error("Failed to fetch leads: " + error.message);
     } finally {
       setLoading(false);

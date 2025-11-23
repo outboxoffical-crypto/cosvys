@@ -11,7 +11,6 @@ import { ArrowLeft, Plus, Ruler, Home, Trash2, Calculator, X, Edit3, Camera, Ima
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { RoomCard } from "./RoomCard";
-import { VirtualizedRoomList } from "./VirtualizedRoomList";
 
 // Utility function for safe numeric parsing - always returns a valid number
 const safeParseFloat = (value: string | number | null | undefined, defaultValue: number = 0): number => {
@@ -82,7 +81,6 @@ export default function RoomMeasurementScreen() {
   const navigate = useNavigate();
   const { projectId } = useParams();
   const [projectData, setProjectData] = useState<ProjectData | null>(null);
-  const [isLoadingData, setIsLoadingData] = useState(true);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [activeTab, setActiveTab] = useState<string>("sqft");
   const [activeProjectType, setActiveProjectType] = useState<string>("");
@@ -140,28 +138,16 @@ export default function RoomMeasurementScreen() {
 
   useEffect(() => {
     const loadData = async () => {
-      setIsLoadingData(true);
+      // Load project data to get project types
+      const savedProjectData = localStorage.getItem(`project_${projectId}`);
+      if (savedProjectData) {
+        const data = JSON.parse(savedProjectData);
+        setProjectData(data);
+        setActiveProjectType(data.projectTypes[0] || "");
+      }
       
+      // Load existing rooms from Supabase - CRITICAL: Load ALL rooms for this project
       try {
-        // Load project data to get project types
-        const savedProjectData = localStorage.getItem(`project_${projectId}`);
-        if (savedProjectData) {
-          const data = JSON.parse(savedProjectData);
-          setProjectData(data);
-          setActiveProjectType(data?.projectTypes?.[0] ?? "Interior");
-        } else {
-          // If no project data in localStorage, create default structure
-          console.warn('No project data found in localStorage, using defaults');
-          setProjectData({
-            customerName: '',
-            mobile: '',
-            address: '',
-            projectTypes: ['Interior']
-          });
-          setActiveProjectType('Interior');
-        }
-        
-        // Load existing rooms from Supabase - CRITICAL: Load ALL rooms for this project
         const { data: roomsData, error } = await supabase
           .from('rooms')
           .select('*')
@@ -170,30 +156,31 @@ export default function RoomMeasurementScreen() {
         
         if (error) {
           console.error('Error loading rooms:', error);
+          toast.error('Failed to load rooms');
+          return;
         }
         
-        const rooms = roomsData ?? [];
-        if (rooms.length > 0) {
+        if (roomsData && roomsData.length > 0) {
           // IMPORTANT: Store ALL rooms with their project_type - filtering happens in UI only
-          const formattedRooms: Room[] = rooms.map(room => ({
-            id: room?.room_id ?? '',
-            name: room?.name ?? '',
-            length: Number(room?.length ?? 0),
-            width: Number(room?.width ?? 0),
-            height: Number(room?.height ?? 0),
-            projectType: room?.project_type ?? '', // Preserve original project type
-            pictures: Array.isArray(room?.pictures) ? room.pictures as string[] : [],
-            openingAreas: Array.isArray(room?.opening_areas) ? room.opening_areas as unknown as OpeningArea[] : [],
-            extraSurfaces: Array.isArray(room?.extra_surfaces) ? room.extra_surfaces as unknown as ExtraSurface[] : [],
-            doorWindowGrills: Array.isArray(room?.door_window_grills) ? room.door_window_grills as unknown as DoorWindowGrill[] : [],
-            floorArea: Number(room?.floor_area ?? 0),
-            wallArea: Number(room?.wall_area ?? 0),
-            ceilingArea: Number(room?.ceiling_area ?? 0),
-            adjustedWallArea: Number(room?.adjusted_wall_area ?? 0),
-            totalOpeningArea: Number(room?.total_opening_area ?? 0),
-            totalExtraSurface: Number(room?.total_extra_surface ?? 0),
-            totalDoorWindowGrillArea: Number(room?.total_door_window_grill_area ?? 0),
-            selectedAreas: (typeof room?.selected_areas === 'object' && room.selected_areas !== null) ? 
+          const formattedRooms: Room[] = roomsData.map(room => ({
+            id: room.room_id,
+            name: room.name,
+            length: Number(room.length),
+            width: Number(room.width),
+            height: Number(room.height),
+            projectType: room.project_type, // Preserve original project type
+            pictures: Array.isArray(room.pictures) ? room.pictures as string[] : [],
+            openingAreas: Array.isArray(room.opening_areas) ? room.opening_areas as unknown as OpeningArea[] : [],
+            extraSurfaces: Array.isArray(room.extra_surfaces) ? room.extra_surfaces as unknown as ExtraSurface[] : [],
+            doorWindowGrills: Array.isArray(room.door_window_grills) ? room.door_window_grills as unknown as DoorWindowGrill[] : [],
+            floorArea: Number(room.floor_area),
+            wallArea: Number(room.wall_area),
+            ceilingArea: Number(room.ceiling_area),
+            adjustedWallArea: Number(room.adjusted_wall_area),
+            totalOpeningArea: Number(room.total_opening_area),
+            totalExtraSurface: Number(room.total_extra_surface),
+            totalDoorWindowGrillArea: Number(room.total_door_window_grill_area),
+            selectedAreas: (typeof room.selected_areas === 'object' && room.selected_areas !== null) ? 
               room.selected_areas as { floor: boolean; wall: boolean; ceiling: boolean } : 
               { floor: true, wall: true, ceiling: false }
           }));
@@ -201,40 +188,12 @@ export default function RoomMeasurementScreen() {
           setRooms(formattedRooms);
         }
       } catch (error) {
-        console.error('Error loading data:', error);
-        // Set default project data on error
-        setProjectData({
-          customerName: '',
-          mobile: '',
-          address: '',
-          projectTypes: ['Interior']
-        });
-        setActiveProjectType('Interior');
-      } finally {
-        setIsLoadingData(false);
+        console.error('Error:', error);
+        toast.error('Failed to load rooms');
       }
     };
     
-    // Add timeout to prevent infinite loading
-    const timeout = setTimeout(() => {
-      if (isLoadingData) {
-        console.error('Loading timeout - forcing completion');
-        setIsLoadingData(false);
-        if (!projectData) {
-          setProjectData({
-            customerName: '',
-            mobile: '',
-            address: '',
-            projectTypes: ['Interior']
-          });
-          setActiveProjectType('Interior');
-        }
-      }
-    }, 5000); // 5 second timeout
-    
     loadData();
-    
-    return () => clearTimeout(timeout);
   }, [projectId]);
 
   // Check for localStorage flag to open specific tab (e.g., from Paint Estimation)
@@ -1061,28 +1020,9 @@ export default function RoomMeasurementScreen() {
     }
   }, [rooms, projectId]);
 
-  // Optimized: Memoize filtered rooms to prevent recalculation on every render
-  const getRoomsByProjectType = useMemo(() => (projectType: string) => {
+  const getRoomsByProjectType = useCallback((projectType: string) => {
     return rooms.filter(room => room.projectType === projectType);
   }, [rooms]);
-
-  // Optimized: Memoize filtered rooms for current active project type
-  const filteredRooms = useMemo(() => {
-    return rooms
-      .filter(room => room.projectType === activeProjectType)
-      .filter(room => room.length > 0 || room.width > 0 || room.height > 0);
-  }, [rooms, activeProjectType]);
-
-  // Optimized: Memoize total calculations to prevent recalculation
-  const roomTotals = useMemo(() => {
-    return filteredRooms.reduce((acc, room) => {
-      return {
-        floor: acc.floor + (room.selectedAreas.floor ? room.floorArea : 0),
-        wall: acc.wall + (room.selectedAreas.wall ? room.adjustedWallArea : 0),
-        ceiling: acc.ceiling + (room.selectedAreas.ceiling ? room.ceilingArea : 0),
-      };
-    }, { floor: 0, wall: 0, ceiling: 0 });
-  }, [filteredRooms]);
 
   const toggleAreaSelection = useCallback(async (roomId: string, areaType: 'floor' | 'wall' | 'ceiling') => {
     const targetRoom = rooms.find(r => r.id === roomId);
@@ -1320,11 +1260,10 @@ export default function RoomMeasurementScreen() {
     })();
   };
 
-  if (isLoadingData) {
+  if (!projectData) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="animate-spin h-12 w-12 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
+        <div className="text-center">
           <p className="text-muted-foreground">Loading project data...</p>
         </div>
       </div>
@@ -1640,50 +1579,16 @@ export default function RoomMeasurementScreen() {
             )}
 
             {/* Show Rooms for Active Project Type - Filter out rooms that only have door/window data */}
-            {activeProjectType && filteredRooms.length > 0 && (
+            {activeProjectType && getRoomsByProjectType(activeProjectType).filter(room => room.length > 0 || room.width > 0 || room.height > 0).length > 0 && (
               <div className="space-y-4">
                 <div>
                   <h3 className="text-lg font-semibold text-foreground">{activeProjectType} - Rooms</h3>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Total: {filteredRooms.length} room(s)
+                    Total: {getRoomsByProjectType(activeProjectType).filter(room => room.length > 0 || room.width > 0 || room.height > 0).length} room(s)
                   </p>
-                  <div className="grid grid-cols-3 gap-2 mt-2">
-                    <div className="text-center p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
-                      <p className="text-xs text-muted-foreground">Floor</p>
-                      <p className="font-bold text-foreground">{roomTotals.floor.toFixed(1)} sq.ft</p>
-                    </div>
-                    <div className="text-center p-2 bg-green-50 dark:bg-green-900/20 rounded">
-                      <p className="text-xs text-muted-foreground">Wall</p>
-                      <p className="font-bold text-foreground">{roomTotals.wall.toFixed(1)} sq.ft</p>
-                    </div>
-                    <div className="text-center p-2 bg-purple-50 dark:bg-purple-900/20 rounded">
-                      <p className="text-xs text-muted-foreground">Ceiling</p>
-                      <p className="font-bold text-foreground">{roomTotals.ceiling.toFixed(1)} sq.ft</p>
-                    </div>
-                  </div>
                 </div>
-                
-                {/* Virtualized Room List for Performance */}
-                {filteredRooms.length > 10 ? (
-                  <VirtualizedRoomList
-                    rooms={filteredRooms}
-                    onEditRoom={handleEditRoom}
-                    onRemoveRoom={removeRoom}
-                    onToggleAreaSelection={toggleAreaSelection}
-                    onAddOpeningArea={addOpeningAreaToRoom}
-                    onRemoveOpeningArea={removeOpeningArea}
-                    onAddExtraSurface={addExtraSurfaceToRoom}
-                    onRemoveExtraSurface={removeExtraSurface}
-                    onRemoveDoorWindowGrill={removeDoorWindowGrill}
-                    onUpdateDoorWindowGrillName={updateDoorWindowGrillName}
-                    roomOpeningInputs={roomOpeningInputs}
-                    roomExtraSurfaceInputs={roomExtraSurfaceInputs}
-                    onSetRoomOpeningInputs={setRoomOpeningInputs}
-                    onSetRoomExtraSurfaceInputs={setRoomExtraSurfaceInputs}
-                  />
-                ) : (
-                  <div className="space-y-4">
-                    {filteredRooms.map((room) => (
+                <div className="space-y-4">
+                  {getRoomsByProjectType(activeProjectType).filter(room => room.length > 0 || room.width > 0 || room.height > 0).map((room) => (
                     <Card key={room.id} className="eca-shadow overflow-hidden">
                       <CardContent className="p-4">
                         <div className="space-y-4">
@@ -1952,9 +1857,8 @@ export default function RoomMeasurementScreen() {
                         </div>
                       </CardContent>
                     </Card>
-                    ))}
-                  </div>
-                )}
+                  ))}
+                </div>
               </div>
             )}
           </TabsContent>

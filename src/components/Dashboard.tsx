@@ -14,7 +14,6 @@ import ProjectDetailsModal from "./ProjectDetailsModal";
 import { MaterialTracker } from "./MaterialTracker";
 import { LabourTracker } from "./LabourTracker";
 import { LeadSummaryBox } from "./LeadSummaryBox";
-import { ProjectCardSkeleton } from "./ProjectCardSkeleton";
 import { format } from "date-fns";
 import { 
   Plus, 
@@ -65,9 +64,6 @@ export default function Dashboard() {
   const [dealerInfo, setDealerInfo] = useState<any>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [materialTrackerOpen, setMaterialTrackerOpen] = useState(false);
   const [materialTrackerProjectId, setMaterialTrackerProjectId] = useState<string | null>(null);
@@ -78,8 +74,6 @@ export default function Dashboard() {
   const [userName, setUserName] = useState<string>("");
   const [avatarUrl, setAvatarUrl] = useState<string>("");
   const [userInitials, setUserInitials] = useState<string>("");
-  const [page, setPage] = useState(1);
-  const PAGE_SIZE = 5;
 
   useEffect(() => {
     const stored = localStorage.getItem('dealerInfo');
@@ -173,67 +167,33 @@ export default function Dashboard() {
     }
   };
 
-  const fetchProjects = async (isLoadMore = false) => {
-    if (isLoadMore) {
-      setLoadingMore(true);
-    } else {
-      setLoading(true);
-      setError(null);
-    }
+  const fetchProjects = async () => {
+    setLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
     
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        setError("Please log in to view projects");
-        setLoading(false);
-        return;
-      }
-
-      const from = isLoadMore ? projects.length : 0;
-      const to = from + PAGE_SIZE - 1;
-
-      const { data, error, count } = await supabase
-        .from('projects')
-        .select('*', { count: 'exact' })
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .range(from, to);
-
-      if (error) {
-        throw error;
-      }
-
-      if (isLoadMore) {
-        setProjects(prev => [...prev, ...(data || [])]);
-      } else {
-        setProjects(data || []);
-      }
-
-      // Check if there are more projects to load
-      const totalLoaded = isLoadMore ? projects.length + (data?.length || 0) : data?.length || 0;
-      setHasMore(totalLoaded < (count || 0));
-      
-    } catch (error: any) {
-      console.error('Error fetching projects:', error);
-      setError(error.message || "Failed to load projects");
-      
-      if (!isLoadMore) {
-        toast({
-          title: "Error",
-          description: "Failed to load projects",
-          variant: "destructive",
-        });
-      }
-    } finally {
+    if (!user) {
       setLoading(false);
-      setLoadingMore(false);
+      return;
     }
-  };
 
-  const handleLoadMore = () => {
-    setPage(prev => prev + 1);
-    fetchProjects(true);
+    const { data, error } = await supabase
+      .from('projects')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    if (error) {
+      console.error('Error fetching projects:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load projects",
+        variant: "destructive",
+      });
+    } else {
+      setProjects(data || []);
+    }
+    setLoading(false);
   };
 
   const fetchLeadStats = async () => {
@@ -501,33 +461,33 @@ export default function Dashboard() {
         <div className="flex flex-nowrap gap-2 sm:gap-3 mb-6 justify-center">
           <Button 
             onClick={() => navigate("/add-project")}
-            className="flex-1 min-w-[100px] h-14 sm:h-16 bg-primary hover:bg-primary-hover text-primary-foreground eca-shadow hover:shadow-lg transition-all rounded-lg"
+            className="flex-1 min-w-0 h-14 sm:h-16 bg-primary hover:bg-primary-hover text-primary-foreground eca-shadow hover:shadow-lg transition-all rounded-lg"
           >
-            <div className="flex items-center gap-1.5 sm:gap-2 w-full justify-center px-2">
+            <div className="flex items-center gap-2 sm:gap-3 w-full justify-center">
               <Plus className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-              <span className="font-semibold text-[10px] sm:text-xs whitespace-nowrap">New Project</span>
+              <span className="font-semibold text-xs sm:text-sm truncate">New Project</span>
             </div>
           </Button>
           
           <Button 
             onClick={() => navigate("/dealer-pricing")}
             variant="outline"
-            className="flex-1 min-w-[100px] h-14 sm:h-16 bg-card hover:bg-muted text-foreground eca-shadow hover:shadow-lg transition-all rounded-lg border-border"
+            className="flex-1 min-w-0 h-14 sm:h-16 bg-card hover:bg-muted text-foreground eca-shadow hover:shadow-lg transition-all rounded-lg border-border"
           >
-            <div className="flex items-center gap-1.5 sm:gap-2 w-full justify-center px-2">
+            <div className="flex items-center gap-2 sm:gap-3 w-full justify-center">
               <Package className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 text-foreground" />
-              <span className="font-semibold text-[10px] sm:text-xs whitespace-nowrap">Manage Pricing</span>
+              <span className="font-semibold text-xs sm:text-sm truncate">Manage Pricing</span>
             </div>
           </Button>
 
           <Button 
             onClick={() => navigate("/lead-book")}
             variant="outline"
-            className="flex-1 min-w-[100px] h-14 sm:h-16 bg-card hover:bg-muted text-foreground eca-shadow hover:shadow-lg transition-all rounded-lg border-border"
+            className="flex-1 min-w-0 h-14 sm:h-16 bg-card hover:bg-muted text-foreground eca-shadow hover:shadow-lg transition-all rounded-lg border-border"
           >
-            <div className="flex items-center gap-1.5 sm:gap-2 w-full justify-center px-2">
+            <div className="flex items-center gap-2 sm:gap-3 w-full justify-center">
               <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 text-foreground" />
-              <span className="font-semibold text-[10px] sm:text-xs whitespace-nowrap">Lead Summary</span>
+              <span className="font-semibold text-xs sm:text-sm truncate">Lead Summary</span>
             </div>
           </Button>
         </div>
@@ -546,20 +506,9 @@ export default function Dashboard() {
           </div>
 
           {loading ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map((i) => (
-                <ProjectCardSkeleton key={i} />
-              ))}
+            <div className="flex items-center justify-center p-12">
+              <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
             </div>
-          ) : error ? (
-            <Card className="text-center p-8 eca-shadow border-destructive/50">
-              <Home className="h-12 w-12 text-destructive mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-foreground mb-2">Failed to Load Projects</h3>
-              <p className="text-muted-foreground mb-4">{error}</p>
-              <Button onClick={() => fetchProjects()} variant="outline">
-                Try Again
-              </Button>
-            </Card>
           ) : filteredProjects.length === 0 ? (
             <Card className="text-center p-8 eca-shadow">
               <Home className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -575,9 +524,8 @@ export default function Dashboard() {
               )}
             </Card>
           ) : (
-            <>
-              <div className="space-y-3">
-                {filteredProjects.map((project) => (
+            <div className="space-y-3">
+              {filteredProjects.map((project) => (
                 <Card key={project.id} className="eca-shadow hover:shadow-lg transition-shadow">
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between mb-3">
@@ -801,29 +749,8 @@ export default function Dashboard() {
                     </div>
                   </CardContent>
                 </Card>
-                ))}
-              </div>
-              
-              {!searchQuery && hasMore && (
-                <div className="flex justify-center pt-4">
-                  <Button
-                    variant="outline"
-                    onClick={handleLoadMore}
-                    disabled={loadingMore}
-                    className="w-full sm:w-auto"
-                  >
-                    {loadingMore ? (
-                      <>
-                        <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full mr-2"></div>
-                        Loading...
-                      </>
-                    ) : (
-                      "Load More Projects"
-                    )}
-                  </Button>
-                </div>
-              )}
-            </>
+              ))}
+            </div>
           )}
         </div>
       </div>
