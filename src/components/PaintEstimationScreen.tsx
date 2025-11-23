@@ -85,11 +85,6 @@ export default function PaintEstimationScreen() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [emulsionComboOpen, setEmulsionComboOpen] = useState(false);
-  
-  // State for product pricing products
-  const [puttyProducts, setPuttyProducts] = useState<string[]>([]);
-  const [primerProducts, setPrimerProducts] = useState<string[]>([]);
-  const [loadingProducts, setLoadingProducts] = useState(false);
 
   // Sync initial paint type, prefer snapshot from Generate Summary
   useEffect(() => {
@@ -193,48 +188,7 @@ export default function PaintEstimationScreen() {
   // Fetch coverage data
   useEffect(() => {
     fetchCoverageData();
-    fetchProductPricingProducts();
   }, []);
-  
-  // Fetch products from product_pricing table
-  const fetchProductPricingProducts = async () => {
-    setLoadingProducts(true);
-    try {
-      const { data, error } = await supabase
-        .from('product_pricing')
-        .select('product_name, category')
-        .eq('is_visible', true)
-        .in('category', ['Putty', 'Primer'])
-        .order('product_name');
-      
-      if (error) {
-        console.error('Error fetching product pricing:', error);
-        toast.error('Failed to load products');
-        setLoadingProducts(false);
-        return;
-      }
-      
-      if (data) {
-        const puttyList = data
-          .filter(item => item.category === 'Putty')
-          .map(item => item.product_name)
-          .sort((a, b) => a.localeCompare(b));
-        
-        const primerList = data
-          .filter(item => item.category === 'Primer')
-          .map(item => item.product_name)
-          .sort((a, b) => a.localeCompare(b));
-        
-        setPuttyProducts(puttyList);
-        setPrimerProducts(primerList);
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      toast.error('Failed to load products');
-    } finally {
-      setLoadingProducts(false);
-    }
-  };
 
   const fetchCoverageData = async () => {
     try {
@@ -1717,25 +1671,21 @@ export default function PaintEstimationScreen() {
                       onValueChange={(value) => handleUpdateConfig({
                         selectedMaterials: { ...selectedConfig.selectedMaterials, putty: value }
                       })}
-                      disabled={loadingProducts}
                     >
                       <SelectTrigger className="h-9">
-                        <SelectValue placeholder={loadingProducts ? "Loading..." : "Select putty type"} />
+                        <SelectValue placeholder="Select putty type" />
                       </SelectTrigger>
                       <SelectContent>
-                        {loadingProducts ? (
-                          <div className="flex items-center justify-center py-2">
-                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-                          </div>
-                        ) : puttyProducts.length === 0 ? (
-                          <div className="py-2 px-2 text-sm text-muted-foreground">No putty products available</div>
-                        ) : (
-                          puttyProducts.map((puttyName) => (
+                        {coverageData
+                          .filter(item => item.category === "Putty")
+                          .map(item => item.product_name)
+                          .filter((value, index, self) => self.indexOf(value) === index)
+                          .sort((a, b) => a.localeCompare(b))
+                          .map((puttyName) => (
                             <SelectItem key={puttyName} value={puttyName}>
                               {puttyName}
                             </SelectItem>
-                          ))
-                        )}
+                          ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -1781,25 +1731,21 @@ export default function PaintEstimationScreen() {
                       onValueChange={(value) => handleUpdateConfig({
                         selectedMaterials: { ...selectedConfig.selectedMaterials, primer: value }
                       })}
-                      disabled={loadingProducts}
                     >
                       <SelectTrigger className="h-9">
-                        <SelectValue placeholder={loadingProducts ? "Loading..." : "Select primer type"} />
+                        <SelectValue placeholder="Select primer type" />
                       </SelectTrigger>
                       <SelectContent>
-                        {loadingProducts ? (
-                          <div className="flex items-center justify-center py-2">
-                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-                          </div>
-                        ) : primerProducts.length === 0 ? (
-                          <div className="py-2 px-2 text-sm text-muted-foreground">No primer products available</div>
-                        ) : (
-                          primerProducts.map((primerName) => (
+                        {coverageData
+                          .filter(item => item.category === "Primer")
+                          .map(item => item.product_name)
+                          .filter((value, index, self) => self.indexOf(value) === index)
+                          .sort((a, b) => a.localeCompare(b))
+                          .map((primerName) => (
                             <SelectItem key={primerName} value={primerName}>
                               {primerName}
                             </SelectItem>
-                          ))
-                        )}
+                          ))}
                       </SelectContent>
                     </Select>
                   </div>
