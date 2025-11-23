@@ -1901,31 +1901,7 @@ export default function PaintEstimationScreen() {
                           .filter(item => item.category === "Primer")
                           .map(item => item.product_name)
                           .filter((value, index, self) => self.indexOf(value) === index)
-                          .filter(primerName => {
-                            // Filter primers based on paint type
-                            // Exterior-only primers
-                            const exteriorOnlyPrimers = [
-                              'AP Apex Utima Protek Base Coat',
-                              'AP Apex Utima Protek Duralife Base Coat',
-                              'AP SmartCare Damp Sheath Exterior Primer',
-                              'AP TruCare Exterior Wall Primer'
-                            ];
-                            // Interior-only primers
-                            const interiorOnlyPrimers = [
-                              'AP SmartCare Damp Sheath Interior Primer',
-                              'AP TruCare Interior Wall Primer'
-                            ];
-                            
-                            if (selectedPaintType === "Exterior") {
-                              return exteriorOnlyPrimers.includes(primerName);
-                            } else if (selectedPaintType === "Interior") {
-                              return interiorOnlyPrimers.includes(primerName);
-                            } else if (selectedPaintType === "Waterproofing") {
-                              // For waterproofing, show relevant primers
-                              return interiorOnlyPrimers.includes(primerName) || exteriorOnlyPrimers.includes(primerName);
-                            }
-                            return true;
-                          })
+                          .sort((a, b) => a.localeCompare(b))
                           .map((primerName) => (
                             <SelectItem key={primerName} value={primerName}>
                               {primerName}
