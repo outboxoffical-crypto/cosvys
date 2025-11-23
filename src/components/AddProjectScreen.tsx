@@ -17,6 +17,7 @@ export default function AddProjectScreen() {
   const { toast } = useToast();
   const projectId = location.state?.projectId;
   const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     customerName: "",
     mobile: "",
@@ -81,6 +82,11 @@ export default function AddProjectScreen() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Prevent double submission
+    if (submitting) return;
+
+    setSubmitting(true);
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -148,6 +154,8 @@ export default function AddProjectScreen() {
         description: error.message || "Please check your inputs and try again.",
         variant: "destructive",
       });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -386,9 +394,16 @@ export default function AddProjectScreen() {
             <Button 
               type="submit"
               className="w-full h-12 text-base font-medium"
-              disabled={!isFormValid}
+              disabled={!isFormValid || submitting}
             >
-              {projectId ? 'Save Changes' : 'Continue to Measurements'}
+              {submitting ? (
+                <div className="flex items-center gap-2">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                  <span>{projectId ? 'Saving...' : 'Creating...'}</span>
+                </div>
+              ) : (
+                projectId ? 'Save Changes' : 'Continue to Measurements'
+              )}
             </Button>
           </div>
         </form>
