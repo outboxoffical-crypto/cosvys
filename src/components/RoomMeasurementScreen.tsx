@@ -82,6 +82,7 @@ export default function RoomMeasurementScreen() {
   const navigate = useNavigate();
   const { projectId } = useParams();
   const [projectData, setProjectData] = useState<ProjectData | null>(null);
+  const [isLoadingData, setIsLoadingData] = useState(true);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [activeTab, setActiveTab] = useState<string>("sqft");
   const [activeProjectType, setActiveProjectType] = useState<string>("");
@@ -139,16 +140,28 @@ export default function RoomMeasurementScreen() {
 
   useEffect(() => {
     const loadData = async () => {
-      // Load project data to get project types
-      const savedProjectData = localStorage.getItem(`project_${projectId}`);
-      if (savedProjectData) {
-        const data = JSON.parse(savedProjectData);
-        setProjectData(data);
-        setActiveProjectType(data.projectTypes[0] || "");
-      }
+      setIsLoadingData(true);
       
-      // Load existing rooms from Supabase - CRITICAL: Load ALL rooms for this project
       try {
+        // Load project data to get project types
+        const savedProjectData = localStorage.getItem(`project_${projectId}`);
+        if (savedProjectData) {
+          const data = JSON.parse(savedProjectData);
+          setProjectData(data);
+          setActiveProjectType(data?.projectTypes?.[0] ?? "Interior");
+        } else {
+          // If no project data in localStorage, create default structure
+          console.warn('No project data found in localStorage, using defaults');
+          setProjectData({
+            customerName: '',
+            mobile: '',
+            address: '',
+            projectTypes: ['Interior']
+          });
+          setActiveProjectType('Interior');
+        }
+        
+        // Load existing rooms from Supabase - CRITICAL: Load ALL rooms for this project
         const { data: roomsData, error } = await supabase
           .from('rooms')
           .select('*')
@@ -188,11 +201,40 @@ export default function RoomMeasurementScreen() {
           setRooms(formattedRooms);
         }
       } catch (error) {
-        console.error('Error:', error);
+        console.error('Error loading data:', error);
+        // Set default project data on error
+        setProjectData({
+          customerName: '',
+          mobile: '',
+          address: '',
+          projectTypes: ['Interior']
+        });
+        setActiveProjectType('Interior');
+      } finally {
+        setIsLoadingData(false);
       }
     };
     
+    // Add timeout to prevent infinite loading
+    const timeout = setTimeout(() => {
+      if (isLoadingData) {
+        console.error('Loading timeout - forcing completion');
+        setIsLoadingData(false);
+        if (!projectData) {
+          setProjectData({
+            customerName: '',
+            mobile: '',
+            address: '',
+            projectTypes: ['Interior']
+          });
+          setActiveProjectType('Interior');
+        }
+      }
+    }, 5000); // 5 second timeout
+    
     loadData();
+    
+    return () => clearTimeout(timeout);
   }, [projectId]);
 
   // Check for localStorage flag to open specific tab (e.g., from Paint Estimation)
@@ -1278,10 +1320,11 @@ export default function RoomMeasurementScreen() {
     })();
   };
 
-  if (!projectData) {
+  if (isLoadingData) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
+        <div className="text-center space-y-4">
+          <div className="animate-spin h-12 w-12 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
           <p className="text-muted-foreground">Loading project data...</p>
         </div>
       </div>
