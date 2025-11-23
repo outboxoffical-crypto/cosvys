@@ -458,54 +458,36 @@ export default function Dashboard() {
 
 
         {/* Quick Actions Grid */}
-        <div className="flex flex-nowrap mb-6 justify-center" style={{ gap: '12px' }}>
+        <div className="flex flex-nowrap gap-2 sm:gap-3 mb-6 justify-center">
           <Button 
             onClick={() => navigate("/add-project")}
-            className="flex-1 min-w-[110px] h-16 bg-primary hover:bg-primary-hover text-primary-foreground eca-shadow hover:shadow-lg transition-all rounded-lg"
-            style={{ 
-              display: 'flex', 
-              justifyContent: 'center', 
-              alignItems: 'center',
-              padding: '8px'
-            }}
+            className="flex-1 min-w-[100px] h-14 sm:h-16 bg-primary hover:bg-primary-hover text-primary-foreground eca-shadow hover:shadow-lg transition-all rounded-lg"
           >
-            <div className="flex items-center whitespace-nowrap" style={{ gap: '8px' }}>
-              <Plus className="h-5 w-5 flex-shrink-0" />
-              <span className="font-semibold text-[14px] md:text-[15px] lg:text-[16px]">New Project</span>
+            <div className="flex items-center gap-1.5 sm:gap-2 w-full justify-center px-2">
+              <Plus className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+              <span className="font-semibold text-[10px] sm:text-xs whitespace-nowrap">New Project</span>
             </div>
           </Button>
           
           <Button 
             onClick={() => navigate("/dealer-pricing")}
             variant="outline"
-            className="flex-1 min-w-[110px] h-16 bg-card hover:bg-muted text-foreground eca-shadow hover:shadow-lg transition-all rounded-lg border-border"
-            style={{ 
-              display: 'flex', 
-              justifyContent: 'center', 
-              alignItems: 'center',
-              padding: '8px'
-            }}
+            className="flex-1 min-w-[100px] h-14 sm:h-16 bg-card hover:bg-muted text-foreground eca-shadow hover:shadow-lg transition-all rounded-lg border-border"
           >
-            <div className="flex items-center whitespace-nowrap" style={{ gap: '8px' }}>
-              <Package className="h-5 w-5 flex-shrink-0 text-foreground" />
-              <span className="font-semibold text-[14px] md:text-[15px] lg:text-[16px]">Manage Pricing</span>
+            <div className="flex items-center gap-1.5 sm:gap-2 w-full justify-center px-2">
+              <Package className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 text-foreground" />
+              <span className="font-semibold text-[10px] sm:text-xs whitespace-nowrap">Manage Pricing</span>
             </div>
           </Button>
 
           <Button 
             onClick={() => navigate("/lead-book")}
             variant="outline"
-            className="flex-1 min-w-[110px] h-16 bg-card hover:bg-muted text-foreground eca-shadow hover:shadow-lg transition-all rounded-lg border-border"
-            style={{ 
-              display: 'flex', 
-              justifyContent: 'center', 
-              alignItems: 'center',
-              padding: '8px'
-            }}
+            className="flex-1 min-w-[100px] h-14 sm:h-16 bg-card hover:bg-muted text-foreground eca-shadow hover:shadow-lg transition-all rounded-lg border-border"
           >
-            <div className="flex items-center whitespace-nowrap" style={{ gap: '8px' }}>
-              <BookOpen className="h-5 w-5 flex-shrink-0 text-foreground" />
-              <span className="font-semibold text-[14px] md:text-[15px] lg:text-[16px]">Lead Summary</span>
+            <div className="flex items-center gap-1.5 sm:gap-2 w-full justify-center px-2">
+              <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 text-foreground" />
+              <span className="font-semibold text-[10px] sm:text-xs whitespace-nowrap">Lead Summary</span>
             </div>
           </Button>
         </div>

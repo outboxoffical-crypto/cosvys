@@ -138,59 +138,37 @@ export default function RoomMeasurementScreen() {
 
   useEffect(() => {
     const loadData = async () => {
+      // Load project data to get project types
+      const savedProjectData = localStorage.getItem(`project_${projectId}`);
+      if (savedProjectData) {
+        const data = JSON.parse(savedProjectData);
+        setProjectData(data);
+        setActiveProjectType(data.projectTypes[0] || "");
+      }
+      
+      // Load existing rooms from Supabase - CRITICAL: Load ALL rooms for this project
       try {
-        // Load project data from Supabase
-        const { data: projectDataFromDb, error: projectError } = await supabase
-          .from('projects')
-          .select('customer_name, phone, location, project_type')
-          .eq('id', projectId)
-          .single();
-        
-        if (projectError) {
-          console.error('Error loading project:', projectError);
-          toast.error('Failed to load project data');
-          return;
-        }
-        
-        if (projectDataFromDb) {
-          // Parse project_type string (comma-separated) into array
-          const projectTypes = projectDataFromDb.project_type
-            .split(',')
-            .map((type: string) => type.trim())
-            .filter(Boolean);
-          
-          const data = {
-            customerName: projectDataFromDb.customer_name || '',
-            mobile: projectDataFromDb.phone || '',
-            address: projectDataFromDb.location || '',
-            projectTypes
-          };
-          
-          setProjectData(data);
-          setActiveProjectType(projectTypes[0] || '');
-        }
-        
-        // Load existing rooms from Supabase
-        const { data: roomsData, error: roomsError } = await supabase
+        const { data: roomsData, error } = await supabase
           .from('rooms')
           .select('*')
           .eq('project_id', projectId)
           .order('created_at', { ascending: true });
         
-        if (roomsError) {
-          console.error('Error loading rooms:', roomsError);
+        if (error) {
+          console.error('Error loading rooms:', error);
           toast.error('Failed to load rooms');
           return;
         }
         
         if (roomsData && roomsData.length > 0) {
+          // IMPORTANT: Store ALL rooms with their project_type - filtering happens in UI only
           const formattedRooms: Room[] = roomsData.map(room => ({
             id: room.room_id,
             name: room.name,
             length: Number(room.length),
             width: Number(room.width),
             height: Number(room.height),
-            projectType: room.project_type,
+            projectType: room.project_type, // Preserve original project type
             pictures: Array.isArray(room.pictures) ? room.pictures as string[] : [],
             openingAreas: Array.isArray(room.opening_areas) ? room.opening_areas as unknown as OpeningArea[] : [],
             extraSurfaces: Array.isArray(room.extra_surfaces) ? room.extra_surfaces as unknown as ExtraSurface[] : [],
@@ -206,11 +184,12 @@ export default function RoomMeasurementScreen() {
               room.selected_areas as { floor: boolean; wall: boolean; ceiling: boolean } : 
               { floor: true, wall: true, ceiling: false }
           }));
+          // Store ALL rooms - DO NOT filter by project type here
           setRooms(formattedRooms);
         }
       } catch (error) {
-        console.error('Error loading data:', error);
-        toast.error('Failed to load project data');
+        console.error('Error:', error);
+        toast.error('Failed to load rooms');
       }
     };
     
