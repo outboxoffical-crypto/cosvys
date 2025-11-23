@@ -11,6 +11,7 @@ import { ArrowLeft, Plus, Ruler, Home, Trash2, Calculator, X, Edit3, Camera, Ima
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { RoomCard } from "./RoomCard";
+import { VirtualizedRoomList } from "./VirtualizedRoomList";
 
 // Utility function for safe numeric parsing - always returns a valid number
 const safeParseFloat = (value: string | number | null | undefined, defaultValue: number = 0): number => {
@@ -1020,9 +1021,28 @@ export default function RoomMeasurementScreen() {
     }
   }, [rooms, projectId]);
 
-  const getRoomsByProjectType = useCallback((projectType: string) => {
+  // Optimized: Memoize filtered rooms to prevent recalculation on every render
+  const getRoomsByProjectType = useMemo(() => (projectType: string) => {
     return rooms.filter(room => room.projectType === projectType);
   }, [rooms]);
+
+  // Optimized: Memoize filtered rooms for current active project type
+  const filteredRooms = useMemo(() => {
+    return rooms
+      .filter(room => room.projectType === activeProjectType)
+      .filter(room => room.length > 0 || room.width > 0 || room.height > 0);
+  }, [rooms, activeProjectType]);
+
+  // Optimized: Memoize total calculations to prevent recalculation
+  const roomTotals = useMemo(() => {
+    return filteredRooms.reduce((acc, room) => {
+      return {
+        floor: acc.floor + (room.selectedAreas.floor ? room.floorArea : 0),
+        wall: acc.wall + (room.selectedAreas.wall ? room.adjustedWallArea : 0),
+        ceiling: acc.ceiling + (room.selectedAreas.ceiling ? room.ceilingArea : 0),
+      };
+    }, { floor: 0, wall: 0, ceiling: 0 });
+  }, [filteredRooms]);
 
   const toggleAreaSelection = useCallback(async (roomId: string, areaType: 'floor' | 'wall' | 'ceiling') => {
     const targetRoom = rooms.find(r => r.id === roomId);
@@ -1579,16 +1599,50 @@ export default function RoomMeasurementScreen() {
             )}
 
             {/* Show Rooms for Active Project Type - Filter out rooms that only have door/window data */}
-            {activeProjectType && getRoomsByProjectType(activeProjectType).filter(room => room.length > 0 || room.width > 0 || room.height > 0).length > 0 && (
+            {activeProjectType && filteredRooms.length > 0 && (
               <div className="space-y-4">
                 <div>
                   <h3 className="text-lg font-semibold text-foreground">{activeProjectType} - Rooms</h3>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Total: {getRoomsByProjectType(activeProjectType).filter(room => room.length > 0 || room.width > 0 || room.height > 0).length} room(s)
+                    Total: {filteredRooms.length} room(s)
                   </p>
+                  <div className="grid grid-cols-3 gap-2 mt-2">
+                    <div className="text-center p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
+                      <p className="text-xs text-muted-foreground">Floor</p>
+                      <p className="font-bold text-foreground">{roomTotals.floor.toFixed(1)} sq.ft</p>
+                    </div>
+                    <div className="text-center p-2 bg-green-50 dark:bg-green-900/20 rounded">
+                      <p className="text-xs text-muted-foreground">Wall</p>
+                      <p className="font-bold text-foreground">{roomTotals.wall.toFixed(1)} sq.ft</p>
+                    </div>
+                    <div className="text-center p-2 bg-purple-50 dark:bg-purple-900/20 rounded">
+                      <p className="text-xs text-muted-foreground">Ceiling</p>
+                      <p className="font-bold text-foreground">{roomTotals.ceiling.toFixed(1)} sq.ft</p>
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-4">
-                  {getRoomsByProjectType(activeProjectType).filter(room => room.length > 0 || room.width > 0 || room.height > 0).map((room) => (
+                
+                {/* Virtualized Room List for Performance */}
+                {filteredRooms.length > 10 ? (
+                  <VirtualizedRoomList
+                    rooms={filteredRooms}
+                    onEditRoom={handleEditRoom}
+                    onRemoveRoom={removeRoom}
+                    onToggleAreaSelection={toggleAreaSelection}
+                    onAddOpeningArea={addOpeningAreaToRoom}
+                    onRemoveOpeningArea={removeOpeningArea}
+                    onAddExtraSurface={addExtraSurfaceToRoom}
+                    onRemoveExtraSurface={removeExtraSurface}
+                    onRemoveDoorWindowGrill={removeDoorWindowGrill}
+                    onUpdateDoorWindowGrillName={updateDoorWindowGrillName}
+                    roomOpeningInputs={roomOpeningInputs}
+                    roomExtraSurfaceInputs={roomExtraSurfaceInputs}
+                    onSetRoomOpeningInputs={setRoomOpeningInputs}
+                    onSetRoomExtraSurfaceInputs={setRoomExtraSurfaceInputs}
+                  />
+                ) : (
+                  <div className="space-y-4">
+                    {filteredRooms.map((room) => (
                     <Card key={room.id} className="eca-shadow overflow-hidden">
                       <CardContent className="p-4">
                         <div className="space-y-4">
@@ -1857,8 +1911,9 @@ export default function RoomMeasurementScreen() {
                         </div>
                       </CardContent>
                     </Card>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </TabsContent>
