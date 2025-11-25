@@ -218,7 +218,10 @@ const LeadBookScreen = () => {
             </Button>
             <h1 className="text-2xl font-bold">Lead Book</h1>
           </div>
-          <div className="w-[40px]"></div>
+          <Button onClick={() => setIsDialogOpen(true)} className="bg-primary text-white hover:bg-primary/90">
+            <Plus className="h-4 w-4 mr-2" />
+            Add Lead
+          </Button>
         </div>
         
         <Dialog open={isDialogOpen} onOpenChange={(open) => {
