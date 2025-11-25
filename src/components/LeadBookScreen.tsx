@@ -45,7 +45,7 @@ const LeadBookScreen = () => {
     central_local: "Local",
     lead_id: "",
     status: "Pending",
-    quotation_value: 0,
+    quotation_value: "" as string | number,
     nps: null as number | null,
     drop_reason_remarks: "",
     approval_status: "Pending",
@@ -122,7 +122,7 @@ const LeadBookScreen = () => {
         ...formData,
         user_id: user.id,
         nps: formData.nps === null ? null : Number(formData.nps),
-        quotation_value: Number(formData.quotation_value),
+        quotation_value: formData.quotation_value === "" ? 0 : Number(formData.quotation_value),
       };
 
       if (editingLead) {
@@ -200,7 +200,7 @@ const LeadBookScreen = () => {
       central_local: "Local",
       lead_id: "",
       status: "Pending",
-      quotation_value: 0,
+      quotation_value: "",
       nps: null,
       drop_reason_remarks: "",
       approval_status: "Pending",
@@ -309,8 +309,9 @@ const LeadBookScreen = () => {
                   <Input
                     id="quotation_value"
                     type="number"
+                    placeholder="0"
                     value={formData.quotation_value}
-                    onChange={(e) => setFormData({ ...formData, quotation_value: parseFloat(e.target.value) || 0 })}
+                    onChange={(e) => setFormData({ ...formData, quotation_value: e.target.value ? parseFloat(e.target.value) : "" })}
                   />
                 </div>
                 <div>
