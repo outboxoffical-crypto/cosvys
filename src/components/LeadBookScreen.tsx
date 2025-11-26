@@ -211,17 +211,11 @@ const LeadBookScreen = () => {
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <h1 className="text-2xl font-bold">Lead Book</h1>
-          </div>
-          <Button onClick={() => setIsDialogOpen(true)} className="bg-primary text-white hover:bg-primary/90">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Lead
+        <div className="flex items-center gap-2 mb-6">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")}>
+            <ArrowLeft className="h-5 w-5" />
           </Button>
+          <h1 className="text-2xl font-bold">Lead Book</h1>
         </div>
         
         <Dialog open={isDialogOpen} onOpenChange={(open) => {
