@@ -235,7 +235,7 @@ const LeadBookScreen = () => {
                     type="date"
                     value={formData.date}
                     onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                    className="[&::-webkit-calendar-picker-indicator]:ml-auto [&::-webkit-calendar-picker-indicator]:mr-2 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                    className="[&::-webkit-calendar-picker-indicator]:ml-auto [&::-webkit-calendar-picker-indicator]:mr-4 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                   />
                 </div>
                 <div>
