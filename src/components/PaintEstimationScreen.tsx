@@ -228,18 +228,29 @@ export default function PaintEstimationScreen() {
         }
         
         if (roomsData) {
-          // Set rooms immediately - non-blocking
+          // Set rooms immediately for instant UI render
           setRooms(roomsData);
           
-          // Run calculations in background using startTransition
+          // Show loading indicator
           setIsCalculating(true);
-          setTimeout(() => {
-            initializeConfigurations(roomsData);
-            setIsCalculating(false);
-          }, 0);
+          
+          // Defer calculations to next frame for smooth transition
+          requestAnimationFrame(() => {
+            // Use setTimeout to ensure screen renders first
+            setTimeout(() => {
+              try {
+                initializeConfigurations(roomsData);
+              } catch (error) {
+                console.error('Calculation error:', error);
+              } finally {
+                setIsCalculating(false);
+              }
+            }, 50);
+          });
         }
       } catch (error) {
         console.error('Error:', error);
+        setIsCalculating(false);
       }
     };
     
@@ -955,11 +966,11 @@ export default function PaintEstimationScreen() {
         
         {/* Calculating Indicator - Non-blocking */}
         {isCalculating && (
-          <Card className="eca-shadow border-2 border-primary/30 bg-primary/5">
+          <Card className="eca-shadow border-2 border-primary/30 bg-primary/5 animate-pulse">
             <CardContent className="p-4">
               <div className="flex items-center justify-center space-x-3">
-                <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                <p className="text-sm font-medium text-primary">Calculating paint areas...</p>
+                <div className="h-5 w-5 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+                <p className="text-base font-semibold text-primary">Calculating material & labour... Please wait</p>
               </div>
             </CardContent>
           </Card>
