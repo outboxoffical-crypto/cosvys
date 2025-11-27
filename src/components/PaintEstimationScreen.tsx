@@ -947,21 +947,24 @@ export default function PaintEstimationScreen() {
               <Button
                 variant={selectedPaintType === "Interior" ? "default" : "outline"}
                 onClick={() => setSelectedPaintType("Interior")}
-                className="h-12 text-sm"
+                className="h-12 px-2 overflow-hidden whitespace-nowrap text-ellipsis text-center"
+                style={{ fontSize: 'clamp(12px, 3vw, 16px)' }}
               >
                 Interior Paint
               </Button>
               <Button
                 variant={selectedPaintType === "Exterior" ? "default" : "outline"}
                 onClick={() => setSelectedPaintType("Exterior")}
-                className="h-12 text-sm"
+                className="h-12 px-2 overflow-hidden whitespace-nowrap text-ellipsis text-center"
+                style={{ fontSize: 'clamp(12px, 3vw, 16px)' }}
               >
                 Exterior Paint
               </Button>
               <Button
                 variant={selectedPaintType === "Waterproofing" ? "default" : "outline"}
                 onClick={() => setSelectedPaintType("Waterproofing")}
-                className="h-12 text-sm"
+                className="h-12 px-2 overflow-hidden whitespace-nowrap text-ellipsis text-center"
+                style={{ fontSize: 'clamp(12px, 3vw, 16px)' }}
               >
                 Waterproofing
               </Button>
