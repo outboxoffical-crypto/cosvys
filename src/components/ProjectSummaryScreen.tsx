@@ -20,23 +20,23 @@ export default function ProjectSummaryScreen() {
 
   useEffect(() => {
     const loadData = async () => {
-      // Load project data - all synchronously without delays
-      const project = localStorage.getItem(`project_${projectId}`);
+      // Load estimation and area configs from localStorage
       const estimationData = localStorage.getItem(`estimation_${projectId}`);
       const areaConfigsData = localStorage.getItem(`areaConfigurations_${projectId}`);
 
-      if (project) setProjectData(JSON.parse(project));
       if (estimationData) setEstimation(JSON.parse(estimationData));
       if (areaConfigsData) setAreaConfigurations(JSON.parse(areaConfigsData));
 
-      // Load rooms and dealer info in parallel
+      // Load project data, rooms and dealer info from Supabase in parallel
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        const [roomsResult, dealerResult] = await Promise.all([
+        const [projectResult, roomsResult, dealerResult] = await Promise.all([
+          supabase.from('projects').select('*').eq('id', projectId).single(),
           supabase.from('rooms').select('*').eq('project_id', projectId),
           supabase.from('dealer_info').select('*').eq('user_id', session.user.id).maybeSingle()
         ]);
         
+        if (projectResult.data) setProjectData(projectResult.data);
         if (roomsResult.data) setRooms(roomsResult.data);
         if (dealerResult.data) setDealerInfo(dealerResult.data);
       }
@@ -528,35 +528,32 @@ export default function ProjectSummaryScreen() {
                     <div className="w-2 h-2 bg-primary rounded-full"></div>
                   </div>
                   <div>
-                    <p className="font-semibold text-foreground">{projectData?.customerName}</p>
+                    <p className="font-semibold text-foreground">{projectData?.customer_name || 'N/A'}</p>
                     <p className="text-sm text-muted-foreground">Customer Name</p>
                   </div>
                 </div>
                 <div className="flex items-center">
                   <Phone className="h-4 w-4 text-muted-foreground mr-3 ml-1" />
                   <div>
-                    <p className="font-medium text-foreground">{projectData?.mobile}</p>
+                    <p className="font-medium text-foreground">{projectData?.phone || 'N/A'}</p>
                     <p className="text-sm text-muted-foreground">Mobile Number</p>
                   </div>
                 </div>
                 <div className="flex items-start">
                   <MapPin className="h-4 w-4 text-muted-foreground mr-3 ml-1 mt-1" />
                   <div>
-                    <p className="font-medium text-foreground">{projectData?.address}</p>
+                    <p className="font-medium text-foreground">{projectData?.location || 'N/A'}</p>
                     <p className="text-sm text-muted-foreground">Address</p>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-3">
                   <span className="text-sm text-muted-foreground font-medium mb-2 w-full">Project Type:</span>
-                  {(projectData?.projectTypes || []).map((type: string, index: number) => (
+                  {activeProjectTypes.map((type: string) => (
                     <div 
                       key={type} 
-                      className={`inline-flex items-center px-4 py-2 font-semibold text-sm rounded-full transition-all duration-200 hover:shadow-md ${
-                        index === 0 && projectData?.projectTypes?.length >= 1
-                          ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white shadow-md' 
-                          : 'bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200'
-                      }`}
+                      className="inline-flex items-center px-4 py-2 font-semibold text-sm rounded-full transition-all duration-200 hover:shadow-md text-white shadow-md"
                       style={{
+                        backgroundColor: '#E63946',
                         fontFamily: '"Segoe UI", "Inter", system-ui, sans-serif'
                       }}
                     >
