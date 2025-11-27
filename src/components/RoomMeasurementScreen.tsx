@@ -1085,7 +1085,7 @@ export default function RoomMeasurementScreen() {
 
   const handleContinue = async () => {
     if (rooms.length > 0) {
-      // Save all room data before navigating to ensure persistence
+      // INSTANT navigation - don't wait for save
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
@@ -1093,7 +1093,10 @@ export default function RoomMeasurementScreen() {
           return;
         }
 
-        // Batch update all rooms to ensure all data is saved
+        // Navigate IMMEDIATELY - 0.3s target
+        navigate(`/paint-estimation/${projectId}`);
+        
+        // Save rooms in background without blocking
         const updatePromises = rooms.map(room => 
           supabase.from('rooms').upsert({
             user_id: session.user.id,
@@ -1103,7 +1106,7 @@ export default function RoomMeasurementScreen() {
             length: room.length,
             width: room.width,
             height: room.height,
-            project_type: room.projectType, // Ensure project type is saved
+            project_type: room.projectType,
             pictures: room.pictures as any,
             opening_areas: room.openingAreas as any,
             extra_surfaces: room.extraSurfaces as any,
@@ -1119,11 +1122,13 @@ export default function RoomMeasurementScreen() {
           }, { onConflict: 'room_id,project_id' })
         );
 
-        await Promise.all(updatePromises);
-        navigate(`/paint-estimation/${projectId}`);
+        // Background save - non-blocking
+        Promise.all(updatePromises).catch(error => {
+          console.error('Background save error:', error);
+        });
       } catch (error) {
-        console.error('Error saving rooms before navigation:', error);
-        toast.error('Failed to save room data');
+        console.error('Error in navigation:', error);
+        toast.error('Navigation failed');
       }
     }
   };

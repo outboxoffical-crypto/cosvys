@@ -83,7 +83,8 @@ export default function PaintEstimationScreen() {
   
   const [selectedConfigId, setSelectedConfigId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isCalculating, setIsCalculating] = useState(false);
   const [emulsionComboOpen, setEmulsionComboOpen] = useState(false);
 
   // Sync initial paint type, prefer snapshot from Generate Summary
@@ -185,16 +186,20 @@ export default function PaintEstimationScreen() {
     });
   };
 
-  // Fetch coverage data
+  // Optimized coverage data fetch - only relevant categories
   useEffect(() => {
     fetchCoverageData();
   }, []);
 
   const fetchCoverageData = async () => {
     try {
+      // Fetch only essential categories - NOT all rows
+      const categories = ['Putty', 'Primer', 'Interior Emulsion', 'Exterior Emulsion', 'Waterproofing'];
+      
       const { data, error } = await supabase
         .from('coverage_data')
-        .select('*')
+        .select('id, category, product_name, coats, coverage_range, surface_type, notes')
+        .in('category', categories)
         .order('product_name');
       
       if (error) {
@@ -208,30 +213,33 @@ export default function PaintEstimationScreen() {
     }
   };
 
-  // Load rooms and filter by project type
+  // Optimized room loading with background calculations
   useEffect(() => {
     const loadRooms = async () => {
-      setIsLoading(true);
       try {
         const { data: roomsData, error } = await supabase
           .from('rooms')
-          .select('*')
+          .select('id, room_id, name, project_type, floor_area, wall_area, ceiling_area, adjusted_wall_area, selected_areas, door_window_grills, total_door_window_grill_area')
           .eq('project_id', projectId);
         
         if (error) {
           console.error('Error loading rooms:', error);
-          setIsLoading(false);
           return;
         }
         
         if (roomsData) {
+          // Set rooms immediately - non-blocking
           setRooms(roomsData);
-          initializeConfigurations(roomsData);
-          setIsLoading(false);
+          
+          // Run calculations in background using startTransition
+          setIsCalculating(true);
+          setTimeout(() => {
+            initializeConfigurations(roomsData);
+            setIsCalculating(false);
+          }, 0);
         }
       } catch (error) {
         console.error('Error:', error);
-        setIsLoading(false);
       }
     };
     
@@ -944,17 +952,21 @@ export default function PaintEstimationScreen() {
             </div>
           </CardContent>
         </Card>
-
-        {isLoading ? (
-          <Card className="eca-shadow">
-            <CardContent className="p-6 text-center">
-              <p className="text-muted-foreground">Loading areas...</p>
+        
+        {/* Calculating Indicator - Non-blocking */}
+        {isCalculating && (
+          <Card className="eca-shadow border-2 border-primary/30 bg-primary/5">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-center space-x-3">
+                <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                <p className="text-sm font-medium text-primary">Calculating paint areas...</p>
+              </div>
             </CardContent>
           </Card>
-        ) : (
-          <>
-            {/* Paint Configuration Summary - MOVED TO TOP (only non-enamel) */}
-            {areaConfigurations.some(c => (c.paintingSystem || c.areaType === 'Enamel') && c.areaType !== 'Enamel') && (
+        )}
+
+        {/* Paint Configuration Summary - MOVED TO TOP (only non-enamel) */}
+        {areaConfigurations.some(c => (c.paintingSystem || c.areaType === 'Enamel') && c.areaType !== 'Enamel') && (
               <Card className="eca-shadow border-2 border-primary/30">
                 <CardHeader>
                   <CardTitle className="text-lg">Paint Configuration Summary</CardTitle>
@@ -1400,8 +1412,6 @@ export default function PaintEstimationScreen() {
                 </CardContent>
               </Card>
             )}
-          </>
-        )}
       </div>
 
       {/* Configuration Dialog */}
