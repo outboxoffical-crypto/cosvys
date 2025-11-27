@@ -281,8 +281,9 @@ export default function PaintEstimationScreen() {
     let hasEnamelSelected = false;
 
     filteredRooms.forEach((room: any) => {
+      // Only use selected_areas if it exists, otherwise treat all as NOT selected
       const selectedAreas = (typeof room.selected_areas === 'object' && room.selected_areas !== null) ? 
-        room.selected_areas as any : { floor: false, wall: true, ceiling: false };
+        room.selected_areas as any : { floor: false, wall: false, ceiling: false };
       
       if (selectedAreas.floor) {
         floorAreaTotal += Number(room.floor_area || 0);
@@ -296,9 +297,13 @@ export default function PaintEstimationScreen() {
         ceilingAreaTotal += Number(room.ceiling_area || 0);
         hasCeilingSelected = true;
       }
-      if (room.door_window_grills && Array.isArray(room.door_window_grills)) {
-        enamelAreaTotal += Number(room.total_door_window_grill_area || 0);
-        hasEnamelSelected = true;
+      // Enamel is auto-included if door/window/grill areas exist with actual area
+      if (room.door_window_grills && Array.isArray(room.door_window_grills) && room.door_window_grills.length > 0) {
+        const enamelArea = Number(room.total_door_window_grill_area || 0);
+        if (enamelArea > 0) {
+          enamelAreaTotal += enamelArea;
+          hasEnamelSelected = true;
+        }
       }
     });
 
@@ -383,7 +388,7 @@ export default function PaintEstimationScreen() {
         let newRoomName = 'Additional Floor Area';
         const newFloorRoom = newRooms.find(room => {
           const selectedAreas = (typeof room.selected_areas === 'object' && room.selected_areas !== null) ? 
-            room.selected_areas as any : { floor: false, wall: true, ceiling: false };
+            room.selected_areas as any : { floor: false, wall: false, ceiling: false };
           return selectedAreas.floor;
         });
         if (newFloorRoom) {
@@ -414,7 +419,7 @@ export default function PaintEstimationScreen() {
         let newRoomName = 'Additional Wall Area';
         const newWallRoom = newRooms.find(room => {
           const selectedAreas = (typeof room.selected_areas === 'object' && room.selected_areas !== null) ? 
-            room.selected_areas as any : { floor: false, wall: true, ceiling: false };
+            room.selected_areas as any : { floor: false, wall: false, ceiling: false };
           return selectedAreas.wall;
         });
         if (newWallRoom) {
@@ -445,7 +450,7 @@ export default function PaintEstimationScreen() {
         let newRoomName = 'Additional Ceiling Area';
         const newCeilingRoom = newRooms.find(room => {
           const selectedAreas = (typeof room.selected_areas === 'object' && room.selected_areas !== null) ? 
-            room.selected_areas as any : { floor: false, wall: true, ceiling: false };
+            room.selected_areas as any : { floor: false, wall: false, ceiling: false };
           return selectedAreas.ceiling;
         });
         if (newCeilingRoom) {
