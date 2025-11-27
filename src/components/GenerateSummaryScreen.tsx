@@ -59,6 +59,11 @@ export default function GenerateSummaryScreen() {
   const [projectData, setProjectData] = useState<any>(null);
   const [coverageData, setCoverageData] = useState<any>({});
   const [productPricing, setProductPricing] = useState<any>({});
+  
+  // Loading states for progressive rendering
+  const [isLoadingPaintConfig, setIsLoadingPaintConfig] = useState(true);
+  const [isLoadingLabour, setIsLoadingLabour] = useState(true);
+  const [isLoadingMaterial, setIsLoadingMaterial] = useState(true);
   useEffect(() => {
     loadData();
   }, [projectId]);
@@ -72,6 +77,24 @@ export default function GenerateSummaryScreen() {
       });
     }, 100);
   }, []);
+
+  // Progressive calculation after data loads
+  useEffect(() => {
+    if (areaConfigs.length > 0 || calculationConfigs.length > 0) {
+      // Defer calculations to next tick for instant UI
+      setTimeout(() => {
+        setIsLoadingPaintConfig(false);
+      }, 0);
+      
+      setTimeout(() => {
+        setIsLoadingLabour(false);
+      }, 100);
+      
+      setTimeout(() => {
+        setIsLoadingMaterial(false);
+      }, 200);
+    }
+  }, [areaConfigs, calculationConfigs]);
   const loadData = async () => {
     try {
       // Load coverage data from database
@@ -395,7 +418,14 @@ export default function GenerateSummaryScreen() {
           <p className="text-sm text-muted-foreground mt-1">All configured paint types</p>
         </CardHeader>
         <CardContent>
-          {areaConfigs.length === 0 ? <div className="text-sm text-muted-foreground p-4 border rounded-md bg-muted/30">
+          {isLoadingPaintConfig ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="flex flex-col items-center gap-3">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <p className="text-sm text-muted-foreground">Loading configurations...</p>
+              </div>
+            </div>
+          ) : areaConfigs.length === 0 ? <div className="text-sm text-muted-foreground p-4 border rounded-md bg-muted/30">
               No paint configurations found. Please add them in Paint Estimation and click Generate Summary.
             </div> : <div className="space-y-4">
               {renderConfigGroup(interiorConfigs, 'Interior Paint Configurations')}
@@ -725,6 +755,14 @@ export default function GenerateSummaryScreen() {
           <p className="text-sm text-muted-foreground mt-1">Based on {workingHours} working hours per day</p>
         </CardHeader>
         <CardContent>
+          {isLoadingLabour ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="flex flex-col items-center gap-3">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <p className="text-sm text-muted-foreground">Calculating labour requirements...</p>
+              </div>
+            </div>
+          ) : (
           <div className="space-y-3">
             {/* Mode Selector */}
             <div className="flex gap-2 p-1 bg-muted rounded-lg w-fit">
@@ -1019,6 +1057,7 @@ export default function GenerateSummaryScreen() {
               </>}
 
           </div>
+          )}
         </CardContent>
       </Card>;
   };
@@ -1301,7 +1340,14 @@ export default function GenerateSummaryScreen() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {calculationConfigs.length === 0 ? <div className="text-sm text-muted-foreground p-4 border rounded-md bg-muted/30">
+          {isLoadingMaterial ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="flex flex-col items-center gap-3">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <p className="text-sm text-muted-foreground">Calculating material requirements...</p>
+              </div>
+            </div>
+          ) : calculationConfigs.length === 0 ? <div className="text-sm text-muted-foreground p-4 border rounded-md bg-muted/30">
               No material configurations found.
             </div> : <div className="space-y-4">
               {/* Interior Configurations */}
@@ -1496,9 +1542,8 @@ export default function GenerateSummaryScreen() {
                       </Card>;
               })}
                     
-                  </div>
+                   </div>
                 </div>}
-            </div>}
 
           {/* Total Material Cost Summary */}
           {configMaterials.length > 0 && <div className="p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border-2 border-primary mt-4">
@@ -1509,6 +1554,7 @@ export default function GenerateSummaryScreen() {
                 </p>
               </div>
             </div>}
+          </div>}
         </CardContent>
       </Card>;
   };
