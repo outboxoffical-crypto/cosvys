@@ -1085,7 +1085,6 @@ export default function RoomMeasurementScreen() {
 
   const handleContinue = async () => {
     if (rooms.length > 0) {
-      // INSTANT navigation - don't wait for save
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
@@ -1093,10 +1092,10 @@ export default function RoomMeasurementScreen() {
           return;
         }
 
-        // Navigate IMMEDIATELY - 0.3s target
-        navigate(`/paint-estimation/${projectId}`);
+        // Show immediate feedback
+        toast.loading('Saving rooms...', { id: 'save-progress' });
         
-        // Save rooms in background without blocking
+        // Save rooms and WAIT for completion to ensure data is persisted
         const updatePromises = rooms.map(room => 
           supabase.from('rooms').upsert({
             user_id: session.user.id,
@@ -1122,14 +1121,18 @@ export default function RoomMeasurementScreen() {
           }, { onConflict: 'room_id,project_id' })
         );
 
-        // Background save - non-blocking
-        Promise.all(updatePromises).catch(error => {
-          console.error('Background save error:', error);
-        });
+        // Wait for all saves to complete
+        await Promise.all(updatePromises);
+        toast.success('Rooms saved successfully', { id: 'save-progress' });
+        
+        // Navigate after save completes
+        navigate(`/paint-estimation/${projectId}`);
       } catch (error) {
-        console.error('Error in navigation:', error);
-        toast.error('Navigation failed');
+        console.error('Error saving rooms:', error);
+        toast.error('Failed to save rooms', { id: 'save-progress' });
       }
+    } else {
+      toast.error('Please add at least one room');
     }
   };
 

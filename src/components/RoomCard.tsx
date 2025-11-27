@@ -343,7 +343,16 @@ export const RoomCard = memo(({
     </Card>
   );
 }, (prevProps, nextProps) => {
-  // Custom comparison to prevent unnecessary re-renders
+  // Deep comparison for arrays to properly detect changes
+  const openingAreasEqual = prevProps.room.openingAreas.length === nextProps.room.openingAreas.length &&
+    prevProps.room.openingAreas.every((oa, i) => oa.id === nextProps.room.openingAreas[i]?.id);
+  
+  const extraSurfacesEqual = prevProps.room.extraSurfaces.length === nextProps.room.extraSurfaces.length &&
+    prevProps.room.extraSurfaces.every((es, i) => es.id === nextProps.room.extraSurfaces[i]?.id);
+  
+  const doorWindowGrillsEqual = prevProps.room.doorWindowGrills.length === nextProps.room.doorWindowGrills.length &&
+    prevProps.room.doorWindowGrills.every((dwg, i) => dwg.id === nextProps.room.doorWindowGrills[i]?.id);
+
   return (
     prevProps.room.id === nextProps.room.id &&
     prevProps.room.name === nextProps.room.name &&
@@ -354,12 +363,13 @@ export const RoomCard = memo(({
     prevProps.room.wallArea === nextProps.room.wallArea &&
     prevProps.room.ceilingArea === nextProps.room.ceilingArea &&
     prevProps.room.adjustedWallArea === nextProps.room.adjustedWallArea &&
+    prevProps.room.totalExtraSurface === nextProps.room.totalExtraSurface &&
     prevProps.room.selectedAreas.floor === nextProps.room.selectedAreas.floor &&
     prevProps.room.selectedAreas.wall === nextProps.room.selectedAreas.wall &&
     prevProps.room.selectedAreas.ceiling === nextProps.room.selectedAreas.ceiling &&
-    prevProps.room.openingAreas.length === nextProps.room.openingAreas.length &&
-    prevProps.room.extraSurfaces.length === nextProps.room.extraSurfaces.length &&
-    prevProps.room.doorWindowGrills.length === nextProps.room.doorWindowGrills.length &&
+    openingAreasEqual &&
+    extraSurfacesEqual &&
+    doorWindowGrillsEqual &&
     prevProps.newOpeningArea.height === nextProps.newOpeningArea.height &&
     prevProps.newOpeningArea.width === nextProps.newOpeningArea.width &&
     prevProps.newOpeningArea.quantity === nextProps.newOpeningArea.quantity &&
