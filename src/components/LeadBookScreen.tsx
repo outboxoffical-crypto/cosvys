@@ -495,18 +495,6 @@ const LeadBookScreen = () => {
                         <p className="text-sm text-muted-foreground mt-1">Conversion</p>
                       </div>
                     </div>
-                    <div className="mt-6 grid grid-cols-2 gap-4 w-full max-w-sm">
-                      <div className="text-center p-3 bg-muted/50 rounded-lg">
-                        <p className="text-2xl font-bold text-foreground">{monthlyConversionData.total}</p>
-                        <p className="text-xs text-muted-foreground mt-1">Total Leads</p>
-                      </div>
-                      <div className="text-center p-3 bg-gradient-to-r from-[#E63946]/10 to-[#A855F7]/10 rounded-lg">
-                        <p className="text-2xl font-bold bg-gradient-to-r from-[#E63946] to-[#A855F7] bg-clip-text text-transparent">
-                          {monthlyConversionData.converted}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">Converted</p>
-                      </div>
-                    </div>
                   </>
                 )}
               </div>
