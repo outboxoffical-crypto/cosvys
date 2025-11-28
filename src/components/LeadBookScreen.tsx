@@ -416,20 +416,21 @@ const LeadBookScreen = () => {
           </CardHeader>
           <CardContent>
             <div className="flex flex-col gap-6">
-              {/* Month Selector - Compact Dropdown */}
+              {/* Month Selector */}
               <div className="w-full max-w-xs mx-auto">
+                <Label className="text-sm font-medium text-muted-foreground mb-2 block">Select the Month</Label>
                 <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                  <SelectTrigger className="h-16 text-2xl font-bold bg-gradient-to-r from-[#E63946]/5 to-[#A855F7]/5 border-2 hover:border-primary/50 transition-colors">
+                  <SelectTrigger className="h-11 text-base font-medium border hover:border-primary/40 transition-colors bg-background">
                     <SelectValue>
-                      {getLast12Months().find(m => m.key === selectedMonth)?.label.split(' ')[0] || "Select Month"}
+                      {getLast12Months().find(m => m.key === selectedMonth)?.label || "Select Month"}
                     </SelectValue>
                   </SelectTrigger>
-                  <SelectContent className="max-h-[300px]">
+                  <SelectContent className="max-h-[280px]">
                     {getLast12Months().map((month) => (
                       <SelectItem 
                         key={month.key} 
                         value={month.key}
-                        className="text-base py-3"
+                        className="text-sm py-2.5"
                       >
                         {month.label}
                       </SelectItem>
