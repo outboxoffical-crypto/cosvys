@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from "recharts";
 
 interface Lead {
   id: string;
@@ -36,6 +37,8 @@ const LeadBookScreen = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [leadStats, setLeadStats] = useState({ total: 0, converted: 0, dropped: 0, pending: 0 });
+  const [selectedMonth, setSelectedMonth] = useState<string>("");
+  const [monthlyConversionData, setMonthlyConversionData] = useState({ total: 0, converted: 0, percentage: 0 });
   
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -55,7 +58,44 @@ const LeadBookScreen = () => {
   useEffect(() => {
     fetchLeads();
     fetchLeadStats();
+    // Set current month as default
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    setSelectedMonth(currentMonth);
   }, []);
+
+  useEffect(() => {
+    if (selectedMonth && leads.length > 0) {
+      calculateMonthlyConversion(selectedMonth);
+    }
+  }, [selectedMonth, leads]);
+
+  const calculateMonthlyConversion = (month: string) => {
+    const [year, monthNum] = month.split('-');
+    const monthLeads = leads.filter(lead => {
+      const leadDate = new Date(lead.date);
+      return leadDate.getFullYear() === parseInt(year) && 
+             leadDate.getMonth() + 1 === parseInt(monthNum);
+    });
+
+    const total = monthLeads.length;
+    const converted = monthLeads.filter(l => l.status === "Converted").length;
+    const percentage = total > 0 ? Math.round((converted / total) * 100) : 0;
+
+    setMonthlyConversionData({ total, converted, percentage });
+  };
+
+  const getLast12Months = () => {
+    const months = [];
+    const now = new Date();
+    for (let i = 0; i < 12; i++) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      const monthLabel = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+      months.push({ key: monthKey, label: monthLabel });
+    }
+    return months;
+  };
 
   const fetchLeadStats = async () => {
     try {
@@ -368,6 +408,110 @@ const LeadBookScreen = () => {
             </form>
           </DialogContent>
         </Dialog>
+
+        {/* Monthly Conversion Chart */}
+        <Card className="eca-shadow mb-6">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-semibold">Monthly Lead Conversion</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col md:flex-row gap-6">
+              {/* Month Selector */}
+              <div className="w-full md:w-48 flex-shrink-0">
+                <p className="text-sm font-medium mb-3 text-muted-foreground">Select Month</p>
+                <div className="flex md:flex-col gap-2 overflow-x-auto md:overflow-y-auto md:max-h-[320px] pb-2 md:pb-0">
+                  {getLast12Months().map((month) => (
+                    <Button
+                      key={month.key}
+                      variant={selectedMonth === month.key ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setSelectedMonth(month.key)}
+                      className={`whitespace-nowrap min-w-[100px] md:w-full justify-start ${
+                        selectedMonth === month.key 
+                          ? "bg-gradient-to-r from-[#E63946] to-[#A855F7] text-white font-semibold" 
+                          : "hover:bg-muted"
+                      }`}
+                    >
+                      {month.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Donut Chart */}
+              <div className="flex-1 flex flex-col items-center justify-center min-h-[300px]">
+                {monthlyConversionData.total === 0 ? (
+                  <div className="text-center">
+                    <div className="mb-4 opacity-30">
+                      <ResponsiveContainer width={280} height={280}>
+                        <PieChart>
+                          <Pie
+                            data={[{ value: 100 }]}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={80}
+                            outerRadius={110}
+                            fill="#e5e7eb"
+                            dataKey="value"
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <p className="text-muted-foreground">No lead data available for this month</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="relative">
+                      <ResponsiveContainer width={280} height={280}>
+                        <PieChart>
+                          <Pie
+                            data={[
+                              { name: 'Converted', value: monthlyConversionData.converted },
+                              { name: 'Not Converted', value: monthlyConversionData.total - monthlyConversionData.converted }
+                            ]}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={80}
+                            outerRadius={110}
+                            paddingAngle={2}
+                            dataKey="value"
+                          >
+                            <Cell fill="url(#gradient1)" />
+                            <Cell fill="#f3f4f6" />
+                          </Pie>
+                          <defs>
+                            <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+                              <stop offset="0%" stopColor="#E63946" />
+                              <stop offset="100%" stopColor="#A855F7" />
+                            </linearGradient>
+                          </defs>
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <p className="text-4xl font-bold bg-gradient-to-r from-[#E63946] to-[#A855F7] bg-clip-text text-transparent">
+                          {monthlyConversionData.percentage}%
+                        </p>
+                        <p className="text-sm text-muted-foreground mt-1">Conversion</p>
+                      </div>
+                    </div>
+                    <div className="mt-6 grid grid-cols-2 gap-4 w-full max-w-sm">
+                      <div className="text-center p-3 bg-muted/50 rounded-lg">
+                        <p className="text-2xl font-bold text-foreground">{monthlyConversionData.total}</p>
+                        <p className="text-xs text-muted-foreground mt-1">Total Leads</p>
+                      </div>
+                      <div className="text-center p-3 bg-gradient-to-r from-[#E63946]/10 to-[#A855F7]/10 rounded-lg">
+                        <p className="text-2xl font-bold bg-gradient-to-r from-[#E63946] to-[#A855F7] bg-clip-text text-transparent">
+                          {monthlyConversionData.converted}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">Converted</p>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Lead Summary Statistics */}
         <Card className="eca-shadow mb-6">
