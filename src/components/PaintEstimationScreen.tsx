@@ -509,6 +509,128 @@ export default function PaintEstimationScreen() {
         }));
         localStorage.removeItem(modeKey);
       } catch {}
+    } else if (!isAdditionalMode && baseline && baseline.roomIds && baseline.roomIds.length > 0) {
+      // FALLBACK: If baseline exists and there are NEW rooms (not in baseline.roomIds),
+      // create separate additional boxes automatically (even without the mode flag).
+      // This ensures new sq.ft never disappears when user edits project.
+      const baselineRoomIds = baseline.roomIds || [];
+      const currentRoomIds = filteredRooms.map(r => r.id);
+      const newRoomIds = currentRoomIds.filter(id => !baselineRoomIds.includes(id));
+      
+      if (newRoomIds.length > 0) {
+        // New rooms detected! Calculate the difference
+        const addFloor = Math.max(0, floorAreaTotal - (baseline.floor || 0));
+        const addWall = Math.max(0, wallAreaTotal - (baseline.wall || 0));
+        const addCeiling = Math.max(0, ceilingAreaTotal - (baseline.ceiling || 0));
+
+        // Keep main as baseline
+        floorMain = baseline.floor || 0;
+        wallMain = baseline.wall || 0;
+        ceilingMain = baseline.ceiling || 0;
+
+        const newRooms = filteredRooms.filter(r => newRoomIds.includes(r.id));
+
+        if (addFloor > 0) {
+          let newRoomName = 'Additional Floor Area';
+          const newFloorRoom = newRooms.find(room => {
+            const selectedAreas = (typeof room.selected_areas === 'object' && room.selected_areas !== null) ? 
+              room.selected_areas as any : { floor: false, wall: false, ceiling: false };
+            return selectedAreas.floor;
+          });
+          if (newFloorRoom) {
+            newRoomName = `${newFloorRoom.name} (Floor Area)`;
+          }
+
+          const newConfig: AreaConfiguration = {
+            id: `floor-additional-${Date.now()}`,
+            areaType: 'Floor' as any,
+            paintingSystem: null,
+            coatConfiguration: { putty: 0, primer: 0, emulsion: 0 },
+            repaintingConfiguration: { primer: 0, emulsion: 0 },
+            selectedMaterials: { putty: '', primer: '', emulsion: '' },
+            area: addFloor,
+            perSqFtRate: '',
+            label: newRoomName,
+            isAdditional: true,
+          };
+          additional.push(newConfig);
+          try {
+            storedList.push({ ...newConfig });
+            localStorage.setItem(storedKey, JSON.stringify(storedList));
+          } catch {}
+        }
+
+        if (addWall > 0) {
+          let newRoomName = 'Additional Wall Area';
+          const newWallRoom = newRooms.find(room => {
+            const selectedAreas = (typeof room.selected_areas === 'object' && room.selected_areas !== null) ? 
+              room.selected_areas as any : { floor: false, wall: false, ceiling: false };
+            return selectedAreas.wall;
+          });
+          if (newWallRoom) {
+            newRoomName = `${newWallRoom.name} (Wall Area)`;
+          }
+
+          const newConfig: AreaConfiguration = {
+            id: `wall-additional-${Date.now()}`,
+            areaType: 'Wall',
+            paintingSystem: null,
+            coatConfiguration: { putty: 0, primer: 0, emulsion: 0 },
+            repaintingConfiguration: { primer: 0, emulsion: 0 },
+            selectedMaterials: { putty: '', primer: '', emulsion: '' },
+            area: addWall,
+            perSqFtRate: '',
+            label: newRoomName,
+            isAdditional: true,
+          };
+          additional.push(newConfig);
+          try {
+            storedList.push({ ...newConfig });
+            localStorage.setItem(storedKey, JSON.stringify(storedList));
+          } catch {}
+        }
+
+        if (addCeiling > 0) {
+          let newRoomName = 'Additional Ceiling Area';
+          const newCeilingRoom = newRooms.find(room => {
+            const selectedAreas = (typeof room.selected_areas === 'object' && room.selected_areas !== null) ? 
+              room.selected_areas as any : { floor: false, wall: false, ceiling: false };
+            return selectedAreas.ceiling;
+          });
+          if (newCeilingRoom) {
+            newRoomName = `${newCeilingRoom.name} (Ceiling Area)`;
+          }
+
+          const newConfig: AreaConfiguration = {
+            id: `ceiling-additional-${Date.now()}`,
+            areaType: 'Ceiling',
+            paintingSystem: null,
+            coatConfiguration: { putty: 0, primer: 0, emulsion: 0 },
+            repaintingConfiguration: { primer: 0, emulsion: 0 },
+            selectedMaterials: { putty: '', primer: '', emulsion: '' },
+            area: addCeiling,
+            perSqFtRate: '',
+            label: newRoomName,
+            isAdditional: true,
+          };
+          additional.push(newConfig);
+          try {
+            storedList.push({ ...newConfig });
+            localStorage.setItem(storedKey, JSON.stringify(storedList));
+          } catch {}
+        }
+
+        // Update baseline to include new rooms
+        try {
+          localStorage.setItem(baselineKey, JSON.stringify({
+            floor: floorAreaTotal,
+            wall: wallAreaTotal,
+            ceiling: ceilingAreaTotal,
+            enamel: enamelAreaTotal,
+            roomIds: currentRoomIds,
+          }));
+        } catch {}
+      }
     }
 
     // Check if we're in "additional enamel area" mode
