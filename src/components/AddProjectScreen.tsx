@@ -113,14 +113,28 @@ export default function AddProjectScreen() {
         throw new Error("You must be logged in");
       }
 
+      // Trim and validate input values
+      const trimmedCustomerName = formData.customerName.trim();
+      const trimmedMobile = formData.mobile.trim();
+      const trimmedAddress = formData.address.trim();
+
+      if (!trimmedCustomerName || !trimmedMobile || !trimmedAddress) {
+        toast({
+          title: "Invalid Input",
+          description: "Please ensure all fields contain valid data",
+          variant: "destructive",
+        });
+        return;
+      }
+
       if (projectId) {
         // Update existing project
         const { error } = await supabase
           .from('projects')
           .update({
-            customer_name: formData.customerName,
-            phone: formData.mobile,
-            location: formData.address,
+            customer_name: trimmedCustomerName,
+            phone: trimmedMobile,
+            location: trimmedAddress,
             project_type: formData.projectTypes.join(', '),
             quotation_value: parseFloat(formData.quotationValue) || 0,
             area_sqft: parseFloat(formData.areaSqft) || 0,
@@ -138,7 +152,7 @@ export default function AddProjectScreen() {
 
         navigate('/dashboard');
       } else {
-        // Create new project in Supabase
+        // Create new project in Supabase with validated data
         const validated = projectSchema.parse(formData);
         
         const { data: newProject, error } = await supabase
@@ -146,9 +160,9 @@ export default function AddProjectScreen() {
           .insert({
             user_id: session.user.id,
             lead_id: `LEAD-${Date.now()}`,
-            customer_name: formData.customerName,
-            phone: formData.mobile,
-            location: formData.address,
+            customer_name: trimmedCustomerName,
+            phone: trimmedMobile,
+            location: trimmedAddress,
             project_type: formData.projectTypes.join(', '),
             quotation_value: 0,
             area_sqft: 0,
@@ -158,7 +172,16 @@ export default function AddProjectScreen() {
           .select()
           .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error('Supabase insert error:', error);
+          throw error;
+        }
+
+        if (!newProject) {
+          throw new Error('Project creation failed - no data returned');
+        }
+
+        console.log('Project created successfully:', newProject);
 
         toast({
           title: "Success",
@@ -168,6 +191,7 @@ export default function AddProjectScreen() {
         navigate(`/room-measurement/${newProject.id}`);
       }
     } catch (error: any) {
+      console.error('Submit error:', error);
       toast({
         title: "Error",
         description: error.message || "Please check your inputs and try again.",
