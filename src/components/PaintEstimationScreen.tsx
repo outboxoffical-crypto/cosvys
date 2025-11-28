@@ -213,7 +213,7 @@ export default function PaintEstimationScreen() {
     }
   };
 
-  // Optimized room loading with background calculations
+  // Optimized room loading with background calculations and real-time updates
   useEffect(() => {
     const loadRooms = async () => {
       try {
@@ -255,6 +255,28 @@ export default function PaintEstimationScreen() {
     };
     
     loadRooms();
+
+    // Set up real-time subscription to detect new rooms
+    const channel = supabase
+      .channel('rooms-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'rooms',
+          filter: `project_id=eq.${projectId}`
+        },
+        () => {
+          // Reload rooms when any change is detected
+          loadRooms();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [projectId, selectedPaintType]);
 
   // Initialize configurations based on rooms
