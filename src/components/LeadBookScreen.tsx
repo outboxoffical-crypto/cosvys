@@ -543,10 +543,6 @@ const LeadBookScreen = () => {
               <p className="text-muted-foreground mb-4">
                 No leads found. Add your first lead to get started.
               </p>
-              <Button onClick={() => setIsDialogOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Lead
-              </Button>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -626,6 +622,14 @@ const LeadBookScreen = () => {
             </div>
           )}
         </Card>
+
+        {/* Add Lead Button */}
+        <div className="flex justify-center mt-4">
+          <Button onClick={() => setIsDialogOpen(true)} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Add Lead
+          </Button>
+        </div>
       </div>
     </div>
   );
