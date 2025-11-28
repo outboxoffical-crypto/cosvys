@@ -78,25 +78,33 @@ export default function GenerateSummaryScreen() {
     }, 100);
   }, []);
 
-  // Progressive calculation after data loads
+  // Progressive calculation after data loads - always complete loading states
   useEffect(() => {
-    if (areaConfigs.length > 0 || calculationConfigs.length > 0) {
-      // Defer calculations to next tick for instant UI
-      setTimeout(() => {
-        setIsLoadingPaintConfig(false);
-      }, 0);
-      
-      setTimeout(() => {
-        setIsLoadingLabour(false);
-      }, 100);
-      
-      setTimeout(() => {
-        setIsLoadingMaterial(false);
-      }, 200);
-    }
+    // Always set loading to false after data attempt, even if empty
+    const timer1 = setTimeout(() => {
+      setIsLoadingPaintConfig(false);
+    }, 0);
+    
+    const timer2 = setTimeout(() => {
+      setIsLoadingLabour(false);
+    }, 100);
+    
+    const timer3 = setTimeout(() => {
+      setIsLoadingMaterial(false);
+    }, 200);
+
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      clearTimeout(timer3);
+    };
   }, [areaConfigs, calculationConfigs]);
   const loadData = async () => {
     try {
+      setIsLoadingPaintConfig(true);
+      setIsLoadingLabour(true);
+      setIsLoadingMaterial(true);
+
       // Load coverage data from database
       const {
         data: coverageResults
@@ -292,6 +300,10 @@ export default function GenerateSummaryScreen() {
       }
     } catch (error) {
       console.error('Error loading data:', error);
+      // Ensure loading states are cleared even on error
+      setIsLoadingPaintConfig(false);
+      setIsLoadingLabour(false);
+      setIsLoadingMaterial(false);
     }
   };
 
