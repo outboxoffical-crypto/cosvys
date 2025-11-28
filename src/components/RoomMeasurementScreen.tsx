@@ -12,6 +12,31 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { RoomCard } from "./RoomCard";
 
+// Debounce utility for auto-save operations
+const useDebounce = <T extends (...args: any[]) => any>(
+  callback: T,
+  delay: number
+): ((...args: Parameters<T>) => void) => {
+  const timeoutRef = useRef<NodeJS.Timeout>();
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  return useCallback((...args: Parameters<T>) => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = setTimeout(() => {
+      callback(...args);
+    }, delay);
+  }, [callback, delay]);
+};
+
 // Utility function for safe numeric parsing - always returns a valid number
 const safeParseFloat = (value: string | number | null | undefined, defaultValue: number = 0): number => {
   if (value === null || value === undefined || value === '') return defaultValue;
@@ -135,6 +160,29 @@ export default function RoomMeasurementScreen() {
   const [doorWindowDialogOpen, setDoorWindowDialogOpen] = useState(false);
   const [doorWindowRoomName, setDoorWindowRoomName] = useState("");
   const [doorWindowProjectType, setDoorWindowProjectType] = useState<string>("");
+
+  // Debounced save functions (800ms delay)
+  const debouncedSaveRoom = useDebounce(async (roomData: any, userId: string) => {
+    try {
+      await supabase
+        .from('rooms')
+        .insert(roomData);
+    } catch (error) {
+      console.error('Debounced save error:', error);
+    }
+  }, 800);
+
+  const debouncedUpdateRoom = useDebounce(async (roomId: string, updates: any) => {
+    try {
+      await supabase
+        .from('rooms')
+        .update(updates)
+        .eq('room_id', roomId)
+        .eq('project_id', projectId!);
+    } catch (error) {
+      console.error('Debounced update error:', error);
+    }
+  }, 800);
 
   useEffect(() => {
     const loadData = async () => {
@@ -497,43 +545,30 @@ export default function RoomMeasurementScreen() {
       // Show instant visual confirmation
       toast.success('Room added');
       
-      // Save to database in background - SILENT, NO BLOCKING
-      setTimeout(async () => {
-        try {
-          const { error } = await supabase
-            .from('rooms')
-            .insert({
-              user_id: session.user.id,
-              project_id: projectId!,
-              room_id: roomId,
-              name: room.name,
-              length: room.length,
-              width: room.width,
-              height: room.height,
-              project_type: room.projectType,
-              pictures: room.pictures as any,
-              opening_areas: room.openingAreas as any,
-              extra_surfaces: room.extraSurfaces as any,
-              door_window_grills: [] as any,
-              floor_area: room.floorArea,
-              wall_area: room.wallArea,
-              ceiling_area: room.ceilingArea,
-              adjusted_wall_area: room.adjustedWallArea,
-              total_opening_area: room.totalOpeningArea,
-              total_extra_surface: room.totalExtraSurface,
-              total_door_window_grill_area: 0,
-              selected_areas: room.selectedAreas as any
-            });
-          
-          if (error) {
-            console.error('Background save error:', error);
-            // Silent failure - room already visible in UI
-          }
-        } catch (error) {
-          console.error('Background save error:', error);
-          // Silent failure - room already visible in UI
-        }
-      }, 0);
+      // Save to database with debouncing - waits 800ms after last change
+      const roomData = {
+        user_id: session.user.id,
+        project_id: projectId!,
+        room_id: roomId,
+        name: room.name,
+        length: room.length,
+        width: room.width,
+        height: room.height,
+        project_type: room.projectType,
+        pictures: room.pictures as any,
+        opening_areas: room.openingAreas as any,
+        extra_surfaces: room.extraSurfaces as any,
+        door_window_grills: [] as any,
+        floor_area: room.floorArea,
+        wall_area: room.wallArea,
+        ceiling_area: room.ceilingArea,
+        adjusted_wall_area: room.adjustedWallArea,
+        total_opening_area: room.totalOpeningArea,
+        total_extra_surface: room.totalExtraSurface,
+        total_door_window_grill_area: 0,
+        selected_areas: room.selectedAreas as any
+      };
+      debouncedSaveRoom(roomData, session.user.id);
     }
   };
 
@@ -609,19 +644,13 @@ export default function RoomMeasurementScreen() {
 
     toast.success('Opening area added');
 
-    // Save to database in background - SILENT
-    setTimeout(async () => {
-      try {
-        await supabase.from('rooms').update({
-          opening_areas: updatedOpeningAreas as any,
-          total_opening_area: areas.totalOpeningArea,
-          adjusted_wall_area: areas.adjustedWallArea
-        }).eq('room_id', roomId).eq('project_id', projectId!);
-      } catch (error) {
-        console.error('Background sync error:', error);
-      }
-    }, 0);
-  }, [rooms, projectId, calculateAreas, roomOpeningInputs]);
+    // Debounced save - waits 800ms of inactivity
+    debouncedUpdateRoom(roomId, {
+      opening_areas: updatedOpeningAreas as any,
+      total_opening_area: areas.totalOpeningArea,
+      adjusted_wall_area: areas.adjustedWallArea
+    });
+  }, [rooms, projectId, calculateAreas, roomOpeningInputs, debouncedUpdateRoom]);
 
   const addExtraSurfaceToRoom = useCallback(async (roomId: string) => {
     const roomInput = roomExtraSurfaceInputs[roomId] || { height: "", width: "", quantity: "" };
@@ -672,19 +701,13 @@ export default function RoomMeasurementScreen() {
 
     toast.success('Extra surface added');
 
-    // Save in background - SILENT
-    setTimeout(async () => {
-      try {
-        await supabase.from('rooms').update({
-          extra_surfaces: updatedExtraSurfaces as any,
-          total_extra_surface: areas.totalExtraSurface,
-          adjusted_wall_area: areas.adjustedWallArea
-        }).eq('room_id', roomId).eq('project_id', projectId!);
-      } catch (error) {
-        console.error('Background sync error:', error);
-      }
-    }, 0);
-  }, [rooms, projectId, calculateAreas, roomExtraSurfaceInputs]);
+    // Debounced save - waits 800ms of inactivity
+    debouncedUpdateRoom(roomId, {
+      extra_surfaces: updatedExtraSurfaces as any,
+      total_extra_surface: areas.totalExtraSurface,
+      adjusted_wall_area: areas.adjustedWallArea
+    });
+  }, [rooms, projectId, calculateAreas, roomExtraSurfaceInputs, debouncedUpdateRoom]);
 
   const addDoorWindowGrillToRoom = async (roomId: string) => {
     const doorWindowGrill = addDoorWindowGrill(roomId);
@@ -872,7 +895,7 @@ export default function RoomMeasurementScreen() {
     setDoorWindowDialogOpen(false);
   };
 
-  const removeOpeningArea = useCallback(async (roomId: string, openingId: string) => {
+  const removeOpeningArea = useCallback((roomId: string, openingId: string) => {
     const targetRoom = rooms.find(r => r.id === roomId);
     if (!targetRoom) return;
 
@@ -893,19 +916,15 @@ export default function RoomMeasurementScreen() {
         : room
     ));
 
-    // Save in background
-    try {
-      await supabase.from('rooms').update({
-        opening_areas: updatedOpeningAreas as any,
-        total_opening_area: areas.totalOpeningArea,
-        adjusted_wall_area: areas.adjustedWallArea
-      }).eq('room_id', roomId).eq('project_id', projectId!);
-    } catch (error) {
-      console.error('Error:', error);
-    }
-  }, [rooms, projectId, calculateAreas]);
+    // Debounced save - waits 800ms of inactivity
+    debouncedUpdateRoom(roomId, {
+      opening_areas: updatedOpeningAreas as any,
+      total_opening_area: areas.totalOpeningArea,
+      adjusted_wall_area: areas.adjustedWallArea
+    });
+  }, [rooms, projectId, calculateAreas, debouncedUpdateRoom]);
 
-  const removeExtraSurface = useCallback(async (roomId: string, extraId: string) => {
+  const removeExtraSurface = useCallback((roomId: string, extraId: string) => {
     const targetRoom = rooms.find(r => r.id === roomId);
     if (!targetRoom) return;
 
@@ -926,19 +945,15 @@ export default function RoomMeasurementScreen() {
         : room
     ));
 
-    // Save in background
-    try {
-      await supabase.from('rooms').update({
-        extra_surfaces: updatedExtraSurfaces as any,
-        total_extra_surface: areas.totalExtraSurface,
-        adjusted_wall_area: areas.adjustedWallArea
-      }).eq('room_id', roomId).eq('project_id', projectId!);
-    } catch (error) {
-      console.error('Error:', error);
-    }
-  }, [rooms, projectId, calculateAreas]);
+    // Debounced save - waits 800ms of inactivity
+    debouncedUpdateRoom(roomId, {
+      extra_surfaces: updatedExtraSurfaces as any,
+      total_extra_surface: areas.totalExtraSurface,
+      adjusted_wall_area: areas.adjustedWallArea
+    });
+  }, [rooms, projectId, calculateAreas, debouncedUpdateRoom]);
 
-  const removeDoorWindowGrill = useCallback(async (roomId: string, dwgId: string) => {
+  const removeDoorWindowGrill = useCallback((roomId: string, dwgId: string) => {
     const targetRoom = rooms.find(r => r.id === roomId);
     if (!targetRoom) return;
 
@@ -959,19 +974,15 @@ export default function RoomMeasurementScreen() {
         : room
     ));
 
-    // Save in background
-    try {
-      await supabase.from('rooms').update({
-        door_window_grills: updatedDoorWindowGrills as any,
-        total_door_window_grill_area: areas.totalDoorWindowGrillArea,
-        adjusted_wall_area: areas.adjustedWallArea
-      }).eq('room_id', roomId).eq('project_id', projectId!);
-    } catch (error) {
-      console.error('Error:', error);
-    }
-  }, [rooms, projectId, calculateAreas]);
+    // Debounced save - waits 800ms of inactivity
+    debouncedUpdateRoom(roomId, {
+      door_window_grills: updatedDoorWindowGrills as any,
+      total_door_window_grill_area: areas.totalDoorWindowGrillArea,
+      adjusted_wall_area: areas.adjustedWallArea
+    });
+  }, [rooms, projectId, calculateAreas, debouncedUpdateRoom]);
 
-  const updateDoorWindowGrillName = useCallback(async (roomId: string, dwgId: string, newName: string) => {
+  const updateDoorWindowGrillName = useCallback((roomId: string, dwgId: string, newName: string) => {
     const targetRoom = rooms.find(r => r.id === roomId);
     if (!targetRoom) return;
 
@@ -986,21 +997,17 @@ export default function RoomMeasurementScreen() {
         : room
     ));
 
-    // Save in background
-    try {
-      await supabase.from('rooms').update({
-        door_window_grills: updatedDoorWindowGrills as any
-      }).eq('room_id', roomId).eq('project_id', projectId!);
-    } catch (error) {
-      console.error('Error:', error);
-    }
-  }, [rooms, projectId]);
+    // Debounced save - waits 800ms of inactivity
+    debouncedUpdateRoom(roomId, {
+      door_window_grills: updatedDoorWindowGrills as any
+    });
+  }, [rooms, projectId, debouncedUpdateRoom]);
 
   const getRoomsByProjectType = useCallback((projectType: string) => {
     return rooms.filter(room => room.projectType === projectType);
   }, [rooms]);
 
-  const toggleAreaSelection = useCallback(async (roomId: string, areaType: 'floor' | 'wall' | 'ceiling') => {
+  const toggleAreaSelection = useCallback((roomId: string, areaType: 'floor' | 'wall' | 'ceiling') => {
     const targetRoom = rooms.find(r => r.id === roomId);
     if (!targetRoom) return;
 
@@ -1016,15 +1023,11 @@ export default function RoomMeasurementScreen() {
         : room
     ));
 
-    // Save in background
-    try {
-      await supabase.from('rooms').update({
-        selected_areas: updatedSelectedAreas as any
-      }).eq('room_id', roomId).eq('project_id', projectId!);
-    } catch (error) {
-      console.error('Error:', error);
-    }
-  }, [rooms, projectId]);
+    // Debounced save - waits 800ms of inactivity
+    debouncedUpdateRoom(roomId, {
+      selected_areas: updatedSelectedAreas as any
+    });
+  }, [rooms, projectId, debouncedUpdateRoom]);
 
   // Calculate totals from current rooms array - always recalculate, never increment
   const getTotalSelectedArea = useCallback((rooms: Room[]) => {
@@ -1194,30 +1197,20 @@ export default function RoomMeasurementScreen() {
     setEditingRoom(null);
     toast.success('Room updated');
 
-    // Save to database in background - SILENT
-    setTimeout(async () => {
-      try {
-        await supabase
-          .from('rooms')
-          .update({
-            name: editFormData.name.trim(),
-            length,
-            width,
-            height,
-            floor_area: areas.floorArea,
-            wall_area: areas.wallArea,
-            ceiling_area: areas.ceilingArea,
-            adjusted_wall_area: areas.adjustedWallArea,
-            total_opening_area: areas.totalOpeningArea,
-            total_extra_surface: areas.totalExtraSurface,
-            total_door_window_grill_area: areas.totalDoorWindowGrillArea
-          })
-          .eq('room_id', editingRoom.id)
-          .eq('project_id', projectId!);
-      } catch (error) {
-        console.error('Background sync error:', error);
-      }
-    }, 0);
+    // Debounced save - waits 800ms of inactivity
+    debouncedUpdateRoom(editingRoom.id, {
+      name: editFormData.name.trim(),
+      length,
+      width,
+      height,
+      floor_area: areas.floorArea,
+      wall_area: areas.wallArea,
+      ceiling_area: areas.ceilingArea,
+      adjusted_wall_area: areas.adjustedWallArea,
+      total_opening_area: areas.totalOpeningArea,
+      total_extra_surface: areas.totalExtraSurface,
+      total_door_window_grill_area: areas.totalDoorWindowGrillArea
+    });
   };
 
   if (!projectData) {
