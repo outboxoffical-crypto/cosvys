@@ -409,13 +409,17 @@ const LeadBookScreen = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Monthly Conversion Chart */}
+        {/* Lead Summary Statistics */}
         <Card className="eca-shadow mb-6">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base font-semibold">Monthly Lead Conversion</CardTitle>
+            <CardTitle className="text-base font-semibold flex items-center gap-2">
+              <BookOpen className="h-5 w-5 text-primary" />
+              Lead Summary
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col gap-6">
+            {/* Monthly Conversion Chart */}
+            <div className="flex flex-col gap-6 mb-6 pb-6 border-b">
               {/* Month Selector */}
               <div className="w-full max-w-xs mx-auto">
                 <Label className="text-sm font-medium text-muted-foreground mb-2 block">Select Month</Label>
@@ -461,56 +465,43 @@ const LeadBookScreen = () => {
                     <p className="text-muted-foreground">No lead data available for this month</p>
                   </div>
                 ) : (
-                  <>
-                    <div className="relative">
-                      <ResponsiveContainer width={280} height={280}>
-                        <PieChart>
-                          <Pie
-                            data={[
-                              { name: 'Converted', value: monthlyConversionData.converted },
-                              { name: 'Not Converted', value: monthlyConversionData.total - monthlyConversionData.converted }
-                            ]}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={80}
-                            outerRadius={110}
-                            paddingAngle={2}
-                            dataKey="value"
-                          >
-                            <Cell fill="url(#gradient1)" />
-                            <Cell fill="#f3f4f6" />
-                          </Pie>
-                          <defs>
-                            <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="100%">
-                              <stop offset="0%" stopColor="#E63946" />
-                              <stop offset="100%" stopColor="#A855F7" />
-                            </linearGradient>
-                          </defs>
-                        </PieChart>
-                      </ResponsiveContainer>
-                      <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <p className="text-4xl font-bold bg-gradient-to-r from-[#E63946] to-[#A855F7] bg-clip-text text-transparent">
-                          {monthlyConversionData.percentage}%
-                        </p>
-                        <p className="text-sm text-muted-foreground mt-1">Conversion</p>
-                      </div>
+                  <div className="relative">
+                    <ResponsiveContainer width={280} height={280}>
+                      <PieChart>
+                        <Pie
+                          data={[
+                            { name: 'Converted', value: monthlyConversionData.converted },
+                            { name: 'Not Converted', value: monthlyConversionData.total - monthlyConversionData.converted }
+                          ]}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={80}
+                          outerRadius={110}
+                          paddingAngle={2}
+                          dataKey="value"
+                        >
+                          <Cell fill="url(#gradient1)" />
+                          <Cell fill="#f3f4f6" />
+                        </Pie>
+                        <defs>
+                          <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stopColor="#E63946" />
+                            <stop offset="100%" stopColor="#A855F7" />
+                          </linearGradient>
+                        </defs>
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <p className="text-4xl font-bold bg-gradient-to-r from-[#E63946] to-[#A855F7] bg-clip-text text-transparent">
+                        {monthlyConversionData.percentage}%
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-1">Conversion</p>
                     </div>
-                  </>
+                  </div>
                 )}
               </div>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Lead Summary Statistics */}
-        <Card className="eca-shadow mb-6">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base font-semibold flex items-center gap-2">
-              <BookOpen className="h-5 w-5 text-primary" />
-              Lead Summary
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-blue-50 p-3 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
