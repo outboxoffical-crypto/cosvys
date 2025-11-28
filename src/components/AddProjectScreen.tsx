@@ -86,6 +86,25 @@ export default function AddProjectScreen() {
     // Prevent double submission
     if (submitting) return;
 
+    // Validate required fields
+    if (!formData.customerName || !formData.mobile || !formData.address || formData.projectTypes.length === 0) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields: Customer Name, Mobile, Address, and Project Type",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (formData.mobile.length !== 10) {
+      toast({
+        title: "Invalid Mobile Number",
+        description: "Mobile number must be exactly 10 digits",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSubmitting(true);
 
     try {

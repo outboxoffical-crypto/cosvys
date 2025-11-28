@@ -180,6 +180,12 @@ export default function Dashboard() {
       .from('projects')
       .select('*')
       .eq('user_id', user.id)
+      .not('customer_name', 'is', null)
+      .not('phone', 'is', null)
+      .not('location', 'is', null)
+      .neq('customer_name', '')
+      .neq('phone', '')
+      .neq('location', '')
       .order('created_at', { ascending: false })
       .limit(10);
 
@@ -528,10 +534,12 @@ export default function Dashboard() {
               {filteredProjects.map((project) => (
                 <Card key={project.id} className="eca-shadow hover:shadow-lg transition-shadow">
                   <CardContent className="p-4">
-                    <div className="flex items-start justify-between mb-3">
+                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <h3 className="font-semibold text-foreground">{project.customer_name}</h3>
+                          <h3 className="font-semibold text-foreground">
+                            {project.customer_name || 'Incomplete Project'}
+                          </h3>
                           {project.approval_status === 'Approved' && (
                             <Badge className="bg-green-500 text-white">
                               <CheckCircle2 className="h-3 w-3 mr-1" />
@@ -541,11 +549,11 @@ export default function Dashboard() {
                         </div>
                         <div className="flex items-center text-sm text-muted-foreground mt-1">
                           <Phone className="h-3 w-3 mr-1" />
-                          {project.phone}
+                          {project.phone || 'No contact'}
                         </div>
                         <div className="flex items-center text-sm text-muted-foreground mt-1">
                           <MapPin className="h-3 w-3 mr-1" />
-                          {project.location}
+                          {project.location || 'No address'}
                         </div>
                       </div>
                       <div className="flex gap-2">
