@@ -418,7 +418,7 @@ const LeadBookScreen = () => {
             <div className="flex flex-col gap-6">
               {/* Month Selector */}
               <div className="w-full max-w-xs mx-auto">
-                <Label className="text-sm font-medium text-muted-foreground mb-2 block">Select the Month</Label>
+                <Label className="text-sm font-medium text-muted-foreground mb-2 block">Select Month</Label>
                 <Select value={selectedMonth} onValueChange={setSelectedMonth}>
                   <SelectTrigger className="h-11 text-base font-medium border hover:border-primary/40 transition-colors bg-background">
                     <SelectValue>
