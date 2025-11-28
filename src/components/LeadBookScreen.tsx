@@ -415,31 +415,31 @@ const LeadBookScreen = () => {
             <CardTitle className="text-base font-semibold">Monthly Lead Conversion</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col md:flex-row gap-6">
-              {/* Month Selector */}
-              <div className="w-full md:w-48 flex-shrink-0">
-                <p className="text-sm font-medium mb-3 text-muted-foreground">Select Month</p>
-                <div className="flex md:flex-col gap-2 overflow-x-auto md:overflow-y-auto md:max-h-[320px] pb-2 md:pb-0">
-                  {getLast12Months().map((month) => (
-                    <Button
-                      key={month.key}
-                      variant={selectedMonth === month.key ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setSelectedMonth(month.key)}
-                      className={`whitespace-nowrap min-w-[100px] md:w-full justify-start ${
-                        selectedMonth === month.key 
-                          ? "bg-gradient-to-r from-[#E63946] to-[#A855F7] text-white font-semibold" 
-                          : "hover:bg-muted"
-                      }`}
-                    >
-                      {month.label}
-                    </Button>
-                  ))}
-                </div>
+            <div className="flex flex-col gap-6">
+              {/* Month Selector - Compact Dropdown */}
+              <div className="w-full max-w-xs mx-auto">
+                <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                  <SelectTrigger className="h-16 text-2xl font-bold bg-gradient-to-r from-[#E63946]/5 to-[#A855F7]/5 border-2 hover:border-primary/50 transition-colors">
+                    <SelectValue>
+                      {getLast12Months().find(m => m.key === selectedMonth)?.label.split(' ')[0] || "Select Month"}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[300px]">
+                    {getLast12Months().map((month) => (
+                      <SelectItem 
+                        key={month.key} 
+                        value={month.key}
+                        className="text-base py-3"
+                      >
+                        {month.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Donut Chart */}
-              <div className="flex-1 flex flex-col items-center justify-center min-h-[300px]">
+              <div className="flex flex-col items-center justify-center min-h-[300px] w-full">
                 {monthlyConversionData.total === 0 ? (
                   <div className="text-center">
                     <div className="mb-4 opacity-30">
