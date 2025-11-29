@@ -23,6 +23,41 @@ serve(async (req) => {
   try {
     const { length, width, height, opening_areas = [], extra_surfaces = [], door_window_grills = [] }: CalculateAreasRequest = await req.json();
 
+    // Input validation
+    if (typeof length !== 'number' || typeof width !== 'number' || typeof height !== 'number') {
+      return new Response(JSON.stringify({ error: 'Dimensions must be numeric values' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (length < 0.1 || length > 1000 || width < 0.1 || width > 1000 || height < 0 || height > 100) {
+      return new Response(JSON.stringify({ error: 'Dimensions must be positive and within reasonable ranges (length/width: 0.1-1000, height: 0-100)' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (opening_areas.length > 50 || extra_surfaces.length > 50 || door_window_grills.length > 50) {
+      return new Response(JSON.stringify({ error: 'Too many area entries (max 50 per type)' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Validate array elements
+    const validateAreaArray = (arr: Array<{ area: number }>, name: string) => {
+      for (const item of arr) {
+        if (typeof item.area !== 'number' || item.area < 0 || item.area > 10000) {
+          throw new Error(`Invalid ${name} area value`);
+        }
+      }
+    };
+
+    validateAreaArray(opening_areas, 'opening');
+    validateAreaArray(extra_surfaces, 'extra_surface');
+    validateAreaArray(door_window_grills, 'door_window_grill');
+
     console.log('Calculating areas for room:', { length, width, height });
 
     // Calculate floor area
