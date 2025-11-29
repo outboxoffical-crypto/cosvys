@@ -982,7 +982,7 @@ export default function PaintEstimationScreen() {
       .reduce((total, config) => total + config.area, 0);
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     // Validate at least one configuration is complete across all paint types
     const allConfigs = [...interiorConfigurations, ...exteriorConfigurations, ...waterproofingConfigurations];
     const hasValidConfig = allConfigs.some(
@@ -994,17 +994,62 @@ export default function PaintEstimationScreen() {
       return;
     }
 
-    // Save all configurations (all paint types)
-    const updatedData = {
-      interiorConfigurations: interiorConfigurations,
-      exteriorConfigurations: exteriorConfigurations,
-      waterproofingConfigurations: waterproofingConfigurations,
-      lastPaintType: selectedPaintType,
-      totalCost: calculateTotalCost()
-    };
-    
-    localStorage.setItem(`estimation_${projectId}`, JSON.stringify(updatedData));
-    navigate(`/generate-summary/${projectId}`);
+    // Show loading toast
+    toast.loading('Generating summary...', { id: 'generate-summary' });
+
+    try {
+      // Pre-calculate and cache ALL summary data to avoid recalculation
+      const totalCost = calculateTotalCost();
+      
+      // Calculate area totals by paint type
+      const areaTotals = {
+        interior: { floor: 0, wall: 0, ceiling: 0 },
+        exterior: { floor: 0, wall: 0, ceiling: 0 },
+        waterproofing: { floor: 0, wall: 0, ceiling: 0 }
+      };
+      
+      interiorConfigurations.forEach(c => {
+        if (c.areaType === 'Floor') areaTotals.interior.floor += c.area;
+        if (c.areaType === 'Wall') areaTotals.interior.wall += c.area;
+        if (c.areaType === 'Ceiling') areaTotals.interior.ceiling += c.area;
+      });
+      
+      exteriorConfigurations.forEach(c => {
+        if (c.areaType === 'Floor') areaTotals.exterior.floor += c.area;
+        if (c.areaType === 'Wall') areaTotals.exterior.wall += c.area;
+        if (c.areaType === 'Ceiling') areaTotals.exterior.ceiling += c.area;
+      });
+      
+      waterproofingConfigurations.forEach(c => {
+        if (c.areaType === 'Floor') areaTotals.waterproofing.floor += c.area;
+        if (c.areaType === 'Wall') areaTotals.waterproofing.wall += c.area;
+        if (c.areaType === 'Ceiling') areaTotals.waterproofing.ceiling += c.area;
+      });
+
+      // Save all configurations with pre-calculated cache
+      const cachedData = {
+        interiorConfigurations: interiorConfigurations,
+        exteriorConfigurations: exteriorConfigurations,
+        waterproofingConfigurations: waterproofingConfigurations,
+        lastPaintType: selectedPaintType,
+        totalCost: totalCost,
+        areaTotals: areaTotals,
+        timestamp: Date.now(),
+        // Cache flag to indicate fresh calculation
+        isCached: true
+      };
+      
+      localStorage.setItem(`estimation_${projectId}`, JSON.stringify(cachedData));
+      
+      // Success toast
+      toast.success('Summary generated', { id: 'generate-summary' });
+      
+      // Navigate immediately
+      navigate(`/generate-summary/${projectId}`);
+    } catch (error) {
+      console.error('Error generating summary:', error);
+      toast.error('Failed to generate summary', { id: 'generate-summary' });
+    }
   };
 
   // Separate configurations by type
