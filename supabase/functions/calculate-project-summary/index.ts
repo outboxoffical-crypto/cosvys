@@ -63,14 +63,14 @@ serve(async (req) => {
       throw new Error(`Failed to fetch rooms: ${roomsError.message}`);
     }
 
-    // Batch processing for 50+ rooms
-    const BATCH_SIZE = 50;
+    // Batch processing for better performance - smaller batches prevent freezing
+    const BATCH_SIZE = 10; // Process 10 rooms at a time
     const roomBatches = [];
     for (let i = 0; i < (rooms || []).length; i += BATCH_SIZE) {
       roomBatches.push((rooms || []).slice(i, i + BATCH_SIZE));
     }
 
-    console.log(`Processing ${rooms?.length || 0} rooms in ${roomBatches.length} batch(es)`);
+    console.log(`Processing ${rooms?.length || 0} rooms in ${roomBatches.length} batch(es) - optimized for performance`);
 
     // Fetch coverage data and product pricing in parallel
     const [coverageResult, pricingResult, dealerResult] = await Promise.all([

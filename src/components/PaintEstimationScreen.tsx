@@ -994,8 +994,32 @@ export default function PaintEstimationScreen() {
       return;
     }
 
-    // Show loading toast
-    toast.loading('Calculating project summary...', { id: 'generate-summary' });
+    // Simulate progressive loading with status updates
+    let progress = 0;
+    const progressSteps = [
+      { percent: 15, message: 'Loading rooms data...' },
+      { percent: 30, message: 'Fetching configurations...' },
+      { percent: 50, message: 'Calculating materials...' },
+      { percent: 70, message: 'Processing paint coverage...' },
+      { percent: 85, message: 'Calculating labour costs...' },
+      { percent: 95, message: 'Generating final summary...' }
+    ];
+
+    // Show initial loading
+    const toastId = toast.loading(`${progressSteps[0].message} (${progressSteps[0].percent}%)`, { 
+      id: 'generate-summary' 
+    });
+
+    // Update progress every 500ms
+    const progressInterval = setInterval(() => {
+      if (progress < progressSteps.length - 1) {
+        progress++;
+        toast.loading(
+          `${progressSteps[progress].message} (${progressSteps[progress].percent}%)`, 
+          { id: 'generate-summary' }
+        );
+      }
+    }, 500);
 
     try {
       // Call backend API to calculate summary
@@ -1011,21 +1035,32 @@ export default function PaintEstimationScreen() {
         }
       });
 
+      clearInterval(progressInterval);
+
       if (response.error) {
         throw new Error(response.error.message || 'Failed to generate summary');
+      }
+
+      if (!response.data) {
+        throw new Error('No summary data returned from server');
       }
 
       // Cache the API response
       const summaryData = response.data;
       localStorage.setItem(`project_summary_${projectId}`, JSON.stringify(summaryData));
+      toast.success('✓ Summary calculated successfully!', { id: 'generate-summary' });
       
-      toast.success('Summary generated successfully!', { id: 'generate-summary' });
-      
-      // Navigate immediately
-      navigate(`/project/${projectId}/generate-summary`);
-    } catch (error: any) {
+      // Navigate after a brief delay to ensure cache is written
+      setTimeout(() => {
+        navigate(`/project/${projectId}/generate-summary`);
+      }, 100);
+    } catch (error) {
+      clearInterval(progressInterval);
       console.error('Failed to generate summary:', error);
-      toast.error(error.message || 'Failed to generate summary', { id: 'generate-summary' });
+      toast.error(
+        `Calculation failed: ${error.message || 'Please try again'}`, 
+        { id: 'generate-summary', duration: 4000 }
+      );
     }
   };
 

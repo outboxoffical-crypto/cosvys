@@ -103,89 +103,80 @@ export default function GenerateSummaryScreen() {
       setIsLoadingLabour(true);
       setIsLoadingMaterial(true);
 
-      // CRITICAL: Check for cached summary from backend API
+      // CRITICAL: Check for cached summary from backend API FIRST
       const summaryKey = `project_summary_${projectId}`;
       const summaryStr = localStorage.getItem(summaryKey);
       
-      if (summaryStr) {
-        const cachedSummary = JSON.parse(summaryStr);
-        
-        // Use cached API response directly
-        console.log('✓ Using cached API summary - no recalculation needed');
-        
-        setProjectData(cachedSummary.project_data);
-        setPaintType(cachedSummary.paint_type);
-        
-        // Convert API response to UI format
-        const paintConfigs: AreaConfig[] = cachedSummary.configurations.map((calc: any) => ({
-          id: calc.config_id,
-          areaType: calc.area_type,
-          paintingSystem: calc.painting_system,
-          area: calc.area,
-          perSqFtRate: calc.per_sqft_rate.toString(),
-          paintTypeCategory: cachedSummary.paint_type,
-          selectedMaterials: {
-            putty: calc.materials.putty?.product || '',
-            primer: calc.materials.primer?.product || '',
-            emulsion: calc.materials.emulsion?.product || ''
-          },
-          coatConfiguration: {
-            putty: calc.materials.putty?.coats || 0,
-            primer: calc.materials.primer?.coats || 0,
-            emulsion: calc.materials.emulsion?.coats || 0
-          }
-        }));
-        
-        setAreaConfigs(paintConfigs);
-        setCalculationConfigs(paintConfigs);
-        
-        // Set labour mode from cached data
-        setLabourMode(cachedSummary.labour.mode);
-        setManualDays(cachedSummary.labour.days);
-        setAutoLabourPerDay(cachedSummary.labour.labourers_per_day);
-        
-        // Set dealer margin
-        setDealerMargin(cachedSummary.costs.dealer_margin);
-        
-        // Immediately mark as loaded
+      if (!summaryStr) {
+        // No cached data - should not happen if flow is correct
+        toast({
+          title: "Error",
+          description: "Summary data not found. Please reconfigure and try again.",
+          variant: "destructive",
+        });
         setIsLoadingPaintConfig(false);
         setIsLoadingLabour(false);
         setIsLoadingMaterial(false);
-        
         return;
       }
 
-      // Fallback: Fetch minimal data if no cache (should not happen normally)
-      const storedPaintType = localStorage.getItem(`selected_paint_type_${projectId}`) || 'Interior';
-      setPaintType(storedPaintType);
-
-      // Fetch only essential data
-      const [projectResult, dealerResult] = await Promise.all([
-        supabase.from('projects').select('*').eq('id', projectId).single(),
-        supabase.from('dealer_info').select('margin').eq('user_id', (await supabase.auth.getUser()).data.user?.id).single()
-      ]);
-
-      if (projectResult.data) {
-        setProjectData(projectResult.data);
+      const cachedSummary = JSON.parse(summaryStr);
+      
+      // Validate cached data structure
+      if (!cachedSummary.configurations || !cachedSummary.costs) {
+        throw new Error('Invalid summary data format');
       }
-
-      if (dealerResult.data) {
-        setDealerMargin(dealerResult.data.margin);
-      }
-
-      // Mark as loaded
-      setIsLoadingPaintConfig(false);
-      setIsLoadingLabour(false);
-      setIsLoadingMaterial(false);
-
+      
+      // Use cached API response directly - NO recalculation
+      console.log('✓ Loading cached summary from backend API');
+      
+      setProjectData(cachedSummary.project_data);
+      setPaintType(cachedSummary.paint_type);
+      
+      const paintConfigs: AreaConfig[] = cachedSummary.configurations.map((calc: any) => ({
+        id: calc.config_id || `config_${Math.random()}`,
+        areaType: calc.area_type,
+        paintingSystem: calc.painting_system,
+        selectedMaterials: calc.materials,
+        area: calc.area,
+        perSqFtRate: calc.per_sqft_rate,
+        totalCost: calc.cost,
+        paintTypeCategory: cachedSummary.paint_type,
+        coatConfiguration: {
+          putty: calc.materials?.putty?.coats || 0,
+          primer: calc.materials?.primer?.coats || 0,
+          emulsion: calc.materials?.emulsion?.coats || 0
+        }
+      }));
+      
+      setAreaConfigs(paintConfigs);
+      
+      // Set calculation configs with materials
+      const calcConfigs = cachedSummary.configurations.map((calc: any) => ({
+        ...calc,
+        materials: calc.materials
+      }));
+      setCalculationConfigs(calcConfigs);
+      
+      // Set labour details
+      setLabourMode(cachedSummary.labour.mode);
+      setManualDays(cachedSummary.labour.days);
+      setAutoLabourPerDay(cachedSummary.labour.labourers_per_day);
+      
+      // Set costs
+      setDealerMargin(cachedSummary.costs.dealer_margin || 0);
+      
+      console.log('✓ Summary loaded successfully from cache');
+      
     } catch (error) {
-      console.error('Error loading data:', error);
+      console.error('Error loading summary data:', error);
       toast({
         title: "Error",
-        description: "Failed to load project data. Please try again.",
+        description: "Failed to load summary. Please go back and regenerate.",
         variant: "destructive",
       });
-      // Even on error, stop loading
+      
+      // Ensure loading states are cleared even on error
       setIsLoadingPaintConfig(false);
       setIsLoadingLabour(false);
       setIsLoadingMaterial(false);
