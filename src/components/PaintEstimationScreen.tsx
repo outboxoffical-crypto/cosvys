@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -807,24 +807,170 @@ export default function PaintEstimationScreen() {
     }
   };
 
-  // Re-initialize when rooms change or paint type changes
-  useEffect(() => {
-    if (rooms.length > 0 && !isLoading) {
-      // Run heavy calculations slightly deferred to avoid white screen
-      setIsCalculating(true);
-      requestAnimationFrame(() => {
-        setTimeout(() => {
-          try {
-            initializeConfigurations(rooms);
-          } catch (error) {
-            console.error('Calculation error:', error);
-          } finally {
-            setIsCalculating(false);
-          }
-        }, 50);
+  // Memoized configuration initialization to prevent heavy recalculations
+  const memoizedConfigs = useMemo(() => {
+    if (rooms.length === 0) return [];
+    
+    const configs: AreaConfiguration[] = [];
+    
+    // Filter rooms by selected paint type
+    const filteredRooms = rooms.filter(room => {
+      const projectType = room.project_type;
+      if (selectedPaintType === "Interior") return projectType === "Interior";
+      if (selectedPaintType === "Exterior") return projectType === "Exterior";
+      if (selectedPaintType === "Waterproofing") return projectType === "Waterproofing";
+      return false;
+    });
+
+    // Calculate totals for each area type - simple arithmetic only
+    let floorAreaTotal = 0;
+    let wallAreaTotal = 0;
+    let ceilingAreaTotal = 0;
+    let enamelAreaTotal = 0;
+    let hasFloorSelected = false;
+    let hasWallSelected = false;
+    let hasCeilingSelected = false;
+
+    filteredRooms.forEach((room: any) => {
+      const selectedAreas = (typeof room.selected_areas === 'object' && room.selected_areas !== null) ? 
+        room.selected_areas as any : { floor: false, wall: false, ceiling: false };
+      
+      if (selectedAreas.floor) {
+        floorAreaTotal += Number(room.floor_area || 0);
+        hasFloorSelected = true;
+      }
+      if (selectedAreas.wall) {
+        wallAreaTotal += Number(room.adjusted_wall_area || room.wall_area || 0);
+        hasWallSelected = true;
+      }
+      if (selectedAreas.ceiling) {
+        ceilingAreaTotal += Number(room.ceiling_area || 0);
+        hasCeilingSelected = true;
+      }
+      if (room.door_window_grills && Array.isArray(room.door_window_grills) && room.door_window_grills.length > 0) {
+        const enamelArea = Number(room.total_door_window_grill_area || 0);
+        if (enamelArea > 0) {
+          enamelAreaTotal += enamelArea;
+        }
+      }
+    });
+
+    // Create main configuration boxes - simple and fast
+    if (floorAreaTotal > 0 && hasFloorSelected) {
+      configs.push({
+        id: 'floor-main',
+        areaType: 'Floor' as any,
+        paintingSystem: null,
+        coatConfiguration: { putty: 0, primer: 0, emulsion: 0 },
+        repaintingConfiguration: { primer: 0, emulsion: 0 },
+        selectedMaterials: { putty: '', primer: '', emulsion: '' },
+        area: floorAreaTotal,
+        perSqFtRate: '',
+        label: 'Floor Area',
+        isAdditional: false
       });
     }
+
+    if (wallAreaTotal > 0 && hasWallSelected) {
+      configs.push({
+        id: 'wall-main',
+        areaType: 'Wall',
+        paintingSystem: null,
+        coatConfiguration: { putty: 0, primer: 0, emulsion: 0 },
+        repaintingConfiguration: { primer: 0, emulsion: 0 },
+        selectedMaterials: { putty: '', primer: '', emulsion: '' },
+        area: wallAreaTotal,
+        perSqFtRate: '',
+        label: 'Wall Area',
+        isAdditional: false
+      });
+    }
+
+    if (ceilingAreaTotal > 0 && hasCeilingSelected) {
+      configs.push({
+        id: 'ceiling-main',
+        areaType: 'Ceiling',
+        paintingSystem: null,
+        coatConfiguration: { putty: 0, primer: 0, emulsion: 0 },
+        repaintingConfiguration: { primer: 0, emulsion: 0 },
+        selectedMaterials: { putty: '', primer: '', emulsion: '' },
+        area: ceilingAreaTotal,
+        perSqFtRate: '',
+        label: 'Ceiling Area',
+        isAdditional: false
+      });
+    }
+
+    if (enamelAreaTotal > 0) {
+      configs.push({
+        id: 'enamel-main',
+        areaType: 'Enamel',
+        paintingSystem: null,
+        coatConfiguration: { putty: 0, primer: 0, emulsion: 0 },
+        repaintingConfiguration: { primer: 0, emulsion: 0 },
+        selectedMaterials: { putty: '', primer: '', emulsion: '' },
+        area: enamelAreaTotal,
+        perSqFtRate: '',
+        label: 'Enamel Area',
+        isAdditional: false
+      });
+    }
+
+    return configs;
   }, [rooms, selectedPaintType]);
+
+  // Re-initialize when memoized configs change
+  useEffect(() => {
+    if (memoizedConfigs.length === 0) return;
+    
+    const existingConfigs = selectedPaintType === "Interior" ? interiorConfigurations :
+                            selectedPaintType === "Exterior" ? exteriorConfigurations :
+                            waterproofingConfigurations;
+
+    if (existingConfigs.length > 0) {
+      // Preserve user selections, only update areas
+      const updated = existingConfigs
+        .map(existing => {
+          const match = memoizedConfigs.find(cfg =>
+            cfg.id === existing.id || 
+            (cfg.areaType === existing.areaType && cfg.label === existing.label)
+          );
+          return match ? { ...existing, area: match.area } : null;
+        })
+        .filter(Boolean) as AreaConfiguration[];
+      
+      // Add new configs not in existing
+      const newConfigs = memoizedConfigs.filter(cfg =>
+        !updated.some(u => u.id === cfg.id || (u.areaType === cfg.areaType && u.label === cfg.label))
+      );
+      
+      setAreaConfigurations([...updated, ...newConfigs]);
+    } else {
+      // First load - try to restore from localStorage async
+      setTimeout(() => {
+        try {
+          const preservedKey = `configs_preserved_${projectId}_${selectedPaintType}`;
+          const raw = localStorage.getItem(preservedKey);
+          const preservedList = raw ? JSON.parse(raw) : [];
+          
+          if (preservedList.length > 0) {
+            const merged = memoizedConfigs.map(cfg => {
+              const match = preservedList.find((p: any) =>
+                p.id === cfg.id || (p.areaType === cfg.areaType && p.label === cfg.label)
+              );
+              return match ? { ...cfg, ...match, area: cfg.area } : cfg;
+            });
+            setAreaConfigurations(merged);
+          } else {
+            setAreaConfigurations(memoizedConfigs);
+          }
+        } catch {
+          setAreaConfigurations(memoizedConfigs);
+        }
+      }, 0);
+      return; // Exit early, async will set configs
+    }
+  }, [memoizedConfigs, selectedPaintType]);
 
   // Persist configurations so they survive navigation and reload
   useEffect(() => {
@@ -1205,18 +1351,6 @@ export default function PaintEstimationScreen() {
             </div>
           </CardContent>
         </Card>
-        
-        {/* Calculating Indicator - Non-blocking */}
-        {isCalculating && (
-          <Card className="eca-shadow border-2 border-primary/30 bg-primary/5 animate-pulse">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-center space-x-3">
-                <div className="h-5 w-5 border-3 border-primary border-t-transparent rounded-full animate-spin" />
-                <p className="text-base font-semibold text-primary">Calculating material & labour... Please wait</p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Paint Configuration Summary - MOVED TO TOP (only non-enamel) */}
         {areaConfigurations.some(c => (c.paintingSystem || c.areaType === 'Enamel') && c.areaType !== 'Enamel') && (
