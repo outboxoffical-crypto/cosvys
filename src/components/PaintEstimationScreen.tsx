@@ -995,60 +995,37 @@ export default function PaintEstimationScreen() {
     }
 
     // Show loading toast
-    toast.loading('Generating summary...', { id: 'generate-summary' });
+    toast.loading('Calculating project summary...', { id: 'generate-summary' });
 
     try {
-      // Pre-calculate and cache ALL summary data to avoid recalculation
-      const totalCost = calculateTotalCost();
+      // Call backend API to calculate summary
+      const { data: { session } } = await supabase.auth.getSession();
       
-      // Calculate area totals by paint type
-      const areaTotals = {
-        interior: { floor: 0, wall: 0, ceiling: 0 },
-        exterior: { floor: 0, wall: 0, ceiling: 0 },
-        waterproofing: { floor: 0, wall: 0, ceiling: 0 }
-      };
-      
-      interiorConfigurations.forEach(c => {
-        if (c.areaType === 'Floor') areaTotals.interior.floor += c.area;
-        if (c.areaType === 'Wall') areaTotals.interior.wall += c.area;
-        if (c.areaType === 'Ceiling') areaTotals.interior.ceiling += c.area;
-      });
-      
-      exteriorConfigurations.forEach(c => {
-        if (c.areaType === 'Floor') areaTotals.exterior.floor += c.area;
-        if (c.areaType === 'Wall') areaTotals.exterior.wall += c.area;
-        if (c.areaType === 'Ceiling') areaTotals.exterior.ceiling += c.area;
-      });
-      
-      waterproofingConfigurations.forEach(c => {
-        if (c.areaType === 'Floor') areaTotals.waterproofing.floor += c.area;
-        if (c.areaType === 'Wall') areaTotals.waterproofing.wall += c.area;
-        if (c.areaType === 'Ceiling') areaTotals.waterproofing.ceiling += c.area;
+      const response = await supabase.functions.invoke('calculate-project-summary', {
+        body: {
+          project_id: projectId,
+          paint_type: selectedPaintType,
+          configurations: allConfigs,
+          labour_mode: 'auto',
+          auto_labour_per_day: 1
+        }
       });
 
-      // Save all configurations with pre-calculated cache
-      const cachedData = {
-        interiorConfigurations: interiorConfigurations,
-        exteriorConfigurations: exteriorConfigurations,
-        waterproofingConfigurations: waterproofingConfigurations,
-        lastPaintType: selectedPaintType,
-        totalCost: totalCost,
-        areaTotals: areaTotals,
-        timestamp: Date.now(),
-        // Cache flag to indicate fresh calculation
-        isCached: true
-      };
+      if (response.error) {
+        throw new Error(response.error.message || 'Failed to generate summary');
+      }
+
+      // Cache the API response
+      const summaryData = response.data;
+      localStorage.setItem(`project_summary_${projectId}`, JSON.stringify(summaryData));
       
-      localStorage.setItem(`estimation_${projectId}`, JSON.stringify(cachedData));
-      
-      // Success toast
-      toast.success('Summary generated', { id: 'generate-summary' });
+      toast.success('Summary generated successfully!', { id: 'generate-summary' });
       
       // Navigate immediately
-      navigate(`/generate-summary/${projectId}`);
-    } catch (error) {
-      console.error('Error generating summary:', error);
-      toast.error('Failed to generate summary', { id: 'generate-summary' });
+      navigate(`/project/${projectId}/generate-summary`);
+    } catch (error: any) {
+      console.error('Failed to generate summary:', error);
+      toast.error(error.message || 'Failed to generate summary', { id: 'generate-summary' });
     }
   };
 
