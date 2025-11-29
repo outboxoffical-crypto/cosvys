@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
 interface AreaConfig {
   id: string;
   areaType: string;
@@ -64,8 +65,15 @@ export default function GenerateSummaryScreen() {
   const [isLoadingPaintConfig, setIsLoadingPaintConfig] = useState(true);
   const [isLoadingLabour, setIsLoadingLabour] = useState(true);
   const [isLoadingMaterial, setIsLoadingMaterial] = useState(true);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [cachedAreaTotals, setCachedAreaTotals] = useState<any>(null);
+  
   useEffect(() => {
-    loadData();
+    // Only load data ONCE on initial mount
+    if (isInitialLoad) {
+      loadData();
+      setIsInitialLoad(false);
+    }
   }, [projectId]);
 
   // Scroll to top when component first loads
@@ -78,21 +86,15 @@ export default function GenerateSummaryScreen() {
     }, 100);
   }, []);
 
-  // Progressive calculation after data loads
+  // Progressive calculation after data loads - ONLY if data exists
   useEffect(() => {
     if (areaConfigs.length > 0 || calculationConfigs.length > 0) {
-      // Defer calculations to next tick for instant UI
-      setTimeout(() => {
-        setIsLoadingPaintConfig(false);
-      }, 0);
+      // Instant paint config display
+      setIsLoadingPaintConfig(false);
       
-      setTimeout(() => {
-        setIsLoadingLabour(false);
-      }, 100);
-      
-      setTimeout(() => {
-        setIsLoadingMaterial(false);
-      }, 200);
+      // Staggered loading for smooth UX
+      setTimeout(() => setIsLoadingLabour(false), 100);
+      setTimeout(() => setIsLoadingMaterial(false), 200);
     }
   }, [areaConfigs, calculationConfigs]);
   const loadData = async () => {
@@ -101,57 +103,32 @@ export default function GenerateSummaryScreen() {
       setIsLoadingLabour(true);
       setIsLoadingMaterial(true);
 
-      // Load coverage data from database
-      const {
-        data: coverageResults
-      } = await supabase.from('coverage_data').select('product_name, coverage_range');
-      if (coverageResults) {
-        const coverageMap: any = {};
-        coverageResults.forEach(item => {
-          coverageMap[item.product_name.toLowerCase()] = item.coverage_range;
-        });
-        setCoverageData(coverageMap);
-      }
-
-      // Load product pricing from database
-      const {
-        data: {
-          user: currentUser
-        }
-      } = await supabase.auth.getUser();
-      if (currentUser) {
-        const {
-          data: pricingData
-        } = await supabase.from('product_pricing').select('product_name, sizes').eq('user_id', currentUser.id);
-        if (pricingData) {
-          const pricingMap: any = {};
-          pricingData.forEach(item => {
-            pricingMap[item.product_name.toLowerCase()] = item.sizes;
-          });
-          setProductPricing(pricingMap);
-        }
-      }
-
-      // Load project data
-      const project = localStorage.getItem(`project_${projectId}`);
-      if (project) setProjectData(JSON.parse(project));
-
-      // Load all configurations from estimation data
+      // CRITICAL: Check for cached summary data first
       const estimationKey = `estimation_${projectId}`;
       const estimationStr = localStorage.getItem(estimationKey);
       const storedPaintType = localStorage.getItem(`selected_paint_type_${projectId}`) || 'Interior';
+      
+      let cachedEstimation: any = null;
       let paintEstimationConfigs: AreaConfig[] = [];
+      
       if (estimationStr) {
-        const est = JSON.parse(estimationStr);
-        const pt = est.lastPaintType || storedPaintType;
+        cachedEstimation = JSON.parse(estimationStr);
+        
+        // If cache has pre-calculated totals, use them directly
+        if (cachedEstimation.isCached && cachedEstimation.areaTotals) {
+          setCachedAreaTotals(cachedEstimation.areaTotals);
+          console.log('✓ Using cached area totals - no recalculation needed');
+        }
+        
+        const pt = cachedEstimation.lastPaintType || storedPaintType;
         setPaintType(pt);
 
         // Combine all configurations from all paint types
         const allConfigs: AreaConfig[] = [];
 
         // Add Interior configurations with type marker
-        if (Array.isArray(est.interiorConfigurations) && est.interiorConfigurations.length > 0) {
-          est.interiorConfigurations.forEach((config: any) => {
+        if (Array.isArray(cachedEstimation.interiorConfigurations) && cachedEstimation.interiorConfigurations.length > 0) {
+          cachedEstimation.interiorConfigurations.forEach((config: any) => {
             allConfigs.push({
               ...config,
               paintTypeCategory: 'Interior'
@@ -160,8 +137,8 @@ export default function GenerateSummaryScreen() {
         }
 
         // Add Exterior configurations with type marker
-        if (Array.isArray(est.exteriorConfigurations) && est.exteriorConfigurations.length > 0) {
-          est.exteriorConfigurations.forEach((config: any) => {
+        if (Array.isArray(cachedEstimation.exteriorConfigurations) && cachedEstimation.exteriorConfigurations.length > 0) {
+          cachedEstimation.exteriorConfigurations.forEach((config: any) => {
             allConfigs.push({
               ...config,
               paintTypeCategory: 'Exterior'
@@ -170,15 +147,15 @@ export default function GenerateSummaryScreen() {
         }
 
         // Add Waterproofing configurations with type marker
-        if (Array.isArray(est.waterproofingConfigurations) && est.waterproofingConfigurations.length > 0) {
-          est.waterproofingConfigurations.forEach((config: any) => {
+        if (Array.isArray(cachedEstimation.waterproofingConfigurations) && cachedEstimation.waterproofingConfigurations.length > 0) {
+          cachedEstimation.waterproofingConfigurations.forEach((config: any) => {
             allConfigs.push({
               ...config,
               paintTypeCategory: 'Waterproofing'
             });
           });
         }
-        console.log('Loaded all configs from estimation:', allConfigs.length);
+        console.log('✓ Loaded cached configs:', allConfigs.length);
         paintEstimationConfigs = allConfigs;
         setAreaConfigs(allConfigs);
       } else {
@@ -203,10 +180,14 @@ export default function GenerateSummaryScreen() {
         setAreaConfigs(Array.isArray(configs) ? configs : []);
       }
 
-      // Load rooms from backend
+      // Load minimal room data (only if not already cached)
       const {
         data: roomsData
-      } = await supabase.from('rooms').select('*').eq('project_id', projectId);
+      } = await supabase
+        .from('rooms')
+        .select('id, name, project_type, total_door_window_grill_area, selected_areas, floor_area, adjusted_wall_area, wall_area, ceiling_area')
+        .eq('project_id', projectId);
+      
       if (roomsData) {
         setRooms(roomsData);
 
@@ -282,20 +263,54 @@ export default function GenerateSummaryScreen() {
         setCalculationConfigs(paintEstimationConfigs);
       }
 
-      // Load dealer info
-      const {
-        data: {
-          user
-        }
-      } = await supabase.auth.getUser();
-      if (user) {
-        const {
-          data: dealerData
-        } = await supabase.from('dealer_info').select('margin').eq('user_id', user.id).single();
-        if (dealerData) setDealerMargin(Number(dealerData.margin) || 0);
+      // Load coverage + pricing + dealer info in parallel
+      const [coverageResults, currentUser, projectLocal] = await Promise.all([
+        supabase.from('coverage_data').select('product_name, coverage_range'),
+        supabase.auth.getUser(),
+        Promise.resolve(localStorage.getItem(`project_${projectId}`))
+      ]);
+
+      // Process coverage data
+      if (coverageResults.data) {
+        const coverageMap: any = {};
+        coverageResults.data.forEach(item => {
+          coverageMap[item.product_name.toLowerCase()] = item.coverage_range;
+        });
+        setCoverageData(coverageMap);
       }
+
+      // Load project data
+      if (projectLocal) setProjectData(JSON.parse(projectLocal));
+
+      // Load pricing + dealer info
+      if (currentUser.data?.user) {
+        const [pricingData, dealerData] = await Promise.all([
+          supabase.from('product_pricing').select('product_name, sizes').eq('user_id', currentUser.data.user.id),
+          supabase.from('dealer_info').select('margin').eq('user_id', currentUser.data.user.id).maybeSingle()
+        ]);
+        
+        if (pricingData.data) {
+          const pricingMap: any = {};
+          pricingData.data.forEach(item => {
+            pricingMap[item.product_name.toLowerCase()] = item.sizes;
+          });
+          setProductPricing(pricingMap);
+        }
+        
+        if (dealerData.data) {
+          setDealerMargin(Number(dealerData.data.margin) || 0);
+        }
+      }
+
+      console.log('✓ Summary data loaded successfully');
     } catch (error) {
-      console.error('Error loading data:', error);
+      console.error('❌ Error loading summary data:', error);
+      toast({
+        title: "Loading Error",
+        description: "Failed to load project summary. Please try again.",
+        variant: "destructive"
+      });
+      
       // Ensure loading states are cleared even on error
       setIsLoadingPaintConfig(false);
       setIsLoadingLabour(false);
@@ -427,11 +442,10 @@ export default function GenerateSummaryScreen() {
         </CardHeader>
         <CardContent>
           {isLoadingPaintConfig ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="flex flex-col items-center gap-3">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                <p className="text-sm text-muted-foreground">Loading configurations...</p>
-              </div>
+            <div className="space-y-3">
+              <Skeleton className="h-32 w-full" />
+              <Skeleton className="h-32 w-full" />
+              <Skeleton className="h-24 w-full" />
             </div>
           ) : areaConfigs.length === 0 ? <div className="text-sm text-muted-foreground p-4 border rounded-md bg-muted/30">
               No paint configurations found. Please add them in Paint Estimation and click Generate Summary.
@@ -764,11 +778,10 @@ export default function GenerateSummaryScreen() {
         </CardHeader>
         <CardContent>
           {isLoadingLabour ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="flex flex-col items-center gap-3">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                <p className="text-sm text-muted-foreground">Calculating labour requirements...</p>
-              </div>
+            <div className="space-y-3">
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-24 w-full" />
+              <Skeleton className="h-16 w-full" />
             </div>
           ) : (
           <div className="space-y-3">
@@ -1349,11 +1362,10 @@ export default function GenerateSummaryScreen() {
         </CardHeader>
         <CardContent>
           {isLoadingMaterial ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="flex flex-col items-center gap-3">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                <p className="text-sm text-muted-foreground">Calculating material requirements...</p>
-              </div>
+            <div className="space-y-3">
+              <Skeleton className="h-40 w-full" />
+              <Skeleton className="h-40 w-full" />
+              <Skeleton className="h-24 w-full" />
             </div>
           ) : calculationConfigs.length === 0 ? <div className="text-sm text-muted-foreground p-4 border rounded-md bg-muted/30">
               No material configurations found.
@@ -1604,8 +1616,8 @@ export default function GenerateSummaryScreen() {
       </Card>;
   };
 
-  // Calculate actual total project cost (used in both Generate Summary and Project Summary tabs)
-  const calculateActualTotalCost = () => {
+  // Memoized calculation of actual total project cost (prevents recalculation on every render)
+  const calculateActualTotalCost = useMemo(() => {
     const materialCost = totalMaterialCostRef.current;
     
     // Calculate labour cost using same logic as renderTotalCost
@@ -1701,7 +1713,7 @@ export default function GenerateSummaryScreen() {
     const marginCost = totalProjectCostFromConfig * 0.1;
     
     return materialCost + marginCost + labourCost;
-  };
+  }, [areaConfigs, labourMode, autoLabourPerDay, manualDays]);
 
   // Section 6: Estimated Total Cost
   const renderTotalCost = () => {
@@ -1812,7 +1824,7 @@ export default function GenerateSummaryScreen() {
     }, 0);
     const marginCost = totalProjectCostFromConfig * 0.1;
     
-    const totalCost = calculateActualTotalCost();
+    const totalCost = calculateActualTotalCost;
     return <Card className="eca-shadow bg-card border-primary/20">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg font-semibold">
@@ -1949,7 +1961,7 @@ export default function GenerateSummaryScreen() {
     Object.values(totalAreas).forEach((areas: any) => {
       totalArea += areas.wallArea + areas.floorArea + areas.ceilingArea;
     });
-    const message = `Cosvys Project Summary\n\nCustomer: ${projectData?.customerName}\nTotal Area: ${totalArea.toFixed(1)} sq.ft\nEstimated Cost: ₹${Math.round(calculateActualTotalCost()).toLocaleString()}\n\nGenerated by Cosvys`;
+    const message = `Cosvys Project Summary\n\nCustomer: ${projectData?.customerName}\nTotal Area: ${totalArea.toFixed(1)} sq.ft\nEstimated Cost: ₹${Math.round(calculateActualTotalCost).toLocaleString()}\n\nGenerated by Cosvys`;
     const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
   };
@@ -1959,7 +1971,7 @@ export default function GenerateSummaryScreen() {
       totalArea += areas.wallArea + areas.floorArea + areas.ceilingArea;
     });
     const subject = `Project Summary - ${projectData?.customerName}`;
-    const body = `Please find the project summary for ${projectData?.customerName}.\n\nTotal Area: ${totalArea.toFixed(1)} sq.ft\nEstimated Cost: ₹${Math.round(calculateActualTotalCost()).toLocaleString()}\n\nGenerated by Cosvys`;
+    const body = `Please find the project summary for ${projectData?.customerName}.\n\nTotal Area: ${totalArea.toFixed(1)} sq.ft\nEstimated Cost: ₹${Math.round(calculateActualTotalCost).toLocaleString()}\n\nGenerated by Cosvys`;
     const url = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.open(url);
   };
@@ -1984,7 +1996,7 @@ export default function GenerateSummaryScreen() {
       });
 
       // Calculate quotation value
-      const quotationValue = calculateActualTotalCost();
+      const quotationValue = calculateActualTotalCost;
 
       // Determine project types
       const projectTypes = Array.from(new Set(rooms.map(room => room.project_type).filter(Boolean)));
@@ -2191,22 +2203,22 @@ export default function GenerateSummaryScreen() {
                       Actual<br />Project Cost
                     </p>
                     <p className="text-xl font-bold text-foreground">
-                      ₹{Math.round(calculateActualTotalCost()).toLocaleString('en-IN')}
+                      ₹{Math.round(calculateActualTotalCost).toLocaleString('en-IN')}
                     </p>
                   </div>
                 </div>
 
                 <div className="p-4 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 rounded-lg border border-red-200 dark:border-red-800">
                   <p className="text-sm text-red-700 dark:text-red-300 mb-2 font-medium">Average Value</p>
-                  <p className="text-3xl font-bold text-red-700 dark:text-red-300">
-                    ₹{Math.abs(
-                      areaConfigs.reduce((sum, config) => {
-                        const area = Number(config.area) || 0;
-                        const rate = parseFloat(config.perSqFtRate) || 0;
-                        return sum + area * rate;
-                      }, 0) - calculateActualTotalCost()
-                    ).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
-                  </p>
+                   <p className="text-3xl font-bold text-red-700 dark:text-red-300">
+                     ₹{Math.abs(
+                       areaConfigs.reduce((sum, config) => {
+                         const area = Number(config.area) || 0;
+                         const rate = parseFloat(config.perSqFtRate) || 0;
+                         return sum + area * rate;
+                       }, 0) - calculateActualTotalCost
+                     ).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                   </p>
                 </div>
               </CardContent>
             </Card>
