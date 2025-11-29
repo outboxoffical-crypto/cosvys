@@ -103,218 +103,111 @@ export default function GenerateSummaryScreen() {
       setIsLoadingLabour(true);
       setIsLoadingMaterial(true);
 
-      // CRITICAL: Check for cached summary data first
-      const estimationKey = `estimation_${projectId}`;
-      const estimationStr = localStorage.getItem(estimationKey);
-      const storedPaintType = localStorage.getItem(`selected_paint_type_${projectId}`) || 'Interior';
+      // CRITICAL: Check for cached summary from backend API
+      const summaryKey = `project_summary_${projectId}`;
+      const summaryStr = localStorage.getItem(summaryKey);
       
-      let cachedEstimation: any = null;
-      let paintEstimationConfigs: AreaConfig[] = [];
-      
-      if (estimationStr) {
-        cachedEstimation = JSON.parse(estimationStr);
+      if (summaryStr) {
+        const cachedSummary = JSON.parse(summaryStr);
         
-        // If cache has pre-calculated totals, use them directly
-        if (cachedEstimation.isCached && cachedEstimation.areaTotals) {
-          setCachedAreaTotals(cachedEstimation.areaTotals);
-          console.log('✓ Using cached area totals - no recalculation needed');
-        }
+        // Use cached API response directly
+        console.log('✓ Using cached API summary - no recalculation needed');
         
-        const pt = cachedEstimation.lastPaintType || storedPaintType;
-        setPaintType(pt);
-
-        // Combine all configurations from all paint types
-        const allConfigs: AreaConfig[] = [];
-
-        // Add Interior configurations with type marker
-        if (Array.isArray(cachedEstimation.interiorConfigurations) && cachedEstimation.interiorConfigurations.length > 0) {
-          cachedEstimation.interiorConfigurations.forEach((config: any) => {
-            allConfigs.push({
-              ...config,
-              paintTypeCategory: 'Interior'
-            });
-          });
-        }
-
-        // Add Exterior configurations with type marker
-        if (Array.isArray(cachedEstimation.exteriorConfigurations) && cachedEstimation.exteriorConfigurations.length > 0) {
-          cachedEstimation.exteriorConfigurations.forEach((config: any) => {
-            allConfigs.push({
-              ...config,
-              paintTypeCategory: 'Exterior'
-            });
-          });
-        }
-
-        // Add Waterproofing configurations with type marker
-        if (Array.isArray(cachedEstimation.waterproofingConfigurations) && cachedEstimation.waterproofingConfigurations.length > 0) {
-          cachedEstimation.waterproofingConfigurations.forEach((config: any) => {
-            allConfigs.push({
-              ...config,
-              paintTypeCategory: 'Waterproofing'
-            });
-          });
-        }
-        console.log('✓ Loaded cached configs:', allConfigs.length);
-        paintEstimationConfigs = allConfigs;
-        setAreaConfigs(allConfigs);
-      } else {
-        // Fallback to per-type saved configs while still on estimation screen
-        const pt = storedPaintType;
-        setPaintType(pt);
-        const paintConfigs = localStorage.getItem(`paint_configs_${projectId}_${pt}`);
-        const preservedConfigs = localStorage.getItem(`configs_preserved_${projectId}_${pt}`);
-        let configs: any[] = [];
-        if (paintConfigs) {
-          configs = JSON.parse(paintConfigs);
-        } else if (preservedConfigs) {
-          configs = JSON.parse(preservedConfigs);
-        }
-        // Add paint type marker to fallback configs
-        configs = configs.map(c => ({
-          ...c,
-          paintTypeCategory: pt
-        }));
-        console.log('Loaded fallback configs:', configs);
-        paintEstimationConfigs = Array.isArray(configs) ? configs : [];
-        setAreaConfigs(Array.isArray(configs) ? configs : []);
-      }
-
-      // Load minimal room data (only if not already cached)
-      const {
-        data: roomsData
-      } = await supabase
-        .from('rooms')
-        .select('id, name, project_type, total_door_window_grill_area, selected_areas, floor_area, adjusted_wall_area, wall_area, ceiling_area')
-        .eq('project_id', projectId);
-      
-      if (roomsData) {
-        setRooms(roomsData);
-
-        // Create enamel configurations from door/window/grill areas for calculations only
-        const enamelConfigs: AreaConfig[] = [];
-        roomsData.forEach(room => {
-          const enamelArea = Number(room.total_door_window_grill_area || 0);
-          if (enamelArea > 0) {
-            enamelConfigs.push({
-              id: `enamel_${room.id}`,
-              areaType: 'Door & Window',
-              paintingSystem: 'Fresh Painting',
-              area: enamelArea,
-              perSqFtRate: '0',
-              label: `${room.name} - Door & Window`,
-              paintTypeCategory: room.project_type as 'Interior' | 'Exterior' | 'Waterproofing',
-              selectedMaterials: {
-                putty: '',
-                primer: 'Enamel Primer',
-                emulsion: 'Enamel Paint'
-              },
-              coatConfiguration: {
-                putty: 0,
-                primer: 1,
-                emulsion: 2
-              }
-            });
+        setProjectData(cachedSummary.project_data);
+        setPaintType(cachedSummary.paint_type);
+        
+        // Convert API response to UI format
+        const paintConfigs: AreaConfig[] = cachedSummary.configurations.map((calc: any) => ({
+          id: calc.config_id,
+          areaType: calc.area_type,
+          paintingSystem: calc.painting_system,
+          area: calc.area,
+          perSqFtRate: calc.per_sqft_rate.toString(),
+          paintTypeCategory: cachedSummary.paint_type,
+          selectedMaterials: {
+            putty: calc.materials.putty?.product || '',
+            primer: calc.materials.primer?.product || '',
+            emulsion: calc.materials.emulsion?.product || ''
+          },
+          coatConfiguration: {
+            putty: calc.materials.putty?.coats || 0,
+            primer: calc.materials.primer?.coats || 0,
+            emulsion: calc.materials.emulsion?.coats || 0
           }
-        });
-
-        // Before setting, filter out area types that have 0 selected area in Room Measurements
-        const selectedTotalsByType: Record<string, {
-          floor: number;
-          wall: number;
-          ceiling: number;
-        }> = {};
-        ['Interior', 'Exterior', 'Waterproofing'].forEach(t => {
-          selectedTotalsByType[t] = {
-            floor: 0,
-            wall: 0,
-            ceiling: 0
-          };
-        });
-        roomsData.forEach(room => {
-          const sel = typeof room.selected_areas === 'object' && room.selected_areas !== null && !Array.isArray(room.selected_areas) ? room.selected_areas as any : {
-            floor: false,
-            wall: true,
-            ceiling: false
-          };
-          const type = room.project_type || 'Interior';
-          if (!selectedTotalsByType[type]) selectedTotalsByType[type] = {
-            floor: 0,
-            wall: 0,
-            ceiling: 0
-          };
-          if (sel.floor) selectedTotalsByType[type].floor += Number(room.floor_area || 0);
-          if (sel.wall) selectedTotalsByType[type].wall += Number(room.adjusted_wall_area || room.wall_area || 0);
-          if (sel.ceiling) selectedTotalsByType[type].ceiling += Number(room.ceiling_area || 0);
-        });
-        const filteredPaintConfigs = (paintEstimationConfigs || []).filter(cfg => {
-          const type = cfg.paintTypeCategory || 'Interior';
-          if (cfg.areaType === 'Floor') return (selectedTotalsByType[type]?.floor || 0) > 0;
-          if (cfg.areaType === 'Wall') return (selectedTotalsByType[type]?.wall || 0) > 0;
-          if (cfg.areaType === 'Ceiling') return (selectedTotalsByType[type]?.ceiling || 0) > 0;
-          return true;
-        });
-
-        // Update both areaConfigs and calculationConfigs with filtered list
-        setAreaConfigs(filteredPaintConfigs);
-        setCalculationConfigs([...filteredPaintConfigs, ...enamelConfigs]);
-      } else {
-        // If no rooms data, just use paint estimation configs
-        setCalculationConfigs(paintEstimationConfigs);
+        }));
+        
+        setAreaConfigs(paintConfigs);
+        setCalculationConfigs(paintConfigs);
+        
+        // Set labour mode from cached data
+        setLabourMode(cachedSummary.labour.mode);
+        setManualDays(cachedSummary.labour.days);
+        setAutoLabourPerDay(cachedSummary.labour.labourers_per_day);
+        
+        // Set dealer margin
+        setDealerMargin(cachedSummary.costs.dealer_margin);
+        
+        // Immediately mark as loaded
+        setIsLoadingPaintConfig(false);
+        setIsLoadingLabour(false);
+        setIsLoadingMaterial(false);
+        
+        return;
       }
 
-      // Load coverage + pricing + dealer info in parallel
-      const [coverageResults, currentUser, projectLocal] = await Promise.all([
-        supabase.from('coverage_data').select('product_name, coverage_range'),
-        supabase.auth.getUser(),
-        Promise.resolve(localStorage.getItem(`project_${projectId}`))
+      // Fallback: Fetch minimal data if no cache (should not happen normally)
+      const storedPaintType = localStorage.getItem(`selected_paint_type_${projectId}`) || 'Interior';
+      setPaintType(storedPaintType);
+
+      // Fetch only essential data
+      const [projectResult, dealerResult] = await Promise.all([
+        supabase.from('projects').select('*').eq('id', projectId).single(),
+        supabase.from('dealer_info').select('margin').eq('user_id', (await supabase.auth.getUser()).data.user?.id).single()
       ]);
 
-      // Process coverage data
-      if (coverageResults.data) {
-        const coverageMap: any = {};
-        coverageResults.data.forEach(item => {
-          coverageMap[item.product_name.toLowerCase()] = item.coverage_range;
-        });
-        setCoverageData(coverageMap);
+      if (projectResult.data) {
+        setProjectData(projectResult.data);
       }
 
-      // Load project data
-      if (projectLocal) setProjectData(JSON.parse(projectLocal));
-
-      // Load pricing + dealer info
-      if (currentUser.data?.user) {
-        const [pricingData, dealerData] = await Promise.all([
-          supabase.from('product_pricing').select('product_name, sizes').eq('user_id', currentUser.data.user.id),
-          supabase.from('dealer_info').select('margin').eq('user_id', currentUser.data.user.id).maybeSingle()
-        ]);
-        
-        if (pricingData.data) {
-          const pricingMap: any = {};
-          pricingData.data.forEach(item => {
-            pricingMap[item.product_name.toLowerCase()] = item.sizes;
-          });
-          setProductPricing(pricingMap);
-        }
-        
-        if (dealerData.data) {
-          setDealerMargin(Number(dealerData.data.margin) || 0);
-        }
+      if (dealerResult.data) {
+        setDealerMargin(dealerResult.data.margin);
       }
 
-      console.log('✓ Summary data loaded successfully');
-    } catch (error) {
-      console.error('❌ Error loading summary data:', error);
-      toast({
-        title: "Loading Error",
-        description: "Failed to load project summary. Please try again.",
-        variant: "destructive"
-      });
-      
-      // Ensure loading states are cleared even on error
+      // Mark as loaded
       setIsLoadingPaintConfig(false);
       setIsLoadingLabour(false);
       setIsLoadingMaterial(false);
+
+    } catch (error) {
+      console.error('Error loading data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load project data. Please try again.",
+        variant: "destructive",
+      });
+      // Even on error, stop loading
+      setIsLoadingPaintConfig(false);
+      setIsLoadingLabour(false);
+      setIsLoadingMaterial(false);
+    }
+  };
+
+  // Handle labour mode changes
+  const handleManualDaysChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setManualDaysInput(value);
+    const num = parseFloat(value);
+    if (!isNaN(num) && num > 0) {
+      setManualDays(Math.round(num));
+    }
+  };
+
+  const handleAutoLabourPerDayChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setAutoLabourPerDayInput(value);
+    const num = parseFloat(value);
+    if (!isNaN(num) && num > 0) {
+      setAutoLabourPerDay(Math.round(num));
     }
   };
 
@@ -332,6 +225,7 @@ export default function GenerateSummaryScreen() {
     const interiorConfigs = areaConfigs.filter(c => c.paintTypeCategory === 'Interior');
     const exteriorConfigs = areaConfigs.filter(c => c.paintTypeCategory === 'Exterior');
     const waterproofingConfigs = areaConfigs.filter(c => c.paintTypeCategory === 'Waterproofing');
+    
     const renderConfigGroup = (configs: AreaConfig[], typeLabel: string) => {
       if (configs.length === 0) return null;
       return <div key={typeLabel} className="space-y-3 mb-6">
