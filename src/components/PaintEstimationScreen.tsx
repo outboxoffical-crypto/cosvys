@@ -228,29 +228,11 @@ export default function PaintEstimationScreen() {
         }
         
         if (roomsData) {
-          // Set rooms immediately for instant UI render
+          // Set rooms immediately for instant UI render; calculations run in separate effect
           setRooms(roomsData);
-          
-          // Show loading indicator
-          setIsCalculating(true);
-          
-          // Defer calculations to next frame for smooth transition
-          requestAnimationFrame(() => {
-            // Use setTimeout to ensure screen renders first
-            setTimeout(() => {
-              try {
-                initializeConfigurations(roomsData);
-              } catch (error) {
-                console.error('Calculation error:', error);
-              } finally {
-                setIsCalculating(false);
-              }
-            }, 50);
-          });
         }
       } catch (error) {
         console.error('Error:', error);
-        setIsCalculating(false);
       }
     };
     
@@ -828,8 +810,19 @@ export default function PaintEstimationScreen() {
   // Re-initialize when rooms change or paint type changes
   useEffect(() => {
     if (rooms.length > 0 && !isLoading) {
-      // Reinitialize configurations for current paint type
-      initializeConfigurations(rooms);
+      // Run heavy calculations slightly deferred to avoid white screen
+      setIsCalculating(true);
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          try {
+            initializeConfigurations(rooms);
+          } catch (error) {
+            console.error('Calculation error:', error);
+          } finally {
+            setIsCalculating(false);
+          }
+        }, 50);
+      });
     }
   }, [rooms, selectedPaintType]);
 
