@@ -108,15 +108,20 @@ export default function GenerateSummaryScreen() {
       const summaryStr = localStorage.getItem(summaryKey);
       
       if (!summaryStr) {
-        // No cached data - should not happen if flow is correct
+        // No cached data - user navigated directly without generating
         toast({
-          title: "Error",
-          description: "Summary data not found. Please reconfigure and try again.",
+          title: "Missing Summary Data",
+          description: "Please go back to Paint Estimation and click 'Generate Summary' first.",
           variant: "destructive",
         });
         setIsLoadingPaintConfig(false);
         setIsLoadingLabour(false);
         setIsLoadingMaterial(false);
+        
+        // Redirect back after showing error
+        setTimeout(() => {
+          navigate(`/project/${projectId}/paint-estimation`);
+        }, 2000);
         return;
       }
 
