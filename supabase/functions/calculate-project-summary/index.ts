@@ -21,24 +21,40 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  try {
-    const authHeader = req.headers.get('authorization')!;
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      global: { headers: { Authorization: authHeader } },
-      auth: { persistSession: false }
-    });
+  // Add timeout protection (50 seconds to stay under 60s limit)
+  const timeoutMs = 50000;
+  const timeoutPromise = new Promise((_, reject) => {
+    setTimeout(() => reject(new Error('Calculation timeout - too many rooms. Please reduce room count or try again.')), timeoutMs);
+  });
 
-    const { 
-      project_id,
-      paint_type,
-      configurations,
-      labour_mode,
-      manual_days = 5,
-      auto_labour_per_day = 1
-    }: CalculationRequest = await req.json();
+  const calculationPromise = (async () => {
+    try {
+      const authHeader = req.headers.get('authorization')!;
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+      
+      const supabase = createClient(supabaseUrl, supabaseKey, {
+        global: { headers: { Authorization: authHeader } },
+        auth: { persistSession: false }
+      });
+
+      const { 
+        project_id,
+        paint_type,
+        configurations,
+        labour_mode,
+        manual_days = 5,
+        auto_labour_per_day = 1
+      }: CalculationRequest = await req.json();
+
+      // Validate input
+      if (!project_id) {
+        throw new Error('Missing project_id');
+      }
+
+      if (!configurations || configurations.length === 0) {
+        throw new Error('No configurations provided');
+      }
 
     console.log(`[calculate-project-summary] Starting calculation for project ${project_id}`);
 
@@ -63,14 +79,17 @@ serve(async (req) => {
       throw new Error(`Failed to fetch rooms: ${roomsError.message}`);
     }
 
-    // Batch processing for better performance - smaller batches prevent freezing
-    const BATCH_SIZE = 10; // Process 10 rooms at a time
-    const roomBatches = [];
-    for (let i = 0; i < (rooms || []).length; i += BATCH_SIZE) {
-      roomBatches.push((rooms || []).slice(i, i + BATCH_SIZE));
+    // Batch processing for high-performance with large datasets
+    // Smaller batches for 100+ rooms to prevent memory issues
+    const totalRooms = (rooms || []).length;
+    const BATCH_SIZE = totalRooms > 100 ? 5 : 10;
+    
+    console.log(`Processing ${totalRooms} rooms in batches of ${BATCH_SIZE} - optimized for performance`);
+    
+    // Early exit if too many rooms (safety guard)
+    if (totalRooms > 500) {
+      throw new Error('Too many rooms (500+ limit). Please split into multiple projects.');
     }
-
-    console.log(`Processing ${rooms?.length || 0} rooms in ${roomBatches.length} batch(es) - optimized for performance`);
 
     // Fetch coverage data and product pricing in parallel
     const [coverageResult, pricingResult, dealerResult] = await Promise.all([
@@ -181,21 +200,31 @@ serve(async (req) => {
       calculated_at: new Date().toISOString()
     };
 
-    console.log(`[calculate-project-summary] ✓ Calculation complete for project ${project_id}`);
+      console.log(`[calculate-project-summary] ✓ Calculation complete for project ${project_id}`);
 
-    return new Response(JSON.stringify(summary), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+      return new Response(JSON.stringify(summary), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
 
+    } catch (error) {
+      console.error('[calculate-project-summary] Error:', error);
+      throw error;
+    }
+  })();
+
+  try {
+    // Race between calculation and timeout
+    const result = await Promise.race([calculationPromise, timeoutPromise]);
+    return result as Response;
   } catch (error) {
-    console.error('[calculate-project-summary] Error:', error);
+    console.error('[calculate-project-summary] Fatal error:', error);
     return new Response(
       JSON.stringify({ 
-        error: error.message,
-        details: 'Failed to calculate project summary'
+        error: error.message || 'Unknown error',
+        details: 'Failed to calculate project summary. Please try again with fewer rooms or contact support.'
       }), 
       {
-        status: 500,
+        status: error.message?.includes('timeout') ? 504 : 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     );

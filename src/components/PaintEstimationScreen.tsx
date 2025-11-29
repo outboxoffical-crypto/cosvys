@@ -58,6 +58,7 @@ export default function PaintEstimationScreen() {
   const { projectId } = useParams();
   
   const [selectedPaintType, setSelectedPaintType] = useState<"Interior" | "Exterior" | "Waterproofing">("Interior");
+  const [isCalculating, setIsCalculating] = useState(false);
   const [rooms, setRooms] = useState<any[]>([]);
   const [coverageData, setCoverageData] = useState<CoverageData[]>([]);
   
@@ -84,7 +85,6 @@ export default function PaintEstimationScreen() {
   const [selectedConfigId, setSelectedConfigId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isCalculating, setIsCalculating] = useState(false);
   const [emulsionComboOpen, setEmulsionComboOpen] = useState(false);
 
   // Sync initial paint type, prefer snapshot from Generate Summary
@@ -994,7 +994,13 @@ export default function PaintEstimationScreen() {
       return;
     }
 
-    // Simulate progressive loading with status updates
+    // Prevent multiple simultaneous calculations
+    if (isCalculating) {
+      return;
+    }
+    setIsCalculating(true);
+
+    // Progressive loading with status updates
     let progress = 0;
     const progressSteps = [
       { percent: 15, message: 'Loading rooms data...' },
@@ -1006,7 +1012,7 @@ export default function PaintEstimationScreen() {
     ];
 
     // Show initial loading
-    const toastId = toast.loading(`${progressSteps[0].message} (${progressSteps[0].percent}%)`, { 
+    toast.loading(`${progressSteps[0].message} (${progressSteps[0].percent}%)`, { 
       id: 'generate-summary' 
     });
 
@@ -1022,7 +1028,10 @@ export default function PaintEstimationScreen() {
     }, 500);
 
     try {
-      // Call backend API to calculate summary
+      // Call backend API to calculate summary with timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 55000); // 55s client timeout
+
       const { data: { session } } = await supabase.auth.getSession();
       
       const response = await supabase.functions.invoke('calculate-project-summary', {
@@ -1035,6 +1044,7 @@ export default function PaintEstimationScreen() {
         }
       });
 
+      clearTimeout(timeoutId);
       clearInterval(progressInterval);
 
       if (response.error) {
@@ -1045,22 +1055,52 @@ export default function PaintEstimationScreen() {
         throw new Error('No summary data returned from server');
       }
 
-      // Cache the API response
+      // Verify response structure
       const summaryData = response.data;
-      localStorage.setItem(`project_summary_${projectId}`, JSON.stringify(summaryData));
+      if (!summaryData.configurations || !summaryData.costs) {
+        throw new Error('Invalid summary data structure');
+      }
+
+      // Cache the API response and verify write
+      const cacheKey = `project_summary_${projectId}`;
+      localStorage.setItem(cacheKey, JSON.stringify(summaryData));
+      
+      // Verify cache was written successfully
+      const verifyCache = localStorage.getItem(cacheKey);
+      if (!verifyCache) {
+        throw new Error('Failed to save summary data. Please try again.');
+      }
+
       toast.success('✓ Summary calculated successfully!', { id: 'generate-summary' });
       
-      // Navigate after a brief delay to ensure cache is written
+      // Navigate only after successful cache verification
+      // Use longer delay on mobile/slow devices
+      const delay = navigator.userAgent.match(/Mobile|Tablet/) ? 300 : 150;
       setTimeout(() => {
+        setIsCalculating(false);
         navigate(`/project/${projectId}/generate-summary`);
-      }, 100);
-    } catch (error) {
+      }, delay);
+
+    } catch (error: any) {
       clearInterval(progressInterval);
+      setIsCalculating(false);
+      
       console.error('Failed to generate summary:', error);
-      toast.error(
-        `Calculation failed: ${error.message || 'Please try again'}`, 
-        { id: 'generate-summary', duration: 4000 }
-      );
+      
+      // User-friendly error messages
+      let errorMessage = 'Calculation failed. Please try again.';
+      if (error.name === 'AbortError' || error.message?.includes('timeout')) {
+        errorMessage = 'Calculation timeout. Too many rooms - please reduce room count or split into multiple projects.';
+      } else if (error.message?.includes('network') || error.message?.includes('fetch')) {
+        errorMessage = 'Network error. Please check your connection and try again.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage, { 
+        id: 'generate-summary', 
+        duration: 6000 
+      });
     }
   };
 
