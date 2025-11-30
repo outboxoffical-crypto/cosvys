@@ -18,6 +18,21 @@ export const safeString = (value: any, defaultValue: string = 'Not selected'): s
   return String(value);
 };
 
+export const safeMaterialName = (material: any, defaultValue: string = 'Not selected'): string => {
+  if (!material) {
+    return defaultValue;
+  }
+  // If material is an object with 'name' property, return the name
+  if (typeof material === 'object' && material.name) {
+    return String(material.name);
+  }
+  // If material is already a string, return it
+  if (typeof material === 'string') {
+    return material;
+  }
+  return defaultValue;
+};
+
 export const safeCoverage = (coverageRange: string | null | undefined): number => {
   if (!coverageRange || coverageRange === '') {
     return 0;
