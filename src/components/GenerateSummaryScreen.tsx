@@ -132,9 +132,21 @@ export default function GenerateSummaryScreen() {
 
       const currentUser = await loadEssentialData();
 
-      // Load project data from localStorage (fast)
-      const project = localStorage.getItem(`project_${projectId}`);
-      if (project) setProjectData(JSON.parse(project));
+      // Load project data from Supabase with correct field names
+      const { data: projectFromDb, error: projectError } = await supabase
+        .from('projects')
+        .select('customer_name, phone, location, project_type')
+        .eq('id', projectId)
+        .single();
+      
+      if (projectFromDb && !projectError) {
+        setProjectData({
+          customerName: projectFromDb.customer_name,
+          mobile: projectFromDb.phone,
+          address: projectFromDb.location,
+          projectTypes: projectFromDb.project_type ? projectFromDb.project_type.split(',').map((t: string) => t.trim()) : []
+        });
+      }
 
       // DEFERRED: Load pricing data in background (not blocking UI)
       setTimeout(async () => {
