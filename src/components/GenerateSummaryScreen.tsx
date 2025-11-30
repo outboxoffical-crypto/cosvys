@@ -78,27 +78,8 @@ export default function GenerateSummaryScreen() {
     }, 100);
   }, []);
 
-  // Progressive calculation after data loads - run only once
-  const hasInitialized = useRef(false);
-  
-  useEffect(() => {
-    if (!hasInitialized.current && (areaConfigs.length > 0 || calculationConfigs.length > 0)) {
-      hasInitialized.current = true;
-      
-      // Defer calculations to next tick for instant UI
-      setTimeout(() => {
-        setIsLoadingPaintConfig(false);
-      }, 0);
-      
-      setTimeout(() => {
-        setIsLoadingLabour(false);
-      }, 100);
-      
-      setTimeout(() => {
-        setIsLoadingMaterial(false);
-      }, 200);
-    }
-  }, [areaConfigs.length, calculationConfigs.length]);
+  // Progressive loading: handled directly in loadData to avoid extra re-renders
+
   const loadData = async () => {
     try {
       setIsLoadingPaintConfig(true);
@@ -333,6 +314,11 @@ export default function GenerateSummaryScreen() {
         } = await supabase.from('dealer_info').select('margin').eq('user_id', user.id).single();
         if (dealerData) setDealerMargin(Number(dealerData.margin) || 0);
       }
+
+      // All data loaded successfully
+      setIsLoadingPaintConfig(false);
+      setIsLoadingLabour(false);
+      setIsLoadingMaterial(false);
     } catch (error) {
       console.error('Error loading data:', error);
       // Ensure loading states are cleared even on error
