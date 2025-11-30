@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { safeNumber, safeString, safeCoverage, safePrice, safeArray, safeObject, formatCurrency, formatArea } from "@/utils/safeCalculations";
+import { safeNumber, safeString, safeCoverage, safePrice, safeArray, safeObject, safeMaterialName, formatCurrency, formatArea } from "@/utils/safeCalculations";
 interface AreaConfig {
   id: string;
   areaType: string;
@@ -274,22 +274,22 @@ function GenerateSummaryScreen() {
               if (config.paintingSystem === 'Fresh Painting') {
                 const parts = [];
                 if (config.coatConfiguration.putty > 0) {
-                  parts.push(`${config.coatConfiguration.putty} coat${config.coatConfiguration.putty > 1 ? 's' : ''} of ${config.selectedMaterials.putty || 'Putty'}`);
+                  parts.push(`${config.coatConfiguration.putty} coat${config.coatConfiguration.putty > 1 ? 's' : ''} of ${safeMaterialName(config.selectedMaterials.putty, 'Putty')}`);
                 }
                 if (config.coatConfiguration.primer > 0) {
-                  parts.push(`${config.coatConfiguration.primer} coat${config.coatConfiguration.primer > 1 ? 's' : ''} of ${config.selectedMaterials.primer || 'Primer'}`);
+                  parts.push(`${config.coatConfiguration.primer} coat${config.coatConfiguration.primer > 1 ? 's' : ''} of ${safeMaterialName(config.selectedMaterials.primer, 'Primer')}`);
                 }
                 if (config.coatConfiguration.emulsion > 0) {
-                  parts.push(`${config.coatConfiguration.emulsion} coat${config.coatConfiguration.emulsion > 1 ? 's' : ''} of ${config.selectedMaterials.emulsion || 'Emulsion'}`);
+                  parts.push(`${config.coatConfiguration.emulsion} coat${config.coatConfiguration.emulsion > 1 ? 's' : ''} of ${safeMaterialName(config.selectedMaterials.emulsion, 'Emulsion')}`);
                 }
                 return parts.join(' + ');
               } else {
                 const parts = [];
                 if (config.repaintingConfiguration?.primer > 0) {
-                  parts.push(`${config.repaintingConfiguration.primer} coat${config.repaintingConfiguration.primer > 1 ? 's' : ''} of ${config.selectedMaterials.primer || 'Primer'}`);
+                  parts.push(`${config.repaintingConfiguration.primer} coat${config.repaintingConfiguration.primer > 1 ? 's' : ''} of ${safeMaterialName(config.selectedMaterials.primer, 'Primer')}`);
                 }
                 if (config.repaintingConfiguration?.emulsion > 0) {
-                  parts.push(`${config.repaintingConfiguration.emulsion} coat${config.repaintingConfiguration.emulsion > 1 ? 's' : ''} of ${config.selectedMaterials.emulsion || 'Emulsion'}`);
+                  parts.push(`${config.repaintingConfiguration.emulsion} coat${config.repaintingConfiguration.emulsion > 1 ? 's' : ''} of ${safeMaterialName(config.selectedMaterials.emulsion, 'Emulsion')}`);
                 }
                 return parts.join(' + ');
               }
@@ -307,7 +307,7 @@ function GenerateSummaryScreen() {
                       
                       <div className="space-y-1">
                         <p className="text-sm text-muted-foreground">Paint Type</p>
-                        <p className="font-medium">{config.selectedMaterials.emulsion || config.areaType}</p>
+                        <p className="font-medium">{safeMaterialName(config.selectedMaterials.emulsion, config.areaType)}</p>
                       </div>
                       
                       <div className="space-y-1">
@@ -587,8 +587,10 @@ function GenerateSummaryScreen() {
       const area = Number(config.area) || 0;
       const isFresh = config.paintingSystem === 'Fresh Painting';
 
-      // Determine if water-based or oil-based
-      const isOilBased = config.selectedMaterials.emulsion?.toLowerCase().includes('enamel') || config.selectedMaterials.primer?.toLowerCase().includes('oxide') || config.selectedMaterials.emulsion?.toLowerCase().includes('oil');
+      // Determine if water-based or oil-based - safely extract material names
+      const emulsionName = safeMaterialName(config.selectedMaterials.emulsion, '').toLowerCase();
+      const primerName = safeMaterialName(config.selectedMaterials.primer, '').toLowerCase();
+      const isOilBased = emulsionName.includes('enamel') || primerName.includes('oxide') || emulsionName.includes('oil');
       const tasks: any[] = [];
       if (isFresh) {
         // Putty
@@ -597,7 +599,7 @@ function GenerateSummaryScreen() {
           const adjustedCoverage = coverageRates.waterBased.putty * (workingHours / standardHours);
           const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
           tasks.push({
-            name: config.selectedMaterials.putty || 'Putty',
+            name: safeMaterialName(config.selectedMaterials.putty, 'Putty'),
             area,
             coats: config.coatConfiguration.putty,
             totalWork,
@@ -610,12 +612,14 @@ function GenerateSummaryScreen() {
         if (config.coatConfiguration.primer > 0) {
           const totalWork = area * config.coatConfiguration.primer;
           // Use enamel base coat coverage for enamel primer
-          const isEnamel = config.selectedMaterials.primer?.toLowerCase().includes('enamel') || config.selectedMaterials.emulsion?.toLowerCase().includes('enamel');
+          const primerName = safeMaterialName(config.selectedMaterials.primer, '').toLowerCase();
+          const emulsionName = safeMaterialName(config.selectedMaterials.emulsion, '').toLowerCase();
+          const isEnamel = primerName.includes('enamel') || emulsionName.includes('enamel');
           const coverage = isEnamel ? coverageRates.oilBased.enamelBase : isOilBased ? coverageRates.oilBased.redOxide : coverageRates.waterBased.primer;
           const adjustedCoverage = coverage * (workingHours / standardHours);
           const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
           tasks.push({
-            name: config.selectedMaterials.primer || 'Primer',
+            name: safeMaterialName(config.selectedMaterials.primer, 'Primer'),
             area,
             coats: config.coatConfiguration.primer,
             totalWork,
@@ -627,12 +631,13 @@ function GenerateSummaryScreen() {
         // Emulsion/Paint
         if (config.coatConfiguration.emulsion > 0) {
           const totalWork = area * config.coatConfiguration.emulsion;
-          const isEnamel = config.selectedMaterials.emulsion?.toLowerCase().includes('enamel');
+          const emulsionName = safeMaterialName(config.selectedMaterials.emulsion, '').toLowerCase();
+          const isEnamel = emulsionName.includes('enamel');
           const coverage = isEnamel ? coverageRates.oilBased.enamelTop : isOilBased ? coverageRates.oilBased.enamelTop : coverageRates.waterBased.emulsion;
           const adjustedCoverage = coverage * (workingHours / standardHours);
           const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
           tasks.push({
-            name: config.selectedMaterials.emulsion || 'Emulsion',
+            name: safeMaterialName(config.selectedMaterials.emulsion, 'Emulsion'),
             area,
             coats: config.coatConfiguration.emulsion,
             totalWork,
@@ -1216,12 +1221,14 @@ function GenerateSummaryScreen() {
         // Primer
         if (config.selectedMaterials.primer && config.coatConfiguration.primer > 0) {
           // Use enamel-specific coverage for enamel primer
-          const isEnamel = config.selectedMaterials.primer?.toLowerCase().includes('enamel') || config.selectedMaterials.emulsion?.toLowerCase().includes('enamel');
+          const primerName = safeMaterialName(config.selectedMaterials.primer, '').toLowerCase();
+          const emulsionName = safeMaterialName(config.selectedMaterials.emulsion, '').toLowerCase();
+          const isEnamel = primerName.includes('enamel') || emulsionName.includes('enamel');
           const coverage = isEnamel ? 100 : 120; // sq ft per liter (enamel has lower coverage)
           const litersNeeded = area / coverage * config.coatConfiguration.primer;
-          const calc = calculateMaterial(config.selectedMaterials.primer, litersNeeded);
+          const calc = calculateMaterial(safeMaterialName(config.selectedMaterials.primer), litersNeeded);
           materials.push({
-            name: config.selectedMaterials.primer,
+            name: safeMaterialName(config.selectedMaterials.primer),
             type: isEnamel ? 'Enamel' : 'Primer',
             ...calc
           });
@@ -1229,12 +1236,13 @@ function GenerateSummaryScreen() {
 
         // Emulsion
         if (config.selectedMaterials.emulsion && config.coatConfiguration.emulsion > 0) {
-          const isEnamel = config.selectedMaterials.emulsion.toLowerCase().includes('enamel');
+          const emulsionName = safeMaterialName(config.selectedMaterials.emulsion, '').toLowerCase();
+          const isEnamel = emulsionName.includes('enamel');
           const coverage = isEnamel ? 100 : 120; // sq ft per liter (enamel has lower coverage)
           const litersNeeded = area / coverage * config.coatConfiguration.emulsion;
-          const calc = calculateMaterial(config.selectedMaterials.emulsion, litersNeeded);
+          const calc = calculateMaterial(safeMaterialName(config.selectedMaterials.emulsion), litersNeeded);
           materials.push({
-            name: config.selectedMaterials.emulsion,
+            name: safeMaterialName(config.selectedMaterials.emulsion),
             type: isEnamel ? 'Enamel' : 'Emulsion',
             ...calc
           });
@@ -1254,10 +1262,11 @@ function GenerateSummaryScreen() {
         if (config.selectedMaterials.emulsion && config.repaintingConfiguration?.emulsion && config.repaintingConfiguration.emulsion > 0) {
           const coverage = 120;
           const litersNeeded = area / coverage * config.repaintingConfiguration.emulsion;
-          const calc = calculateMaterial(config.selectedMaterials.emulsion, litersNeeded);
+          const calc = calculateMaterial(safeMaterialName(config.selectedMaterials.emulsion), litersNeeded);
+          const emulsionName = safeMaterialName(config.selectedMaterials.emulsion, '').toLowerCase();
           materials.push({
-            name: config.selectedMaterials.emulsion,
-            type: config.selectedMaterials.emulsion.toLowerCase().includes('enamel') ? 'Enamel' : 'Emulsion',
+            name: safeMaterialName(config.selectedMaterials.emulsion),
+            type: emulsionName.includes('enamel') ? 'Enamel' : 'Emulsion',
             ...calc
           });
         }
@@ -1561,9 +1570,9 @@ function GenerateSummaryScreen() {
     areaConfigs.forEach(config => {
       const area = Number(config.area) || 0;
       const isFresh = config.paintingSystem === 'Fresh Painting';
-      const isOilBased = config.selectedMaterials.emulsion?.toLowerCase().includes('enamel') || 
-                        config.selectedMaterials.primer?.toLowerCase().includes('oxide') || 
-                        config.selectedMaterials.emulsion?.toLowerCase().includes('oil');
+      const emulsionName = safeMaterialName(config.selectedMaterials.emulsion, '').toLowerCase();
+      const primerName = safeMaterialName(config.selectedMaterials.primer, '').toLowerCase();
+      const isOilBased = emulsionName.includes('enamel') || primerName.includes('oxide') || emulsionName.includes('oil');
       const tasks: any[] = [];
       if (isFresh) {
         if (config.coatConfiguration.putty > 0) {
@@ -1661,7 +1670,9 @@ function GenerateSummaryScreen() {
     areaConfigs.forEach(config => {
       const area = Number(config.area) || 0;
       const isFresh = config.paintingSystem === 'Fresh Painting';
-      const isOilBased = config.selectedMaterials.emulsion?.toLowerCase().includes('enamel') || config.selectedMaterials.primer?.toLowerCase().includes('oxide') || config.selectedMaterials.emulsion?.toLowerCase().includes('oil');
+      const emulsionName = safeMaterialName(config.selectedMaterials.emulsion, '').toLowerCase();
+      const primerName = safeMaterialName(config.selectedMaterials.primer, '').toLowerCase();
+      const isOilBased = emulsionName.includes('enamel') || primerName.includes('oxide') || emulsionName.includes('oil');
       const tasks: any[] = [];
       if (isFresh) {
         if (config.coatConfiguration.putty > 0) {
