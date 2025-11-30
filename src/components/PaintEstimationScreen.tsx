@@ -1224,7 +1224,7 @@ export default function PaintEstimationScreen() {
       const delay = navigator.userAgent.match(/Mobile|Tablet/) ? 300 : 150;
       setTimeout(() => {
         setIsCalculating(false);
-        navigate(`/project/${projectId}/generate-summary`);
+        navigate(`/generate-summary/${projectId}`);
       }, delay);
 
     } catch (error: any) {
