@@ -2135,8 +2135,8 @@ export default function GenerateSummaryScreen() {
                   {Array.isArray(projectData?.projectTypes) && projectData.projectTypes.length > 0 ? projectData.projectTypes.map((type: string) => <div key={type} style={{
                   fontFamily: '"Segoe UI", "Inter", system-ui, sans-serif'
                 }} className="inline-flex items-center px-4 py-2 font-semibold text-sm bg-gray-100 text-gray-800 border border-gray-300 rounded-full hover:bg-gray-200 transition-all ">
-                        {type}
-                      </div>) : paintType && <div className="inline-flex items-center px-4 py-2 font-semibold text-sm rounded-full bg-gradient-to-r from-red-500 to-pink-500 text-white shadow-md transition-all duration-200 hover:shadow-lg" style={{
+                  {type}
+                      </div>) : paintType && <div className="inline-flex items-center px-4 py-2 font-semibold text-sm bg-gray-100 text-gray-800 border border-gray-300 rounded-full hover:bg-gray-200 transition-all" style={{
                   fontFamily: '"Segoe UI", "Inter", system-ui, sans-serif'
                 }}>
                         {paintType}
