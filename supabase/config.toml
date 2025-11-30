@@ -6,9 +6,6 @@ verify_jwt = false
 [functions.calculate-paint-requirements]
 verify_jwt = false
 
-[functions.calculate-project-summary]
-verify_jwt = true
-
 [functions.send-approval-sms]
 verify_jwt = true
 

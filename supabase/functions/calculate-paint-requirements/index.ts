@@ -36,44 +36,6 @@ serve(async (req) => {
       project_type 
     }: PaintCalculationRequest = await req.json();
 
-    // Input validation
-    if (!room_id || typeof room_id !== 'string') {
-      return new Response(JSON.stringify({ error: 'Valid room_id is required' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    if (typeof floor_area !== 'number' || typeof wall_area !== 'number' || 
-        typeof ceiling_area !== 'number' || typeof adjusted_wall_area !== 'number') {
-      return new Response(JSON.stringify({ error: 'All area values must be numeric' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    if (floor_area < 0 || floor_area > 100000 || wall_area < 0 || wall_area > 100000 || 
-        ceiling_area < 0 || ceiling_area > 100000 || adjusted_wall_area < 0 || adjusted_wall_area > 100000) {
-      return new Response(JSON.stringify({ error: 'Area values must be between 0 and 100000 sq.ft' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    if (!selected_areas || typeof selected_areas !== 'object') {
-      return new Response(JSON.stringify({ error: 'selected_areas must be an object' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    if (!project_type || typeof project_type !== 'string') {
-      return new Response(JSON.stringify({ error: 'Valid project_type is required' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
     // Calculate totals based on selected areas
     let total_paintable_area = 0;
     

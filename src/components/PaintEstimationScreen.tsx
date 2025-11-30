@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -58,7 +58,6 @@ export default function PaintEstimationScreen() {
   const { projectId } = useParams();
   
   const [selectedPaintType, setSelectedPaintType] = useState<"Interior" | "Exterior" | "Waterproofing">("Interior");
-  const [isCalculating, setIsCalculating] = useState(false);
   const [rooms, setRooms] = useState<any[]>([]);
   const [coverageData, setCoverageData] = useState<CoverageData[]>([]);
   
@@ -85,6 +84,7 @@ export default function PaintEstimationScreen() {
   const [selectedConfigId, setSelectedConfigId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isCalculating, setIsCalculating] = useState(false);
   const [emulsionComboOpen, setEmulsionComboOpen] = useState(false);
 
   // Sync initial paint type, prefer snapshot from Generate Summary
@@ -807,170 +807,24 @@ export default function PaintEstimationScreen() {
     }
   };
 
-  // Memoized configuration initialization to prevent heavy recalculations
-  const memoizedConfigs = useMemo(() => {
-    if (rooms.length === 0) return [];
-    
-    const configs: AreaConfiguration[] = [];
-    
-    // Filter rooms by selected paint type
-    const filteredRooms = rooms.filter(room => {
-      const projectType = room.project_type;
-      if (selectedPaintType === "Interior") return projectType === "Interior";
-      if (selectedPaintType === "Exterior") return projectType === "Exterior";
-      if (selectedPaintType === "Waterproofing") return projectType === "Waterproofing";
-      return false;
-    });
-
-    // Calculate totals for each area type - simple arithmetic only
-    let floorAreaTotal = 0;
-    let wallAreaTotal = 0;
-    let ceilingAreaTotal = 0;
-    let enamelAreaTotal = 0;
-    let hasFloorSelected = false;
-    let hasWallSelected = false;
-    let hasCeilingSelected = false;
-
-    filteredRooms.forEach((room: any) => {
-      const selectedAreas = (typeof room.selected_areas === 'object' && room.selected_areas !== null) ? 
-        room.selected_areas as any : { floor: false, wall: false, ceiling: false };
-      
-      if (selectedAreas.floor) {
-        floorAreaTotal += Number(room.floor_area || 0);
-        hasFloorSelected = true;
-      }
-      if (selectedAreas.wall) {
-        wallAreaTotal += Number(room.adjusted_wall_area || room.wall_area || 0);
-        hasWallSelected = true;
-      }
-      if (selectedAreas.ceiling) {
-        ceilingAreaTotal += Number(room.ceiling_area || 0);
-        hasCeilingSelected = true;
-      }
-      if (room.door_window_grills && Array.isArray(room.door_window_grills) && room.door_window_grills.length > 0) {
-        const enamelArea = Number(room.total_door_window_grill_area || 0);
-        if (enamelArea > 0) {
-          enamelAreaTotal += enamelArea;
-        }
-      }
-    });
-
-    // Create main configuration boxes - simple and fast
-    if (floorAreaTotal > 0 && hasFloorSelected) {
-      configs.push({
-        id: 'floor-main',
-        areaType: 'Floor' as any,
-        paintingSystem: null,
-        coatConfiguration: { putty: 0, primer: 0, emulsion: 0 },
-        repaintingConfiguration: { primer: 0, emulsion: 0 },
-        selectedMaterials: { putty: '', primer: '', emulsion: '' },
-        area: floorAreaTotal,
-        perSqFtRate: '',
-        label: 'Floor Area',
-        isAdditional: false
-      });
-    }
-
-    if (wallAreaTotal > 0 && hasWallSelected) {
-      configs.push({
-        id: 'wall-main',
-        areaType: 'Wall',
-        paintingSystem: null,
-        coatConfiguration: { putty: 0, primer: 0, emulsion: 0 },
-        repaintingConfiguration: { primer: 0, emulsion: 0 },
-        selectedMaterials: { putty: '', primer: '', emulsion: '' },
-        area: wallAreaTotal,
-        perSqFtRate: '',
-        label: 'Wall Area',
-        isAdditional: false
-      });
-    }
-
-    if (ceilingAreaTotal > 0 && hasCeilingSelected) {
-      configs.push({
-        id: 'ceiling-main',
-        areaType: 'Ceiling',
-        paintingSystem: null,
-        coatConfiguration: { putty: 0, primer: 0, emulsion: 0 },
-        repaintingConfiguration: { primer: 0, emulsion: 0 },
-        selectedMaterials: { putty: '', primer: '', emulsion: '' },
-        area: ceilingAreaTotal,
-        perSqFtRate: '',
-        label: 'Ceiling Area',
-        isAdditional: false
-      });
-    }
-
-    if (enamelAreaTotal > 0) {
-      configs.push({
-        id: 'enamel-main',
-        areaType: 'Enamel',
-        paintingSystem: null,
-        coatConfiguration: { putty: 0, primer: 0, emulsion: 0 },
-        repaintingConfiguration: { primer: 0, emulsion: 0 },
-        selectedMaterials: { putty: '', primer: '', emulsion: '' },
-        area: enamelAreaTotal,
-        perSqFtRate: '',
-        label: 'Enamel Area',
-        isAdditional: false
-      });
-    }
-
-    return configs;
-  }, [rooms, selectedPaintType]);
-
-  // Re-initialize when memoized configs change
+  // Re-initialize when rooms change or paint type changes
   useEffect(() => {
-    if (memoizedConfigs.length === 0) return;
-    
-    const existingConfigs = selectedPaintType === "Interior" ? interiorConfigurations :
-                            selectedPaintType === "Exterior" ? exteriorConfigurations :
-                            waterproofingConfigurations;
-
-    if (existingConfigs.length > 0) {
-      // Preserve user selections, only update areas
-      const updated = existingConfigs
-        .map(existing => {
-          const match = memoizedConfigs.find(cfg =>
-            cfg.id === existing.id || 
-            (cfg.areaType === existing.areaType && cfg.label === existing.label)
-          );
-          return match ? { ...existing, area: match.area } : null;
-        })
-        .filter(Boolean) as AreaConfiguration[];
-      
-      // Add new configs not in existing
-      const newConfigs = memoizedConfigs.filter(cfg =>
-        !updated.some(u => u.id === cfg.id || (u.areaType === cfg.areaType && u.label === cfg.label))
-      );
-      
-      setAreaConfigurations([...updated, ...newConfigs]);
-    } else {
-      // First load - try to restore from localStorage async
-      setTimeout(() => {
-        try {
-          const preservedKey = `configs_preserved_${projectId}_${selectedPaintType}`;
-          const raw = localStorage.getItem(preservedKey);
-          const preservedList = raw ? JSON.parse(raw) : [];
-          
-          if (preservedList.length > 0) {
-            const merged = memoizedConfigs.map(cfg => {
-              const match = preservedList.find((p: any) =>
-                p.id === cfg.id || (p.areaType === cfg.areaType && p.label === cfg.label)
-              );
-              return match ? { ...cfg, ...match, area: cfg.area } : cfg;
-            });
-            setAreaConfigurations(merged);
-          } else {
-            setAreaConfigurations(memoizedConfigs);
+    if (rooms.length > 0 && !isLoading) {
+      // Run heavy calculations slightly deferred to avoid white screen
+      setIsCalculating(true);
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          try {
+            initializeConfigurations(rooms);
+          } catch (error) {
+            console.error('Calculation error:', error);
+          } finally {
+            setIsCalculating(false);
           }
-        } catch {
-          setAreaConfigurations(memoizedConfigs);
-        }
-      }, 0);
-      return; // Exit early, async will set configs
+        }, 50);
+      });
     }
-  }, [memoizedConfigs, selectedPaintType]);
+  }, [rooms, selectedPaintType]);
 
   // Persist configurations so they survive navigation and reload
   useEffect(() => {
@@ -1128,157 +982,29 @@ export default function PaintEstimationScreen() {
       .reduce((total, config) => total + config.area, 0);
   };
 
-  const handleContinue = async () => {
-    // Step 1: Validate rooms exist
-    if (!rooms || rooms.length === 0) {
-      toast.error('Please add at least one room before generating summary', {
-        description: 'Go back to Room Measurements and add rooms first'
-      });
-      return;
-    }
-
-    // Step 2: Validate at least one configuration is complete across all paint types
+  const handleContinue = () => {
+    // Validate at least one configuration is complete across all paint types
     const allConfigs = [...interiorConfigurations, ...exteriorConfigurations, ...waterproofingConfigurations];
     const hasValidConfig = allConfigs.some(
-      config => config.paintingSystem && config.perSqFtRate && config.selectedMaterials?.emulsion
+      config => config.paintingSystem && config.perSqFtRate
     );
 
     if (!hasValidConfig) {
-      toast.error('Please complete paint configuration before generating summary', {
-        description: 'Configure at least one area with painting system, materials, and rate per sq.ft',
-        duration: 5000
-      });
+      toast.error('Please configure at least one area with painting system and rate');
       return;
     }
 
-    // Step 3: Validate materials are selected
-    const hasIncompleteMaterials = allConfigs.some(
-      config => config.paintingSystem && (!config.selectedMaterials?.emulsion || !config.perSqFtRate)
-    );
-
-    if (hasIncompleteMaterials) {
-      toast.error('Incomplete paint configuration', {
-        description: 'Please select all materials and enter rate per sq.ft for each configured area',
-        duration: 5000
-      });
-      return;
-    }
-
-    // Prevent multiple simultaneous calculations
-    if (isCalculating) {
-      return;
-    }
-    setIsCalculating(true);
-
-    // Progressive loading with status updates
-    let progress = 0;
-    const progressSteps = [
-      { percent: 15, message: 'Loading rooms data...' },
-      { percent: 30, message: 'Fetching configurations...' },
-      { percent: 50, message: 'Calculating materials...' },
-      { percent: 70, message: 'Processing paint coverage...' },
-      { percent: 85, message: 'Calculating labour costs...' },
-      { percent: 95, message: 'Generating final summary...' }
-    ];
-
-    // Show initial loading
-    toast.loading(`${progressSteps[0].message} (${progressSteps[0].percent}%)`, { 
-      id: 'generate-summary' 
-    });
-
-    // Update progress every 500ms
-    const progressInterval = setInterval(() => {
-      if (progress < progressSteps.length - 1) {
-        progress++;
-        toast.loading(
-          `${progressSteps[progress].message} (${progressSteps[progress].percent}%)`, 
-          { id: 'generate-summary' }
-        );
-      }
-    }, 500);
-
-    try {
-      // Call backend API to calculate summary with timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 55000); // 55s client timeout
-
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      const response = await supabase.functions.invoke('calculate-project-summary', {
-        body: {
-          project_id: projectId,
-          paint_type: selectedPaintType,
-          configurations: allConfigs,
-          labour_mode: 'auto',
-          auto_labour_per_day: 1
-        }
-      });
-
-      clearTimeout(timeoutId);
-      clearInterval(progressInterval);
-
-      if (response.error) {
-        throw new Error(response.error.message || 'Failed to generate summary');
-      }
-
-      if (!response.data) {
-        throw new Error('No summary data returned from server');
-      }
-
-      // Verify response structure
-      const summaryData = response.data;
-      if (!summaryData.configurations || !summaryData.costs) {
-        throw new Error('Invalid summary data structure');
-      }
-
-      // Cache the API response and verify write
-      const cacheKey = `project_summary_${projectId}`;
-      localStorage.setItem(cacheKey, JSON.stringify(summaryData));
-      
-      // Verify cache was written successfully
-      const verifyCache = localStorage.getItem(cacheKey);
-      if (!verifyCache) {
-        throw new Error('Failed to save summary data. Please try again.');
-      }
-
-      toast.success('✓ Summary calculated successfully!', { id: 'generate-summary' });
-      
-      // Navigate only after successful cache verification with controlled timing
-      // Show loading state for exactly 1 second for smooth UX
-      setTimeout(() => {
-        setIsCalculating(false);
-        navigate(`/generate-summary/${projectId}`);
-      }, 1000);
-
-    } catch (error: any) {
-      clearInterval(progressInterval);
-      setIsCalculating(false);
-      
-      console.error('Failed to generate summary:', error);
-      
-      // User-friendly error messages based on error type
-      let errorMessage = 'Calculation failed. Please review your configuration and try again.';
-      let errorDescription = '';
-      
-      if (error.name === 'AbortError' || error.message?.includes('timeout')) {
-        errorMessage = 'Calculation timeout detected';
-        errorDescription = 'Too many rooms configured. Try splitting into multiple projects or reduce room count.';
-      } else if (error.message?.includes('network') || error.message?.includes('fetch') || error.message?.includes('Failed to fetch')) {
-        errorMessage = 'Network connection error';
-        errorDescription = 'Please check your internet connection and try again.';
-      } else if (error.message?.includes('Invalid') || error.message?.includes('structure')) {
-        errorMessage = 'Configuration data issue';
-        errorDescription = 'Please review your paint configuration and ensure all required fields are filled.';
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-      
-      toast.error(errorMessage, { 
-        id: 'generate-summary',
-        description: errorDescription,
-        duration: 7000 
-      });
-    }
+    // Save all configurations (all paint types)
+    const updatedData = {
+      interiorConfigurations: interiorConfigurations,
+      exteriorConfigurations: exteriorConfigurations,
+      waterproofingConfigurations: waterproofingConfigurations,
+      lastPaintType: selectedPaintType,
+      totalCost: calculateTotalCost()
+    };
+    
+    localStorage.setItem(`estimation_${projectId}`, JSON.stringify(updatedData));
+    navigate(`/generate-summary/${projectId}`);
   };
 
   // Separate configurations by type
@@ -1382,6 +1108,18 @@ export default function PaintEstimationScreen() {
             </div>
           </CardContent>
         </Card>
+        
+        {/* Calculating Indicator - Non-blocking */}
+        {isCalculating && (
+          <Card className="eca-shadow border-2 border-primary/30 bg-primary/5 animate-pulse">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-center space-x-3">
+                <div className="h-5 w-5 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+                <p className="text-base font-semibold text-primary">Calculating material & labour... Please wait</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Paint Configuration Summary - MOVED TO TOP (only non-enamel) */}
         {areaConfigurations.some(c => (c.paintingSystem || c.areaType === 'Enamel') && c.areaType !== 'Enamel') && (

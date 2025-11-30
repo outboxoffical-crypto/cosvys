@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,9 +8,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Skeleton } from "@/components/ui/skeleton";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { safeNumber, safeString, safeCoverage, safePrice, safeArray, safeObject, safeMaterialName, formatCurrency, formatArea } from "@/utils/safeCalculations";
 interface AreaConfig {
   id: string;
   areaType: string;
@@ -34,7 +31,7 @@ interface AreaConfig {
     emulsion: number;
   };
 }
-function GenerateSummaryScreen() {
+export default function GenerateSummaryScreen() {
   const navigate = useNavigate();
   const {
     projectId
@@ -67,15 +64,8 @@ function GenerateSummaryScreen() {
   const [isLoadingPaintConfig, setIsLoadingPaintConfig] = useState(true);
   const [isLoadingLabour, setIsLoadingLabour] = useState(true);
   const [isLoadingMaterial, setIsLoadingMaterial] = useState(true);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const [cachedAreaTotals, setCachedAreaTotals] = useState<any>(null);
-  
   useEffect(() => {
-    // Only load data ONCE on initial mount
-    if (isInitialLoad) {
-      loadData();
-      setIsInitialLoad(false);
-    }
+    loadData();
   }, [projectId]);
 
   // Scroll to top when component first loads
@@ -88,15 +78,21 @@ function GenerateSummaryScreen() {
     }, 100);
   }, []);
 
-  // Progressive calculation after data loads - ONLY if data exists
+  // Progressive calculation after data loads
   useEffect(() => {
     if (areaConfigs.length > 0 || calculationConfigs.length > 0) {
-      // Instant paint config display
-      setIsLoadingPaintConfig(false);
+      // Defer calculations to next tick for instant UI
+      setTimeout(() => {
+        setIsLoadingPaintConfig(false);
+      }, 0);
       
-      // Staggered loading for smooth UX
-      setTimeout(() => setIsLoadingLabour(false), 100);
-      setTimeout(() => setIsLoadingMaterial(false), 200);
+      setTimeout(() => {
+        setIsLoadingLabour(false);
+      }, 100);
+      
+      setTimeout(() => {
+        setIsLoadingMaterial(false);
+      }, 200);
     }
   }, [areaConfigs, calculationConfigs]);
   const loadData = async () => {
@@ -105,135 +101,205 @@ function GenerateSummaryScreen() {
       setIsLoadingLabour(true);
       setIsLoadingMaterial(true);
 
-      // CRITICAL: Check for cached summary from backend API FIRST
-      const summaryKey = `project_summary_${projectId}`;
-      const summaryStr = localStorage.getItem(summaryKey);
-      
-      if (!summaryStr) {
-        // No cached data - user navigated directly without generating
-        toast({
-          title: "Missing Summary Data",
-          description: "Please go back to Paint Estimation and click 'Generate Summary' first.",
-          variant: "destructive",
+      // Load coverage data from database
+      const {
+        data: coverageResults
+      } = await supabase.from('coverage_data').select('product_name, coverage_range');
+      if (coverageResults) {
+        const coverageMap: any = {};
+        coverageResults.forEach(item => {
+          coverageMap[item.product_name.toLowerCase()] = item.coverage_range;
         });
-        setIsLoadingPaintConfig(false);
-        setIsLoadingLabour(false);
-        setIsLoadingMaterial(false);
-        
-        // Redirect back after showing error
-        setTimeout(() => {
-          navigate(`/project/${projectId}/paint-estimation`);
-        }, 2000);
-        return;
+        setCoverageData(coverageMap);
       }
 
-      const cachedSummary = JSON.parse(summaryStr);
-      
-      // Validate cached data structure with safe fallbacks
-      if (!cachedSummary.configurations || !cachedSummary.costs) {
-        console.warn('Invalid summary data format - using defaults');
-        // Instead of throwing, use safe defaults
-        cachedSummary.configurations = safeArray(cachedSummary.configurations, []);
-        cachedSummary.costs = safeObject(cachedSummary.costs, { dealer_margin: 0 });
+      // Load product pricing from database
+      const {
+        data: {
+          user: currentUser
+        }
+      } = await supabase.auth.getUser();
+      if (currentUser) {
+        const {
+          data: pricingData
+        } = await supabase.from('product_pricing').select('product_name, sizes').eq('user_id', currentUser.id);
+        if (pricingData) {
+          const pricingMap: any = {};
+          pricingData.forEach(item => {
+            pricingMap[item.product_name.toLowerCase()] = item.sizes;
+          });
+          setProductPricing(pricingMap);
+        }
       }
-      
-      // Use cached API response directly - NO recalculation
-      console.log('✓ Loading cached summary from backend API');
-      
-      setProjectData(safeObject(cachedSummary.project_data, {}));
-      setPaintType(safeString(cachedSummary.paint_type, 'Interior'));
-      
-      const paintConfigs: AreaConfig[] = safeArray(cachedSummary.configurations, []).map((calc: any) => {
-        const paintCategory = safeString(cachedSummary.paint_type, 'Interior');
-        const validCategory = (paintCategory === 'Interior' || paintCategory === 'Exterior' || paintCategory === 'Waterproofing') 
-          ? paintCategory 
-          : 'Interior';
-        
-        return {
-          id: safeString(calc.config_id, `config_${Math.random()}`),
-          areaType: safeString(calc.area_type, 'Wall'),
-          paintingSystem: safeString(calc.painting_system, 'Fresh Painting'),
-          selectedMaterials: safeObject(calc.materials, {
-            putty: 'Not selected',
-            primer: 'Not selected',
-            emulsion: 'Not selected'
-          }),
-          area: safeNumber(calc.area, 0),
-          perSqFtRate: safeString(calc.per_sqft_rate, '0'),
-          totalCost: safeNumber(calc.cost, 0),
-          paintTypeCategory: validCategory as 'Interior' | 'Exterior' | 'Waterproofing',
-          coatConfiguration: {
-            putty: safeNumber(calc.materials?.putty?.coats, 0),
-            primer: safeNumber(calc.materials?.primer?.coats, 0),
-            emulsion: safeNumber(calc.materials?.emulsion?.coats, 0)
+
+      // Load project data
+      const project = localStorage.getItem(`project_${projectId}`);
+      if (project) setProjectData(JSON.parse(project));
+
+      // Load all configurations from estimation data
+      const estimationKey = `estimation_${projectId}`;
+      const estimationStr = localStorage.getItem(estimationKey);
+      const storedPaintType = localStorage.getItem(`selected_paint_type_${projectId}`) || 'Interior';
+      let paintEstimationConfigs: AreaConfig[] = [];
+      if (estimationStr) {
+        const est = JSON.parse(estimationStr);
+        const pt = est.lastPaintType || storedPaintType;
+        setPaintType(pt);
+
+        // Combine all configurations from all paint types
+        const allConfigs: AreaConfig[] = [];
+
+        // Add Interior configurations with type marker
+        if (Array.isArray(est.interiorConfigurations) && est.interiorConfigurations.length > 0) {
+          est.interiorConfigurations.forEach((config: any) => {
+            allConfigs.push({
+              ...config,
+              paintTypeCategory: 'Interior'
+            });
+          });
+        }
+
+        // Add Exterior configurations with type marker
+        if (Array.isArray(est.exteriorConfigurations) && est.exteriorConfigurations.length > 0) {
+          est.exteriorConfigurations.forEach((config: any) => {
+            allConfigs.push({
+              ...config,
+              paintTypeCategory: 'Exterior'
+            });
+          });
+        }
+
+        // Add Waterproofing configurations with type marker
+        if (Array.isArray(est.waterproofingConfigurations) && est.waterproofingConfigurations.length > 0) {
+          est.waterproofingConfigurations.forEach((config: any) => {
+            allConfigs.push({
+              ...config,
+              paintTypeCategory: 'Waterproofing'
+            });
+          });
+        }
+        console.log('Loaded all configs from estimation:', allConfigs.length);
+        paintEstimationConfigs = allConfigs;
+        setAreaConfigs(allConfigs);
+      } else {
+        // Fallback to per-type saved configs while still on estimation screen
+        const pt = storedPaintType;
+        setPaintType(pt);
+        const paintConfigs = localStorage.getItem(`paint_configs_${projectId}_${pt}`);
+        const preservedConfigs = localStorage.getItem(`configs_preserved_${projectId}_${pt}`);
+        let configs: any[] = [];
+        if (paintConfigs) {
+          configs = JSON.parse(paintConfigs);
+        } else if (preservedConfigs) {
+          configs = JSON.parse(preservedConfigs);
+        }
+        // Add paint type marker to fallback configs
+        configs = configs.map(c => ({
+          ...c,
+          paintTypeCategory: pt
+        }));
+        console.log('Loaded fallback configs:', configs);
+        paintEstimationConfigs = Array.isArray(configs) ? configs : [];
+        setAreaConfigs(Array.isArray(configs) ? configs : []);
+      }
+
+      // Load rooms from backend
+      const {
+        data: roomsData
+      } = await supabase.from('rooms').select('*').eq('project_id', projectId);
+      if (roomsData) {
+        setRooms(roomsData);
+
+        // Create enamel configurations from door/window/grill areas for calculations only
+        const enamelConfigs: AreaConfig[] = [];
+        roomsData.forEach(room => {
+          const enamelArea = Number(room.total_door_window_grill_area || 0);
+          if (enamelArea > 0) {
+            enamelConfigs.push({
+              id: `enamel_${room.id}`,
+              areaType: 'Door & Window',
+              paintingSystem: 'Fresh Painting',
+              area: enamelArea,
+              perSqFtRate: '0',
+              label: `${room.name} - Door & Window`,
+              paintTypeCategory: room.project_type as 'Interior' | 'Exterior' | 'Waterproofing',
+              selectedMaterials: {
+                putty: '',
+                primer: 'Enamel Primer',
+                emulsion: 'Enamel Paint'
+              },
+              coatConfiguration: {
+                putty: 0,
+                primer: 1,
+                emulsion: 2
+              }
+            });
           }
-        };
-      });
-      
-      setAreaConfigs(paintConfigs);
-      
-      // Set calculation configs with materials
-      const calcConfigs = safeArray(cachedSummary.configurations, []).map((calc: any) => ({
-        ...calc,
-        materials: safeObject(calc.materials, {})
-      }));
-      setCalculationConfigs(calcConfigs);
-      
-      // Set labour details with safe defaults
-      const labourData = safeObject(cachedSummary.labour, {
-        mode: 'auto',
-        days: 5,
-        labourers_per_day: 1
-      });
-      setLabourMode(safeString(labourData.mode, 'auto') as 'auto' | 'manual');
-      setManualDays(safeNumber(labourData.days, 5));
-      setAutoLabourPerDay(safeNumber(labourData.labourers_per_day, 1));
-      
-      // Set costs with safe defaults
-      const costs = safeObject(cachedSummary.costs, { dealer_margin: 0 });
-      setDealerMargin(safeNumber(costs.dealer_margin, 0));
-      
-      console.log('✓ Summary loaded successfully from cache');
-      
+        });
+
+        // Before setting, filter out area types that have 0 selected area in Room Measurements
+        const selectedTotalsByType: Record<string, {
+          floor: number;
+          wall: number;
+          ceiling: number;
+        }> = {};
+        ['Interior', 'Exterior', 'Waterproofing'].forEach(t => {
+          selectedTotalsByType[t] = {
+            floor: 0,
+            wall: 0,
+            ceiling: 0
+          };
+        });
+        roomsData.forEach(room => {
+          const sel = typeof room.selected_areas === 'object' && room.selected_areas !== null && !Array.isArray(room.selected_areas) ? room.selected_areas as any : {
+            floor: false,
+            wall: true,
+            ceiling: false
+          };
+          const type = room.project_type || 'Interior';
+          if (!selectedTotalsByType[type]) selectedTotalsByType[type] = {
+            floor: 0,
+            wall: 0,
+            ceiling: 0
+          };
+          if (sel.floor) selectedTotalsByType[type].floor += Number(room.floor_area || 0);
+          if (sel.wall) selectedTotalsByType[type].wall += Number(room.adjusted_wall_area || room.wall_area || 0);
+          if (sel.ceiling) selectedTotalsByType[type].ceiling += Number(room.ceiling_area || 0);
+        });
+        const filteredPaintConfigs = (paintEstimationConfigs || []).filter(cfg => {
+          const type = cfg.paintTypeCategory || 'Interior';
+          if (cfg.areaType === 'Floor') return (selectedTotalsByType[type]?.floor || 0) > 0;
+          if (cfg.areaType === 'Wall') return (selectedTotalsByType[type]?.wall || 0) > 0;
+          if (cfg.areaType === 'Ceiling') return (selectedTotalsByType[type]?.ceiling || 0) > 0;
+          return true;
+        });
+
+        // Update both areaConfigs and calculationConfigs with filtered list
+        setAreaConfigs(filteredPaintConfigs);
+        setCalculationConfigs([...filteredPaintConfigs, ...enamelConfigs]);
+      } else {
+        // If no rooms data, just use paint estimation configs
+        setCalculationConfigs(paintEstimationConfigs);
+      }
+
+      // Load dealer info
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
+      if (user) {
+        const {
+          data: dealerData
+        } = await supabase.from('dealer_info').select('margin').eq('user_id', user.id).single();
+        if (dealerData) setDealerMargin(Number(dealerData.margin) || 0);
+      }
     } catch (error) {
-      console.error('Error loading summary data:', error);
-      
-      // Instead of showing error and redirecting, show friendly message
-      toast({
-        title: "Partial Data Load",
-        description: "Some summary data may be incomplete. Please review the configuration.",
-        variant: "default",
-      });
-      
+      console.error('Error loading data:', error);
       // Ensure loading states are cleared even on error
       setIsLoadingPaintConfig(false);
       setIsLoadingLabour(false);
       setIsLoadingMaterial(false);
-      
-      // Set safe defaults to prevent blank screen
-      setProjectData({});
-      setAreaConfigs([]);
-      setCalculationConfigs([]);
-      setDealerMargin(0);
-    }
-  };
-
-  // Handle labour mode changes
-  const handleManualDaysChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setManualDaysInput(value);
-    const num = parseFloat(value);
-    if (!isNaN(num) && num > 0) {
-      setManualDays(Math.round(num));
-    }
-  };
-
-  const handleAutoLabourPerDayChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setAutoLabourPerDayInput(value);
-    const num = parseFloat(value);
-    if (!isNaN(num) && num > 0) {
-      setAutoLabourPerDay(Math.round(num));
     }
   };
 
@@ -251,7 +317,6 @@ function GenerateSummaryScreen() {
     const interiorConfigs = areaConfigs.filter(c => c.paintTypeCategory === 'Interior');
     const exteriorConfigs = areaConfigs.filter(c => c.paintTypeCategory === 'Exterior');
     const waterproofingConfigs = areaConfigs.filter(c => c.paintTypeCategory === 'Waterproofing');
-    
     const renderConfigGroup = (configs: AreaConfig[], typeLabel: string) => {
       if (configs.length === 0) return null;
       return <div key={typeLabel} className="space-y-3 mb-6">
@@ -274,22 +339,22 @@ function GenerateSummaryScreen() {
               if (config.paintingSystem === 'Fresh Painting') {
                 const parts = [];
                 if (config.coatConfiguration.putty > 0) {
-                  parts.push(`${config.coatConfiguration.putty} coat${config.coatConfiguration.putty > 1 ? 's' : ''} of ${safeMaterialName(config.selectedMaterials.putty, 'Putty')}`);
+                  parts.push(`${config.coatConfiguration.putty} coat${config.coatConfiguration.putty > 1 ? 's' : ''} of ${config.selectedMaterials.putty || 'Putty'}`);
                 }
                 if (config.coatConfiguration.primer > 0) {
-                  parts.push(`${config.coatConfiguration.primer} coat${config.coatConfiguration.primer > 1 ? 's' : ''} of ${safeMaterialName(config.selectedMaterials.primer, 'Primer')}`);
+                  parts.push(`${config.coatConfiguration.primer} coat${config.coatConfiguration.primer > 1 ? 's' : ''} of ${config.selectedMaterials.primer || 'Primer'}`);
                 }
                 if (config.coatConfiguration.emulsion > 0) {
-                  parts.push(`${config.coatConfiguration.emulsion} coat${config.coatConfiguration.emulsion > 1 ? 's' : ''} of ${safeMaterialName(config.selectedMaterials.emulsion, 'Emulsion')}`);
+                  parts.push(`${config.coatConfiguration.emulsion} coat${config.coatConfiguration.emulsion > 1 ? 's' : ''} of ${config.selectedMaterials.emulsion || 'Emulsion'}`);
                 }
                 return parts.join(' + ');
               } else {
                 const parts = [];
                 if (config.repaintingConfiguration?.primer > 0) {
-                  parts.push(`${config.repaintingConfiguration.primer} coat${config.repaintingConfiguration.primer > 1 ? 's' : ''} of ${safeMaterialName(config.selectedMaterials.primer, 'Primer')}`);
+                  parts.push(`${config.repaintingConfiguration.primer} coat${config.repaintingConfiguration.primer > 1 ? 's' : ''} of ${config.selectedMaterials.primer || 'Primer'}`);
                 }
                 if (config.repaintingConfiguration?.emulsion > 0) {
-                  parts.push(`${config.repaintingConfiguration.emulsion} coat${config.repaintingConfiguration.emulsion > 1 ? 's' : ''} of ${safeMaterialName(config.selectedMaterials.emulsion, 'Emulsion')}`);
+                  parts.push(`${config.repaintingConfiguration.emulsion} coat${config.repaintingConfiguration.emulsion > 1 ? 's' : ''} of ${config.selectedMaterials.emulsion || 'Emulsion'}`);
                 }
                 return parts.join(' + ');
               }
@@ -307,7 +372,7 @@ function GenerateSummaryScreen() {
                       
                       <div className="space-y-1">
                         <p className="text-sm text-muted-foreground">Paint Type</p>
-                        <p className="font-medium">{safeMaterialName(config.selectedMaterials.emulsion, config.areaType)}</p>
+                        <p className="font-medium">{config.selectedMaterials.emulsion || config.areaType}</p>
                       </div>
                       
                       <div className="space-y-1">
@@ -362,10 +427,11 @@ function GenerateSummaryScreen() {
         </CardHeader>
         <CardContent>
           {isLoadingPaintConfig ? (
-            <div className="space-y-3">
-              <Skeleton className="h-32 w-full" />
-              <Skeleton className="h-32 w-full" />
-              <Skeleton className="h-24 w-full" />
+            <div className="flex items-center justify-center py-8">
+              <div className="flex flex-col items-center gap-3">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <p className="text-sm text-muted-foreground">Loading configurations...</p>
+              </div>
             </div>
           ) : areaConfigs.length === 0 ? <div className="text-sm text-muted-foreground p-4 border rounded-md bg-muted/30">
               No paint configurations found. Please add them in Paint Estimation and click Generate Summary.
@@ -587,10 +653,8 @@ function GenerateSummaryScreen() {
       const area = Number(config.area) || 0;
       const isFresh = config.paintingSystem === 'Fresh Painting';
 
-      // Determine if water-based or oil-based - safely extract material names
-      const emulsionName = safeMaterialName(config.selectedMaterials.emulsion, '').toLowerCase();
-      const primerName = safeMaterialName(config.selectedMaterials.primer, '').toLowerCase();
-      const isOilBased = emulsionName.includes('enamel') || primerName.includes('oxide') || emulsionName.includes('oil');
+      // Determine if water-based or oil-based
+      const isOilBased = config.selectedMaterials.emulsion?.toLowerCase().includes('enamel') || config.selectedMaterials.primer?.toLowerCase().includes('oxide') || config.selectedMaterials.emulsion?.toLowerCase().includes('oil');
       const tasks: any[] = [];
       if (isFresh) {
         // Putty
@@ -599,7 +663,7 @@ function GenerateSummaryScreen() {
           const adjustedCoverage = coverageRates.waterBased.putty * (workingHours / standardHours);
           const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
           tasks.push({
-            name: safeMaterialName(config.selectedMaterials.putty, 'Putty'),
+            name: config.selectedMaterials.putty || 'Putty',
             area,
             coats: config.coatConfiguration.putty,
             totalWork,
@@ -612,14 +676,12 @@ function GenerateSummaryScreen() {
         if (config.coatConfiguration.primer > 0) {
           const totalWork = area * config.coatConfiguration.primer;
           // Use enamel base coat coverage for enamel primer
-          const primerName = safeMaterialName(config.selectedMaterials.primer, '').toLowerCase();
-          const emulsionName = safeMaterialName(config.selectedMaterials.emulsion, '').toLowerCase();
-          const isEnamel = primerName.includes('enamel') || emulsionName.includes('enamel');
+          const isEnamel = config.selectedMaterials.primer?.toLowerCase().includes('enamel') || config.selectedMaterials.emulsion?.toLowerCase().includes('enamel');
           const coverage = isEnamel ? coverageRates.oilBased.enamelBase : isOilBased ? coverageRates.oilBased.redOxide : coverageRates.waterBased.primer;
           const adjustedCoverage = coverage * (workingHours / standardHours);
           const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
           tasks.push({
-            name: safeMaterialName(config.selectedMaterials.primer, 'Primer'),
+            name: config.selectedMaterials.primer || 'Primer',
             area,
             coats: config.coatConfiguration.primer,
             totalWork,
@@ -631,13 +693,12 @@ function GenerateSummaryScreen() {
         // Emulsion/Paint
         if (config.coatConfiguration.emulsion > 0) {
           const totalWork = area * config.coatConfiguration.emulsion;
-          const emulsionName = safeMaterialName(config.selectedMaterials.emulsion, '').toLowerCase();
-          const isEnamel = emulsionName.includes('enamel');
+          const isEnamel = config.selectedMaterials.emulsion?.toLowerCase().includes('enamel');
           const coverage = isEnamel ? coverageRates.oilBased.enamelTop : isOilBased ? coverageRates.oilBased.enamelTop : coverageRates.waterBased.emulsion;
           const adjustedCoverage = coverage * (workingHours / standardHours);
           const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
           tasks.push({
-            name: safeMaterialName(config.selectedMaterials.emulsion, 'Emulsion'),
+            name: config.selectedMaterials.emulsion || 'Emulsion',
             area,
             coats: config.coatConfiguration.emulsion,
             totalWork,
@@ -703,10 +764,11 @@ function GenerateSummaryScreen() {
         </CardHeader>
         <CardContent>
           {isLoadingLabour ? (
-            <div className="space-y-3">
-              <Skeleton className="h-20 w-full" />
-              <Skeleton className="h-24 w-full" />
-              <Skeleton className="h-16 w-full" />
+            <div className="flex items-center justify-center py-8">
+              <div className="flex flex-col items-center gap-3">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <p className="text-sm text-muted-foreground">Calculating labour requirements...</p>
+              </div>
             </div>
           ) : (
           <div className="space-y-3">
@@ -1221,14 +1283,12 @@ function GenerateSummaryScreen() {
         // Primer
         if (config.selectedMaterials.primer && config.coatConfiguration.primer > 0) {
           // Use enamel-specific coverage for enamel primer
-          const primerName = safeMaterialName(config.selectedMaterials.primer, '').toLowerCase();
-          const emulsionName = safeMaterialName(config.selectedMaterials.emulsion, '').toLowerCase();
-          const isEnamel = primerName.includes('enamel') || emulsionName.includes('enamel');
+          const isEnamel = config.selectedMaterials.primer?.toLowerCase().includes('enamel') || config.selectedMaterials.emulsion?.toLowerCase().includes('enamel');
           const coverage = isEnamel ? 100 : 120; // sq ft per liter (enamel has lower coverage)
           const litersNeeded = area / coverage * config.coatConfiguration.primer;
-          const calc = calculateMaterial(safeMaterialName(config.selectedMaterials.primer), litersNeeded);
+          const calc = calculateMaterial(config.selectedMaterials.primer, litersNeeded);
           materials.push({
-            name: safeMaterialName(config.selectedMaterials.primer),
+            name: config.selectedMaterials.primer,
             type: isEnamel ? 'Enamel' : 'Primer',
             ...calc
           });
@@ -1236,13 +1296,12 @@ function GenerateSummaryScreen() {
 
         // Emulsion
         if (config.selectedMaterials.emulsion && config.coatConfiguration.emulsion > 0) {
-          const emulsionName = safeMaterialName(config.selectedMaterials.emulsion, '').toLowerCase();
-          const isEnamel = emulsionName.includes('enamel');
+          const isEnamel = config.selectedMaterials.emulsion.toLowerCase().includes('enamel');
           const coverage = isEnamel ? 100 : 120; // sq ft per liter (enamel has lower coverage)
           const litersNeeded = area / coverage * config.coatConfiguration.emulsion;
-          const calc = calculateMaterial(safeMaterialName(config.selectedMaterials.emulsion), litersNeeded);
+          const calc = calculateMaterial(config.selectedMaterials.emulsion, litersNeeded);
           materials.push({
-            name: safeMaterialName(config.selectedMaterials.emulsion),
+            name: config.selectedMaterials.emulsion,
             type: isEnamel ? 'Enamel' : 'Emulsion',
             ...calc
           });
@@ -1262,11 +1321,10 @@ function GenerateSummaryScreen() {
         if (config.selectedMaterials.emulsion && config.repaintingConfiguration?.emulsion && config.repaintingConfiguration.emulsion > 0) {
           const coverage = 120;
           const litersNeeded = area / coverage * config.repaintingConfiguration.emulsion;
-          const calc = calculateMaterial(safeMaterialName(config.selectedMaterials.emulsion), litersNeeded);
-          const emulsionName = safeMaterialName(config.selectedMaterials.emulsion, '').toLowerCase();
+          const calc = calculateMaterial(config.selectedMaterials.emulsion, litersNeeded);
           materials.push({
-            name: safeMaterialName(config.selectedMaterials.emulsion),
-            type: emulsionName.includes('enamel') ? 'Enamel' : 'Emulsion',
+            name: config.selectedMaterials.emulsion,
+            type: config.selectedMaterials.emulsion.toLowerCase().includes('enamel') ? 'Enamel' : 'Emulsion',
             ...calc
           });
         }
@@ -1291,10 +1349,11 @@ function GenerateSummaryScreen() {
         </CardHeader>
         <CardContent>
           {isLoadingMaterial ? (
-            <div className="space-y-3">
-              <Skeleton className="h-40 w-full" />
-              <Skeleton className="h-40 w-full" />
-              <Skeleton className="h-24 w-full" />
+            <div className="flex items-center justify-center py-8">
+              <div className="flex flex-col items-center gap-3">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <p className="text-sm text-muted-foreground">Calculating material requirements...</p>
+              </div>
             </div>
           ) : calculationConfigs.length === 0 ? <div className="text-sm text-muted-foreground p-4 border rounded-md bg-muted/30">
               No material configurations found.
@@ -1545,8 +1604,8 @@ function GenerateSummaryScreen() {
       </Card>;
   };
 
-  // Memoized calculation of actual total project cost (prevents recalculation on every render)
-  const calculateActualTotalCost = useMemo(() => {
+  // Calculate actual total project cost (used in both Generate Summary and Project Summary tabs)
+  const calculateActualTotalCost = () => {
     const materialCost = totalMaterialCostRef.current;
     
     // Calculate labour cost using same logic as renderTotalCost
@@ -1570,9 +1629,9 @@ function GenerateSummaryScreen() {
     areaConfigs.forEach(config => {
       const area = Number(config.area) || 0;
       const isFresh = config.paintingSystem === 'Fresh Painting';
-      const emulsionName = safeMaterialName(config.selectedMaterials.emulsion, '').toLowerCase();
-      const primerName = safeMaterialName(config.selectedMaterials.primer, '').toLowerCase();
-      const isOilBased = emulsionName.includes('enamel') || primerName.includes('oxide') || emulsionName.includes('oil');
+      const isOilBased = config.selectedMaterials.emulsion?.toLowerCase().includes('enamel') || 
+                        config.selectedMaterials.primer?.toLowerCase().includes('oxide') || 
+                        config.selectedMaterials.emulsion?.toLowerCase().includes('oil');
       const tasks: any[] = [];
       if (isFresh) {
         if (config.coatConfiguration.putty > 0) {
@@ -1642,7 +1701,7 @@ function GenerateSummaryScreen() {
     const marginCost = totalProjectCostFromConfig * 0.1;
     
     return materialCost + marginCost + labourCost;
-  }, [areaConfigs, labourMode, autoLabourPerDay, manualDays]);
+  };
 
   // Section 6: Estimated Total Cost
   const renderTotalCost = () => {
@@ -1670,9 +1729,7 @@ function GenerateSummaryScreen() {
     areaConfigs.forEach(config => {
       const area = Number(config.area) || 0;
       const isFresh = config.paintingSystem === 'Fresh Painting';
-      const emulsionName = safeMaterialName(config.selectedMaterials.emulsion, '').toLowerCase();
-      const primerName = safeMaterialName(config.selectedMaterials.primer, '').toLowerCase();
-      const isOilBased = emulsionName.includes('enamel') || primerName.includes('oxide') || emulsionName.includes('oil');
+      const isOilBased = config.selectedMaterials.emulsion?.toLowerCase().includes('enamel') || config.selectedMaterials.primer?.toLowerCase().includes('oxide') || config.selectedMaterials.emulsion?.toLowerCase().includes('oil');
       const tasks: any[] = [];
       if (isFresh) {
         if (config.coatConfiguration.putty > 0) {
@@ -1755,7 +1812,7 @@ function GenerateSummaryScreen() {
     }, 0);
     const marginCost = totalProjectCostFromConfig * 0.1;
     
-    const totalCost = calculateActualTotalCost;
+    const totalCost = calculateActualTotalCost();
     return <Card className="eca-shadow bg-card border-primary/20">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg font-semibold">
@@ -1892,7 +1949,7 @@ function GenerateSummaryScreen() {
     Object.values(totalAreas).forEach((areas: any) => {
       totalArea += areas.wallArea + areas.floorArea + areas.ceilingArea;
     });
-    const message = `Cosvys Project Summary\n\nCustomer: ${projectData?.customerName}\nTotal Area: ${totalArea.toFixed(1)} sq.ft\nEstimated Cost: ₹${Math.round(calculateActualTotalCost).toLocaleString()}\n\nGenerated by Cosvys`;
+    const message = `Cosvys Project Summary\n\nCustomer: ${projectData?.customerName}\nTotal Area: ${totalArea.toFixed(1)} sq.ft\nEstimated Cost: ₹${Math.round(calculateActualTotalCost()).toLocaleString()}\n\nGenerated by Cosvys`;
     const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
   };
@@ -1902,7 +1959,7 @@ function GenerateSummaryScreen() {
       totalArea += areas.wallArea + areas.floorArea + areas.ceilingArea;
     });
     const subject = `Project Summary - ${projectData?.customerName}`;
-    const body = `Please find the project summary for ${projectData?.customerName}.\n\nTotal Area: ${totalArea.toFixed(1)} sq.ft\nEstimated Cost: ₹${Math.round(calculateActualTotalCost).toLocaleString()}\n\nGenerated by Cosvys`;
+    const body = `Please find the project summary for ${projectData?.customerName}.\n\nTotal Area: ${totalArea.toFixed(1)} sq.ft\nEstimated Cost: ₹${Math.round(calculateActualTotalCost()).toLocaleString()}\n\nGenerated by Cosvys`;
     const url = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.open(url);
   };
@@ -1927,7 +1984,7 @@ function GenerateSummaryScreen() {
       });
 
       // Calculate quotation value
-      const quotationValue = calculateActualTotalCost;
+      const quotationValue = calculateActualTotalCost();
 
       // Determine project types
       const projectTypes = Array.from(new Set(rooms.map(room => room.project_type).filter(Boolean)));
@@ -1971,8 +2028,7 @@ function GenerateSummaryScreen() {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="eca-gradient text-white p-4">
         <div className="flex items-center justify-between mb-4">
@@ -2135,22 +2191,22 @@ function GenerateSummaryScreen() {
                       Actual<br />Project Cost
                     </p>
                     <p className="text-xl font-bold text-foreground">
-                      ₹{Math.round(calculateActualTotalCost).toLocaleString('en-IN')}
+                      ₹{Math.round(calculateActualTotalCost()).toLocaleString('en-IN')}
                     </p>
                   </div>
                 </div>
 
                 <div className="p-4 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 rounded-lg border border-red-200 dark:border-red-800">
                   <p className="text-sm text-red-700 dark:text-red-300 mb-2 font-medium">Average Value</p>
-                   <p className="text-3xl font-bold text-red-700 dark:text-red-300">
-                     ₹{Math.abs(
-                       areaConfigs.reduce((sum, config) => {
-                         const area = Number(config.area) || 0;
-                         const rate = parseFloat(config.perSqFtRate) || 0;
-                         return sum + area * rate;
-                       }, 0) - calculateActualTotalCost
-                     ).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
-                   </p>
+                  <p className="text-3xl font-bold text-red-700 dark:text-red-300">
+                    ₹{Math.abs(
+                      areaConfigs.reduce((sum, config) => {
+                        const area = Number(config.area) || 0;
+                        const rate = parseFloat(config.perSqFtRate) || 0;
+                        return sum + area * rate;
+                      }, 0) - calculateActualTotalCost()
+                    ).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -2197,15 +2253,5 @@ function GenerateSummaryScreen() {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
-  );
-}
-
-// Wrap with ErrorBoundary for crash protection
-export default function GenerateSummaryScreenWithErrorBoundary() {
-  return (
-    <ErrorBoundary fallbackMessage="Summary incomplete — please review your configuration">
-      <GenerateSummaryScreen />
-    </ErrorBoundary>
-  );
+    </div>;
 }
