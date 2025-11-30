@@ -1234,12 +1234,9 @@ export default function GenerateSummaryScreen() {
       const pricingData = getProductPricingFromDB(material);
       
       if (!pricingData) {
-        // Show error if product not found in pricing
-        toast({
-          title: "Product name mismatch",
-          description: `Product "${material}" not found in Product Pricing tab. Please check Product Pricing tab.`,
-          variant: "destructive",
-        });
+        // Avoid triggering toasts during render to prevent re-render loops.
+        // Log the issue and return safe defaults so the UI can still render.
+        console.warn(`Product pricing not found for material: ${material}`);
         return {
           quantity: quantity.toFixed(2),
           minQuantity: Math.ceil(quantity),
