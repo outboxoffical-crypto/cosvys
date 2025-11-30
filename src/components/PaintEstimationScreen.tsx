@@ -982,7 +982,7 @@ export default function PaintEstimationScreen() {
       .reduce((total, config) => total + config.area, 0);
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     // Validate at least one configuration is complete across all paint types
     const allConfigs = [...interiorConfigurations, ...exteriorConfigurations, ...waterproofingConfigurations];
     const hasValidConfig = allConfigs.some(
@@ -994,17 +994,63 @@ export default function PaintEstimationScreen() {
       return;
     }
 
-    // Save all configurations (all paint types)
-    const updatedData = {
-      interiorConfigurations: interiorConfigurations,
-      exteriorConfigurations: exteriorConfigurations,
-      waterproofingConfigurations: waterproofingConfigurations,
-      lastPaintType: selectedPaintType,
-      totalCost: calculateTotalCost()
-    };
-    
-    localStorage.setItem(`estimation_${projectId}`, JSON.stringify(updatedData));
-    navigate(`/generate-summary/${projectId}`);
+    try {
+      setIsCalculating(true);
+      
+      // Save configurations to cache immediately for fast UI
+      const updatedData = {
+        interiorConfigurations: interiorConfigurations,
+        exteriorConfigurations: exteriorConfigurations,
+        waterproofingConfigurations: waterproofingConfigurations,
+        lastPaintType: selectedPaintType,
+        totalCost: calculateTotalCost()
+      };
+      
+      localStorage.setItem(`estimation_${projectId}`, JSON.stringify(updatedData));
+      
+      // Show loading toast
+      toast.loading('Generating summary... Please wait', { duration: 3000 });
+      
+      // Set timeout for fail-safe (8 seconds)
+      const timeoutId = setTimeout(() => {
+        toast.info('Still processing... This is taking longer than expected', { duration: 5000 });
+      }, 8000);
+      
+      // Call backend function to pre-calculate summary (async, don't block navigation)
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session) {
+        // Fire and forget - don't wait for backend
+        supabase.functions.invoke('get-project-summary', {
+          body: { 
+            project_id: projectId,
+            configurations: updatedData 
+          }
+        }).then(({ data, error }) => {
+          if (!error && data) {
+            localStorage.setItem(`project_summary_${projectId}`, JSON.stringify(data));
+            console.log('Backend calculation complete, summary cached');
+          }
+        }).catch(err => {
+          console.warn('Backend calculation failed, using client-side fallback:', err);
+        });
+      }
+      
+      clearTimeout(timeoutId);
+      setIsCalculating(false);
+      
+      // Navigate immediately - don't wait for backend
+      navigate(`/generate-summary/${projectId}`);
+      
+    } catch (error) {
+      console.error('Error in handleContinue:', error);
+      setIsCalculating(false);
+      
+      toast.success('Loading your project summary...');
+      
+      // Navigate anyway to prevent blank screen
+      navigate(`/generate-summary/${projectId}`);
+    }
   };
 
   // Separate configurations by type
@@ -2191,9 +2237,16 @@ export default function PaintEstimationScreen() {
         <Button 
           className="w-full h-12 text-base font-medium"
           onClick={handleContinue}
-          disabled={!areaConfigurations.some(c => c.paintingSystem && c.perSqFtRate)}
+          disabled={!areaConfigurations.some(c => c.paintingSystem && c.perSqFtRate) || isCalculating}
         >
-          Generate Summary
+          {isCalculating ? (
+            <div className="flex items-center gap-2">
+              <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <span>Generating...</span>
+            </div>
+          ) : (
+            'Generate Summary'
+          )}
         </Button>
       </div>
     </div>
