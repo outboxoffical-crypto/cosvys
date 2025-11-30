@@ -78,9 +78,13 @@ export default function GenerateSummaryScreen() {
     }, 100);
   }, []);
 
-  // Progressive calculation after data loads
+  // Progressive calculation after data loads - run only once
+  const hasInitialized = useRef(false);
+  
   useEffect(() => {
-    if (areaConfigs.length > 0 || calculationConfigs.length > 0) {
+    if (!hasInitialized.current && (areaConfigs.length > 0 || calculationConfigs.length > 0)) {
+      hasInitialized.current = true;
+      
       // Defer calculations to next tick for instant UI
       setTimeout(() => {
         setIsLoadingPaintConfig(false);
@@ -94,7 +98,7 @@ export default function GenerateSummaryScreen() {
         setIsLoadingMaterial(false);
       }, 200);
     }
-  }, [areaConfigs, calculationConfigs]);
+  }, [areaConfigs.length, calculationConfigs.length]);
   const loadData = async () => {
     try {
       setIsLoadingPaintConfig(true);
