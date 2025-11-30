@@ -101,42 +101,73 @@ export default function GenerateSummaryScreen() {
       setIsLoadingLabour(true);
       setIsLoadingMaterial(true);
 
-      // Load coverage data from database
-      const {
-        data: coverageResults
-      } = await supabase.from('coverage_data').select('product_name, coverage_range');
-      if (coverageResults) {
-        const coverageMap: any = {};
-        coverageResults.forEach(item => {
-          coverageMap[item.product_name.toLowerCase()] = item.coverage_range;
-        });
-        setCoverageData(coverageMap);
+      // PRIORITY 1: Check for cached backend summary first
+      const cachedSummary = localStorage.getItem(`project_summary_${projectId}`);
+      if (cachedSummary) {
+        try {
+          const parsed = JSON.parse(cachedSummary);
+          if (parsed.summary) {
+            console.log('Using cached backend summary');
+            setProjectData(parsed.summary.projectData);
+            // Use cached data to skip heavy queries
+          }
+        } catch (e) {
+          console.warn('Failed to parse cached summary:', e);
+        }
       }
 
-      // Load product pricing from database
-      const {
-        data: {
-          user: currentUser
-        }
-      } = await supabase.auth.getUser();
-      if (currentUser) {
+      // PRIORITY 2: Load only essential data - defer heavy queries
+      const loadEssentialData = async () => {
         const {
-          data: pricingData
-        } = await supabase.from('product_pricing').select('product_name, sizes').eq('user_id', currentUser.id);
-        if (pricingData) {
-          const pricingMap: any = {};
-          pricingData.forEach(item => {
-            pricingMap[item.product_name.toLowerCase()] = item.sizes;
-          });
-          setProductPricing(pricingMap);
-        }
-      }
+          data: {
+            user: currentUser
+          }
+        } = await supabase.auth.getUser();
+        
+        // Parallel load only what's needed for initial render
+        const [coverageResults, dealerData] = await Promise.all([
+          supabase.from('coverage_data').select('product_name, coverage_range'),
+          currentUser ? supabase.from('dealer_info').select('margin').eq('user_id', currentUser.id).maybeSingle() : Promise.resolve({ data: null })
+        ]);
 
-      // Load project data
+        if (coverageResults.data) {
+          const coverageMap: any = {};
+          coverageResults.data.forEach(item => {
+            coverageMap[item.product_name.toLowerCase()] = item.coverage_range;
+          });
+          setCoverageData(coverageMap);
+        }
+
+        if (dealerData.data) {
+          setDealerMargin(Number(dealerData.data.margin) || 0);
+        }
+
+        return currentUser;
+      };
+
+      const currentUser = await loadEssentialData();
+
+      // Load project data from localStorage (fast)
       const project = localStorage.getItem(`project_${projectId}`);
       if (project) setProjectData(JSON.parse(project));
 
-      // Load all configurations from estimation data
+      // DEFERRED: Load pricing data in background (not blocking UI)
+      setTimeout(async () => {
+        if (currentUser) {
+          const {
+            data: pricingData
+          } = await supabase.from('product_pricing').select('product_name, sizes').eq('user_id', currentUser.id);
+          if (pricingData) {
+            const pricingMap: any = {};
+            pricingData.forEach(item => {
+              pricingMap[item.product_name.toLowerCase()] = item.sizes;
+            });
+            setProductPricing(pricingMap);
+          }
+        }
+      }, 50);
+
+      // Load all configurations from estimation data (from cache - instant)
       const estimationKey = `estimation_${projectId}`;
       const estimationStr = localStorage.getItem(estimationKey);
       const storedPaintType = localStorage.getItem(`selected_paint_type_${projectId}`) || 'Interior';
@@ -203,10 +234,14 @@ export default function GenerateSummaryScreen() {
         setAreaConfigs(Array.isArray(configs) ? configs : []);
       }
 
-      // Load rooms from backend
+      // OPTIMIZED: Load only essential room fields (not full pictures/opening arrays)
       const {
         data: roomsData
-      } = await supabase.from('rooms').select('*').eq('project_id', projectId);
+      } = await supabase
+        .from('rooms')
+        .select('id, name, project_type, floor_area, wall_area, adjusted_wall_area, ceiling_area, total_door_window_grill_area, selected_areas')
+        .eq('project_id', projectId);
+      
       if (roomsData) {
         setRooms(roomsData);
 
