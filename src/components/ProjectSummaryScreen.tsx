@@ -7,8 +7,10 @@ import { ArrowLeft, FileText, Share2, Download, Phone, MapPin, Home, Palette, Us
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { safeNumber, safeString, formatCurrency, formatArea } from "@/utils/safeCalculations";
 
-export default function ProjectSummaryScreen() {
+function ProjectSummaryScreen() {
   const navigate = useNavigate();
   const { projectId } = useParams();
   const { toast } = useToast();
@@ -777,5 +779,14 @@ export default function ProjectSummaryScreen() {
 
       <div className="h-6"></div>
     </div>
+  );
+}
+
+// Wrap with ErrorBoundary for crash protection
+export default function ProjectSummaryScreenWithErrorBoundary() {
+  return (
+    <ErrorBoundary fallbackMessage="Summary incomplete — please review your configuration">
+      <ProjectSummaryScreen />
+    </ErrorBoundary>
   );
 }

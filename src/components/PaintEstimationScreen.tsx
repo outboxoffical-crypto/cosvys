@@ -1129,14 +1129,38 @@ export default function PaintEstimationScreen() {
   };
 
   const handleContinue = async () => {
-    // Validate at least one configuration is complete across all paint types
+    // Step 1: Validate rooms exist
+    if (!rooms || rooms.length === 0) {
+      toast.error('Please add at least one room before generating summary', {
+        description: 'Go back to Room Measurements and add rooms first'
+      });
+      return;
+    }
+
+    // Step 2: Validate at least one configuration is complete across all paint types
     const allConfigs = [...interiorConfigurations, ...exteriorConfigurations, ...waterproofingConfigurations];
     const hasValidConfig = allConfigs.some(
-      config => config.paintingSystem && config.perSqFtRate
+      config => config.paintingSystem && config.perSqFtRate && config.selectedMaterials?.emulsion
     );
 
     if (!hasValidConfig) {
-      toast.error('Please configure at least one area with painting system and rate');
+      toast.error('Please complete paint configuration before generating summary', {
+        description: 'Configure at least one area with painting system, materials, and rate per sq.ft',
+        duration: 5000
+      });
+      return;
+    }
+
+    // Step 3: Validate materials are selected
+    const hasIncompleteMaterials = allConfigs.some(
+      config => config.paintingSystem && (!config.selectedMaterials?.emulsion || !config.perSqFtRate)
+    );
+
+    if (hasIncompleteMaterials) {
+      toast.error('Incomplete paint configuration', {
+        description: 'Please select all materials and enter rate per sq.ft for each configured area',
+        duration: 5000
+      });
       return;
     }
 
@@ -1219,13 +1243,12 @@ export default function PaintEstimationScreen() {
 
       toast.success('✓ Summary calculated successfully!', { id: 'generate-summary' });
       
-      // Navigate only after successful cache verification
-      // Use longer delay on mobile/slow devices
-      const delay = navigator.userAgent.match(/Mobile|Tablet/) ? 300 : 150;
+      // Navigate only after successful cache verification with controlled timing
+      // Show loading state for exactly 1 second for smooth UX
       setTimeout(() => {
         setIsCalculating(false);
         navigate(`/generate-summary/${projectId}`);
-      }, delay);
+      }, 1000);
 
     } catch (error: any) {
       clearInterval(progressInterval);
@@ -1233,19 +1256,27 @@ export default function PaintEstimationScreen() {
       
       console.error('Failed to generate summary:', error);
       
-      // User-friendly error messages
-      let errorMessage = 'Calculation failed. Please try again.';
+      // User-friendly error messages based on error type
+      let errorMessage = 'Calculation failed. Please review your configuration and try again.';
+      let errorDescription = '';
+      
       if (error.name === 'AbortError' || error.message?.includes('timeout')) {
-        errorMessage = 'Calculation timeout. Too many rooms - please reduce room count or split into multiple projects.';
-      } else if (error.message?.includes('network') || error.message?.includes('fetch')) {
-        errorMessage = 'Network error. Please check your connection and try again.';
+        errorMessage = 'Calculation timeout detected';
+        errorDescription = 'Too many rooms configured. Try splitting into multiple projects or reduce room count.';
+      } else if (error.message?.includes('network') || error.message?.includes('fetch') || error.message?.includes('Failed to fetch')) {
+        errorMessage = 'Network connection error';
+        errorDescription = 'Please check your internet connection and try again.';
+      } else if (error.message?.includes('Invalid') || error.message?.includes('structure')) {
+        errorMessage = 'Configuration data issue';
+        errorDescription = 'Please review your paint configuration and ensure all required fields are filled.';
       } else if (error.message) {
         errorMessage = error.message;
       }
       
       toast.error(errorMessage, { 
-        id: 'generate-summary', 
-        duration: 6000 
+        id: 'generate-summary',
+        description: errorDescription,
+        duration: 7000 
       });
     }
   };

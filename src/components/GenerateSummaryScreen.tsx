@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { safeNumber, safeString, safeCoverage, safePrice, safeArray, safeObject, formatCurrency, formatArea } from "@/utils/safeCalculations";
 interface AreaConfig {
   id: string;
   areaType: string;
@@ -32,7 +34,7 @@ interface AreaConfig {
     emulsion: number;
   };
 }
-export default function GenerateSummaryScreen() {
+function GenerateSummaryScreen() {
   const navigate = useNavigate();
   const {
     projectId
@@ -127,64 +129,92 @@ export default function GenerateSummaryScreen() {
 
       const cachedSummary = JSON.parse(summaryStr);
       
-      // Validate cached data structure
+      // Validate cached data structure with safe fallbacks
       if (!cachedSummary.configurations || !cachedSummary.costs) {
-        throw new Error('Invalid summary data format');
+        console.warn('Invalid summary data format - using defaults');
+        // Instead of throwing, use safe defaults
+        cachedSummary.configurations = safeArray(cachedSummary.configurations, []);
+        cachedSummary.costs = safeObject(cachedSummary.costs, { dealer_margin: 0 });
       }
       
       // Use cached API response directly - NO recalculation
       console.log('✓ Loading cached summary from backend API');
       
-      setProjectData(cachedSummary.project_data);
-      setPaintType(cachedSummary.paint_type);
+      setProjectData(safeObject(cachedSummary.project_data, {}));
+      setPaintType(safeString(cachedSummary.paint_type, 'Interior'));
       
-      const paintConfigs: AreaConfig[] = cachedSummary.configurations.map((calc: any) => ({
-        id: calc.config_id || `config_${Math.random()}`,
-        areaType: calc.area_type,
-        paintingSystem: calc.painting_system,
-        selectedMaterials: calc.materials,
-        area: calc.area,
-        perSqFtRate: calc.per_sqft_rate,
-        totalCost: calc.cost,
-        paintTypeCategory: cachedSummary.paint_type,
-        coatConfiguration: {
-          putty: calc.materials?.putty?.coats || 0,
-          primer: calc.materials?.primer?.coats || 0,
-          emulsion: calc.materials?.emulsion?.coats || 0
-        }
-      }));
+      const paintConfigs: AreaConfig[] = safeArray(cachedSummary.configurations, []).map((calc: any) => {
+        const paintCategory = safeString(cachedSummary.paint_type, 'Interior');
+        const validCategory = (paintCategory === 'Interior' || paintCategory === 'Exterior' || paintCategory === 'Waterproofing') 
+          ? paintCategory 
+          : 'Interior';
+        
+        return {
+          id: safeString(calc.config_id, `config_${Math.random()}`),
+          areaType: safeString(calc.area_type, 'Wall'),
+          paintingSystem: safeString(calc.painting_system, 'Fresh Painting'),
+          selectedMaterials: safeObject(calc.materials, {
+            putty: 'Not selected',
+            primer: 'Not selected',
+            emulsion: 'Not selected'
+          }),
+          area: safeNumber(calc.area, 0),
+          perSqFtRate: safeString(calc.per_sqft_rate, '0'),
+          totalCost: safeNumber(calc.cost, 0),
+          paintTypeCategory: validCategory as 'Interior' | 'Exterior' | 'Waterproofing',
+          coatConfiguration: {
+            putty: safeNumber(calc.materials?.putty?.coats, 0),
+            primer: safeNumber(calc.materials?.primer?.coats, 0),
+            emulsion: safeNumber(calc.materials?.emulsion?.coats, 0)
+          }
+        };
+      });
       
       setAreaConfigs(paintConfigs);
       
       // Set calculation configs with materials
-      const calcConfigs = cachedSummary.configurations.map((calc: any) => ({
+      const calcConfigs = safeArray(cachedSummary.configurations, []).map((calc: any) => ({
         ...calc,
-        materials: calc.materials
+        materials: safeObject(calc.materials, {})
       }));
       setCalculationConfigs(calcConfigs);
       
-      // Set labour details
-      setLabourMode(cachedSummary.labour.mode);
-      setManualDays(cachedSummary.labour.days);
-      setAutoLabourPerDay(cachedSummary.labour.labourers_per_day);
+      // Set labour details with safe defaults
+      const labourData = safeObject(cachedSummary.labour, {
+        mode: 'auto',
+        days: 5,
+        labourers_per_day: 1
+      });
+      setLabourMode(safeString(labourData.mode, 'auto') as 'auto' | 'manual');
+      setManualDays(safeNumber(labourData.days, 5));
+      setAutoLabourPerDay(safeNumber(labourData.labourers_per_day, 1));
       
-      // Set costs
-      setDealerMargin(cachedSummary.costs.dealer_margin || 0);
+      // Set costs with safe defaults
+      const costs = safeObject(cachedSummary.costs, { dealer_margin: 0 });
+      setDealerMargin(safeNumber(costs.dealer_margin, 0));
       
       console.log('✓ Summary loaded successfully from cache');
       
     } catch (error) {
       console.error('Error loading summary data:', error);
+      
+      // Instead of showing error and redirecting, show friendly message
       toast({
-        title: "Error",
-        description: "Failed to load summary. Please go back and regenerate.",
-        variant: "destructive",
+        title: "Partial Data Load",
+        description: "Some summary data may be incomplete. Please review the configuration.",
+        variant: "default",
       });
       
       // Ensure loading states are cleared even on error
       setIsLoadingPaintConfig(false);
       setIsLoadingLabour(false);
       setIsLoadingMaterial(false);
+      
+      // Set safe defaults to prevent blank screen
+      setProjectData({});
+      setAreaConfigs([]);
+      setCalculationConfigs([]);
+      setDealerMargin(0);
     }
   };
 
@@ -1930,7 +1960,8 @@ export default function GenerateSummaryScreen() {
     }
   };
 
-  return <div className="min-h-screen bg-background">
+  return (
+    <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="eca-gradient text-white p-4">
         <div className="flex items-center justify-between mb-4">
@@ -2155,5 +2186,15 @@ export default function GenerateSummaryScreen() {
           </TabsContent>
         </Tabs>
       </div>
-    </div>;
+    </div>
+  );
+}
+
+// Wrap with ErrorBoundary for crash protection
+export default function GenerateSummaryScreenWithErrorBoundary() {
+  return (
+    <ErrorBoundary fallbackMessage="Summary incomplete — please review your configuration">
+      <GenerateSummaryScreen />
+    </ErrorBoundary>
+  );
 }
