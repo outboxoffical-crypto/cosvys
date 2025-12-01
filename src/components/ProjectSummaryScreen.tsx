@@ -297,10 +297,8 @@ export default function ProjectSummaryScreen() {
 
             {/* Section 2: Total Room Details */}
             <div 
-              className="relative overflow-hidden rounded-[22px] p-[28px] text-center transition-transform duration-[250ms]"
+              className="relative overflow-hidden rounded-[22px] p-[28px] text-center transition-transform duration-[250ms] bg-gradient-to-r from-red-400/20 via-purple-400/20 to-blue-400/20 border border-primary/20"
               style={{
-                background: 'linear-gradient(to right, rgba(248, 113, 113, 0.2) 0%, rgba(192, 132, 252, 0.2) 50%, rgba(96, 165, 250, 0.2) 100%)',
-                boxShadow: 'inset 0 2px 8px rgba(99, 102, 241, 0.08), 0 4px 12px rgba(99, 102, 241, 0.12)',
                 fontFamily: '"Segoe UI", "Inter", system-ui, sans-serif'
               }}
               onMouseEnter={(e) => {
