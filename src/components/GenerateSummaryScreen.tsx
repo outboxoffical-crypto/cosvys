@@ -1239,8 +1239,7 @@ export default function GenerateSummaryScreen() {
         console.warn(`Product pricing not found for material: ${material}`);
         return {
           quantity: quantity.toFixed(2),
-          minQuantity: Math.ceil(quantity),
-          maxQuantity: Math.ceil(quantity * 1.25),
+          roundedQuantity: Math.ceil(quantity),
           unit: material.toLowerCase().includes('putty') ? 'kg' : 'L',
           packsNeeded: 0,
           packSize: 0,
@@ -1253,13 +1252,8 @@ export default function GenerateSummaryScreen() {
 
       const { sizes, unit } = pricingData;
       
-      // Determine material type for quantity calculation
-      const isPutty = material.toLowerCase().includes('putty');
-      
-      // Calculate min and max quantities based on coverage variations
-      const minQuantity = Math.ceil(quantity);
-      // For putty, add fixed 10kg; for others, add 25%
-      const maxQuantity = isPutty ? Math.ceil(quantity + 10) : Math.ceil(quantity * 1.25);
+      // Round up to nearest whole number (no buffer, no coat multiplication)
+      const roundedQuantity = Math.ceil(quantity);
 
       // Prepare available pack sizes with prices
       const availablePacks = Object.entries(sizes).map(([size, price]) => ({
@@ -1267,10 +1261,10 @@ export default function GenerateSummaryScreen() {
         price: price as number
       }));
 
-      // Calculate optimal pack combination for MAX quantity
+      // Calculate optimal pack combination for rounded quantity
       const { combination, totalCost, error } = calculateOptimalPackCombination(
         availablePacks,
-        maxQuantity,
+        roundedQuantity,
         unit
       );
 
@@ -1281,8 +1275,7 @@ export default function GenerateSummaryScreen() {
 
       return {
         quantity: quantity.toFixed(2),
-        minQuantity,
-        maxQuantity,
+        roundedQuantity,
         unit,
         packsNeeded: combination.reduce((sum, c) => sum + c.count, 0),
         packSize: combination.length > 0 ? combination[0].size : 'N/A',
@@ -1302,10 +1295,10 @@ export default function GenerateSummaryScreen() {
       const isFresh = config.paintingSystem === 'Fresh Painting';
       const materials: any[] = [];
       if (isFresh) {
-        // Putty
+        // Putty (no coat multiplication - coverage already includes 2-coat rate)
         if (config.selectedMaterials.putty && config.coatConfiguration.putty > 0) {
           const coverage = 20; // sq ft per kg
-          const kgNeeded = area / coverage * config.coatConfiguration.putty;
+          const kgNeeded = area / coverage;
           const calc = calculateMaterial(config.selectedMaterials.putty, kgNeeded);
           materials.push({
             name: config.selectedMaterials.putty,
@@ -1314,12 +1307,12 @@ export default function GenerateSummaryScreen() {
           });
         }
 
-        // Primer
+        // Primer (no coat multiplication - coverage already includes 2-coat rate)
         if (config.selectedMaterials.primer && config.coatConfiguration.primer > 0) {
           // Use enamel-specific coverage for enamel primer
           const isEnamel = config.selectedMaterials.primer?.toLowerCase().includes('enamel') || config.selectedMaterials.emulsion?.toLowerCase().includes('enamel');
           const coverage = isEnamel ? 100 : 120; // sq ft per liter (enamel has lower coverage)
-          const litersNeeded = area / coverage * config.coatConfiguration.primer;
+          const litersNeeded = area / coverage;
           const calc = calculateMaterial(config.selectedMaterials.primer, litersNeeded);
           materials.push({
             name: config.selectedMaterials.primer,
@@ -1328,11 +1321,11 @@ export default function GenerateSummaryScreen() {
           });
         }
 
-        // Emulsion
+        // Emulsion (no coat multiplication - coverage already includes 2-coat rate)
         if (config.selectedMaterials.emulsion && config.coatConfiguration.emulsion > 0) {
           const isEnamel = config.selectedMaterials.emulsion.toLowerCase().includes('enamel');
           const coverage = isEnamel ? 100 : 120; // sq ft per liter (enamel has lower coverage)
-          const litersNeeded = area / coverage * config.coatConfiguration.emulsion;
+          const litersNeeded = area / coverage;
           const calc = calculateMaterial(config.selectedMaterials.emulsion, litersNeeded);
           materials.push({
             name: config.selectedMaterials.emulsion,
@@ -1341,10 +1334,10 @@ export default function GenerateSummaryScreen() {
           });
         }
       } else {
-        // Repainting
+        // Repainting (no coat multiplication - coverage already includes 2-coat rate)
         if (config.selectedMaterials.primer && config.repaintingConfiguration?.primer && config.repaintingConfiguration.primer > 0) {
           const coverage = 120;
-          const litersNeeded = area / coverage * config.repaintingConfiguration.primer;
+          const litersNeeded = area / coverage;
           const calc = calculateMaterial(config.selectedMaterials.primer, litersNeeded);
           materials.push({
             name: config.selectedMaterials.primer,
@@ -1354,7 +1347,7 @@ export default function GenerateSummaryScreen() {
         }
         if (config.selectedMaterials.emulsion && config.repaintingConfiguration?.emulsion && config.repaintingConfiguration.emulsion > 0) {
           const coverage = 120;
-          const litersNeeded = area / coverage * config.repaintingConfiguration.emulsion;
+          const litersNeeded = area / coverage;
           const calc = calculateMaterial(config.selectedMaterials.emulsion, litersNeeded);
           materials.push({
             name: config.selectedMaterials.emulsion,
@@ -1423,13 +1416,10 @@ export default function GenerateSummaryScreen() {
                                       ⚠️ {mat.error}
                                     </div>
                                   )}
-                                  <div className="flex items-baseline justify-between">
+                                   <div className="flex items-baseline justify-between">
                                     <div className="flex-1">
                                       <p className="text-sm text-muted-foreground">
-                                        Quantity: <span className="font-medium text-foreground">{mat.minQuantity} to <strong>{mat.maxQuantity}</strong> {mat.unit}</span>
-                                      </p>
-                                      <p className="text-xs text-muted-foreground mt-0.5">
-                                        (Cost calculated for max: {mat.maxQuantity} {mat.unit})
+                                        Quantity: <span className="font-medium text-foreground">{mat.roundedQuantity} {mat.unit}</span>
                                       </p>
                                       <p className="text-sm text-muted-foreground mt-1">
                                         Coverage: <span className="font-medium text-foreground">{getMaterialCoverage(mat.name, mat.type)}</span>
@@ -1488,13 +1478,10 @@ export default function GenerateSummaryScreen() {
                                       ⚠️ {mat.error}
                                     </div>
                                   )}
-                                  <div className="flex items-baseline justify-between">
+                                   <div className="flex items-baseline justify-between">
                                     <div className="flex-1">
                                       <p className="text-sm text-muted-foreground">
-                                        Quantity: <span className="font-medium text-foreground">{mat.minQuantity} to <strong>{mat.maxQuantity}</strong> {mat.unit}</span>
-                                      </p>
-                                      <p className="text-xs text-muted-foreground mt-0.5">
-                                        (Cost calculated for max: {mat.maxQuantity} {mat.unit})
+                                         Quantity: <span className="font-medium text-foreground">{mat.roundedQuantity} {mat.unit}</span>
                                       </p>
                                       <p className="text-sm text-muted-foreground mt-1">
                                         Coverage: <span className="font-medium text-foreground">{getMaterialCoverage(mat.name, mat.type)}</span>
@@ -1553,13 +1540,10 @@ export default function GenerateSummaryScreen() {
                                       ⚠️ {mat.error}
                                     </div>
                                   )}
-                                  <div className="flex items-baseline justify-between">
+                                   <div className="flex items-baseline justify-between">
                                     <div className="flex-1">
                                       <p className="text-sm text-muted-foreground">
-                                        Quantity: <span className="font-medium text-foreground">{mat.minQuantity} to <strong>{mat.maxQuantity}</strong> {mat.unit}</span>
-                                      </p>
-                                      <p className="text-xs text-muted-foreground mt-0.5">
-                                        (Cost calculated for max: {mat.maxQuantity} {mat.unit})
+                                        Quantity: <span className="font-medium text-foreground">{mat.roundedQuantity} {mat.unit}</span>
                                       </p>
                                       <p className="text-sm text-muted-foreground mt-1">
                                         Coverage: <span className="font-medium text-foreground">{getMaterialCoverage(mat.name, mat.type)}</span>
