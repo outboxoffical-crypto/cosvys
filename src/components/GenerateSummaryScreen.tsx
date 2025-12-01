@@ -2144,7 +2144,7 @@ export default function GenerateSummaryScreen() {
                 <CardTitle className="text-lg">Room Measurements</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="bg-muted/40 border border-border text-foreground rounded-lg p-4 space-y-4">
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 text-foreground rounded-lg p-4 space-y-4">
                   {Object.entries(totalAreas).map(([projectType, areas]: [string, {
                   wallArea: number;
                   floorArea: number;
@@ -2156,24 +2156,24 @@ export default function GenerateSummaryScreen() {
                   const activeAreas = [hasFloor, hasWall, hasCeiling].filter(Boolean).length;
                   if (activeAreas === 0) return null;
                   return <div key={projectType} className="space-y-2">
-                        <div className="text-sm font-semibold text-foreground border-b border-border pb-1">
+                        <div className="text-sm font-semibold text-indigo-900 border-b border-indigo-200 pb-1">
                           {projectType}
                         </div>
                         <div className={`grid gap-4 text-center ${activeAreas === 1 ? 'grid-cols-1' : activeAreas === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
                           {hasWall && <div>
-                              <p className="text-muted-foreground text-sm">Total Wall</p>
-                              <p className="text-xl font-bold text-foreground">{areas.wallArea.toFixed(1)}</p>
-                              <p className="text-muted-foreground text-xs">sq.ft</p>
+                              <p className="text-indigo-600 text-sm">Total Wall</p>
+                              <p className="text-xl font-bold text-indigo-900">{areas.wallArea.toFixed(1)}</p>
+                              <p className="text-indigo-600 text-xs">sq.ft</p>
                             </div>}
                           {hasFloor && <div>
-                              <p className="text-muted-foreground text-sm">Total Floor</p>
-                              <p className="text-xl font-bold text-foreground">{areas.floorArea.toFixed(1)}</p>
-                              <p className="text-muted-foreground text-xs">sq.ft</p>
+                              <p className="text-indigo-600 text-sm">Total Floor</p>
+                              <p className="text-xl font-bold text-indigo-900">{areas.floorArea.toFixed(1)}</p>
+                              <p className="text-indigo-600 text-xs">sq.ft</p>
                             </div>}
                           {hasCeiling && <div>
-                              <p className="text-muted-foreground text-sm">Total Ceiling</p>
-                              <p className="text-xl font-bold text-foreground">{areas.ceilingArea.toFixed(1)}</p>
-                              <p className="text-muted-foreground text-xs">sq.ft</p>
+                              <p className="text-indigo-600 text-sm">Total Ceiling</p>
+                              <p className="text-xl font-bold text-indigo-900">{areas.ceilingArea.toFixed(1)}</p>
+                              <p className="text-indigo-600 text-xs">sq.ft</p>
                             </div>}
                         </div>
                       </div>;
