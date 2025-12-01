@@ -299,7 +299,7 @@ export default function ProjectSummaryScreen() {
             <div 
               className="relative overflow-hidden rounded-[22px] p-[28px] text-center transition-transform duration-[250ms]"
               style={{
-                background: 'linear-gradient(135deg, #eef2ff 0%, #e0f7ff 100%)',
+                background: 'linear-gradient(to right, rgba(248, 113, 113, 0.2) 0%, rgba(192, 132, 252, 0.2) 50%, rgba(96, 165, 250, 0.2) 100%)',
                 boxShadow: 'inset 0 2px 8px rgba(99, 102, 241, 0.08), 0 4px 12px rgba(99, 102, 241, 0.12)',
                 fontFamily: '"Segoe UI", "Inter", system-ui, sans-serif'
               }}
