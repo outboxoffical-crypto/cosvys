@@ -246,7 +246,7 @@ export default function RoomMeasurementScreen() {
             totalDoorWindowGrillArea: Number(room.total_door_window_grill_area),
             selectedAreas: (typeof room.selected_areas === 'object' && room.selected_areas !== null) ? 
               room.selected_areas as { floor: boolean; wall: boolean; ceiling: boolean } : 
-              { floor: true, wall: true, ceiling: false }
+              { floor: false, wall: false, ceiling: false }
           }));
           setRooms(formattedRooms);
         }
@@ -529,8 +529,8 @@ export default function RoomMeasurementScreen() {
         totalExtraSurface,
         totalDoorWindowGrillArea: 0,
         selectedAreas: {
-          floor: true,
-          wall: true,
+          floor: false,
+          wall: false,
           ceiling: false
         }
       };
