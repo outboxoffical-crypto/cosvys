@@ -1008,14 +1008,6 @@ export default function PaintEstimationScreen() {
       
       localStorage.setItem(`estimation_${projectId}`, JSON.stringify(updatedData));
       
-      // Show loading toast
-      toast.loading('Generating summary... Please wait', { duration: 3000 });
-      
-      // Set timeout for fail-safe (8 seconds)
-      const timeoutId = setTimeout(() => {
-        toast.info('Still processing... This is taking longer than expected', { duration: 5000 });
-      }, 8000);
-      
       // Call backend function to pre-calculate summary (async, don't block navigation)
       const { data: { session } } = await supabase.auth.getSession();
       
@@ -1036,7 +1028,6 @@ export default function PaintEstimationScreen() {
         });
       }
       
-      clearTimeout(timeoutId);
       setIsCalculating(false);
       
       // Navigate immediately - don't wait for backend
