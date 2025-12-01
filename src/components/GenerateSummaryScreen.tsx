@@ -2146,7 +2146,7 @@ export default function GenerateSummaryScreen() {
                 <CardTitle className="text-lg">Room Measurements</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border text-foreground rounded-lg p-4 space-y-4 border-primary">
+                <div className="p-4 rounded-lg bg-gradient-to-r from-red-400/20 via-purple-400/20 to-blue-400/20 border border-primary/20 space-y-4 text-foreground">
                   {Object.entries(totalAreas).map(([projectType, areas]: [string, {
                   wallArea: number;
                   floorArea: number;
