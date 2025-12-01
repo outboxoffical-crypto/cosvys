@@ -299,8 +299,8 @@ export default function ProjectSummaryScreen() {
             <div 
               className="relative overflow-hidden rounded-[30px] p-[30px] md:p-[20px]"
               style={{
-                background: 'linear-gradient(135deg, #ff80ab 0%, #ba68c8 100%)',
-                boxShadow: '0px 8px 16px rgba(233, 30, 99, 0.3)',
+                background: 'linear-gradient(135deg, #60a5fa 0%, #93c5fd 50%, #fca5a5 100%)',
+                boxShadow: '0px 8px 16px rgba(96, 165, 250, 0.3)',
                 fontFamily: '"Segoe UI", "Inter", system-ui, sans-serif'
               }}
             >
