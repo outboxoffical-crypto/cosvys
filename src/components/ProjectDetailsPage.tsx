@@ -33,13 +33,15 @@ export default function ProjectDetailsPage() {
 
   // Check if we're in edit mode from URL params
   const editProjectId = searchParams.get("edit");
+  const urlTab = searchParams.get("tab");
 
   useEffect(() => {
     if (editProjectId) {
       setSelectedProjectId(editProjectId);
-      setActiveTab("add-project");
+      // Set active tab from URL or default to add-project
+      setActiveTab(urlTab || "add-project");
     }
-  }, [editProjectId]);
+  }, [editProjectId, urlTab]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -245,7 +247,10 @@ export default function ProjectDetailsPage() {
                   </Button>
                   <div className="pt-4 flex justify-end gap-2">
                     <Button 
-                      onClick={() => setActiveTab("room-measurement")}
+                      onClick={() => {
+                        setActiveTab("room-measurement");
+                        setSearchParams({ edit: selectedProjectId!, tab: "room-measurement" });
+                      }}
                       className="w-full"
                     >
                       Continue to Room Measurements
@@ -272,12 +277,18 @@ export default function ProjectDetailsPage() {
                   <div className="pt-4 flex justify-end gap-2">
                     <Button 
                       variant="outline"
-                      onClick={() => setActiveTab("add-project")}
+                      onClick={() => {
+                        setActiveTab("add-project");
+                        setSearchParams({ edit: selectedProjectId!, tab: "add-project" });
+                      }}
                     >
                       Back
                     </Button>
                     <Button 
-                      onClick={() => setActiveTab("paint-estimation")}
+                      onClick={() => {
+                        setActiveTab("paint-estimation");
+                        setSearchParams({ edit: selectedProjectId!, tab: "paint-estimation" });
+                      }}
                     >
                       Continue to Paint Estimation
                     </Button>
@@ -312,12 +323,18 @@ export default function ProjectDetailsPage() {
                   <div className="pt-4 flex justify-end gap-2">
                     <Button 
                       variant="outline"
-                      onClick={() => setActiveTab("room-measurement")}
+                      onClick={() => {
+                        setActiveTab("room-measurement");
+                        setSearchParams({ edit: selectedProjectId!, tab: "room-measurement" });
+                      }}
                     >
                       Back
                     </Button>
                     <Button 
-                      onClick={() => setActiveTab("project-summary")}
+                      onClick={() => {
+                        setActiveTab("project-summary");
+                        setSearchParams({ edit: selectedProjectId!, tab: "project-summary" });
+                      }}
                     >
                       Continue to Project Summary
                     </Button>
@@ -343,14 +360,17 @@ export default function ProjectDetailsPage() {
                   <div className="pt-4 flex justify-end gap-2">
                     <Button 
                       variant="outline"
-                      onClick={() => setActiveTab("paint-estimation")}
+                      onClick={() => {
+                        setActiveTab("paint-estimation");
+                        setSearchParams({ edit: selectedProjectId!, tab: "paint-estimation" });
+                      }}
                     >
                       Back
                     </Button>
                     <Button 
                       onClick={handleBackToList}
                     >
-                      Finish & Return to Projects
+                      Finish & Return to Dashboard
                     </Button>
                   </div>
                 </div>
