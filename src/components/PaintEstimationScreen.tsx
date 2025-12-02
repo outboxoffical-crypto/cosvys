@@ -1030,8 +1030,14 @@ export default function PaintEstimationScreen() {
       
       setIsCalculating(false);
       
-      // Navigate immediately - don't wait for backend
-      navigate(`/generate-summary/${projectId}`);
+      // Mark paint estimation as completed
+      const stepsKey = `project_steps_${projectId}`;
+      const existingSteps = JSON.parse(localStorage.getItem(stepsKey) || '[]');
+      const updatedSteps = [...new Set([...existingSteps, 'paint-estimation'])];
+      localStorage.setItem(stepsKey, JSON.stringify(updatedSteps));
+      
+      // Navigate to next tab in workflow
+      navigate(`/project-details?edit=${projectId}&tab=project-summary`);
       
     } catch (error) {
       console.error('Error in handleContinue:', error);
@@ -1039,8 +1045,14 @@ export default function PaintEstimationScreen() {
       
       toast.success('Loading your project summary...');
       
+      // Mark paint estimation as completed even on error
+      const stepsKey = `project_steps_${projectId}`;
+      const existingSteps = JSON.parse(localStorage.getItem(stepsKey) || '[]');
+      const updatedSteps = [...new Set([...existingSteps, 'paint-estimation'])];
+      localStorage.setItem(stepsKey, JSON.stringify(updatedSteps));
+      
       // Navigate anyway to prevent blank screen
-      navigate(`/generate-summary/${projectId}`);
+      navigate(`/project-details?edit=${projectId}&tab=project-summary`);
     }
   };
 
@@ -2233,10 +2245,10 @@ export default function PaintEstimationScreen() {
           {isCalculating ? (
             <div className="flex items-center gap-2">
               <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              <span>Generating...</span>
+              <span>Saving...</span>
             </div>
           ) : (
-            'Generate Summary'
+            'Save & Continue to Project Summary'
           )}
         </Button>
       </div>

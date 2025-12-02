@@ -1069,9 +1069,15 @@ export default function RoomMeasurementScreen() {
       // Wait for all rooms to sync before navigating
       await Promise.all(syncPromises);
       
+      // Mark room measurements as completed
+      const stepsKey = `project_steps_${projectId}`;
+      const existingSteps = JSON.parse(localStorage.getItem(stepsKey) || '[]');
+      const updatedSteps = [...new Set([...existingSteps, 'room-measurement'])];
+      localStorage.setItem(stepsKey, JSON.stringify(updatedSteps));
+      
       setIsSyncing(false);
-      // Navigate only after all data is saved
-      navigate(`/paint-estimation/${projectId}`);
+      // Navigate to next tab in workflow
+      navigate(`/project-details?edit=${projectId}&tab=paint-estimation`);
     } catch (error) {
       console.error('Error syncing rooms:', error);
       toast.error('Failed to sync data');
@@ -1973,7 +1979,7 @@ export default function RoomMeasurementScreen() {
         {rooms.length > 0 && (
           <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm border-t p-4 -mx-4">
             <Button onClick={handleContinue} disabled={isSyncing} className="w-full h-12">
-              {isSyncing ? 'Syncing data...' : 'Continue to Paint Estimation'}
+              {isSyncing ? 'Saving...' : 'Save & Continue to Paint Estimation'}
               <ArrowLeft className="ml-2 h-4 w-4 rotate-180" />
             </Button>
           </div>
