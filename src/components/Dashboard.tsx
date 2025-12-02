@@ -308,8 +308,8 @@ export default function Dashboard() {
   };
 
   const handleEditProject = (projectId: string) => {
-    // Navigate to Room Measurements for full project edit flow
-    navigate(`/room-measurement/${projectId}`);
+    // Navigate to Project Details page with tabbed interface for full edit flow
+    navigate(`/project-details?edit=${projectId}`);
   };
 
 
