@@ -30,30 +30,16 @@ export default function ProjectDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>("add-project");
-  const [completedSteps, setCompletedSteps] = useState<string[]>([]);
 
   // Check if we're in edit mode from URL params
   const editProjectId = searchParams.get("edit");
-  const urlTab = searchParams.get("tab");
-
-  // Load completed steps from localStorage
-  useEffect(() => {
-    if (editProjectId) {
-      const stepsKey = `project_steps_${editProjectId}`;
-      const saved = localStorage.getItem(stepsKey);
-      if (saved) {
-        setCompletedSteps(JSON.parse(saved));
-      }
-    }
-  }, [editProjectId]);
 
   useEffect(() => {
     if (editProjectId) {
       setSelectedProjectId(editProjectId);
-      // Set active tab from URL or default to add-project
-      setActiveTab(urlTab || "add-project");
+      setActiveTab("add-project");
     }
-  }, [editProjectId, urlTab]);
+  }, [editProjectId]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -102,30 +88,7 @@ export default function ProjectDetailsPage() {
   const handleBackToList = () => {
     setSelectedProjectId(null);
     setSearchParams({});
-    // Clear completed steps on exit
-    if (selectedProjectId) {
-      localStorage.removeItem(`project_steps_${selectedProjectId}`);
-    }
     loadProjects();
-  };
-
-  // Helper to check if a tab is accessible
-  const isTabAccessible = (tabName: string) => {
-    const stepOrder = ["add-project", "room-measurement", "paint-estimation", "project-summary"];
-    const currentIndex = stepOrder.indexOf(tabName);
-    const activeIndex = stepOrder.indexOf(activeTab);
-    
-    // Allow access to completed steps and current step
-    return completedSteps.includes(tabName) || currentIndex <= activeIndex || completedSteps.length >= currentIndex;
-  };
-
-  // Mark step as completed
-  const markStepCompleted = (step: string) => {
-    if (!selectedProjectId) return;
-    
-    const updated = [...new Set([...completedSteps, step])];
-    setCompletedSteps(updated);
-    localStorage.setItem(`project_steps_${selectedProjectId}`, JSON.stringify(updated));
   };
 
   const formatDate = (dateString: string) => {
@@ -251,40 +214,18 @@ export default function ProjectDetailsPage() {
       </div>
 
       <div className="p-4">
-        <Tabs value={activeTab} onValueChange={(value) => {
-          // Only allow changing to accessible tabs
-          if (isTabAccessible(value)) {
-            setActiveTab(value);
-            setSearchParams({ edit: selectedProjectId!, tab: value });
-          }
-        }} className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-4 mb-6">
-            <TabsTrigger 
-              value="add-project" 
-              className="text-xs md:text-sm"
-              disabled={!isTabAccessible("add-project")}
-            >
+            <TabsTrigger value="add-project" className="text-xs md:text-sm">
               Add Project
             </TabsTrigger>
-            <TabsTrigger 
-              value="room-measurement" 
-              className="text-xs md:text-sm"
-              disabled={!isTabAccessible("room-measurement")}
-            >
+            <TabsTrigger value="room-measurement" className="text-xs md:text-sm">
               Room Measurements
             </TabsTrigger>
-            <TabsTrigger 
-              value="paint-estimation" 
-              className="text-xs md:text-sm"
-              disabled={!isTabAccessible("paint-estimation")}
-            >
+            <TabsTrigger value="paint-estimation" className="text-xs md:text-sm">
               Paint & Summary
             </TabsTrigger>
-            <TabsTrigger 
-              value="project-summary" 
-              className="text-xs md:text-sm"
-              disabled={!isTabAccessible("project-summary")}
-            >
+            <TabsTrigger value="project-summary" className="text-xs md:text-sm">
               Project Summary
             </TabsTrigger>
           </TabsList>
@@ -304,10 +245,7 @@ export default function ProjectDetailsPage() {
                   </Button>
                   <div className="pt-4 flex justify-end gap-2">
                     <Button 
-                      onClick={() => {
-                        setActiveTab("room-measurement");
-                        setSearchParams({ edit: selectedProjectId!, tab: "room-measurement" });
-                      }}
+                      onClick={() => setActiveTab("room-measurement")}
                       className="w-full"
                     >
                       Continue to Room Measurements
@@ -334,18 +272,12 @@ export default function ProjectDetailsPage() {
                   <div className="pt-4 flex justify-end gap-2">
                     <Button 
                       variant="outline"
-                      onClick={() => {
-                        setActiveTab("add-project");
-                        setSearchParams({ edit: selectedProjectId!, tab: "add-project" });
-                      }}
+                      onClick={() => setActiveTab("add-project")}
                     >
                       Back
                     </Button>
                     <Button 
-                      onClick={() => {
-                        setActiveTab("paint-estimation");
-                        setSearchParams({ edit: selectedProjectId!, tab: "paint-estimation" });
-                      }}
+                      onClick={() => setActiveTab("paint-estimation")}
                     >
                       Continue to Paint Estimation
                     </Button>
@@ -380,18 +312,12 @@ export default function ProjectDetailsPage() {
                   <div className="pt-4 flex justify-end gap-2">
                     <Button 
                       variant="outline"
-                      onClick={() => {
-                        setActiveTab("room-measurement");
-                        setSearchParams({ edit: selectedProjectId!, tab: "room-measurement" });
-                      }}
+                      onClick={() => setActiveTab("room-measurement")}
                     >
                       Back
                     </Button>
                     <Button 
-                      onClick={() => {
-                        setActiveTab("project-summary");
-                        setSearchParams({ edit: selectedProjectId!, tab: "project-summary" });
-                      }}
+                      onClick={() => setActiveTab("project-summary")}
                     >
                       Continue to Project Summary
                     </Button>
@@ -417,17 +343,14 @@ export default function ProjectDetailsPage() {
                   <div className="pt-4 flex justify-end gap-2">
                     <Button 
                       variant="outline"
-                      onClick={() => {
-                        setActiveTab("paint-estimation");
-                        setSearchParams({ edit: selectedProjectId!, tab: "paint-estimation" });
-                      }}
+                      onClick={() => setActiveTab("paint-estimation")}
                     >
                       Back
                     </Button>
                     <Button 
                       onClick={handleBackToList}
                     >
-                      Finish & Return to Dashboard
+                      Finish & Return to Projects
                     </Button>
                   </div>
                 </div>

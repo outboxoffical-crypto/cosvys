@@ -150,13 +150,7 @@ export default function AddProjectScreen() {
           description: "Project updated successfully!",
         });
 
-        // Mark step as completed and navigate to next tab
-        const stepsKey = `project_steps_${projectId}`;
-        const existingSteps = JSON.parse(localStorage.getItem(stepsKey) || '[]');
-        const updatedSteps = [...new Set([...existingSteps, 'add-project'])];
-        localStorage.setItem(stepsKey, JSON.stringify(updatedSteps));
-        
-        navigate(`/project-details?edit=${projectId}&tab=room-measurement`);
+        navigate('/dashboard');
       } else {
         // Create new project in Supabase with validated data
         const validated = projectSchema.parse(formData);
@@ -194,12 +188,7 @@ export default function AddProjectScreen() {
           description: "Project created successfully!",
         });
 
-        // Mark initial step as completed
-        const stepsKey = `project_steps_${newProject.id}`;
-        localStorage.setItem(stepsKey, JSON.stringify(['add-project']));
-
-        // Navigate to project details with room measurement tab
-        navigate(`/project-details?edit=${newProject.id}&tab=room-measurement`);
+        navigate(`/room-measurement/${newProject.id}`);
       }
     } catch (error: any) {
       console.error('Submit error:', error);
