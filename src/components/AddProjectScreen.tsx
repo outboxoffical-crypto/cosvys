@@ -150,7 +150,8 @@ export default function AddProjectScreen() {
           description: "Project updated successfully!",
         });
 
-        navigate('/dashboard');
+        // Navigate to next tab in edit flow (Room Measurements)
+        navigate(`/project-details?edit=${projectId}&tab=room-measurement`);
       } else {
         // Create new project in Supabase with validated data
         const validated = projectSchema.parse(formData);
