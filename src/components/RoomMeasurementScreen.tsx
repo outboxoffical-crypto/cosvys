@@ -151,11 +151,6 @@ export default function RoomMeasurementScreen() {
   const [customSectionName, setCustomSectionName] = useState("");
   const [tempCustomSections, setTempCustomSections] = useState<Array<{ id: string; name: string }>>([]);
   const [editingCustomSectionId, setEditingCustomSectionId] = useState<string | null>(null);
-  
-  // Custom Section Dialog state for EXISTING rooms (name-only, blank area)
-  const [existingRoomSectionDialogOpen, setExistingRoomSectionDialogOpen] = useState(false);
-  const [existingRoomSectionRoomId, setExistingRoomSectionRoomId] = useState<string | null>(null);
-  const [existingRoomSectionName, setExistingRoomSectionName] = useState("");
 
   // Immediate save functions - no debouncing for instant sync
   const saveRoomToDatabase = async (roomData: any) => {
@@ -908,65 +903,6 @@ export default function RoomMeasurementScreen() {
     toast.success('Section removed');
   }, []);
 
-  // Handler for adding custom section to EXISTING room (name-only, blank area)
-  const handleOpenExistingRoomSectionDialog = useCallback((roomId: string) => {
-    setExistingRoomSectionRoomId(roomId);
-    setExistingRoomSectionName("");
-    setExistingRoomSectionDialogOpen(true);
-  }, []);
-
-  const handleSaveExistingRoomSection = useCallback(async () => {
-    if (!existingRoomSectionRoomId || !existingRoomSectionName.trim()) {
-      toast.error('Please enter a section name');
-      return;
-    }
-
-    const targetRoom = rooms.find(r => r.id === existingRoomSectionRoomId);
-    if (!targetRoom) return;
-
-    // Create a blank sub-area with only the name (area: 0)
-    const newSection: SubArea = {
-      id: `section-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      name: existingRoomSectionName.trim(),
-      area: 0,
-      length: 0,
-      width: 0,
-      height: 0
-    };
-
-    const updatedSubAreas = [...targetRoom.subAreas, newSection];
-
-    // Update local state immediately
-    setRooms(prev => prev.map(room => 
-      room.id === existingRoomSectionRoomId 
-        ? { ...room, subAreas: updatedSubAreas }
-        : room
-    ));
-
-    // Save to database
-    try {
-      const { error } = await supabase
-        .from('rooms')
-        .update({ sub_areas: updatedSubAreas as any })
-        .eq('room_id', existingRoomSectionRoomId)
-        .eq('project_id', projectId!);
-
-      if (error) {
-        console.error('Error saving section:', error);
-        toast.error('Failed to save section');
-        return;
-      }
-      
-      toast.success('Section added');
-    } catch (error) {
-      console.error('Error:', error);
-      toast.error('Failed to save section');
-    }
-
-    setExistingRoomSectionDialogOpen(false);
-    setExistingRoomSectionRoomId(null);
-    setExistingRoomSectionName("");
-  }, [existingRoomSectionRoomId, existingRoomSectionName, rooms, projectId]);
   // Handle adding door/window from dialog
   const handleAddDoorWindowFromDialog = async () => {
     const doorWindowGrill = addDoorWindowGrill();
@@ -1828,8 +1764,8 @@ export default function RoomMeasurementScreen() {
                                 variant="ghost"
                                 size="icon"
                                 className="h-9 w-9 text-primary hover:text-primary hover:bg-primary/10"
-                                onClick={() => handleOpenExistingRoomSectionDialog(room.id)}
-                                title="Add Separate Section"
+                                onClick={() => handleAddSubArea(room.id)}
+                                title="Add Sub-Area"
                               >
                                 <Plus className="h-4 w-4" />
                               </Button>
@@ -2528,45 +2464,6 @@ export default function RoomMeasurementScreen() {
             </Button>
             <Button onClick={handleSaveCustomSection} disabled={!customSectionName.trim()}>
               {editingCustomSectionId ? "Update" : "Add Section"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Custom Section Dialog for Existing Rooms (name-only, blank area) */}
-      <Dialog open={existingRoomSectionDialogOpen} onOpenChange={(open) => {
-        if (!open) {
-          setExistingRoomSectionDialogOpen(false);
-          setExistingRoomSectionRoomId(null);
-          setExistingRoomSectionName("");
-        }
-      }}>
-        <DialogContent className="sm:max-w-[350px]">
-          <DialogHeader>
-            <DialogTitle>Add Separate Section</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="existing-room-section-name">Enter Separate Area / Section Name</Label>
-              <Input
-                id="existing-room-section-name"
-                placeholder="e.g., Balcony Wall, Kitchen Ceiling"
-                value={existingRoomSectionName}
-                onChange={(e) => setExistingRoomSectionName(e.target.value)}
-                className="h-12"
-              />
-            </div>
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => {
-              setExistingRoomSectionDialogOpen(false);
-              setExistingRoomSectionRoomId(null);
-              setExistingRoomSectionName("");
-            }}>
-              Cancel
-            </Button>
-            <Button onClick={handleSaveExistingRoomSection} disabled={!existingRoomSectionName.trim()}>
-              Add Section
             </Button>
           </div>
         </DialogContent>
