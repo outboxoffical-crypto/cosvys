@@ -145,6 +145,12 @@ export default function RoomMeasurementScreen() {
   const [subAreaDialogOpen, setSubAreaDialogOpen] = useState(false);
   const [subAreaRoomId, setSubAreaRoomId] = useState<string | null>(null);
   const [editingSubArea, setEditingSubArea] = useState<SubArea | null>(null);
+  
+  // Custom Section Dialog state (name-only sections for new room)
+  const [customSectionDialogOpen, setCustomSectionDialogOpen] = useState(false);
+  const [customSectionName, setCustomSectionName] = useState("");
+  const [tempCustomSections, setTempCustomSections] = useState<Array<{ id: string; name: string }>>([]);
+  const [editingCustomSectionId, setEditingCustomSectionId] = useState<string | null>(null);
 
   // Immediate save functions - no debouncing for instant sync
   const saveRoomToDatabase = async (roomData: any) => {
@@ -509,7 +515,11 @@ export default function RoomMeasurementScreen() {
         openingAreas: [...tempOpeningAreas],
         extraSurfaces: [...tempExtraSurfaces],
         doorWindowGrills: [],
-        subAreas: [],
+        subAreas: tempCustomSections.map(section => ({
+          id: section.id,
+          name: section.name,
+          area: 0 // Area to be entered later by user
+        })),
         floorArea,
         wallArea,
         ceilingArea,
@@ -530,6 +540,7 @@ export default function RoomMeasurementScreen() {
       setShowOpenAreaSection(false);
       setTempOpeningAreas([]);
       setTempExtraSurfaces([]);
+      setTempCustomSections([]);
       
       // Show instant visual confirmation
       toast.success('Room added');
@@ -844,6 +855,53 @@ export default function RoomMeasurementScreen() {
       toast.error('Failed to remove sub-area');
     }
   }, [rooms, projectId]);
+
+  // Custom Section handlers (name-only sections for new room)
+  const handleOpenCustomSectionDialog = useCallback((editId?: string) => {
+    if (editId) {
+      const section = tempCustomSections.find(s => s.id === editId);
+      if (section) {
+        setCustomSectionName(section.name);
+        setEditingCustomSectionId(editId);
+      }
+    } else {
+      setCustomSectionName("");
+      setEditingCustomSectionId(null);
+    }
+    setCustomSectionDialogOpen(true);
+  }, [tempCustomSections]);
+
+  const handleSaveCustomSection = useCallback(() => {
+    if (!customSectionName.trim()) {
+      toast.error('Please enter a section name');
+      return;
+    }
+
+    if (editingCustomSectionId) {
+      // Update existing
+      setTempCustomSections(prev => prev.map(s => 
+        s.id === editingCustomSectionId ? { ...s, name: customSectionName.trim() } : s
+      ));
+      toast.success('Section updated');
+    } else {
+      // Add new
+      const newSection = {
+        id: `section-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        name: customSectionName.trim()
+      };
+      setTempCustomSections(prev => [...prev, newSection]);
+      toast.success('Section added');
+    }
+
+    setCustomSectionDialogOpen(false);
+    setCustomSectionName("");
+    setEditingCustomSectionId(null);
+  }, [customSectionName, editingCustomSectionId]);
+
+  const handleRemoveCustomSection = useCallback((sectionId: string) => {
+    setTempCustomSections(prev => prev.filter(s => s.id !== sectionId));
+    toast.success('Section removed');
+  }, []);
 
   // Handle adding door/window from dialog
   const handleAddDoorWindowFromDialog = async () => {
@@ -1365,9 +1423,20 @@ export default function RoomMeasurementScreen() {
             {activeProjectType && (
               <Card className="eca-shadow">
                 <CardHeader>
-                  <CardTitle className="flex items-center text-lg">
-                    <Ruler className="mr-2 h-5 w-5 text-primary" />
-                    Add Room
+                  <CardTitle className="flex items-center justify-between text-lg">
+                    <div className="flex items-center">
+                      <Ruler className="mr-2 h-5 w-5 text-primary" />
+                      Add Room
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10"
+                      onClick={() => handleOpenCustomSectionDialog()}
+                      title="Add Custom Section"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -1602,6 +1671,45 @@ export default function RoomMeasurementScreen() {
                           Add Extra Surface
                         </Button>
                       </div>
+
+                      {/* Custom Sections Display */}
+                      {tempCustomSections.length > 0 && (
+                        <div className="space-y-3 p-4 bg-primary/5 rounded-lg border border-primary/20">
+                          <h4 className="font-semibold text-sm text-primary">Custom Sections</h4>
+                          <div className="grid grid-cols-3 gap-3">
+                            {tempCustomSections.map((section) => (
+                              <div
+                                key={section.id}
+                                className="p-3 rounded-lg border-2 border-primary bg-primary/10 relative group"
+                              >
+                                <div className="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-5 w-5"
+                                    onClick={() => handleOpenCustomSectionDialog(section.id)}
+                                  >
+                                    <Edit3 className="h-3 w-3" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-5 w-5 text-destructive hover:text-destructive"
+                                    onClick={() => handleRemoveCustomSection(section.id)}
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                                <div className="text-center">
+                                  <p className="text-xs text-muted-foreground mb-1 truncate">{section.name}</p>
+                                  <p className="text-lg font-bold text-foreground">—</p>
+                                  <p className="text-xs text-muted-foreground">sq.ft</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
 
                       <Button 
                         onClick={addRoom}
@@ -2321,6 +2429,45 @@ export default function RoomMeasurementScreen() {
         onSave={handleSaveSubArea}
         editingSubArea={editingSubArea}
       />
+
+      {/* Custom Section Dialog (name-only) */}
+      <Dialog open={customSectionDialogOpen} onOpenChange={(open) => {
+        if (!open) {
+          setCustomSectionDialogOpen(false);
+          setCustomSectionName("");
+          setEditingCustomSectionId(null);
+        }
+      }}>
+        <DialogContent className="sm:max-w-[350px]">
+          <DialogHeader>
+            <DialogTitle>{editingCustomSectionId ? "Edit Section" : "Add Custom Section"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="custom-section-name">Name of the Separate Area/Section</Label>
+              <Input
+                id="custom-section-name"
+                placeholder="e.g., Balcony Wall, Kitchen Ceiling"
+                value={customSectionName}
+                onChange={(e) => setCustomSectionName(e.target.value)}
+                className="h-12"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => {
+              setCustomSectionDialogOpen(false);
+              setCustomSectionName("");
+              setEditingCustomSectionId(null);
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveCustomSection} disabled={!customSectionName.trim()}>
+              {editingCustomSectionId ? "Update" : "Add Section"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
