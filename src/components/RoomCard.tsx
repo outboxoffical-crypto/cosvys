@@ -35,6 +35,9 @@ export interface SubArea {
   id: string;
   name: string;
   area: number;
+  length?: number;
+  width?: number;
+  height?: number;
 }
 
 interface Room {
@@ -81,6 +84,7 @@ interface RoomCardProps {
   onAddSubArea?: (roomId: string) => void;
   onEditSubArea?: (roomId: string, subArea: SubArea) => void;
   onRemoveSubArea?: (roomId: string, subAreaId: string) => void;
+  onAddCustomSection?: (roomId: string) => void;
 }
 
 export const RoomCard = memo(({
@@ -100,7 +104,8 @@ export const RoomCard = memo(({
   onExtraSurfaceChange,
   onAddSubArea,
   onEditSubArea,
-  onRemoveSubArea
+  onRemoveSubArea,
+  onAddCustomSection
 }: RoomCardProps) => {
   return (
     <Card className="eca-shadow border-l-4 border-l-primary">
@@ -110,13 +115,13 @@ export const RoomCard = memo(({
           <div className="flex-1">
             <div className="flex items-center gap-1 mb-2">
               <h3 className="font-semibold text-lg">{room.name}</h3>
-              {onAddSubArea && (
+              {onAddCustomSection && (
                 <Button
                   variant="ghost"
                   size="icon"
                   className="h-7 w-7 text-primary hover:text-primary hover:bg-primary/10"
-                  onClick={() => onAddSubArea(room.id)}
-                  title="Add Sub-Area"
+                  onClick={() => onAddCustomSection(room.id)}
+                  title="Add Separate Section"
                 >
                   <Plus className="h-4 w-4" />
                 </Button>
