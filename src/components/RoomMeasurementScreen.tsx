@@ -1428,15 +1428,20 @@ export default function RoomMeasurementScreen() {
                       <Ruler className="mr-2 h-5 w-5 text-primary" />
                       Add Room
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10"
-                      onClick={() => handleOpenCustomSectionDialog()}
-                      title="Add Custom Section"
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
+                    <div className="flex flex-col items-center">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10"
+                        onClick={() => handleOpenCustomSectionDialog()}
+                        title="Create a separate area for different paint configuration inside this room"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                      <span className="text-[10px] text-muted-foreground text-center max-w-[80px] leading-tight">
+                        Add Section
+                      </span>
+                    </div>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -2440,14 +2445,17 @@ export default function RoomMeasurementScreen() {
       }}>
         <DialogContent className="sm:max-w-[350px]">
           <DialogHeader>
-            <DialogTitle>{editingCustomSectionId ? "Edit Section" : "Add Custom Section"}</DialogTitle>
+            <DialogTitle>{editingCustomSectionId ? "Edit Section" : "Add Separate Paint Section"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            <p className="text-sm text-muted-foreground">
+              Create a separate area for different paint configuration inside this room. This section will have its own paint estimation, labour, and material calculations.
+            </p>
             <div className="space-y-2">
-              <Label htmlFor="custom-section-name">Name of the Separate Area/Section</Label>
+              <Label htmlFor="custom-section-name">Enter Section Name</Label>
               <Input
                 id="custom-section-name"
-                placeholder="e.g., Balcony Wall, Kitchen Ceiling"
+                placeholder="e.g., Damp Wall Only, Texture Wall, First Floor Wall, Accent Wall"
                 value={customSectionName}
                 onChange={(e) => setCustomSectionName(e.target.value)}
                 className="h-12"
