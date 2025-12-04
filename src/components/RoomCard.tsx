@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Edit3, X, Image as ImageIcon } from "lucide-react";
+import { Trash2, Edit3, X, Image as ImageIcon, Plus } from "lucide-react";
 
 interface OpeningArea {
   id: string;
@@ -31,6 +31,12 @@ interface DoorWindowGrill {
   area: number;
 }
 
+export interface SubArea {
+  id: string;
+  name: string;
+  area: number;
+}
+
 interface Room {
   id: string;
   name: string;
@@ -42,6 +48,7 @@ interface Room {
   openingAreas: OpeningArea[];
   extraSurfaces: ExtraSurface[];
   doorWindowGrills: DoorWindowGrill[];
+  subAreas?: SubArea[];
   floorArea: number;
   wallArea: number;
   ceilingArea: number;
@@ -71,6 +78,9 @@ interface RoomCardProps {
   onAddExtraSurface: (roomId: string) => void;
   onOpeningAreaChange: (field: 'height' | 'width' | 'quantity', value: string) => void;
   onExtraSurfaceChange: (field: 'height' | 'width' | 'quantity', value: string) => void;
+  onAddSubArea?: (roomId: string) => void;
+  onEditSubArea?: (roomId: string, subArea: SubArea) => void;
+  onRemoveSubArea?: (roomId: string, subAreaId: string) => void;
 }
 
 export const RoomCard = memo(({
@@ -87,7 +97,10 @@ export const RoomCard = memo(({
   onAddOpeningArea,
   onAddExtraSurface,
   onOpeningAreaChange,
-  onExtraSurfaceChange
+  onExtraSurfaceChange,
+  onAddSubArea,
+  onEditSubArea,
+  onRemoveSubArea
 }: RoomCardProps) => {
   return (
     <Card className="eca-shadow border-l-4 border-l-primary">
@@ -95,8 +108,19 @@ export const RoomCard = memo(({
         {/* Room Header */}
         <div className="flex justify-between items-start">
           <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-1 mb-2">
               <h3 className="font-semibold text-lg">{room.name}</h3>
+              {onAddSubArea && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-primary hover:text-primary hover:bg-primary/10"
+                  onClick={() => onAddSubArea(room.id)}
+                  title="Add Sub-Area"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 size="icon"
@@ -297,6 +321,49 @@ export const RoomCard = memo(({
           </div>
         )}
 
+        {/* Sub-Areas - Independent Paintable Sections */}
+        {room.subAreas && room.subAreas.length > 0 && (
+          <div className="border-t pt-3">
+            <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
+              <Badge variant="default" className="bg-primary/80">Sub-Areas</Badge>
+            </h4>
+            <div className="grid grid-cols-2 gap-2">
+              {room.subAreas.map((subArea) => (
+                <div
+                  key={subArea.id}
+                  className="p-3 rounded-lg border-2 border-primary bg-primary/10 relative group"
+                >
+                  <div className="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {onEditSubArea && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5"
+                        onClick={() => onEditSubArea(room.id, subArea)}
+                      >
+                        <Edit3 className="h-3 w-3" />
+                      </Button>
+                    )}
+                    {onRemoveSubArea && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5 text-destructive hover:text-destructive"
+                        onClick={() => onRemoveSubArea(room.id, subArea.id)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
+                  <div className="text-xs font-medium mb-1 pr-12 truncate">{subArea.name}</div>
+                  <div className="text-sm font-bold">{subArea.area.toFixed(1)}</div>
+                  <div className="text-xs text-muted-foreground">sq.ft</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Area Selection Boxes */}
         <div className="border-t pt-3">
           <h4 className="text-sm font-medium mb-2">Select Areas to Paint</h4>
@@ -353,6 +420,9 @@ export const RoomCard = memo(({
   const doorWindowGrillsEqual = prevProps.room.doorWindowGrills.length === nextProps.room.doorWindowGrills.length &&
     prevProps.room.doorWindowGrills.every((dwg, i) => dwg.id === nextProps.room.doorWindowGrills[i]?.id);
 
+  const subAreasEqual = (prevProps.room.subAreas?.length || 0) === (nextProps.room.subAreas?.length || 0) &&
+    (prevProps.room.subAreas || []).every((sa, i) => sa.id === nextProps.room.subAreas?.[i]?.id && sa.area === nextProps.room.subAreas?.[i]?.area);
+
   return (
     prevProps.room.id === nextProps.room.id &&
     prevProps.room.name === nextProps.room.name &&
@@ -370,6 +440,7 @@ export const RoomCard = memo(({
     openingAreasEqual &&
     extraSurfacesEqual &&
     doorWindowGrillsEqual &&
+    subAreasEqual &&
     prevProps.newOpeningArea.height === nextProps.newOpeningArea.height &&
     prevProps.newOpeningArea.width === nextProps.newOpeningArea.width &&
     prevProps.newOpeningArea.quantity === nextProps.newOpeningArea.quantity &&

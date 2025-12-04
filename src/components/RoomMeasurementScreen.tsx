@@ -10,7 +10,8 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft, Plus, Ruler, Home, Trash2, Calculator, X, Edit3, Camera, Image } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { RoomCard } from "./RoomCard";
+import { RoomCard, SubArea } from "./RoomCard";
+import { SubAreaDialog } from "./SubAreaDialog";
 
 // Removed debounce utility - all saves are now immediate for instant sync
 
@@ -58,6 +59,7 @@ interface Room {
   openingAreas: OpeningArea[];
   extraSurfaces: ExtraSurface[];
   doorWindowGrills: DoorWindowGrill[];
+  subAreas: SubArea[];
   floorArea: number;
   wallArea: number;
   ceilingArea: number;
@@ -138,6 +140,11 @@ export default function RoomMeasurementScreen() {
   const [doorWindowDialogOpen, setDoorWindowDialogOpen] = useState(false);
   const [doorWindowRoomName, setDoorWindowRoomName] = useState("");
   const [doorWindowProjectType, setDoorWindowProjectType] = useState<string>("");
+  
+  // Sub-Area Dialog state
+  const [subAreaDialogOpen, setSubAreaDialogOpen] = useState(false);
+  const [subAreaRoomId, setSubAreaRoomId] = useState<string | null>(null);
+  const [editingSubArea, setEditingSubArea] = useState<SubArea | null>(null);
 
   // Immediate save functions - no debouncing for instant sync
   const saveRoomToDatabase = async (roomData: any) => {
@@ -217,6 +224,7 @@ export default function RoomMeasurementScreen() {
             openingAreas: Array.isArray(room.opening_areas) ? room.opening_areas as unknown as OpeningArea[] : [],
             extraSurfaces: Array.isArray(room.extra_surfaces) ? room.extra_surfaces as unknown as ExtraSurface[] : [],
             doorWindowGrills: Array.isArray(room.door_window_grills) ? room.door_window_grills as unknown as DoorWindowGrill[] : [],
+            subAreas: Array.isArray(room.sub_areas) ? room.sub_areas as unknown as SubArea[] : [],
             floorArea: Number(room.floor_area),
             wallArea: Number(room.wall_area),
             ceilingArea: Number(room.ceiling_area),
@@ -501,6 +509,7 @@ export default function RoomMeasurementScreen() {
         openingAreas: [...tempOpeningAreas],
         extraSurfaces: [...tempExtraSurfaces],
         doorWindowGrills: [],
+        subAreas: [],
         floorArea,
         wallArea,
         ceilingArea,
@@ -740,6 +749,102 @@ export default function RoomMeasurementScreen() {
     }
   };
 
+  // Sub-Area handlers
+  const handleAddSubArea = useCallback((roomId: string) => {
+    setSubAreaRoomId(roomId);
+    setEditingSubArea(null);
+    setSubAreaDialogOpen(true);
+  }, []);
+
+  const handleEditSubArea = useCallback((roomId: string, subArea: SubArea) => {
+    setSubAreaRoomId(roomId);
+    setEditingSubArea(subArea);
+    setSubAreaDialogOpen(true);
+  }, []);
+
+  const handleSaveSubArea = useCallback(async (subArea: SubArea) => {
+    if (!subAreaRoomId) return;
+
+    const targetRoom = rooms.find(r => r.id === subAreaRoomId);
+    if (!targetRoom) return;
+
+    let updatedSubAreas: SubArea[];
+    if (editingSubArea) {
+      // Update existing sub-area
+      updatedSubAreas = targetRoom.subAreas.map(sa => 
+        sa.id === subArea.id ? subArea : sa
+      );
+    } else {
+      // Add new sub-area
+      updatedSubAreas = [...targetRoom.subAreas, subArea];
+    }
+
+    // Update local state immediately
+    setRooms(prev => prev.map(room => 
+      room.id === subAreaRoomId 
+        ? { ...room, subAreas: updatedSubAreas }
+        : room
+    ));
+
+    // Save to database
+    try {
+      const { error } = await supabase
+        .from('rooms')
+        .update({ sub_areas: updatedSubAreas as any })
+        .eq('room_id', subAreaRoomId)
+        .eq('project_id', projectId!);
+
+      if (error) {
+        console.error('Error saving sub-area:', error);
+        toast.error('Failed to save sub-area');
+        return;
+      }
+      
+      toast.success(editingSubArea ? 'Sub-area updated' : 'Sub-area added');
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Failed to save sub-area');
+    }
+
+    setSubAreaDialogOpen(false);
+    setSubAreaRoomId(null);
+    setEditingSubArea(null);
+  }, [subAreaRoomId, rooms, projectId, editingSubArea]);
+
+  const handleRemoveSubArea = useCallback(async (roomId: string, subAreaId: string) => {
+    const targetRoom = rooms.find(r => r.id === roomId);
+    if (!targetRoom) return;
+
+    const updatedSubAreas = targetRoom.subAreas.filter(sa => sa.id !== subAreaId);
+
+    // Update local state immediately
+    setRooms(prev => prev.map(room => 
+      room.id === roomId 
+        ? { ...room, subAreas: updatedSubAreas }
+        : room
+    ));
+
+    // Save to database
+    try {
+      const { error } = await supabase
+        .from('rooms')
+        .update({ sub_areas: updatedSubAreas as any })
+        .eq('room_id', roomId)
+        .eq('project_id', projectId!);
+
+      if (error) {
+        console.error('Error removing sub-area:', error);
+        toast.error('Failed to remove sub-area');
+        return;
+      }
+      
+      toast.success('Sub-area removed');
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Failed to remove sub-area');
+    }
+  }, [rooms, projectId]);
+
   // Handle adding door/window from dialog
   const handleAddDoorWindowFromDialog = async () => {
     const doorWindowGrill = addDoorWindowGrill();
@@ -807,6 +912,7 @@ export default function RoomMeasurementScreen() {
         openingAreas: [],
         extraSurfaces: [],
         doorWindowGrills: [doorWindowGrill],
+        subAreas: [],
         floorArea: 0,
         wallArea: 0,
         ceilingArea: 0,
@@ -1536,7 +1642,7 @@ export default function RoomMeasurementScreen() {
                                 </p>
                               </div>
                             </div>
-                            <div className="flex items-center space-x-2">
+                            <div className="flex items-center space-x-1">
                               <Button
                                 variant="default"
                                 size="sm"
@@ -1545,6 +1651,15 @@ export default function RoomMeasurementScreen() {
                               >
                                 <Calculator className="h-4 w-4 mr-1" />
                                 Complete
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-9 w-9 text-primary hover:text-primary hover:bg-primary/10"
+                                onClick={() => handleAddSubArea(room.id)}
+                                title="Add Sub-Area"
+                              >
+                                <Plus className="h-4 w-4" />
                               </Button>
                               <Button
                                 variant="ghost"
@@ -1760,6 +1875,47 @@ export default function RoomMeasurementScreen() {
                               </div>
                             </div>
                           </div>
+
+                          {/* Sub-Areas - Independent Paintable Sections */}
+                          {room.subAreas && room.subAreas.length > 0 && (
+                            <div className="space-y-2 p-3 bg-primary/5 rounded-lg border border-primary/20">
+                              <div className="flex items-center justify-between">
+                                <h4 className="text-sm font-semibold text-primary">Sub-Areas</h4>
+                              </div>
+                              <div className="grid grid-cols-2 gap-2">
+                                {room.subAreas.map((subArea) => (
+                                  <div
+                                    key={subArea.id}
+                                    className="p-3 rounded-lg border-2 border-primary bg-primary/10 relative group"
+                                  >
+                                    <div className="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-5 w-5"
+                                        onClick={() => handleEditSubArea(room.id, subArea)}
+                                      >
+                                        <Edit3 className="h-3 w-3" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-5 w-5 text-destructive hover:text-destructive"
+                                        onClick={() => handleRemoveSubArea(room.id, subArea.id)}
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                    <div className="text-center pr-10">
+                                      <p className="text-xs text-muted-foreground mb-1 truncate">{subArea.name}</p>
+                                      <p className="text-lg font-bold text-foreground">{subArea.area.toFixed(1)}</p>
+                                      <p className="text-xs text-muted-foreground">sq.ft</p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
 
                           {/* Total Area Summary */}
                           <div className="bg-gradient-to-r from-red-500 via-purple-500 to-blue-500 rounded-lg p-4 text-white">
@@ -2153,6 +2309,18 @@ export default function RoomMeasurementScreen() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Sub-Area Dialog */}
+      <SubAreaDialog
+        open={subAreaDialogOpen}
+        onClose={() => {
+          setSubAreaDialogOpen(false);
+          setSubAreaRoomId(null);
+          setEditingSubArea(null);
+        }}
+        onSave={handleSaveSubArea}
+        editingSubArea={editingSubArea}
+      />
     </div>
   );
 }
