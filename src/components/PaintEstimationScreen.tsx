@@ -45,6 +45,9 @@ interface AreaConfiguration {
   perSqFtRate: string;
   label?: string;
   isAdditional?: boolean;
+  isCustomSection?: boolean;
+  roomId?: string;
+  subAreaId?: string;
   enamelConfig?: {
     primerType: string;
     primerCoats: number;
@@ -310,23 +313,27 @@ export default function PaintEstimationScreen() {
         }
       }
       
-      // Process sub-areas as independent paintable sections
+      // Process sub-areas (custom sections) as completely independent paintable sections
+      // These are NOT merged with Wall Area - each is a separate paint configuration
       if (room.sub_areas && Array.isArray(room.sub_areas)) {
         room.sub_areas.forEach((subArea: any) => {
-          if (subArea.area && subArea.area > 0) {
-            configs.push({
-              id: `subarea-${room.room_id}-${subArea.id}`,
-              areaType: 'Wall' as const,
-              paintingSystem: null,
-              coatConfiguration: { putty: 0, primer: 0, emulsion: 0 },
-              repaintingConfiguration: { primer: 0, emulsion: 0 },
-              selectedMaterials: { putty: '', primer: '', emulsion: '' },
-              area: Number(subArea.area),
-              perSqFtRate: '',
-              label: `${room.name} - ${subArea.name}`,
-              isAdditional: false
-            });
-          }
+          // Include ALL custom sections, even those with area=0 (user will enter sq.ft later)
+          configs.push({
+            id: `subarea-${room.room_id}-${subArea.id}`,
+            areaType: 'Wall' as const,
+            paintingSystem: null,
+            coatConfiguration: { putty: 0, primer: 0, emulsion: 0 },
+            repaintingConfiguration: { primer: 0, emulsion: 0 },
+            selectedMaterials: { putty: '', primer: '', emulsion: '' },
+            area: Number(subArea.area) || 0,
+            perSqFtRate: '',
+            // Use only the section name as the label, not prefixed with room name
+            label: subArea.name || 'Custom Section',
+            isAdditional: false,
+            isCustomSection: true, // Flag to identify custom sections
+            roomId: room.room_id,
+            subAreaId: subArea.id
+          });
         });
       }
     });
@@ -926,6 +933,9 @@ export default function PaintEstimationScreen() {
 
   // Handle delete configuration
   const handleDeleteConfig = (configId: string) => {
+    // Find the config to check if it's a custom section
+    const configToDelete = areaConfigurations.find(c => c.id === configId);
+    
     setAreaConfigurations(prev => prev.filter(config => config.id !== configId));
     try {
       const storedKey = `additional_entries_${projectId}_${selectedPaintType}`;
@@ -934,6 +944,24 @@ export default function PaintEstimationScreen() {
       const updated = Array.isArray(list) ? list.filter((item: any) => item.id !== configId) : [];
       localStorage.setItem(storedKey, JSON.stringify(updated));
     } catch {}
+    
+    // If it's a custom section, also delete from database
+    if (configToDelete?.isCustomSection && configToDelete?.roomId && configToDelete?.subAreaId) {
+      const room = rooms.find(r => r.room_id === configToDelete.roomId);
+      if (room && room.sub_areas) {
+        const updatedSubAreas = (room.sub_areas as any[]).filter((sa: any) => 
+          sa.id !== configToDelete.subAreaId
+        );
+        supabase
+          .from('rooms')
+          .update({ sub_areas: updatedSubAreas })
+          .eq('room_id', configToDelete.roomId)
+          .then(({ error }) => {
+            if (error) console.error('Error deleting custom section from database:', error);
+          });
+      }
+    }
+    
     toast.success('Configuration deleted');
   };
 
@@ -995,11 +1023,11 @@ export default function PaintEstimationScreen() {
     }, 0);
   };
 
-  // Calculate total area for Wall and Ceiling
+  // Calculate total area for all paint areas (Floor, Wall, Ceiling, and Custom Sections)
   const getTotalPaintArea = () => {
     return areaConfigurations
-      .filter(c => c.areaType === 'Wall' || c.areaType === 'Ceiling')
-      .reduce((total, config) => total + config.area, 0);
+      .filter(c => c.areaType === 'Floor' || c.areaType === 'Wall' || c.areaType === 'Ceiling')
+      .reduce((total, config) => total + (config.area || 0), 0);
   };
 
   const handleContinue = async () => {
@@ -1065,10 +1093,12 @@ export default function PaintEstimationScreen() {
   };
 
   // Separate configurations by type
-  const floorConfigs = areaConfigurations.filter(c => c.areaType === 'Floor');
-  const wallConfigs = areaConfigurations.filter(c => c.areaType === 'Wall');
-  const ceilingConfigs = areaConfigurations.filter(c => c.areaType === 'Ceiling');
+  const floorConfigs = areaConfigurations.filter(c => c.areaType === 'Floor' && !c.isCustomSection);
+  const wallConfigs = areaConfigurations.filter(c => c.areaType === 'Wall' && !c.isCustomSection);
+  const ceilingConfigs = areaConfigurations.filter(c => c.areaType === 'Ceiling' && !c.isCustomSection);
   const enamelConfigs = areaConfigurations.filter(c => c.areaType === 'Enamel');
+  // Custom sections created via (+) icon - completely separate from Wall Area
+  const customSectionConfigs = areaConfigurations.filter(c => c.isCustomSection);
 
   // Get configuration description
   const getConfigDescription = (config: AreaConfiguration) => {
@@ -1266,7 +1296,7 @@ export default function PaintEstimationScreen() {
             )}
 
             {/* Area to be Painted Section */}
-            {(floorConfigs.length > 0 || wallConfigs.length > 0 || ceilingConfigs.length > 0) && (
+            {(floorConfigs.length > 0 || wallConfigs.length > 0 || ceilingConfigs.length > 0 || customSectionConfigs.length > 0) && (
               <div className="space-y-4">
                 <h2 className="text-lg font-semibold">Area to be Painted</h2>
                 
@@ -1382,6 +1412,91 @@ export default function PaintEstimationScreen() {
                         </div>
                       </div>
                     ))}
+                  </div>
+                )}
+
+                {/* Custom Sections - Independent Paint Areas created via (+) icon */}
+                {customSectionConfigs.length > 0 && (
+                  <div className="space-y-3">
+                    <h3 className="text-base font-semibold text-primary">Custom Paint Sections</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      {customSectionConfigs.map(config => (
+                        <div 
+                          key={config.id} 
+                          className={`border-2 border-dashed rounded-lg p-3 space-y-2 cursor-pointer transition-all relative ${
+                            config.paintingSystem 
+                              ? 'border-primary bg-primary/5' 
+                              : 'border-border hover:border-primary/50'
+                          }`}
+                          onClick={() => handleEditConfig(config.id)}
+                        >
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 text-destructive absolute top-2 right-2"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteConfig(config.id);
+                            }}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                          <div className="text-center">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-primary hover:text-primary/80 text-xs pointer-events-none"
+                            >
+                              {config.paintingSystem || 'Select System'}
+                            </Button>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-xs font-medium text-muted-foreground mb-1">{config.label}</p>
+                            <Input
+                              type="number"
+                              placeholder="Enter sq.ft"
+                              value={config.area || ''}
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                const newArea = parseFloat(e.target.value) || 0;
+                                setAreaConfigurations(prev => {
+                                  const updated = prev.map(c => 
+                                    c.id === config.id ? { ...c, area: newArea } : c
+                                  );
+                                  // Save to localStorage
+                                  const savedConfigKey = `paint_configs_${projectId}_${selectedPaintType}`;
+                                  try {
+                                    localStorage.setItem(savedConfigKey, JSON.stringify(updated));
+                                  } catch (err) {
+                                    console.error('Error saving configs:', err);
+                                  }
+                                  return updated;
+                                });
+                                // Sync to database
+                                if (config.roomId && config.subAreaId) {
+                                  const room = rooms.find(r => r.room_id === config.roomId);
+                                  if (room && room.sub_areas) {
+                                    const updatedSubAreas = (room.sub_areas as any[]).map((sa: any) =>
+                                      sa.id === config.subAreaId ? { ...sa, area: newArea } : sa
+                                    );
+                                    supabase
+                                      .from('rooms')
+                                      .update({ sub_areas: updatedSubAreas })
+                                      .eq('room_id', config.roomId)
+                                      .then(({ error }) => {
+                                        if (error) console.error('Error syncing custom section area:', error);
+                                      });
+                                  }
+                                }
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                              className="h-10 text-center text-lg font-bold"
+                            />
+                            <p className="text-xs text-muted-foreground mt-1">sq.ft</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
 
