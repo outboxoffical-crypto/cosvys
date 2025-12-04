@@ -1415,10 +1415,10 @@ export default function PaintEstimationScreen() {
                   </div>
                 )}
 
-                {/* Custom Sections - Independent Paint Areas created via (+) icon */}
+                {/* Custom Sections - Separate Paint Areas created via (+) icon in Room Measurements */}
                 {customSectionConfigs.length > 0 && (
                   <div className="space-y-3">
-                    <h3 className="text-base font-semibold text-primary">Custom Paint Sections</h3>
+                    <h3 className="text-base font-semibold text-primary">Separate Paint Sections</h3>
                     <div className="grid grid-cols-2 gap-4">
                       {customSectionConfigs.map(config => (
                         <div 
