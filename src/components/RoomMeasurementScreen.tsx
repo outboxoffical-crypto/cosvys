@@ -845,39 +845,6 @@ export default function RoomMeasurementScreen() {
     }
   }, [rooms, projectId]);
 
-  const handleSubAreaSqftChange = useCallback(async (roomId: string, subAreaId: string, value: string) => {
-    const newArea = parseFloat(value) || 0;
-    
-    const targetRoom = rooms.find(r => r.id === roomId);
-    if (!targetRoom) return;
-
-    const updatedSubAreas = targetRoom.subAreas.map(sa => 
-      sa.id === subAreaId ? { ...sa, area: newArea } : sa
-    );
-
-    // Update local state immediately
-    setRooms(prev => prev.map(room => 
-      room.id === roomId 
-        ? { ...room, subAreas: updatedSubAreas }
-        : room
-    ));
-
-    // Debounced save to database
-    try {
-      const { error } = await supabase
-        .from('rooms')
-        .update({ sub_areas: updatedSubAreas as any })
-        .eq('room_id', roomId)
-        .eq('project_id', projectId!);
-
-      if (error) {
-        console.error('Error updating sub-area:', error);
-      }
-    } catch (error) {
-      console.error('Error:', error);
-    }
-  }, [rooms, projectId]);
-
   // Handle adding door/window from dialog
   const handleAddDoorWindowFromDialog = async () => {
     const doorWindowGrill = addDoorWindowGrill();
@@ -1909,53 +1876,44 @@ export default function RoomMeasurementScreen() {
                             </div>
                           </div>
 
-                          {/* Sub-Areas - Independent Configuration Boxes */}
+                          {/* Sub-Areas - Independent Paintable Sections */}
                           {room.subAreas && room.subAreas.length > 0 && (
-                            <div className="grid grid-cols-3 gap-3">
-                              {room.subAreas.map((subArea) => (
-                                <div
-                                  key={subArea.id}
-                                  className={`p-3 rounded-lg border-2 transition-all cursor-pointer ${
-                                    subArea.area > 0 
-                                      ? 'border-primary bg-primary/10' 
-                                      : 'border-dashed border-muted-foreground/30 bg-muted/20'
-                                  }`}
-                                >
-                                  <div className="flex items-center justify-end gap-1 mb-2">
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-6 w-6"
-                                      onClick={() => handleEditSubArea(room.id, subArea)}
-                                      title="Edit name"
-                                    >
-                                      <Edit3 className="h-3 w-3" />
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-6 w-6 text-destructive hover:text-destructive"
-                                      onClick={() => handleRemoveSubArea(room.id, subArea.id)}
-                                      title="Delete"
-                                    >
-                                      <X className="h-3 w-3" />
-                                    </Button>
+                            <div className="space-y-2 p-3 bg-primary/5 rounded-lg border border-primary/20">
+                              <div className="flex items-center justify-between">
+                                <h4 className="text-sm font-semibold text-primary">Sub-Areas</h4>
+                              </div>
+                              <div className="grid grid-cols-3 gap-3">
+                                {room.subAreas.map((subArea) => (
+                                  <div
+                                    key={subArea.id}
+                                    className="p-3 rounded-lg border-2 border-primary bg-primary/10 relative group cursor-pointer transition-all"
+                                  >
+                                    <div className="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-5 w-5"
+                                        onClick={(e) => { e.stopPropagation(); handleEditSubArea(room.id, subArea); }}
+                                      >
+                                        <Edit3 className="h-3 w-3" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-5 w-5 text-destructive hover:text-destructive"
+                                        onClick={(e) => { e.stopPropagation(); handleRemoveSubArea(room.id, subArea.id); }}
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                    <div className="text-center">
+                                      <p className="text-xs text-muted-foreground mb-1 truncate">{subArea.name}</p>
+                                      <p className="text-lg font-bold text-foreground">{subArea.area.toFixed(1)}</p>
+                                      <p className="text-xs text-muted-foreground">sq.ft</p>
+                                    </div>
                                   </div>
-                                  <div className="text-center">
-                                    <p className="text-xs text-muted-foreground mb-1 truncate font-medium">{subArea.name}</p>
-                                    <Input
-                                      type="number"
-                                      value={subArea.area || ""}
-                                      onChange={(e) => handleSubAreaSqftChange(room.id, subArea.id, e.target.value)}
-                                      placeholder="0"
-                                      className="h-9 text-center text-lg font-bold w-full"
-                                      min="0"
-                                      step="0.1"
-                                    />
-                                    <p className="text-xs text-muted-foreground mt-1">sq.ft</p>
-                                  </div>
-                                </div>
-                              ))}
+                                ))}
+                              </div>
                             </div>
                           )}
 
