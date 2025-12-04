@@ -1878,37 +1878,42 @@ export default function RoomMeasurementScreen() {
 
                           {/* Sub-Areas - Independent Paintable Sections */}
                           {room.subAreas && room.subAreas.length > 0 && (
-                            <div className="grid grid-cols-3 gap-3">
-                              {room.subAreas.map((subArea) => (
-                                <div
-                                  key={subArea.id}
-                                  className="p-3 rounded-lg border-2 border-primary bg-primary/10 relative group cursor-pointer transition-all"
-                                >
-                                  <div className="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-5 w-5"
-                                      onClick={(e) => { e.stopPropagation(); handleEditSubArea(room.id, subArea); }}
-                                    >
-                                      <Edit3 className="h-3 w-3" />
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-5 w-5 text-destructive hover:text-destructive"
-                                      onClick={(e) => { e.stopPropagation(); handleRemoveSubArea(room.id, subArea.id); }}
-                                    >
-                                      <X className="h-3 w-3" />
-                                    </Button>
+                            <div className="space-y-2 p-3 bg-primary/5 rounded-lg border border-primary/20">
+                              <div className="flex items-center justify-between">
+                                <h4 className="text-sm font-semibold text-primary">Sub-Areas</h4>
+                              </div>
+                              <div className="grid grid-cols-3 gap-3">
+                                {room.subAreas.map((subArea) => (
+                                  <div
+                                    key={subArea.id}
+                                    className="p-3 rounded-lg border-2 border-primary bg-primary/10 relative group cursor-pointer transition-all"
+                                  >
+                                    <div className="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-5 w-5"
+                                        onClick={(e) => { e.stopPropagation(); handleEditSubArea(room.id, subArea); }}
+                                      >
+                                        <Edit3 className="h-3 w-3" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-5 w-5 text-destructive hover:text-destructive"
+                                        onClick={(e) => { e.stopPropagation(); handleRemoveSubArea(room.id, subArea.id); }}
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                    <div className="text-center">
+                                      <p className="text-xs text-muted-foreground mb-1 truncate">{subArea.name}</p>
+                                      <p className="text-lg font-bold text-foreground">{subArea.area.toFixed(1)}</p>
+                                      <p className="text-xs text-muted-foreground">sq.ft</p>
+                                    </div>
                                   </div>
-                                  <div className="text-center">
-                                    <p className="text-xs text-muted-foreground mb-1 truncate">{subArea.name}</p>
-                                    <p className="text-lg font-bold text-foreground">{subArea.area.toFixed(1)}</p>
-                                    <p className="text-xs text-muted-foreground">sq.ft</p>
-                                  </div>
-                                </div>
-                              ))}
+                                ))}
+                              </div>
                             </div>
                           )}
 
