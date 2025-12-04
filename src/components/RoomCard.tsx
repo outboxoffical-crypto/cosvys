@@ -321,50 +321,7 @@ export const RoomCard = memo(({
           </div>
         )}
 
-        {/* Sub-Areas - Independent Paintable Sections */}
-        {room.subAreas && room.subAreas.length > 0 && (
-          <div className="border-t pt-3">
-            <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
-              <Badge variant="default" className="bg-primary/80">Sub-Areas</Badge>
-            </h4>
-            <div className="grid grid-cols-2 gap-2">
-              {room.subAreas.map((subArea) => (
-                <div
-                  key={subArea.id}
-                  className="p-3 rounded-lg border-2 border-primary bg-primary/10 relative group"
-                >
-                  <div className="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {onEditSubArea && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-5 w-5"
-                        onClick={() => onEditSubArea(room.id, subArea)}
-                      >
-                        <Edit3 className="h-3 w-3" />
-                      </Button>
-                    )}
-                    {onRemoveSubArea && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-5 w-5 text-destructive hover:text-destructive"
-                        onClick={() => onRemoveSubArea(room.id, subArea.id)}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    )}
-                  </div>
-                  <div className="text-xs font-medium mb-1 pr-12 truncate">{subArea.name}</div>
-                  <div className="text-sm font-bold">{subArea.area.toFixed(1)}</div>
-                  <div className="text-xs text-muted-foreground">sq.ft</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Area Selection Boxes */}
+        {/* Area Selection Boxes - includes default areas + custom sections */}
         <div className="border-t pt-3">
           <h4 className="text-sm font-medium mb-2">Select Areas to Paint</h4>
           <div className="grid grid-cols-3 gap-2">
@@ -404,6 +361,40 @@ export const RoomCard = memo(({
               <div className="text-sm font-bold">{room.ceilingArea.toFixed(1)}</div>
               <div className="text-xs text-muted-foreground">sq.ft</div>
             </button>
+            
+            {/* Custom Sections - appear in same grid as Floor/Wall/Ceiling */}
+            {room.subAreas && room.subAreas.map((subArea) => (
+              <div
+                key={subArea.id}
+                className="p-3 rounded-lg border-2 border-primary bg-primary/10 relative group"
+              >
+                <div className="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {onEditSubArea && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-5 w-5"
+                      onClick={() => onEditSubArea(room.id, subArea)}
+                    >
+                      <Edit3 className="h-3 w-3" />
+                    </Button>
+                  )}
+                  {onRemoveSubArea && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-5 w-5 text-destructive hover:text-destructive"
+                      onClick={() => onRemoveSubArea(room.id, subArea.id)}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
+                <div className="text-xs font-medium mb-1 pr-8 truncate">{subArea.name}</div>
+                <div className="text-sm font-bold">{subArea.area > 0 ? subArea.area.toFixed(1) : '—'}</div>
+                <div className="text-xs text-muted-foreground">sq.ft</div>
+              </div>
+            ))}
           </div>
         </div>
       </CardContent>

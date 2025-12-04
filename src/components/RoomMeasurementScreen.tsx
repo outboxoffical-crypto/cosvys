@@ -1439,8 +1439,8 @@ export default function RoomMeasurementScreen() {
                       >
                         <Plus className="h-4 w-4" />
                       </Button>
-                      <span className="text-[10px] text-muted-foreground text-center max-w-[80px] leading-tight">
-                        Add Section
+                      <span className="text-[9px] text-muted-foreground text-center max-w-[80px] leading-tight">
+                        Separate Section
                       </span>
                     </div>
                   </CardTitle>
@@ -1678,10 +1678,10 @@ export default function RoomMeasurementScreen() {
                         </Button>
                       </div>
 
-                      {/* Custom Sections Display */}
+                      {/* Custom Paint Sections - shown as separate boxes */}
                       {tempCustomSections.length > 0 && (
                         <div className="space-y-3 p-4 bg-primary/5 rounded-lg border border-primary/20">
-                          <h4 className="font-semibold text-sm text-primary">Custom Sections</h4>
+                          <h4 className="font-semibold text-sm text-primary">Separate Paint Sections (will appear with Floor/Wall/Ceiling)</h4>
                           <div className="grid grid-cols-3 gap-3">
                             {tempCustomSections.map((section) => (
                               <div
@@ -1707,9 +1707,9 @@ export default function RoomMeasurementScreen() {
                                   </Button>
                                 </div>
                                 <div className="text-center">
-                                  <p className="text-xs text-muted-foreground mb-1 truncate">{section.name}</p>
+                                  <p className="text-xs font-medium text-foreground mb-1 truncate pr-8">{section.name}</p>
                                   <p className="text-lg font-bold text-foreground">—</p>
-                                  <p className="text-xs text-muted-foreground">sq.ft</p>
+                                  <p className="text-xs text-muted-foreground">sq.ft (enter in Paint Estimation)</p>
                                 </div>
                               </div>
                             ))}
@@ -2446,17 +2446,17 @@ export default function RoomMeasurementScreen() {
       }}>
         <DialogContent className="sm:max-w-[350px]">
           <DialogHeader>
-            <DialogTitle>{editingCustomSectionId ? "Edit Section" : "Add Separate Paint Section"}</DialogTitle>
+            <DialogTitle>{editingCustomSectionId ? "Edit Section Name" : "Add Separate Paint Section"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <p className="text-sm text-muted-foreground">
-              Create a separate area for different paint configuration inside this room. This section will have its own paint estimation, labour, and material calculations.
+              This creates a separate paint area box (like Floor, Wall, Ceiling) with its own paint configuration. You'll enter sq.ft in Paint Estimation tab.
             </p>
             <div className="space-y-2">
-              <Label htmlFor="custom-section-name">Enter Section Name</Label>
+              <Label htmlFor="custom-section-name">Section Name</Label>
               <Input
                 id="custom-section-name"
-                placeholder="e.g., Damp Wall Only, Texture Wall, First Floor Wall, Accent Wall"
+                placeholder="e.g., Damp Wall, Texture Wall, Accent Wall"
                 value={customSectionName}
                 onChange={(e) => setCustomSectionName(e.target.value)}
                 className="h-12"
