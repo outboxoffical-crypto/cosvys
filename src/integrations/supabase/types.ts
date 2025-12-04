@@ -456,6 +456,7 @@ export type Database = {
           project_type: string
           room_id: string
           selected_areas: Json | null
+          sub_areas: Json | null
           total_door_window_grill_area: number | null
           total_extra_surface: number | null
           total_opening_area: number | null
@@ -482,6 +483,7 @@ export type Database = {
           project_type: string
           room_id: string
           selected_areas?: Json | null
+          sub_areas?: Json | null
           total_door_window_grill_area?: number | null
           total_extra_surface?: number | null
           total_opening_area?: number | null
@@ -508,6 +510,7 @@ export type Database = {
           project_type?: string
           room_id?: string
           selected_areas?: Json | null
+          sub_areas?: Json | null
           total_door_window_grill_area?: number | null
           total_extra_surface?: number | null
           total_opening_area?: number | null

@@ -219,7 +219,7 @@ export default function PaintEstimationScreen() {
       try {
         const { data: roomsData, error } = await supabase
           .from('rooms')
-          .select('id, room_id, name, project_type, floor_area, wall_area, ceiling_area, adjusted_wall_area, selected_areas, door_window_grills, total_door_window_grill_area')
+          .select('id, room_id, name, project_type, floor_area, wall_area, ceiling_area, adjusted_wall_area, selected_areas, door_window_grills, total_door_window_grill_area, sub_areas')
           .eq('project_id', projectId);
         
         if (error) {
@@ -308,6 +308,26 @@ export default function PaintEstimationScreen() {
           enamelAreaTotal += enamelArea;
           hasEnamelSelected = true;
         }
+      }
+      
+      // Process sub-areas as independent paintable sections
+      if (room.sub_areas && Array.isArray(room.sub_areas)) {
+        room.sub_areas.forEach((subArea: any) => {
+          if (subArea.area && subArea.area > 0) {
+            configs.push({
+              id: `subarea-${room.room_id}-${subArea.id}`,
+              areaType: 'Wall' as const,
+              paintingSystem: null,
+              coatConfiguration: { putty: 0, primer: 0, emulsion: 0 },
+              repaintingConfiguration: { primer: 0, emulsion: 0 },
+              selectedMaterials: { putty: '', primer: '', emulsion: '' },
+              area: Number(subArea.area),
+              perSqFtRate: '',
+              label: `${room.name} - ${subArea.name}`,
+              isAdditional: false
+            });
+          }
+        });
       }
     });
 
