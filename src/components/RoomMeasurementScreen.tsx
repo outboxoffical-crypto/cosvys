@@ -559,6 +559,7 @@ export default function RoomMeasurementScreen() {
         opening_areas: room.openingAreas as any,
         extra_surfaces: room.extraSurfaces as any,
         door_window_grills: [] as any,
+        sub_areas: room.subAreas as any, // Custom sections created via (+) icon
         floor_area: room.floorArea,
         wall_area: room.wallArea,
         ceiling_area: room.ceilingArea,
