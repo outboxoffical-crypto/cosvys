@@ -1531,28 +1531,32 @@ export default function PaintEstimationScreen() {
                   <div className="space-y-3">
                     <h3 className="text-base font-semibold text-primary">Separate Paint Sections</h3>
                     <div className="grid grid-cols-2 gap-4">
-                      {customSectionConfigs.map(config => (
-                        <div 
-                          key={config.id} 
-                          className={`border-2 border-dashed rounded-lg p-3 space-y-2 cursor-pointer transition-all relative ${
-                            config.paintingSystem 
-                              ? 'border-primary bg-primary/5' 
-                              : 'border-border hover:border-primary/50'
-                          }`}
-                          onClick={() => handleEditConfig(config.id)}
-                        >
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 text-destructive absolute top-2 right-2"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteConfig(config.id);
-                            }}
+                      {customSectionConfigs.map(config => {
+                        // Get room name directly from rooms data
+                        const room = rooms.find(r => r.room_id === config.roomId);
+                        const displayName = room?.name || config.label || 'Section';
+                        
+                        return (
+                          <div 
+                            key={config.id} 
+                            className={`border-2 border-dashed rounded-lg p-4 text-center space-y-2 cursor-pointer transition-all relative ${
+                              config.paintingSystem 
+                                ? 'border-primary bg-primary/5' 
+                                : 'border-border hover:border-primary/50'
+                            }`}
+                            onClick={() => handleEditConfig(config.id)}
                           >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                          <div className="text-center">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-destructive absolute top-2 right-2"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteConfig(config.id);
+                              }}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
                             <Button
                               variant="ghost"
                               size="sm"
@@ -1560,53 +1564,11 @@ export default function PaintEstimationScreen() {
                             >
                               {config.paintingSystem || 'Select System'}
                             </Button>
+                            <p className="text-2xl font-bold">{config.area ? config.area.toFixed(1) : '0.0'}</p>
+                            <p className="text-xs text-muted-foreground">{displayName}</p>
                           </div>
-                          <div className="text-center">
-                            <p className="text-xs font-medium text-muted-foreground mb-1">{config.label}</p>
-                            <Input
-                              type="number"
-                              placeholder="Enter sq.ft"
-                              value={config.area || ''}
-                              onChange={(e) => {
-                                e.stopPropagation();
-                                const newArea = parseFloat(e.target.value) || 0;
-                                setAreaConfigurations(prev => {
-                                  const updated = prev.map(c => 
-                                    c.id === config.id ? { ...c, area: newArea } : c
-                                  );
-                                  // Save to localStorage
-                                  const savedConfigKey = `paint_configs_${projectId}_${selectedPaintType}`;
-                                  try {
-                                    localStorage.setItem(savedConfigKey, JSON.stringify(updated));
-                                  } catch (err) {
-                                    console.error('Error saving configs:', err);
-                                  }
-                                  return updated;
-                                });
-                                // Sync to database
-                                if (config.roomId && config.subAreaId) {
-                                  const room = rooms.find(r => r.room_id === config.roomId);
-                                  if (room && room.sub_areas) {
-                                    const updatedSubAreas = (room.sub_areas as any[]).map((sa: any) =>
-                                      sa.id === config.subAreaId ? { ...sa, area: newArea } : sa
-                                    );
-                                    supabase
-                                      .from('rooms')
-                                      .update({ sub_areas: updatedSubAreas })
-                                      .eq('room_id', config.roomId)
-                                      .then(({ error }) => {
-                                        if (error) console.error('Error syncing custom section area:', error);
-                                      });
-                                  }
-                                }
-                              }}
-                              onClick={(e) => e.stopPropagation()}
-                              className="h-10 text-center text-lg font-bold"
-                            />
-                            <p className="text-xs text-muted-foreground mt-1">sq.ft</p>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}
