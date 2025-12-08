@@ -158,9 +158,10 @@ export default function RoomMeasurementScreen() {
   const [separateSectionRoomId, setSeparateSectionRoomId] = useState<string | null>(null);
   const [separateSectionName, setSeparateSectionName] = useState("");
 
-  // Add Section Dialog state (adds a new independent room with section header)
+  // Add Section Dialog state (adds section header to existing room)
   const [addSectionDialogOpen, setAddSectionDialogOpen] = useState(false);
   const [addSectionName, setAddSectionName] = useState("");
+  const [addSectionRoomId, setAddSectionRoomId] = useState<string | null>(null);
 
   // Immediate save functions - no debouncing for instant sync
   const saveRoomToDatabase = async (roomData: any) => {
@@ -915,10 +916,15 @@ export default function RoomMeasurementScreen() {
     toast.success('Section removed');
   }, []);
 
-  // Add Section handler - creates a new independent room with section header label
+  // Add Section handler - adds section header to EXISTING room (not creating new one)
   const handleAddSection = useCallback(async () => {
     if (!addSectionName.trim()) {
       toast.error('Please enter a section name');
+      return;
+    }
+
+    if (!addSectionRoomId) {
+      toast.error('No room selected');
       return;
     }
 
@@ -928,73 +934,45 @@ export default function RoomMeasurementScreen() {
       return;
     }
 
-    // Generate unique stable ID
-    const roomId = `room-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
-    // Create a new empty room with section name as header - user will fill dimensions later
     const sectionNameTrimmed = addSectionName.trim();
-    const room: Room = {
-      id: roomId,
-      name: sectionNameTrimmed, // Use section name as room name
-      sectionName: sectionNameTrimmed, // Store section header for display
-      length: 0,
-      width: 0,
-      height: 0,
-      projectType: activeProjectType,
-      pictures: [],
-      openingAreas: [],
-      extraSurfaces: [],
-      doorWindowGrills: [],
-      subAreas: [],
-      floorArea: 0,
-      wallArea: 0,
-      ceilingArea: 0,
-      adjustedWallArea: 0,
-      totalOpeningArea: 0,
-      totalExtraSurface: 0,
-      totalDoorWindowGrillArea: 0,
-      selectedAreas: {
-        floor: false,
-        wall: false,
-        ceiling: false
-      }
-    };
     
-    // INSTANT UI UPDATE
-    setRooms(prev => [...prev, room]);
+    // Find the existing room
+    const existingRoom = rooms.find(r => r.id === addSectionRoomId);
+    if (!existingRoom) {
+      toast.error('Room not found');
+      return;
+    }
+    
+    // INSTANT UI UPDATE - update the existing room with section name
+    setRooms(prev => prev.map(r => 
+      r.id === addSectionRoomId 
+        ? { ...r, sectionName: sectionNameTrimmed }
+        : r
+    ));
+    
     setAddSectionDialogOpen(false);
     setAddSectionName("");
+    setAddSectionRoomId(null);
     
     // Show instant visual confirmation
-    toast.success(`Section "${room.name}" added - click Edit to add dimensions`);
+    toast.success(`Section header "${sectionNameTrimmed}" added to ${existingRoom.name}`);
     
-    // Save to database immediately
-    const roomData = {
-      user_id: session.user.id,
-      project_id: projectId!,
-      room_id: roomId,
-      name: room.name,
-      section_name: room.sectionName, // Store section header label
-      length: room.length,
-      width: room.width,
-      height: room.height,
-      project_type: room.projectType,
-      pictures: room.pictures as any,
-      opening_areas: room.openingAreas as any,
-      extra_surfaces: room.extraSurfaces as any,
-      door_window_grills: [] as any,
-      sub_areas: room.subAreas as any,
-      floor_area: room.floorArea,
-      wall_area: room.wallArea,
-      ceiling_area: room.ceilingArea,
-      adjusted_wall_area: room.adjustedWallArea,
-      total_opening_area: room.totalOpeningArea,
-      total_extra_surface: room.totalExtraSurface,
-      total_door_window_grill_area: 0,
-      selected_areas: room.selectedAreas as any
-    };
-    saveRoomToDatabase(roomData);
-  }, [addSectionName, activeProjectType, projectId]);
+    // Update the existing room in database with section_name
+    try {
+      const { error } = await supabase
+        .from('rooms')
+        .update({ section_name: sectionNameTrimmed })
+        .eq('room_id', addSectionRoomId)
+        .eq('project_id', projectId!);
+      
+      if (error) {
+        console.error('Error updating section name:', error);
+        toast.error('Failed to save section header');
+      }
+    } catch (err) {
+      console.error('Error updating section name:', err);
+    }
+  }, [addSectionName, addSectionRoomId, rooms, projectId]);
 
   // Handle adding separate paint section to existing room
   // This creates a sub-area with just a name - area will be entered in Paint Estimation
@@ -1926,10 +1904,11 @@ export default function RoomMeasurementScreen() {
                                 size="icon"
                                 className="h-9 w-9 text-primary hover:text-primary hover:bg-primary/10"
                                 onClick={() => {
-                                  setAddSectionName("");
+                                  setAddSectionName(room.sectionName || "");
+                                  setAddSectionRoomId(room.id);
                                   setAddSectionDialogOpen(true);
                                 }}
-                                title="Add new section"
+                                title={room.sectionName ? "Edit section header" : "Add section header"}
                               >
                                 <Plus className="h-4 w-4" />
                               </Button>
@@ -2642,15 +2621,16 @@ export default function RoomMeasurementScreen() {
         if (!open) {
           setAddSectionDialogOpen(false);
           setAddSectionName("");
+          setAddSectionRoomId(null);
         }
       }}>
         <DialogContent className="sm:max-w-[350px]">
           <DialogHeader>
-            <DialogTitle>Add New Section</DialogTitle>
+            <DialogTitle>Add Section Header</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <p className="text-sm text-muted-foreground">
-              Add a separate paint section (e.g., "Damp Wall Only Putty", "Ground Floor Royale"). This creates an independent configuration box in Paint Estimation.
+              Add a section header to this room (e.g., "Damp Wall Only Putty", "Ground Floor Royale"). The header will appear above the room card.
             </p>
             <div className="space-y-2">
               <Label htmlFor="section-name">Section Name</Label>
@@ -2668,11 +2648,12 @@ export default function RoomMeasurementScreen() {
             <Button variant="outline" onClick={() => {
               setAddSectionDialogOpen(false);
               setAddSectionName("");
+              setAddSectionRoomId(null);
             }}>
               Cancel
             </Button>
             <Button onClick={handleAddSection} disabled={!addSectionName.trim()}>
-              Add Section
+              {addSectionRoomId && rooms.find(r => r.id === addSectionRoomId)?.sectionName ? 'Update Section' : 'Add Section'}
             </Button>
           </div>
         </DialogContent>
