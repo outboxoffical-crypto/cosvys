@@ -1885,7 +1885,7 @@ export default function RoomMeasurementScreen() {
                   </p>
                 </div>
                 <div className="space-y-4">
-                  {getRoomsByProjectType(activeProjectType).filter(room => room.length > 0 || room.width > 0 || room.height > 0).map((room) => (
+                  {getRoomsByProjectType(activeProjectType).filter(room => room.length > 0 || room.width > 0 || room.height > 0 || room.sectionName).map((room) => (
                     <div key={room.id} className="space-y-0">
                       {/* Section Header - shown if sectionName exists */}
                       {room.sectionName && (
