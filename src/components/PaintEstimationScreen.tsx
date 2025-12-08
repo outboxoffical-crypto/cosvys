@@ -222,7 +222,7 @@ export default function PaintEstimationScreen() {
       try {
         const { data: roomsData, error } = await supabase
           .from('rooms')
-          .select('id, room_id, name, project_type, floor_area, wall_area, ceiling_area, adjusted_wall_area, selected_areas, door_window_grills, total_door_window_grill_area, sub_areas')
+          .select('id, room_id, name, project_type, floor_area, wall_area, ceiling_area, adjusted_wall_area, selected_areas, door_window_grills, total_door_window_grill_area, sub_areas, section_name')
           .eq('project_id', projectId);
         
         if (error) {
@@ -287,7 +287,12 @@ export default function PaintEstimationScreen() {
     let hasCeilingSelected = false;
     let hasEnamelSelected = false;
 
-    filteredRooms.forEach((room: any) => {
+    // Separate rooms with section_name (they become independent config boxes)
+    const regularRooms = filteredRooms.filter((room: any) => !room.section_name);
+    const sectionRooms = filteredRooms.filter((room: any) => !!room.section_name);
+
+    // Process regular rooms (merge into totals)
+    regularRooms.forEach((room: any) => {
       // Only use selected_areas if it exists, otherwise treat all as NOT selected
       const selectedAreas = (typeof room.selected_areas === 'object' && room.selected_areas !== null) ? 
         room.selected_areas as any : { floor: false, wall: false, ceiling: false };
@@ -331,6 +336,112 @@ export default function PaintEstimationScreen() {
             label: subArea.name || 'Custom Section',
             isAdditional: false,
             isCustomSection: true, // Flag to identify custom sections
+            roomId: room.room_id,
+            subAreaId: subArea.id
+          });
+        });
+      }
+    });
+
+    // Process rooms with section_name as completely independent configuration boxes
+    sectionRooms.forEach((room: any) => {
+      const selectedAreas = (typeof room.selected_areas === 'object' && room.selected_areas !== null) ? 
+        room.selected_areas as any : { floor: false, wall: false, ceiling: false };
+      
+      const sectionLabel = room.section_name;
+      const roomName = room.name || 'Room';
+      
+      // Create separate config boxes for each selected area type with section header
+      if (selectedAreas.floor) {
+        const floorArea = Number(room.floor_area || 0);
+        configs.push({
+          id: `section-floor-${room.room_id}`,
+          areaType: 'Floor' as const,
+          paintingSystem: null,
+          coatConfiguration: { putty: 0, primer: 0, emulsion: 0 },
+          repaintingConfiguration: { primer: 0, emulsion: 0 },
+          selectedMaterials: { putty: '', primer: '', emulsion: '' },
+          area: floorArea,
+          perSqFtRate: '',
+          label: `SECTION: ${sectionLabel} - ${roomName} (Floor)`,
+          isAdditional: false,
+          isCustomSection: true,
+          roomId: room.room_id
+        });
+      }
+      
+      if (selectedAreas.wall) {
+        const wallArea = Number(room.adjusted_wall_area || room.wall_area || 0);
+        configs.push({
+          id: `section-wall-${room.room_id}`,
+          areaType: 'Wall' as const,
+          paintingSystem: null,
+          coatConfiguration: { putty: 0, primer: 0, emulsion: 0 },
+          repaintingConfiguration: { primer: 0, emulsion: 0 },
+          selectedMaterials: { putty: '', primer: '', emulsion: '' },
+          area: wallArea,
+          perSqFtRate: '',
+          label: `SECTION: ${sectionLabel} - ${roomName} (Wall)`,
+          isAdditional: false,
+          isCustomSection: true,
+          roomId: room.room_id
+        });
+      }
+      
+      if (selectedAreas.ceiling) {
+        const ceilingArea = Number(room.ceiling_area || 0);
+        configs.push({
+          id: `section-ceiling-${room.room_id}`,
+          areaType: 'Ceiling' as const,
+          paintingSystem: null,
+          coatConfiguration: { putty: 0, primer: 0, emulsion: 0 },
+          repaintingConfiguration: { primer: 0, emulsion: 0 },
+          selectedMaterials: { putty: '', primer: '', emulsion: '' },
+          area: ceilingArea,
+          perSqFtRate: '',
+          label: `SECTION: ${sectionLabel} - ${roomName} (Ceiling)`,
+          isAdditional: false,
+          isCustomSection: true,
+          roomId: room.room_id
+        });
+      }
+      
+      // Enamel for section rooms
+      if (room.door_window_grills && Array.isArray(room.door_window_grills) && room.door_window_grills.length > 0) {
+        const enamelArea = Number(room.total_door_window_grill_area || 0);
+        if (enamelArea > 0) {
+          configs.push({
+            id: `section-enamel-${room.room_id}`,
+            areaType: 'Enamel' as const,
+            paintingSystem: null,
+            coatConfiguration: { putty: 0, primer: 0, emulsion: 0 },
+            repaintingConfiguration: { primer: 0, emulsion: 0 },
+            selectedMaterials: { putty: '', primer: '', emulsion: '' },
+            area: enamelArea,
+            perSqFtRate: '',
+            label: `SECTION: ${sectionLabel} - ${roomName} (Enamel)`,
+            isAdditional: false,
+            isCustomSection: true,
+            roomId: room.room_id
+          });
+        }
+      }
+      
+      // Process sub-areas for section rooms
+      if (room.sub_areas && Array.isArray(room.sub_areas)) {
+        room.sub_areas.forEach((subArea: any) => {
+          configs.push({
+            id: `subarea-${room.room_id}-${subArea.id}`,
+            areaType: 'Wall' as const,
+            paintingSystem: null,
+            coatConfiguration: { putty: 0, primer: 0, emulsion: 0 },
+            repaintingConfiguration: { primer: 0, emulsion: 0 },
+            selectedMaterials: { putty: '', primer: '', emulsion: '' },
+            area: Number(subArea.area) || 0,
+            perSqFtRate: '',
+            label: `SECTION: ${sectionLabel} - ${subArea.name || 'Sub Area'}`,
+            isAdditional: false,
+            isCustomSection: true,
             roomId: room.room_id,
             subAreaId: subArea.id
           });
