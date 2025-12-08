@@ -152,6 +152,11 @@ export default function RoomMeasurementScreen() {
   const [tempCustomSections, setTempCustomSections] = useState<Array<{ id: string; name: string }>>([]);
   const [editingCustomSectionId, setEditingCustomSectionId] = useState<string | null>(null);
 
+  // Separate Section Dialog state (adds a section to existing room, shown as separate box in Paint Estimation)
+  const [separateSectionDialogOpen, setSeparateSectionDialogOpen] = useState(false);
+  const [separateSectionRoomId, setSeparateSectionRoomId] = useState<string | null>(null);
+  const [separateSectionName, setSeparateSectionName] = useState("");
+
   // Quick Add Room Dialog state (adds a new independent room)
   const [quickAddRoomDialogOpen, setQuickAddRoomDialogOpen] = useState(false);
   const [quickAddRoomName, setQuickAddRoomName] = useState("");
@@ -985,6 +990,60 @@ export default function RoomMeasurementScreen() {
     };
     saveRoomToDatabase(roomData);
   }, [quickAddRoomName, activeProjectType, projectId]);
+
+  // Handle adding separate paint section to existing room
+  // This creates a sub-area with just a name - area will be entered in Paint Estimation
+  const handleAddSeparateSection = useCallback(async () => {
+    if (!separateSectionName.trim() || !separateSectionRoomId) {
+      toast.error('Please enter a section name');
+      return;
+    }
+
+    const targetRoom = rooms.find(r => r.id === separateSectionRoomId);
+    if (!targetRoom) {
+      toast.error('Room not found');
+      return;
+    }
+
+    // Create a new sub-area with area=0 (user will enter sq.ft in Paint Estimation)
+    const newSection: SubArea = {
+      id: `section-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      name: separateSectionName.trim(),
+      area: 0 // Will be entered in Paint Estimation
+    };
+
+    const updatedSubAreas = [...(targetRoom.subAreas || []), newSection];
+
+    // Update local state immediately
+    setRooms(prev => prev.map(room => 
+      room.id === separateSectionRoomId 
+        ? { ...room, subAreas: updatedSubAreas }
+        : room
+    ));
+
+    // Close dialog
+    setSeparateSectionDialogOpen(false);
+    setSeparateSectionName("");
+    setSeparateSectionRoomId(null);
+
+    toast.success(`Section "${newSection.name}" added - configure it in Paint Estimation`);
+
+    // Save to database
+    try {
+      const { error } = await supabase
+        .from('rooms')
+        .update({ sub_areas: updatedSubAreas as any })
+        .eq('room_id', separateSectionRoomId)
+        .eq('project_id', projectId!);
+
+      if (error) {
+        console.error('Error saving section:', error);
+        toast.error('Failed to save section to database');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  }, [separateSectionName, separateSectionRoomId, rooms, projectId]);
 
   // Handle adding door/window from dialog
   const handleAddDoorWindowFromDialog = async () => {
@@ -1852,8 +1911,12 @@ export default function RoomMeasurementScreen() {
                                 variant="ghost"
                                 size="icon"
                                 className="h-9 w-9 text-primary hover:text-primary hover:bg-primary/10"
-                                onClick={() => setQuickAddRoomDialogOpen(true)}
-                                title="Quick add another room"
+                                onClick={() => {
+                                  setSeparateSectionRoomId(room.id);
+                                  setSeparateSectionName("");
+                                  setSeparateSectionDialogOpen(true);
+                                }}
+                                title="Add separate paint section"
                               >
                                 <Plus className="h-4 w-4" />
                               </Button>
@@ -2596,6 +2659,50 @@ export default function RoomMeasurementScreen() {
             </Button>
             <Button onClick={handleQuickAddRoom} disabled={!quickAddRoomName.trim()}>
               Add Room
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Separate Paint Section Dialog */}
+      <Dialog open={separateSectionDialogOpen} onOpenChange={(open) => {
+        if (!open) {
+          setSeparateSectionDialogOpen(false);
+          setSeparateSectionName("");
+          setSeparateSectionRoomId(null);
+        }
+      }}>
+        <DialogContent className="sm:max-w-[350px]">
+          <DialogHeader>
+            <DialogTitle>Add Separate Paint Section</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-muted-foreground">
+              This creates a separate paint area box in Paint Estimation (like Floor, Wall, Ceiling). 
+              You'll enter sq.ft and configure paint system there.
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="separate-section-name">Section Name</Label>
+              <Input
+                id="separate-section-name"
+                placeholder="e.g., Damp Wall, Texture Section, First Floor Wall"
+                value={separateSectionName}
+                onChange={(e) => setSeparateSectionName(e.target.value)}
+                className="h-12"
+                autoFocus
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => {
+              setSeparateSectionDialogOpen(false);
+              setSeparateSectionName("");
+              setSeparateSectionRoomId(null);
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddSeparateSection} disabled={!separateSectionName.trim()}>
+              Add Section
             </Button>
           </div>
         </DialogContent>
