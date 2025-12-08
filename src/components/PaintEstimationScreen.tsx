@@ -351,7 +351,7 @@ export default function PaintEstimationScreen() {
       const sectionLabel = room.section_name;
       const roomName = room.name || 'Room';
       
-      // Create separate config boxes for each selected area type with section header
+      // Create separate config boxes for each selected area type - show only room name
       if (selectedAreas.floor) {
         const floorArea = Number(room.floor_area || 0);
         configs.push({
@@ -363,7 +363,7 @@ export default function PaintEstimationScreen() {
           selectedMaterials: { putty: '', primer: '', emulsion: '' },
           area: floorArea,
           perSqFtRate: '',
-          label: `SECTION: ${sectionLabel} - ${roomName} (Floor)`,
+          label: roomName,
           isAdditional: false,
           isCustomSection: true,
           roomId: room.room_id
@@ -381,7 +381,7 @@ export default function PaintEstimationScreen() {
           selectedMaterials: { putty: '', primer: '', emulsion: '' },
           area: wallArea,
           perSqFtRate: '',
-          label: `SECTION: ${sectionLabel} - ${roomName} (Wall)`,
+          label: roomName,
           isAdditional: false,
           isCustomSection: true,
           roomId: room.room_id
@@ -399,7 +399,7 @@ export default function PaintEstimationScreen() {
           selectedMaterials: { putty: '', primer: '', emulsion: '' },
           area: ceilingArea,
           perSqFtRate: '',
-          label: `SECTION: ${sectionLabel} - ${roomName} (Ceiling)`,
+          label: roomName,
           isAdditional: false,
           isCustomSection: true,
           roomId: room.room_id
@@ -419,7 +419,7 @@ export default function PaintEstimationScreen() {
             selectedMaterials: { putty: '', primer: '', emulsion: '' },
             area: enamelArea,
             perSqFtRate: '',
-            label: `SECTION: ${sectionLabel} - ${roomName} (Enamel)`,
+            label: roomName,
             isAdditional: false,
             isCustomSection: true,
             roomId: room.room_id
@@ -439,7 +439,7 @@ export default function PaintEstimationScreen() {
             selectedMaterials: { putty: '', primer: '', emulsion: '' },
             area: Number(subArea.area) || 0,
             perSqFtRate: '',
-            label: `SECTION: ${sectionLabel} - ${subArea.name || 'Sub Area'}`,
+            label: subArea.name || 'Sub Area',
             isAdditional: false,
             isCustomSection: true,
             roomId: room.room_id,
