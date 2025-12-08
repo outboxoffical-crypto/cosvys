@@ -152,6 +152,10 @@ export default function RoomMeasurementScreen() {
   const [tempCustomSections, setTempCustomSections] = useState<Array<{ id: string; name: string }>>([]);
   const [editingCustomSectionId, setEditingCustomSectionId] = useState<string | null>(null);
 
+  // Quick Add Room Dialog state (adds a new independent room)
+  const [quickAddRoomDialogOpen, setQuickAddRoomDialogOpen] = useState(false);
+  const [quickAddRoomName, setQuickAddRoomName] = useState("");
+
   // Immediate save functions - no debouncing for instant sync
   const saveRoomToDatabase = async (roomData: any) => {
     try {
@@ -903,6 +907,84 @@ export default function RoomMeasurementScreen() {
     setTempCustomSections(prev => prev.filter(s => s.id !== sectionId));
     toast.success('Section removed');
   }, []);
+
+  // Quick Add Room handler - creates a new independent room with just a name
+  const handleQuickAddRoom = useCallback(async () => {
+    if (!quickAddRoomName.trim()) {
+      toast.error('Please enter a room name');
+      return;
+    }
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast.error('Please log in to save room data');
+      return;
+    }
+
+    // Generate unique stable ID
+    const roomId = `room-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Create a new empty room with just the name - user will fill dimensions later
+    const room: Room = {
+      id: roomId,
+      name: quickAddRoomName.trim(),
+      length: 0,
+      width: 0,
+      height: 0,
+      projectType: activeProjectType,
+      pictures: [],
+      openingAreas: [],
+      extraSurfaces: [],
+      doorWindowGrills: [],
+      subAreas: [],
+      floorArea: 0,
+      wallArea: 0,
+      ceilingArea: 0,
+      adjustedWallArea: 0,
+      totalOpeningArea: 0,
+      totalExtraSurface: 0,
+      totalDoorWindowGrillArea: 0,
+      selectedAreas: {
+        floor: false,
+        wall: false,
+        ceiling: false
+      }
+    };
+    
+    // INSTANT UI UPDATE
+    setRooms(prev => [...prev, room]);
+    setQuickAddRoomDialogOpen(false);
+    setQuickAddRoomName("");
+    
+    // Show instant visual confirmation
+    toast.success(`Room "${room.name}" added - click Edit to add dimensions`);
+    
+    // Save to database immediately
+    const roomData = {
+      user_id: session.user.id,
+      project_id: projectId!,
+      room_id: roomId,
+      name: room.name,
+      length: room.length,
+      width: room.width,
+      height: room.height,
+      project_type: room.projectType,
+      pictures: room.pictures as any,
+      opening_areas: room.openingAreas as any,
+      extra_surfaces: room.extraSurfaces as any,
+      door_window_grills: [] as any,
+      sub_areas: room.subAreas as any,
+      floor_area: room.floorArea,
+      wall_area: room.wallArea,
+      ceiling_area: room.ceilingArea,
+      adjusted_wall_area: room.adjustedWallArea,
+      total_opening_area: room.totalOpeningArea,
+      total_extra_surface: room.totalExtraSurface,
+      total_door_window_grill_area: 0,
+      selected_areas: room.selectedAreas as any
+    };
+    saveRoomToDatabase(roomData);
+  }, [quickAddRoomName, activeProjectType, projectId]);
 
   // Handle adding door/window from dialog
   const handleAddDoorWindowFromDialog = async () => {
@@ -1770,8 +1852,8 @@ export default function RoomMeasurementScreen() {
                                 variant="ghost"
                                 size="icon"
                                 className="h-9 w-9 text-primary hover:text-primary hover:bg-primary/10"
-                                onClick={() => handleAddSubArea(room.id)}
-                                title="Add Sub-Area"
+                                onClick={() => setQuickAddRoomDialogOpen(true)}
+                                title="Quick add another room"
                               >
                                 <Plus className="h-4 w-4" />
                               </Button>
@@ -2473,6 +2555,47 @@ export default function RoomMeasurementScreen() {
             </Button>
             <Button onClick={handleSaveCustomSection} disabled={!customSectionName.trim()}>
               {editingCustomSectionId ? "Update" : "Add Section"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Quick Add Room Dialog */}
+      <Dialog open={quickAddRoomDialogOpen} onOpenChange={(open) => {
+        if (!open) {
+          setQuickAddRoomDialogOpen(false);
+          setQuickAddRoomName("");
+        }
+      }}>
+        <DialogContent className="sm:max-w-[350px]">
+          <DialogHeader>
+            <DialogTitle>Quick Add Room</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-muted-foreground">
+              Quickly add a new room. You can enter dimensions and photos by clicking the Edit icon after creation.
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="quick-room-name">Room Name</Label>
+              <Input
+                id="quick-room-name"
+                placeholder="e.g., Room 2, First Floor Hall, Kids Room"
+                value={quickAddRoomName}
+                onChange={(e) => setQuickAddRoomName(e.target.value)}
+                className="h-12"
+                autoFocus
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => {
+              setQuickAddRoomDialogOpen(false);
+              setQuickAddRoomName("");
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={handleQuickAddRoom} disabled={!quickAddRoomName.trim()}>
+              Add Room
             </Button>
           </div>
         </DialogContent>
