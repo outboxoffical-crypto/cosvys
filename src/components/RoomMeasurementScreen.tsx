@@ -51,6 +51,7 @@ interface DoorWindowGrill {
 interface Room {
   id: string;
   name: string;
+  sectionName?: string; // Section header displayed above room (e.g., "Damp Wall Only Putty")
   length: number;
   width: number;
   height: number;
@@ -157,9 +158,9 @@ export default function RoomMeasurementScreen() {
   const [separateSectionRoomId, setSeparateSectionRoomId] = useState<string | null>(null);
   const [separateSectionName, setSeparateSectionName] = useState("");
 
-  // Quick Add Room Dialog state (adds a new independent room)
-  const [quickAddRoomDialogOpen, setQuickAddRoomDialogOpen] = useState(false);
-  const [quickAddRoomName, setQuickAddRoomName] = useState("");
+  // Add Section Dialog state (adds a new independent room with section header)
+  const [addSectionDialogOpen, setAddSectionDialogOpen] = useState(false);
+  const [addSectionName, setAddSectionName] = useState("");
 
   // Immediate save functions - no debouncing for instant sync
   const saveRoomToDatabase = async (roomData: any) => {
@@ -913,10 +914,10 @@ export default function RoomMeasurementScreen() {
     toast.success('Section removed');
   }, []);
 
-  // Quick Add Room handler - creates a new independent room with just a name
-  const handleQuickAddRoom = useCallback(async () => {
-    if (!quickAddRoomName.trim()) {
-      toast.error('Please enter a room name');
+  // Add Section handler - creates a new independent room with section header label
+  const handleAddSection = useCallback(async () => {
+    if (!addSectionName.trim()) {
+      toast.error('Please enter a section name');
       return;
     }
 
@@ -929,10 +930,12 @@ export default function RoomMeasurementScreen() {
     // Generate unique stable ID
     const roomId = `room-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     
-    // Create a new empty room with just the name - user will fill dimensions later
+    // Create a new empty room with section name as header - user will fill dimensions later
+    const sectionNameTrimmed = addSectionName.trim();
     const room: Room = {
       id: roomId,
-      name: quickAddRoomName.trim(),
+      name: sectionNameTrimmed, // Use section name as room name
+      sectionName: sectionNameTrimmed, // Store section header for display
       length: 0,
       width: 0,
       height: 0,
@@ -958,11 +961,11 @@ export default function RoomMeasurementScreen() {
     
     // INSTANT UI UPDATE
     setRooms(prev => [...prev, room]);
-    setQuickAddRoomDialogOpen(false);
-    setQuickAddRoomName("");
+    setAddSectionDialogOpen(false);
+    setAddSectionName("");
     
     // Show instant visual confirmation
-    toast.success(`Room "${room.name}" added - click Edit to add dimensions`);
+    toast.success(`Section "${room.name}" added - click Edit to add dimensions`);
     
     // Save to database immediately
     const roomData = {
@@ -989,7 +992,7 @@ export default function RoomMeasurementScreen() {
       selected_areas: room.selectedAreas as any
     };
     saveRoomToDatabase(roomData);
-  }, [quickAddRoomName, activeProjectType, projectId]);
+  }, [addSectionName, activeProjectType, projectId]);
 
   // Handle adding separate paint section to existing room
   // This creates a sub-area with just a name - area will be entered in Paint Estimation
@@ -1881,7 +1884,16 @@ export default function RoomMeasurementScreen() {
                 </div>
                 <div className="space-y-4">
                   {getRoomsByProjectType(activeProjectType).filter(room => room.length > 0 || room.width > 0 || room.height > 0).map((room) => (
-                    <Card key={room.id} className="eca-shadow overflow-hidden">
+                    <div key={room.id} className="space-y-0">
+                      {/* Section Header - shown if sectionName exists */}
+                      {room.sectionName && (
+                        <div className="w-full px-3 py-1.5 bg-primary/10 rounded-t-lg border border-b-0 border-primary/20">
+                          <span className="text-xs font-semibold text-primary uppercase tracking-wide">
+                            SECTION: {room.sectionName}
+                          </span>
+                        </div>
+                      )}
+                      <Card className={`eca-shadow overflow-hidden ${room.sectionName ? 'rounded-t-none' : ''}`}>
                       <CardContent className="p-4">
                         <div className="space-y-4">
                           {/* Room Header */}
@@ -1912,10 +1924,10 @@ export default function RoomMeasurementScreen() {
                                 size="icon"
                                 className="h-9 w-9 text-primary hover:text-primary hover:bg-primary/10"
                                 onClick={() => {
-                                  setQuickAddRoomName("");
-                                  setQuickAddRoomDialogOpen(true);
+                                  setAddSectionName("");
+                                  setAddSectionDialogOpen(true);
                                 }}
-                                title="Quick add new room"
+                                title="Add new section"
                               >
                                 <Plus className="h-4 w-4" />
                               </Button>
@@ -2202,6 +2214,7 @@ export default function RoomMeasurementScreen() {
                         </div>
                       </CardContent>
                     </Card>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -2622,28 +2635,28 @@ export default function RoomMeasurementScreen() {
         </DialogContent>
       </Dialog>
 
-      {/* Quick Add Room Dialog */}
-      <Dialog open={quickAddRoomDialogOpen} onOpenChange={(open) => {
+      {/* Add Section Dialog */}
+      <Dialog open={addSectionDialogOpen} onOpenChange={(open) => {
         if (!open) {
-          setQuickAddRoomDialogOpen(false);
-          setQuickAddRoomName("");
+          setAddSectionDialogOpen(false);
+          setAddSectionName("");
         }
       }}>
         <DialogContent className="sm:max-w-[350px]">
           <DialogHeader>
-            <DialogTitle>Quick Add Room</DialogTitle>
+            <DialogTitle>Add New Section</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <p className="text-sm text-muted-foreground">
-              Quickly add a new room. You can enter dimensions and photos by clicking the Edit icon after creation.
+              Add a separate paint section (e.g., "Damp Wall Only Putty", "Ground Floor Royale"). This creates an independent configuration box in Paint Estimation.
             </p>
             <div className="space-y-2">
-              <Label htmlFor="quick-room-name">Room Name</Label>
+              <Label htmlFor="section-name">Section Name</Label>
               <Input
-                id="quick-room-name"
-                placeholder="e.g., Room 2, First Floor Hall, Kids Room"
-                value={quickAddRoomName}
-                onChange={(e) => setQuickAddRoomName(e.target.value)}
+                id="section-name"
+                placeholder="e.g., Damp Wall Only Putty, Ground Floor Royale"
+                value={addSectionName}
+                onChange={(e) => setAddSectionName(e.target.value)}
                 className="h-12"
                 autoFocus
               />
@@ -2651,13 +2664,13 @@ export default function RoomMeasurementScreen() {
           </div>
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => {
-              setQuickAddRoomDialogOpen(false);
-              setQuickAddRoomName("");
+              setAddSectionDialogOpen(false);
+              setAddSectionName("");
             }}>
               Cancel
             </Button>
-            <Button onClick={handleQuickAddRoom} disabled={!quickAddRoomName.trim()}>
-              Add Room
+            <Button onClick={handleAddSection} disabled={!addSectionName.trim()}>
+              Add Section
             </Button>
           </div>
         </DialogContent>
