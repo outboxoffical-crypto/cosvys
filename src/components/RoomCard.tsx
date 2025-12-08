@@ -40,6 +40,7 @@ export interface SubArea {
 interface Room {
   id: string;
   name: string;
+  sectionName?: string; // Section header displayed above room (e.g., "Damp Wall Only Putty")
   length: number;
   width: number;
   height: number;
@@ -78,7 +79,7 @@ interface RoomCardProps {
   onAddExtraSurface: (roomId: string) => void;
   onOpeningAreaChange: (field: 'height' | 'width' | 'quantity', value: string) => void;
   onExtraSurfaceChange: (field: 'height' | 'width' | 'quantity', value: string) => void;
-  onQuickAddRoom?: () => void;
+  onAddSection?: () => void;
   onEditSubArea?: (roomId: string, subArea: SubArea) => void;
   onRemoveSubArea?: (roomId: string, subAreaId: string) => void;
 }
@@ -98,34 +99,43 @@ export const RoomCard = memo(({
   onAddExtraSurface,
   onOpeningAreaChange,
   onExtraSurfaceChange,
-  onQuickAddRoom,
+  onAddSection,
   onEditSubArea,
   onRemoveSubArea
 }: RoomCardProps) => {
   return (
-    <Card className="eca-shadow border-l-4 border-l-primary">
-      <CardContent className="pt-4 space-y-4">
-        {/* Room Header */}
-        <div className="flex justify-between items-start">
-          <div className="flex-1">
-            <div className="flex items-center gap-1 mb-2">
-              <h3 className="font-semibold text-lg">{room.name}</h3>
-              {onQuickAddRoom && (
+    <div className="space-y-0">
+      {/* Section Header - shown if sectionName exists */}
+      {room.sectionName && (
+        <div className="w-full px-3 py-1.5 bg-primary/10 rounded-t-lg border border-b-0 border-primary/20">
+          <span className="text-xs font-semibold text-primary uppercase tracking-wide">
+            SECTION: {room.sectionName}
+          </span>
+        </div>
+      )}
+      <Card className={`eca-shadow border-l-4 border-l-primary ${room.sectionName ? 'rounded-t-none' : ''}`}>
+        <CardContent className="pt-4 space-y-4">
+          {/* Room Header */}
+          <div className="flex justify-between items-start">
+            <div className="flex-1">
+              <div className="flex items-center gap-1 mb-2">
+                <h3 className="font-semibold text-lg">{room.name}</h3>
+                {onAddSection && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-primary hover:text-primary hover:bg-primary/10"
+                    onClick={onAddSection}
+                    title="Add new section"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                )}
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 text-primary hover:text-primary hover:bg-primary/10"
-                  onClick={onQuickAddRoom}
-                  title="Quick add new room"
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              )}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={() => onEditRoom(room)}
+                  className="h-7 w-7"
+                  onClick={() => onEditRoom(room)}
               >
                 <Edit3 className="h-4 w-4" />
               </Button>
@@ -399,6 +409,7 @@ export const RoomCard = memo(({
         </div>
       </CardContent>
     </Card>
+    </div>
   );
 }, (prevProps, nextProps) => {
   // Deep comparison for arrays to properly detect changes
@@ -417,6 +428,7 @@ export const RoomCard = memo(({
   return (
     prevProps.room.id === nextProps.room.id &&
     prevProps.room.name === nextProps.room.name &&
+    prevProps.room.sectionName === nextProps.room.sectionName &&
     prevProps.room.length === nextProps.room.length &&
     prevProps.room.width === nextProps.room.width &&
     prevProps.room.height === nextProps.room.height &&
