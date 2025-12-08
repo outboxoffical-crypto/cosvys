@@ -232,6 +232,7 @@ export default function RoomMeasurementScreen() {
           const formattedRooms: Room[] = roomsData.map(room => ({
             id: room.room_id,
             name: room.name,
+            sectionName: (room as any).section_name || undefined, // Section header label
             length: Number(room.length),
             width: Number(room.width),
             height: Number(room.height),
@@ -973,6 +974,7 @@ export default function RoomMeasurementScreen() {
       project_id: projectId!,
       room_id: roomId,
       name: room.name,
+      section_name: room.sectionName, // Store section header label
       length: room.length,
       width: room.width,
       height: room.height,
