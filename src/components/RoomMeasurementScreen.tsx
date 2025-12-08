@@ -1912,11 +1912,10 @@ export default function RoomMeasurementScreen() {
                                 size="icon"
                                 className="h-9 w-9 text-primary hover:text-primary hover:bg-primary/10"
                                 onClick={() => {
-                                  setSeparateSectionRoomId(room.id);
-                                  setSeparateSectionName("");
-                                  setSeparateSectionDialogOpen(true);
+                                  setQuickAddRoomName("");
+                                  setQuickAddRoomDialogOpen(true);
                                 }}
-                                title="Add separate paint section"
+                                title="Quick add new room"
                               >
                                 <Plus className="h-4 w-4" />
                               </Button>

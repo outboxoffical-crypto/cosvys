@@ -78,7 +78,7 @@ interface RoomCardProps {
   onAddExtraSurface: (roomId: string) => void;
   onOpeningAreaChange: (field: 'height' | 'width' | 'quantity', value: string) => void;
   onExtraSurfaceChange: (field: 'height' | 'width' | 'quantity', value: string) => void;
-  onAddSeparateSection?: (roomId: string) => void;
+  onQuickAddRoom?: () => void;
   onEditSubArea?: (roomId: string, subArea: SubArea) => void;
   onRemoveSubArea?: (roomId: string, subAreaId: string) => void;
 }
@@ -98,7 +98,7 @@ export const RoomCard = memo(({
   onAddExtraSurface,
   onOpeningAreaChange,
   onExtraSurfaceChange,
-  onAddSeparateSection,
+  onQuickAddRoom,
   onEditSubArea,
   onRemoveSubArea
 }: RoomCardProps) => {
@@ -110,13 +110,13 @@ export const RoomCard = memo(({
           <div className="flex-1">
             <div className="flex items-center gap-1 mb-2">
               <h3 className="font-semibold text-lg">{room.name}</h3>
-              {onAddSeparateSection && (
+              {onQuickAddRoom && (
                 <Button
                   variant="ghost"
                   size="icon"
                   className="h-7 w-7 text-primary hover:text-primary hover:bg-primary/10"
-                  onClick={() => onAddSeparateSection(room.id)}
-                  title="Add separate paint section"
+                  onClick={onQuickAddRoom}
+                  title="Quick add new room"
                 >
                   <Plus className="h-4 w-4" />
                 </Button>
