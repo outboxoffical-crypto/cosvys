@@ -12,7 +12,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-
 interface CoverageData {
   id: string;
   category: string;
@@ -22,7 +21,6 @@ interface CoverageData {
   surface_type?: string;
   notes?: string;
 }
-
 interface AreaConfiguration {
   id: string;
   areaType: 'Floor' | 'Wall' | 'Ceiling' | 'Enamel';
@@ -55,25 +53,22 @@ interface AreaConfiguration {
     enamelCoats: number;
   };
 }
-
 export default function PaintEstimationScreen() {
   const navigate = useNavigate();
-  const { projectId } = useParams();
-  
+  const {
+    projectId
+  } = useParams();
   const [selectedPaintType, setSelectedPaintType] = useState<"Interior" | "Exterior" | "Waterproofing">("Interior");
   const [rooms, setRooms] = useState<any[]>([]);
   const [coverageData, setCoverageData] = useState<CoverageData[]>([]);
-  
+
   // Separate state for each paint type to prevent mixing
   const [interiorConfigurations, setInteriorConfigurations] = useState<AreaConfiguration[]>([]);
   const [exteriorConfigurations, setExteriorConfigurations] = useState<AreaConfiguration[]>([]);
   const [waterproofingConfigurations, setWaterproofingConfigurations] = useState<AreaConfiguration[]>([]);
-  
+
   // Current configurations based on selected paint type
-  const areaConfigurations = selectedPaintType === "Interior" ? interiorConfigurations :
-                              selectedPaintType === "Exterior" ? exteriorConfigurations :
-                              waterproofingConfigurations;
-  
+  const areaConfigurations = selectedPaintType === "Interior" ? interiorConfigurations : selectedPaintType === "Exterior" ? exteriorConfigurations : waterproofingConfigurations;
   const setAreaConfigurations = (updater: AreaConfiguration[] | ((prev: AreaConfiguration[]) => AreaConfiguration[])) => {
     if (selectedPaintType === "Interior") {
       setInteriorConfigurations(updater);
@@ -83,7 +78,6 @@ export default function PaintEstimationScreen() {
       setWaterproofingConfigurations(updater);
     }
   };
-  
   const [selectedConfigId, setSelectedConfigId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -143,7 +137,7 @@ export default function PaintEstimationScreen() {
           setInteriorConfigurations(list2);
         }
       }
-      
+
       // Load Exterior configs
       const exteriorKey = `paint_configs_${projectId}_Exterior`;
       const exteriorRaw = typeof window !== 'undefined' ? localStorage.getItem(exteriorKey) : null;
@@ -158,7 +152,7 @@ export default function PaintEstimationScreen() {
           setExteriorConfigurations(list2);
         }
       }
-      
+
       // Load Waterproofing configs
       const waterproofingKey = `paint_configs_${projectId}_Waterproofing`;
       const waterproofingRaw = typeof window !== 'undefined' ? localStorage.getItem(waterproofingKey) : null;
@@ -173,7 +167,6 @@ export default function PaintEstimationScreen() {
           setWaterproofingConfigurations(list2);
         }
       }
-      
       setIsLoading(false);
     } catch {}
   }, [projectId]);
@@ -193,23 +186,18 @@ export default function PaintEstimationScreen() {
   useEffect(() => {
     fetchCoverageData();
   }, []);
-
   const fetchCoverageData = async () => {
     try {
       // Fetch only essential categories - NOT all rows
       const categories = ['Putty', 'Primer', 'Interior Emulsion', 'Exterior Emulsion', 'Waterproofing'];
-      
-      const { data, error } = await supabase
-        .from('coverage_data')
-        .select('id, category, product_name, coats, coverage_range, surface_type, notes')
-        .in('category', categories)
-        .order('product_name');
-      
+      const {
+        data,
+        error
+      } = await supabase.from('coverage_data').select('id, category, product_name, coats, coverage_range, surface_type, notes').in('category', categories).order('product_name');
       if (error) {
         console.error('Error fetching coverage data:', error);
         return;
       }
-      
       setCoverageData(data || []);
     } catch (error) {
       console.error('Error:', error);
@@ -220,16 +208,14 @@ export default function PaintEstimationScreen() {
   useEffect(() => {
     const loadRooms = async () => {
       try {
-        const { data: roomsData, error } = await supabase
-          .from('rooms')
-          .select('id, room_id, name, project_type, floor_area, wall_area, ceiling_area, adjusted_wall_area, selected_areas, door_window_grills, total_door_window_grill_area, sub_areas, section_name')
-          .eq('project_id', projectId);
-        
+        const {
+          data: roomsData,
+          error
+        } = await supabase.from('rooms').select('id, room_id, name, project_type, floor_area, wall_area, ceiling_area, adjusted_wall_area, selected_areas, door_window_grills, total_door_window_grill_area, sub_areas, section_name').eq('project_id', projectId);
         if (error) {
           console.error('Error loading rooms:', error);
           return;
         }
-        
         if (roomsData) {
           // Set rooms immediately for instant UI render; calculations run in separate effect
           setRooms(roomsData);
@@ -238,27 +224,18 @@ export default function PaintEstimationScreen() {
         console.error('Error:', error);
       }
     };
-    
     loadRooms();
 
     // Set up real-time subscription to detect new rooms
-    const channel = supabase
-      .channel('rooms-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'rooms',
-          filter: `project_id=eq.${projectId}`
-        },
-        () => {
-          // Reload rooms when any change is detected
-          loadRooms();
-        }
-      )
-      .subscribe();
-
+    const channel = supabase.channel('rooms-changes').on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'rooms',
+      filter: `project_id=eq.${projectId}`
+    }, () => {
+      // Reload rooms when any change is detected
+      loadRooms();
+    }).subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
@@ -267,7 +244,7 @@ export default function PaintEstimationScreen() {
   // Initialize configurations based on rooms
   const initializeConfigurations = (roomsData: any[]) => {
     const configs: AreaConfiguration[] = [];
-    
+
     // Filter rooms by selected paint type
     const filteredRooms = roomsData.filter(room => {
       const projectType = room.project_type;
@@ -294,9 +271,11 @@ export default function PaintEstimationScreen() {
     // Process regular rooms (merge into totals)
     regularRooms.forEach((room: any) => {
       // Only use selected_areas if it exists, otherwise treat all as NOT selected
-      const selectedAreas = (typeof room.selected_areas === 'object' && room.selected_areas !== null) ? 
-        room.selected_areas as any : { floor: false, wall: false, ceiling: false };
-      
+      const selectedAreas = typeof room.selected_areas === 'object' && room.selected_areas !== null ? room.selected_areas as any : {
+        floor: false,
+        wall: false,
+        ceiling: false
+      };
       if (selectedAreas.floor) {
         floorAreaTotal += Number(room.floor_area || 0);
         hasFloorSelected = true;
@@ -317,7 +296,7 @@ export default function PaintEstimationScreen() {
           hasEnamelSelected = true;
         }
       }
-      
+
       // Process sub-areas (custom sections) as completely independent paintable sections
       // These are NOT merged with Wall Area - each is a separate paint configuration
       if (room.sub_areas && Array.isArray(room.sub_areas)) {
@@ -327,15 +306,27 @@ export default function PaintEstimationScreen() {
             id: `subarea-${room.room_id}-${subArea.id}`,
             areaType: 'Wall' as const,
             paintingSystem: null,
-            coatConfiguration: { putty: 0, primer: 0, emulsion: 0 },
-            repaintingConfiguration: { primer: 0, emulsion: 0 },
-            selectedMaterials: { putty: '', primer: '', emulsion: '' },
+            coatConfiguration: {
+              putty: 0,
+              primer: 0,
+              emulsion: 0
+            },
+            repaintingConfiguration: {
+              primer: 0,
+              emulsion: 0
+            },
+            selectedMaterials: {
+              putty: '',
+              primer: '',
+              emulsion: ''
+            },
             area: Number(subArea.area) || 0,
             perSqFtRate: '',
             // Use only the section name as the label, not prefixed with room name
             label: subArea.name || 'Custom Section',
             isAdditional: false,
-            isCustomSection: true, // Flag to identify custom sections
+            isCustomSection: true,
+            // Flag to identify custom sections
             roomId: room.room_id,
             subAreaId: subArea.id
           });
@@ -345,12 +336,14 @@ export default function PaintEstimationScreen() {
 
     // Process rooms with section_name as completely independent configuration boxes
     sectionRooms.forEach((room: any) => {
-      const selectedAreas = (typeof room.selected_areas === 'object' && room.selected_areas !== null) ? 
-        room.selected_areas as any : { floor: false, wall: false, ceiling: false };
-      
+      const selectedAreas = typeof room.selected_areas === 'object' && room.selected_areas !== null ? room.selected_areas as any : {
+        floor: false,
+        wall: false,
+        ceiling: false
+      };
       const sectionLabel = room.section_name;
       const roomName = room.name || 'Room';
-      
+
       // Create separate config boxes for each selected area type - show only room name
       if (selectedAreas.floor) {
         const floorArea = Number(room.floor_area || 0);
@@ -358,9 +351,20 @@ export default function PaintEstimationScreen() {
           id: `section-floor-${room.room_id}`,
           areaType: 'Floor' as const,
           paintingSystem: null,
-          coatConfiguration: { putty: 0, primer: 0, emulsion: 0 },
-          repaintingConfiguration: { primer: 0, emulsion: 0 },
-          selectedMaterials: { putty: '', primer: '', emulsion: '' },
+          coatConfiguration: {
+            putty: 0,
+            primer: 0,
+            emulsion: 0
+          },
+          repaintingConfiguration: {
+            primer: 0,
+            emulsion: 0
+          },
+          selectedMaterials: {
+            putty: '',
+            primer: '',
+            emulsion: ''
+          },
           area: floorArea,
           perSqFtRate: '',
           label: roomName,
@@ -369,16 +373,26 @@ export default function PaintEstimationScreen() {
           roomId: room.room_id
         });
       }
-      
       if (selectedAreas.wall) {
         const wallArea = Number(room.adjusted_wall_area || room.wall_area || 0);
         configs.push({
           id: `section-wall-${room.room_id}`,
           areaType: 'Wall' as const,
           paintingSystem: null,
-          coatConfiguration: { putty: 0, primer: 0, emulsion: 0 },
-          repaintingConfiguration: { primer: 0, emulsion: 0 },
-          selectedMaterials: { putty: '', primer: '', emulsion: '' },
+          coatConfiguration: {
+            putty: 0,
+            primer: 0,
+            emulsion: 0
+          },
+          repaintingConfiguration: {
+            primer: 0,
+            emulsion: 0
+          },
+          selectedMaterials: {
+            putty: '',
+            primer: '',
+            emulsion: ''
+          },
           area: wallArea,
           perSqFtRate: '',
           label: roomName,
@@ -387,16 +401,26 @@ export default function PaintEstimationScreen() {
           roomId: room.room_id
         });
       }
-      
       if (selectedAreas.ceiling) {
         const ceilingArea = Number(room.ceiling_area || 0);
         configs.push({
           id: `section-ceiling-${room.room_id}`,
           areaType: 'Ceiling' as const,
           paintingSystem: null,
-          coatConfiguration: { putty: 0, primer: 0, emulsion: 0 },
-          repaintingConfiguration: { primer: 0, emulsion: 0 },
-          selectedMaterials: { putty: '', primer: '', emulsion: '' },
+          coatConfiguration: {
+            putty: 0,
+            primer: 0,
+            emulsion: 0
+          },
+          repaintingConfiguration: {
+            primer: 0,
+            emulsion: 0
+          },
+          selectedMaterials: {
+            putty: '',
+            primer: '',
+            emulsion: ''
+          },
           area: ceilingArea,
           perSqFtRate: '',
           label: roomName,
@@ -405,7 +429,7 @@ export default function PaintEstimationScreen() {
           roomId: room.room_id
         });
       }
-      
+
       // Enamel for section rooms
       if (room.door_window_grills && Array.isArray(room.door_window_grills) && room.door_window_grills.length > 0) {
         const enamelArea = Number(room.total_door_window_grill_area || 0);
@@ -414,9 +438,20 @@ export default function PaintEstimationScreen() {
             id: `section-enamel-${room.room_id}`,
             areaType: 'Enamel' as const,
             paintingSystem: null,
-            coatConfiguration: { putty: 0, primer: 0, emulsion: 0 },
-            repaintingConfiguration: { primer: 0, emulsion: 0 },
-            selectedMaterials: { putty: '', primer: '', emulsion: '' },
+            coatConfiguration: {
+              putty: 0,
+              primer: 0,
+              emulsion: 0
+            },
+            repaintingConfiguration: {
+              primer: 0,
+              emulsion: 0
+            },
+            selectedMaterials: {
+              putty: '',
+              primer: '',
+              emulsion: ''
+            },
             area: enamelArea,
             perSqFtRate: '',
             label: roomName,
@@ -426,7 +461,7 @@ export default function PaintEstimationScreen() {
           });
         }
       }
-      
+
       // Process sub-areas for section rooms
       if (room.sub_areas && Array.isArray(room.sub_areas)) {
         room.sub_areas.forEach((subArea: any) => {
@@ -434,9 +469,20 @@ export default function PaintEstimationScreen() {
             id: `subarea-${room.room_id}-${subArea.id}`,
             areaType: 'Wall' as const,
             paintingSystem: null,
-            coatConfiguration: { putty: 0, primer: 0, emulsion: 0 },
-            repaintingConfiguration: { primer: 0, emulsion: 0 },
-            selectedMaterials: { putty: '', primer: '', emulsion: '' },
+            coatConfiguration: {
+              putty: 0,
+              primer: 0,
+              emulsion: 0
+            },
+            repaintingConfiguration: {
+              primer: 0,
+              emulsion: 0
+            },
+            selectedMaterials: {
+              putty: '',
+              primer: '',
+              emulsion: ''
+            },
             area: Number(subArea.area) || 0,
             perSqFtRate: '',
             label: subArea.name || 'Sub Area',
@@ -455,7 +501,13 @@ export default function PaintEstimationScreen() {
     const storedKey = `additional_entries_${projectId}_${selectedPaintType}`;
     const isAdditionalMode = typeof window !== 'undefined' && localStorage.getItem(modeKey) === '1';
     const baselineRaw = typeof window !== 'undefined' ? localStorage.getItem(baselineKey) : null;
-    const baseline = baselineRaw ? JSON.parse(baselineRaw) as { floor?: number; wall?: number; ceiling?: number; enamel?: number; roomIds?: string[] } : null;
+    const baseline = baselineRaw ? JSON.parse(baselineRaw) as {
+      floor?: number;
+      wall?: number;
+      ceiling?: number;
+      enamel?: number;
+      roomIds?: string[];
+    } : null;
 
     // Load previously stored additional entries so we keep them across sessions
     let storedAdditional: AreaConfiguration[] = [];
@@ -467,14 +519,25 @@ export default function PaintEstimationScreen() {
         id: item.id,
         areaType: item.areaType,
         paintingSystem: item.paintingSystem ?? null,
-        coatConfiguration: item.coatConfiguration ?? { putty: 0, primer: 0, emulsion: 0 },
-        repaintingConfiguration: item.repaintingConfiguration ?? { primer: 0, emulsion: 0 },
-        selectedMaterials: item.selectedMaterials ?? { putty: '', primer: '', emulsion: '' },
+        coatConfiguration: item.coatConfiguration ?? {
+          putty: 0,
+          primer: 0,
+          emulsion: 0
+        },
+        repaintingConfiguration: item.repaintingConfiguration ?? {
+          primer: 0,
+          emulsion: 0
+        },
+        selectedMaterials: item.selectedMaterials ?? {
+          putty: '',
+          primer: '',
+          emulsion: ''
+        },
         area: Number(item.area) || 0,
         perSqFtRate: item.perSqFtRate ?? '',
         label: item.label,
         isAdditional: true,
-        enamelConfig: item.enamelConfig,
+        enamelConfig: item.enamelConfig
       }));
     } catch {}
 
@@ -489,24 +552,15 @@ export default function PaintEstimationScreen() {
 
     // If NOT in additional mode, split totals into main + stored additionals
     if (!isAdditionalMode && storedAdditional.length > 0) {
-      const sumStoredFloor = storedAdditional
-        .filter(a => a.areaType === 'Floor')
-        .reduce((sum, a) => sum + (Number(a.area) || 0), 0);
-      const sumStoredWall = storedAdditional
-        .filter(a => a.areaType === 'Wall')
-        .reduce((sum, a) => sum + (Number(a.area) || 0), 0);
-      const sumStoredCeiling = storedAdditional
-        .filter(a => a.areaType === 'Ceiling')
-        .reduce((sum, a) => sum + (Number(a.area) || 0), 0);
-      const sumStoredEnamel = storedAdditional
-        .filter(a => a.areaType === 'Enamel')
-        .reduce((sum, a) => sum + (Number(a.area) || 0), 0);
+      const sumStoredFloor = storedAdditional.filter(a => a.areaType === 'Floor').reduce((sum, a) => sum + (Number(a.area) || 0), 0);
+      const sumStoredWall = storedAdditional.filter(a => a.areaType === 'Wall').reduce((sum, a) => sum + (Number(a.area) || 0), 0);
+      const sumStoredCeiling = storedAdditional.filter(a => a.areaType === 'Ceiling').reduce((sum, a) => sum + (Number(a.area) || 0), 0);
+      const sumStoredEnamel = storedAdditional.filter(a => a.areaType === 'Enamel').reduce((sum, a) => sum + (Number(a.area) || 0), 0);
       floorMain = Math.max(0, floorAreaTotal - sumStoredFloor);
       wallMain = Math.max(0, wallAreaTotal - sumStoredWall);
       ceilingMain = Math.max(0, ceilingAreaTotal - sumStoredCeiling);
       enamelMain = Math.max(0, enamelAreaTotal - sumStoredEnamel);
     }
-
     if (isAdditionalMode && baseline) {
       const addFloor = Math.max(0, floorAreaTotal - (baseline.floor || 0));
       const addWall = Math.max(0, wallAreaTotal - (baseline.wall || 0));
@@ -521,109 +575,151 @@ export default function PaintEstimationScreen() {
       const baselineRoomIds = baseline.roomIds || [];
       const currentRoomIds = filteredRooms.map(r => r.id);
       const newRoomIds = currentRoomIds.filter(id => !baselineRoomIds.includes(id));
-      
+
       // Find the newly added room(s)
       const newRooms = filteredRooms.filter(r => newRoomIds.includes(r.id));
-
       if (addFloor > 0) {
         // Get the room name from the newly added room with floor area
         let newRoomName = 'Additional Floor Area';
         const newFloorRoom = newRooms.find(room => {
-          const selectedAreas = (typeof room.selected_areas === 'object' && room.selected_areas !== null) ? 
-            room.selected_areas as any : { floor: false, wall: false, ceiling: false };
+          const selectedAreas = typeof room.selected_areas === 'object' && room.selected_areas !== null ? room.selected_areas as any : {
+            floor: false,
+            wall: false,
+            ceiling: false
+          };
           return selectedAreas.floor;
         });
         if (newFloorRoom) {
           newRoomName = `${newFloorRoom.name} (Floor Area)`;
         }
-
         const newConfig: AreaConfiguration = {
           id: `floor-additional-${Date.now()}`,
           areaType: 'Floor' as any,
           paintingSystem: null,
-          coatConfiguration: { putty: 0, primer: 0, emulsion: 0 },
-          repaintingConfiguration: { primer: 0, emulsion: 0 },
-          selectedMaterials: { putty: '', primer: '', emulsion: '' },
+          coatConfiguration: {
+            putty: 0,
+            primer: 0,
+            emulsion: 0
+          },
+          repaintingConfiguration: {
+            primer: 0,
+            emulsion: 0
+          },
+          selectedMaterials: {
+            putty: '',
+            primer: '',
+            emulsion: ''
+          },
           area: addFloor,
           perSqFtRate: '',
           label: newRoomName,
-          isAdditional: true,
+          isAdditional: true
         };
         additional.push(newConfig);
         try {
-          storedList.push({ ...newConfig });
+          storedList.push({
+            ...newConfig
+          });
           localStorage.setItem(storedKey, JSON.stringify(storedList));
         } catch {}
       }
-
       if (addWall > 0) {
         // Get the room name from the newly added room with wall area
         let newRoomName = 'Additional Wall Area';
         const newWallRoom = newRooms.find(room => {
-          const selectedAreas = (typeof room.selected_areas === 'object' && room.selected_areas !== null) ? 
-            room.selected_areas as any : { floor: false, wall: false, ceiling: false };
+          const selectedAreas = typeof room.selected_areas === 'object' && room.selected_areas !== null ? room.selected_areas as any : {
+            floor: false,
+            wall: false,
+            ceiling: false
+          };
           return selectedAreas.wall;
         });
         if (newWallRoom) {
           newRoomName = `${newWallRoom.name} (Wall Area)`;
         }
-
         const newConfig: AreaConfiguration = {
           id: `wall-additional-${Date.now()}`,
           areaType: 'Wall',
           paintingSystem: null,
-          coatConfiguration: { putty: 0, primer: 0, emulsion: 0 },
-          repaintingConfiguration: { primer: 0, emulsion: 0 },
-          selectedMaterials: { putty: '', primer: '', emulsion: '' },
+          coatConfiguration: {
+            putty: 0,
+            primer: 0,
+            emulsion: 0
+          },
+          repaintingConfiguration: {
+            primer: 0,
+            emulsion: 0
+          },
+          selectedMaterials: {
+            putty: '',
+            primer: '',
+            emulsion: ''
+          },
           area: addWall,
           perSqFtRate: '',
           label: newRoomName,
-          isAdditional: true,
+          isAdditional: true
         };
         additional.push(newConfig);
         try {
-          storedList.push({ ...newConfig });
+          storedList.push({
+            ...newConfig
+          });
           localStorage.setItem(storedKey, JSON.stringify(storedList));
         } catch {}
       }
-
       if (addCeiling > 0) {
         // Get the room name from the newly added room with ceiling area
         let newRoomName = 'Additional Ceiling Area';
         const newCeilingRoom = newRooms.find(room => {
-          const selectedAreas = (typeof room.selected_areas === 'object' && room.selected_areas !== null) ? 
-            room.selected_areas as any : { floor: false, wall: false, ceiling: false };
+          const selectedAreas = typeof room.selected_areas === 'object' && room.selected_areas !== null ? room.selected_areas as any : {
+            floor: false,
+            wall: false,
+            ceiling: false
+          };
           return selectedAreas.ceiling;
         });
         if (newCeilingRoom) {
           newRoomName = `${newCeilingRoom.name} (Ceiling Area)`;
         }
-
         const newConfig: AreaConfiguration = {
           id: `ceiling-additional-${Date.now()}`,
           areaType: 'Ceiling',
           paintingSystem: null,
-          coatConfiguration: { putty: 0, primer: 0, emulsion: 0 },
-          repaintingConfiguration: { primer: 0, emulsion: 0 },
-          selectedMaterials: { putty: '', primer: '', emulsion: '' },
+          coatConfiguration: {
+            putty: 0,
+            primer: 0,
+            emulsion: 0
+          },
+          repaintingConfiguration: {
+            primer: 0,
+            emulsion: 0
+          },
+          selectedMaterials: {
+            putty: '',
+            primer: '',
+            emulsion: ''
+          },
           area: addCeiling,
           perSqFtRate: '',
           label: newRoomName,
-          isAdditional: true,
+          isAdditional: true
         };
         additional.push(newConfig);
         try {
-          storedList.push({ ...newConfig });
+          storedList.push({
+            ...newConfig
+          });
           localStorage.setItem(storedKey, JSON.stringify(storedList));
         } catch {}
       }
 
       // Update baseline to new totals with room IDs and clear mode
       try {
-        localStorage.setItem(baselineKey, JSON.stringify({ 
+        localStorage.setItem(baselineKey, JSON.stringify({
           floor: floorAreaTotal,
-          wall: wallAreaTotal, 
-          ceiling: ceilingAreaTotal, 
+          wall: wallAreaTotal,
+          ceiling: ceilingAreaTotal,
           enamel: enamelAreaTotal,
           roomIds: currentRoomIds
         }));
@@ -636,7 +732,6 @@ export default function PaintEstimationScreen() {
       const baselineRoomIds = baseline.roomIds || [];
       const currentRoomIds = filteredRooms.map(r => r.id);
       const newRoomIds = currentRoomIds.filter(id => !baselineRoomIds.includes(id));
-      
       if (newRoomIds.length > 0) {
         // New rooms detected! Calculate the difference
         const addFloor = Math.max(0, floorAreaTotal - (baseline.floor || 0));
@@ -647,95 +742,136 @@ export default function PaintEstimationScreen() {
         floorMain = baseline.floor || 0;
         wallMain = baseline.wall || 0;
         ceilingMain = baseline.ceiling || 0;
-
         const newRooms = filteredRooms.filter(r => newRoomIds.includes(r.id));
-
         if (addFloor > 0) {
           let newRoomName = 'Additional Floor Area';
           const newFloorRoom = newRooms.find(room => {
-            const selectedAreas = (typeof room.selected_areas === 'object' && room.selected_areas !== null) ? 
-              room.selected_areas as any : { floor: false, wall: false, ceiling: false };
+            const selectedAreas = typeof room.selected_areas === 'object' && room.selected_areas !== null ? room.selected_areas as any : {
+              floor: false,
+              wall: false,
+              ceiling: false
+            };
             return selectedAreas.floor;
           });
           if (newFloorRoom) {
             newRoomName = `${newFloorRoom.name} (Floor Area)`;
           }
-
           const newConfig: AreaConfiguration = {
             id: `floor-additional-${Date.now()}`,
             areaType: 'Floor' as any,
             paintingSystem: null,
-            coatConfiguration: { putty: 0, primer: 0, emulsion: 0 },
-            repaintingConfiguration: { primer: 0, emulsion: 0 },
-            selectedMaterials: { putty: '', primer: '', emulsion: '' },
+            coatConfiguration: {
+              putty: 0,
+              primer: 0,
+              emulsion: 0
+            },
+            repaintingConfiguration: {
+              primer: 0,
+              emulsion: 0
+            },
+            selectedMaterials: {
+              putty: '',
+              primer: '',
+              emulsion: ''
+            },
             area: addFloor,
             perSqFtRate: '',
             label: newRoomName,
-            isAdditional: true,
+            isAdditional: true
           };
           additional.push(newConfig);
           try {
-            storedList.push({ ...newConfig });
+            storedList.push({
+              ...newConfig
+            });
             localStorage.setItem(storedKey, JSON.stringify(storedList));
           } catch {}
         }
-
         if (addWall > 0) {
           let newRoomName = 'Additional Wall Area';
           const newWallRoom = newRooms.find(room => {
-            const selectedAreas = (typeof room.selected_areas === 'object' && room.selected_areas !== null) ? 
-              room.selected_areas as any : { floor: false, wall: false, ceiling: false };
+            const selectedAreas = typeof room.selected_areas === 'object' && room.selected_areas !== null ? room.selected_areas as any : {
+              floor: false,
+              wall: false,
+              ceiling: false
+            };
             return selectedAreas.wall;
           });
           if (newWallRoom) {
             newRoomName = `${newWallRoom.name} (Wall Area)`;
           }
-
           const newConfig: AreaConfiguration = {
             id: `wall-additional-${Date.now()}`,
             areaType: 'Wall',
             paintingSystem: null,
-            coatConfiguration: { putty: 0, primer: 0, emulsion: 0 },
-            repaintingConfiguration: { primer: 0, emulsion: 0 },
-            selectedMaterials: { putty: '', primer: '', emulsion: '' },
+            coatConfiguration: {
+              putty: 0,
+              primer: 0,
+              emulsion: 0
+            },
+            repaintingConfiguration: {
+              primer: 0,
+              emulsion: 0
+            },
+            selectedMaterials: {
+              putty: '',
+              primer: '',
+              emulsion: ''
+            },
             area: addWall,
             perSqFtRate: '',
             label: newRoomName,
-            isAdditional: true,
+            isAdditional: true
           };
           additional.push(newConfig);
           try {
-            storedList.push({ ...newConfig });
+            storedList.push({
+              ...newConfig
+            });
             localStorage.setItem(storedKey, JSON.stringify(storedList));
           } catch {}
         }
-
         if (addCeiling > 0) {
           let newRoomName = 'Additional Ceiling Area';
           const newCeilingRoom = newRooms.find(room => {
-            const selectedAreas = (typeof room.selected_areas === 'object' && room.selected_areas !== null) ? 
-              room.selected_areas as any : { floor: false, wall: false, ceiling: false };
+            const selectedAreas = typeof room.selected_areas === 'object' && room.selected_areas !== null ? room.selected_areas as any : {
+              floor: false,
+              wall: false,
+              ceiling: false
+            };
             return selectedAreas.ceiling;
           });
           if (newCeilingRoom) {
             newRoomName = `${newCeilingRoom.name} (Ceiling Area)`;
           }
-
           const newConfig: AreaConfiguration = {
             id: `ceiling-additional-${Date.now()}`,
             areaType: 'Ceiling',
             paintingSystem: null,
-            coatConfiguration: { putty: 0, primer: 0, emulsion: 0 },
-            repaintingConfiguration: { primer: 0, emulsion: 0 },
-            selectedMaterials: { putty: '', primer: '', emulsion: '' },
+            coatConfiguration: {
+              putty: 0,
+              primer: 0,
+              emulsion: 0
+            },
+            repaintingConfiguration: {
+              primer: 0,
+              emulsion: 0
+            },
+            selectedMaterials: {
+              putty: '',
+              primer: '',
+              emulsion: ''
+            },
             area: addCeiling,
             perSqFtRate: '',
             label: newRoomName,
-            isAdditional: true,
+            isAdditional: true
           };
           additional.push(newConfig);
           try {
-            storedList.push({ ...newConfig });
+            storedList.push({
+              ...newConfig
+            });
             localStorage.setItem(storedKey, JSON.stringify(storedList));
           } catch {}
         }
@@ -747,7 +883,7 @@ export default function PaintEstimationScreen() {
             wall: wallAreaTotal,
             ceiling: ceilingAreaTotal,
             enamel: enamelAreaTotal,
-            roomIds: currentRoomIds,
+            roomIds: currentRoomIds
           }));
         } catch {}
       }
@@ -758,8 +894,10 @@ export default function PaintEstimationScreen() {
     const enamelBaselineKey = `additional_enamel_baseline_${projectId}_${selectedPaintType}`;
     const isAdditionalEnamelMode = typeof window !== 'undefined' && localStorage.getItem(enamelModeKey) === '1';
     const enamelBaselineRaw = typeof window !== 'undefined' ? localStorage.getItem(enamelBaselineKey) : null;
-    const enamelBaseline = enamelBaselineRaw ? JSON.parse(enamelBaselineRaw) as { enamel?: number; roomIds?: string[] } : null;
-
+    const enamelBaseline = enamelBaselineRaw ? JSON.parse(enamelBaselineRaw) as {
+      enamel?: number;
+      roomIds?: string[];
+    } : null;
     if (isAdditionalEnamelMode && enamelBaseline) {
       const addEnamel = Math.max(0, enamelAreaTotal - (enamelBaseline.enamel || 0));
 
@@ -770,10 +908,9 @@ export default function PaintEstimationScreen() {
       const baselineRoomIds = enamelBaseline.roomIds || [];
       const currentRoomIds = filteredRooms.map(r => r.id);
       const newRoomIds = currentRoomIds.filter(id => !baselineRoomIds.includes(id));
-      
+
       // Find the newly added room(s)
       const newRooms = filteredRooms.filter(r => newRoomIds.includes(r.id));
-
       if (addEnamel > 0) {
         // Get the room name from the newly added room with enamel area
         let newRoomName = 'Additional Enamel Area';
@@ -783,29 +920,41 @@ export default function PaintEstimationScreen() {
         if (newEnamelRoom) {
           newRoomName = `${newEnamelRoom.name} (Enamel Area)`;
         }
-
         const newConfig: AreaConfiguration = {
           id: `enamel-additional-${Date.now()}`,
           areaType: 'Enamel',
           paintingSystem: null,
-          coatConfiguration: { putty: 0, primer: 0, emulsion: 0 },
-          repaintingConfiguration: { primer: 0, emulsion: 0 },
-          selectedMaterials: { putty: '', primer: '', emulsion: '' },
+          coatConfiguration: {
+            putty: 0,
+            primer: 0,
+            emulsion: 0
+          },
+          repaintingConfiguration: {
+            primer: 0,
+            emulsion: 0
+          },
+          selectedMaterials: {
+            putty: '',
+            primer: '',
+            emulsion: ''
+          },
           label: newRoomName,
           area: addEnamel,
           perSqFtRate: '',
-          isAdditional: true,
+          isAdditional: true
         };
         additional.push(newConfig);
         try {
-          storedList.push({ ...newConfig });
+          storedList.push({
+            ...newConfig
+          });
           localStorage.setItem(storedKey, JSON.stringify(storedList));
         } catch {}
       }
 
       // Update baseline to new totals with room IDs and clear mode
       try {
-        localStorage.setItem(enamelBaselineKey, JSON.stringify({ 
+        localStorage.setItem(enamelBaselineKey, JSON.stringify({
           enamel: enamelAreaTotal,
           roomIds: currentRoomIds
         }));
@@ -819,54 +968,95 @@ export default function PaintEstimationScreen() {
         id: 'floor-main',
         areaType: 'Floor' as any,
         paintingSystem: null,
-        coatConfiguration: { putty: 0, primer: 0, emulsion: 0 },
-        repaintingConfiguration: { primer: 0, emulsion: 0 },
-        selectedMaterials: { putty: '', primer: '', emulsion: '' },
+        coatConfiguration: {
+          putty: 0,
+          primer: 0,
+          emulsion: 0
+        },
+        repaintingConfiguration: {
+          primer: 0,
+          emulsion: 0
+        },
+        selectedMaterials: {
+          putty: '',
+          primer: '',
+          emulsion: ''
+        },
         area: floorMain,
         perSqFtRate: '',
         label: 'Floor Area',
         isAdditional: false
       });
     }
-
     if (wallMain > 0 && hasWallSelected) {
       configs.push({
         id: 'wall-main',
         areaType: 'Wall',
         paintingSystem: null,
-        coatConfiguration: { putty: 0, primer: 0, emulsion: 0 },
-        repaintingConfiguration: { primer: 0, emulsion: 0 },
-        selectedMaterials: { putty: '', primer: '', emulsion: '' },
+        coatConfiguration: {
+          putty: 0,
+          primer: 0,
+          emulsion: 0
+        },
+        repaintingConfiguration: {
+          primer: 0,
+          emulsion: 0
+        },
+        selectedMaterials: {
+          putty: '',
+          primer: '',
+          emulsion: ''
+        },
         area: wallMain,
         perSqFtRate: '',
         label: 'Wall Area',
         isAdditional: false
       });
     }
-
     if (ceilingMain > 0 && hasCeilingSelected) {
       configs.push({
         id: 'ceiling-main',
         areaType: 'Ceiling',
         paintingSystem: null,
-        coatConfiguration: { putty: 0, primer: 0, emulsion: 0 },
-        repaintingConfiguration: { primer: 0, emulsion: 0 },
-        selectedMaterials: { putty: '', primer: '', emulsion: '' },
+        coatConfiguration: {
+          putty: 0,
+          primer: 0,
+          emulsion: 0
+        },
+        repaintingConfiguration: {
+          primer: 0,
+          emulsion: 0
+        },
+        selectedMaterials: {
+          putty: '',
+          primer: '',
+          emulsion: ''
+        },
         area: ceilingMain,
         perSqFtRate: '',
         label: 'Ceiling Area',
         isAdditional: false
       });
     }
-
     if (enamelMain > 0) {
       configs.push({
         id: 'enamel-main',
         areaType: 'Enamel',
         paintingSystem: null,
-        coatConfiguration: { putty: 0, primer: 0, emulsion: 0 },
-        repaintingConfiguration: { primer: 0, emulsion: 0 },
-        selectedMaterials: { putty: '', primer: '', emulsion: '' },
+        coatConfiguration: {
+          putty: 0,
+          primer: 0,
+          emulsion: 0
+        },
+        repaintingConfiguration: {
+          primer: 0,
+          emulsion: 0
+        },
+        selectedMaterials: {
+          putty: '',
+          primer: '',
+          emulsion: ''
+        },
         area: enamelMain,
         perSqFtRate: '',
         label: 'Enamel Area',
@@ -885,30 +1075,19 @@ export default function PaintEstimationScreen() {
     configs.push(...filteredStored, ...additional);
 
     // Merge with existing configurations to preserve user choices
-    const existingConfigs = selectedPaintType === "Interior" ? interiorConfigurations :
-                            selectedPaintType === "Exterior" ? exteriorConfigurations :
-                            waterproofingConfigurations;
-
+    const existingConfigs = selectedPaintType === "Interior" ? interiorConfigurations : selectedPaintType === "Exterior" ? exteriorConfigurations : waterproofingConfigurations;
     if (existingConfigs.length > 0) {
       // Update areas only, preserve all user selections, but remove configs that no longer have area
-      const updated = existingConfigs
-        .map(existing => {
-          const match = configs.find(cfg =>
-            cfg.id === existing.id ||
-            (cfg.areaType === existing.areaType && cfg.label === existing.label && !!cfg.isAdditional === !!existing.isAdditional)
-          );
-          return match ? { ...existing, area: match.area } : null;
-        })
-        .filter(Boolean) as AreaConfiguration[];
-      
+      const updated = existingConfigs.map(existing => {
+        const match = configs.find(cfg => cfg.id === existing.id || cfg.areaType === existing.areaType && cfg.label === existing.label && !!cfg.isAdditional === !!existing.isAdditional);
+        return match ? {
+          ...existing,
+          area: match.area
+        } : null;
+      }).filter(Boolean) as AreaConfiguration[];
+
       // Add any new configs not in existing
-      const newConfigs = configs.filter(cfg =>
-        !updated.some(u =>
-          u.id === cfg.id ||
-          (u.areaType === cfg.areaType && u.label === cfg.label && !!u.isAdditional === !!cfg.isAdditional)
-        )
-      );
-      
+      const newConfigs = configs.filter(cfg => !updated.some(u => u.id === cfg.id || u.areaType === cfg.areaType && u.label === cfg.label && !!u.isAdditional === !!cfg.isAdditional));
       setAreaConfigurations([...updated, ...newConfigs]);
     } else {
       // First time initialization - try to load from localStorage
@@ -916,24 +1095,18 @@ export default function PaintEstimationScreen() {
         const preservedKey = `configs_preserved_${projectId}_${selectedPaintType}`;
         const raw = typeof window !== 'undefined' ? localStorage.getItem(preservedKey) : null;
         const preservedList = raw ? JSON.parse(raw) : [];
-        
         if (preservedList.length > 0) {
           const merged = configs.map(cfg => {
-            const match = preservedList.find((p: any) =>
-              p.id === cfg.id ||
-              (p.areaType === cfg.areaType && p.label === cfg.label && !!p.isAdditional === !!cfg.isAdditional)
-            );
-            return match
-              ? {
-                  ...cfg,
-                  paintingSystem: match.paintingSystem ?? cfg.paintingSystem,
-                  coatConfiguration: match.coatConfiguration ?? cfg.coatConfiguration,
-                  repaintingConfiguration: match.repaintingConfiguration ?? cfg.repaintingConfiguration,
-                  selectedMaterials: match.selectedMaterials ?? cfg.selectedMaterials,
-                  perSqFtRate: match.perSqFtRate ?? cfg.perSqFtRate,
-                  enamelConfig: match.enamelConfig ?? cfg.enamelConfig,
-                }
-              : cfg;
+            const match = preservedList.find((p: any) => p.id === cfg.id || p.areaType === cfg.areaType && p.label === cfg.label && !!p.isAdditional === !!cfg.isAdditional);
+            return match ? {
+              ...cfg,
+              paintingSystem: match.paintingSystem ?? cfg.paintingSystem,
+              coatConfiguration: match.coatConfiguration ?? cfg.coatConfiguration,
+              repaintingConfiguration: match.repaintingConfiguration ?? cfg.repaintingConfiguration,
+              selectedMaterials: match.selectedMaterials ?? cfg.selectedMaterials,
+              perSqFtRate: match.perSqFtRate ?? cfg.perSqFtRate,
+              enamelConfig: match.enamelConfig ?? cfg.enamelConfig
+            } : cfg;
           });
           setAreaConfigurations(merged);
         } else {
@@ -980,11 +1153,11 @@ export default function PaintEstimationScreen() {
           perSqFtRate: c.perSqFtRate,
           label: c.label,
           isAdditional: c.isAdditional,
-          enamelConfig: c.enamelConfig,
+          enamelConfig: c.enamelConfig
         }));
         localStorage.setItem(preservedKey, JSON.stringify(toStore));
       }
-      
+
       // Save Exterior configs
       if (exteriorConfigurations.length > 0) {
         const preservedKey = `configs_preserved_${projectId}_Exterior`;
@@ -998,11 +1171,11 @@ export default function PaintEstimationScreen() {
           perSqFtRate: c.perSqFtRate,
           label: c.label,
           isAdditional: c.isAdditional,
-          enamelConfig: c.enamelConfig,
+          enamelConfig: c.enamelConfig
         }));
         localStorage.setItem(preservedKey, JSON.stringify(toStore));
       }
-      
+
       // Save Waterproofing configs
       if (waterproofingConfigurations.length > 0) {
         const preservedKey = `configs_preserved_${projectId}_Waterproofing`;
@@ -1016,7 +1189,7 @@ export default function PaintEstimationScreen() {
           perSqFtRate: c.perSqFtRate,
           label: c.label,
           isAdditional: c.isAdditional,
-          enamelConfig: c.enamelConfig,
+          enamelConfig: c.enamelConfig
         }));
         localStorage.setItem(preservedKey, JSON.stringify(toStore));
       }
@@ -1046,7 +1219,6 @@ export default function PaintEstimationScreen() {
   const handleDeleteConfig = (configId: string) => {
     // Find the config to check if it's a custom section
     const configToDelete = areaConfigurations.find(c => c.id === configId);
-    
     setAreaConfigurations(prev => prev.filter(config => config.id !== configId));
     try {
       const storedKey = `additional_entries_${projectId}_${selectedPaintType}`;
@@ -1055,35 +1227,32 @@ export default function PaintEstimationScreen() {
       const updated = Array.isArray(list) ? list.filter((item: any) => item.id !== configId) : [];
       localStorage.setItem(storedKey, JSON.stringify(updated));
     } catch {}
-    
+
     // If it's a custom section, also delete from database
     if (configToDelete?.isCustomSection && configToDelete?.roomId && configToDelete?.subAreaId) {
       const room = rooms.find(r => r.room_id === configToDelete.roomId);
       if (room && room.sub_areas) {
-        const updatedSubAreas = (room.sub_areas as any[]).filter((sa: any) => 
-          sa.id !== configToDelete.subAreaId
-        );
-        supabase
-          .from('rooms')
-          .update({ sub_areas: updatedSubAreas })
-          .eq('room_id', configToDelete.roomId)
-          .then(({ error }) => {
-            if (error) console.error('Error deleting custom section from database:', error);
-          });
+        const updatedSubAreas = (room.sub_areas as any[]).filter((sa: any) => sa.id !== configToDelete.subAreaId);
+        supabase.from('rooms').update({
+          sub_areas: updatedSubAreas
+        }).eq('room_id', configToDelete.roomId).then(({
+          error
+        }) => {
+          if (error) console.error('Error deleting custom section from database:', error);
+        });
       }
     }
-    
     toast.success('Configuration deleted');
   };
 
   // Handle update configuration
   const handleUpdateConfig = (updates: Partial<AreaConfiguration>) => {
     if (!selectedConfigId) return;
-    
     setAreaConfigurations(prev => {
-      const updated = prev.map(config => 
-        config.id === selectedConfigId ? { ...config, ...updates } : config
-      );
+      const updated = prev.map(config => config.id === selectedConfigId ? {
+        ...config,
+        ...updates
+      } : config);
       // Save to localStorage
       const savedConfigKey = `paint_configs_${projectId}_${selectedPaintType}`;
       try {
@@ -1101,15 +1270,25 @@ export default function PaintEstimationScreen() {
       id: `${areaType.toLowerCase()}-additional-${Date.now()}`,
       areaType: areaType,
       paintingSystem: null,
-      coatConfiguration: { putty: 0, primer: 0, emulsion: 0 },
-      repaintingConfiguration: { primer: 0, emulsion: 0 },
-      selectedMaterials: { putty: '', primer: '', emulsion: '' },
+      coatConfiguration: {
+        putty: 0,
+        primer: 0,
+        emulsion: 0
+      },
+      repaintingConfiguration: {
+        primer: 0,
+        emulsion: 0
+      },
+      selectedMaterials: {
+        putty: '',
+        primer: '',
+        emulsion: ''
+      },
       area: 0,
       perSqFtRate: '',
       label: `Additional ${areaType} Area`,
       isAdditional: true
     };
-
     setAreaConfigurations(prev => [...prev, newConfig]);
     // Open config dialog immediately
     setTimeout(() => {
@@ -1136,26 +1315,19 @@ export default function PaintEstimationScreen() {
 
   // Calculate total area for all paint areas (Floor, Wall, Ceiling, and Custom Sections)
   const getTotalPaintArea = () => {
-    return areaConfigurations
-      .filter(c => c.areaType === 'Floor' || c.areaType === 'Wall' || c.areaType === 'Ceiling')
-      .reduce((total, config) => total + (config.area || 0), 0);
+    return areaConfigurations.filter(c => c.areaType === 'Floor' || c.areaType === 'Wall' || c.areaType === 'Ceiling').reduce((total, config) => total + (config.area || 0), 0);
   };
-
   const handleContinue = async () => {
     // Validate at least one configuration is complete across all paint types
     const allConfigs = [...interiorConfigurations, ...exteriorConfigurations, ...waterproofingConfigurations];
-    const hasValidConfig = allConfigs.some(
-      config => config.paintingSystem && config.perSqFtRate
-    );
-
+    const hasValidConfig = allConfigs.some(config => config.paintingSystem && config.perSqFtRate);
     if (!hasValidConfig) {
       toast.error('Please configure at least one area with painting system and rate');
       return;
     }
-
     try {
       setIsCalculating(true);
-      
+
       // Save configurations to cache immediately for fast UI
       const updatedData = {
         interiorConfigurations: interiorConfigurations,
@@ -1164,20 +1336,25 @@ export default function PaintEstimationScreen() {
         lastPaintType: selectedPaintType,
         totalCost: calculateTotalCost()
       };
-      
       localStorage.setItem(`estimation_${projectId}`, JSON.stringify(updatedData));
-      
+
       // Call backend function to pre-calculate summary (async, don't block navigation)
-      const { data: { session } } = await supabase.auth.getSession();
-      
+      const {
+        data: {
+          session
+        }
+      } = await supabase.auth.getSession();
       if (session) {
         // Fire and forget - don't wait for backend
         supabase.functions.invoke('get-project-summary', {
-          body: { 
+          body: {
             project_id: projectId,
-            configurations: updatedData 
+            configurations: updatedData
           }
-        }).then(({ data, error }) => {
+        }).then(({
+          data,
+          error
+        }) => {
           if (!error && data) {
             localStorage.setItem(`project_summary_${projectId}`, JSON.stringify(data));
             console.log('Backend calculation complete, summary cached');
@@ -1186,18 +1363,15 @@ export default function PaintEstimationScreen() {
           console.warn('Backend calculation failed, using client-side fallback:', err);
         });
       }
-      
       setIsCalculating(false);
-      
+
       // Navigate immediately - don't wait for backend
       navigate(`/generate-summary/${projectId}`);
-      
     } catch (error) {
       console.error('Error in handleContinue:', error);
       setIsCalculating(false);
-      
       toast.success('Loading your project summary...');
-      
+
       // Navigate anyway to prevent blank screen
       navigate(`/generate-summary/${projectId}`);
     }
@@ -1224,7 +1398,6 @@ export default function PaintEstimationScreen() {
       }
       return parts.join(' + ');
     }
-
     if (!config.paintingSystem) return '';
     const parts: string[] = [];
     if (config.paintingSystem === "Fresh Painting") {
@@ -1247,18 +1420,11 @@ export default function PaintEstimationScreen() {
     }
     return parts.join(' + ');
   };
-
-  return (
-    <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="eca-gradient text-white p-4">
         <div className="flex items-center space-x-3">
-          <Button 
-            variant="ghost" 
-            size="icon"
-            className="text-white hover:bg-white/20"
-            onClick={() => navigate(`/room-measurement/${projectId}`)}
-          >
+          <Button variant="ghost" size="icon" className="text-white hover:bg-white/20" onClick={() => navigate(`/room-measurement/${projectId}`)}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
@@ -1279,28 +1445,19 @@ export default function PaintEstimationScreen() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-3 gap-2">
-              <Button
-                variant={selectedPaintType === "Interior" ? "default" : "outline"}
-                onClick={() => setSelectedPaintType("Interior")}
-                className="h-12 px-2 overflow-hidden whitespace-nowrap text-ellipsis text-center"
-                style={{ fontSize: 'clamp(12px, 3vw, 16px)' }}
-              >
+              <Button variant={selectedPaintType === "Interior" ? "default" : "outline"} onClick={() => setSelectedPaintType("Interior")} className="h-12 px-2 overflow-hidden whitespace-nowrap text-ellipsis text-center" style={{
+              fontSize: 'clamp(12px, 3vw, 16px)'
+            }}>
                 Interior Paint
               </Button>
-              <Button
-                variant={selectedPaintType === "Exterior" ? "default" : "outline"}
-                onClick={() => setSelectedPaintType("Exterior")}
-                className="h-12 px-2 overflow-hidden whitespace-nowrap text-ellipsis text-center"
-                style={{ fontSize: 'clamp(12px, 3vw, 16px)' }}
-              >
+              <Button variant={selectedPaintType === "Exterior" ? "default" : "outline"} onClick={() => setSelectedPaintType("Exterior")} className="h-12 px-2 overflow-hidden whitespace-nowrap text-ellipsis text-center" style={{
+              fontSize: 'clamp(12px, 3vw, 16px)'
+            }}>
                 Exterior Paint
               </Button>
-              <Button
-                variant={selectedPaintType === "Waterproofing" ? "default" : "outline"}
-                onClick={() => setSelectedPaintType("Waterproofing")}
-                className="h-12 px-2 overflow-hidden whitespace-nowrap text-ellipsis text-center"
-                style={{ fontSize: 'clamp(12px, 3vw, 16px)' }}
-              >
+              <Button variant={selectedPaintType === "Waterproofing" ? "default" : "outline"} onClick={() => setSelectedPaintType("Waterproofing")} className="h-12 px-2 overflow-hidden whitespace-nowrap text-ellipsis text-center" style={{
+              fontSize: 'clamp(12px, 3vw, 16px)'
+            }}>
                 Waterproofing
               </Button>
             </div>
@@ -1308,45 +1465,31 @@ export default function PaintEstimationScreen() {
         </Card>
         
         {/* Calculating Indicator - Non-blocking */}
-        {isCalculating && (
-          <Card className="eca-shadow border-2 border-primary/30 bg-primary/5 animate-pulse">
+        {isCalculating && <Card className="eca-shadow border-2 border-primary/30 bg-primary/5 animate-pulse">
             <CardContent className="p-4">
               <div className="flex items-center justify-center space-x-3">
                 <div className="h-5 w-5 border-3 border-primary border-t-transparent rounded-full animate-spin" />
                 <p className="text-base font-semibold text-primary">Calculating material & labour... Please wait</p>
               </div>
             </CardContent>
-          </Card>
-        )}
+          </Card>}
 
         {/* Paint Configuration Summary - MOVED TO TOP (only non-enamel) */}
-        {areaConfigurations.some(c => (c.paintingSystem || c.areaType === 'Enamel') && c.areaType !== 'Enamel') && (
-              <Card className="eca-shadow border-2 border-primary/30">
+        {areaConfigurations.some(c => (c.paintingSystem || c.areaType === 'Enamel') && c.areaType !== 'Enamel') && <Card className="eca-shadow border-2 border-primary/30">
                 <CardHeader>
                   <CardTitle className="text-lg">Paint Configuration Summary</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {areaConfigurations.filter(c => (c.paintingSystem || c.areaType === 'Enamel') && c.areaType !== 'Enamel').map((config) => (
-                    <Card key={config.id} className="border-2 border-primary/20 bg-primary/5">
+                  {areaConfigurations.filter(c => (c.paintingSystem || c.areaType === 'Enamel') && c.areaType !== 'Enamel').map(config => <Card key={config.id} className="border-2 border-primary/20 bg-primary/5">
                       <CardContent className="p-4">
                         <div className="space-y-3">
                           <div className="flex items-center justify-between">
                             <h3 className="font-semibold text-base">{config.label}</h3>
                             <div className="flex gap-2">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20"
-                                onClick={() => handleDeleteConfig(config.id)}
-                              >
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20" onClick={() => handleDeleteConfig(config.id)}>
                                 <Trash2 className="h-4 w-4" />
                               </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() => handleEditConfig(config.id)}
-                              >
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEditConfig(config.id)}>
                                 <Settings className="h-4 w-4" />
                               </Button>
                             </div>
@@ -1376,202 +1519,109 @@ export default function PaintEstimationScreen() {
 
                           <div className="space-y-2">
                             <Label className="text-sm">Per Sq.ft Rate (₹)</Label>
-                            <Input
-                              type="number"
-                              placeholder="Enter rate per sq.ft"
-                              value={config.perSqFtRate}
-                              onChange={(e) => {
-                setAreaConfigurations(prev => {
-                  const updated = prev.map(c => 
-                    c.id === config.id ? { ...c, perSqFtRate: e.target.value } : c
-                  );
-                  // Save to localStorage
-                  const savedConfigKey = `paint_configs_${projectId}_${selectedPaintType}`;
-                  try {
-                    localStorage.setItem(savedConfigKey, JSON.stringify(updated));
-                  } catch (e) {
-                    console.error('Error saving configs:', e);
-                  }
-                  return updated;
-                });
-                              }}
-                              className="h-10"
-                            />
+                            <Input type="number" placeholder="Enter rate per sq.ft" value={config.perSqFtRate} onChange={e => {
+                    setAreaConfigurations(prev => {
+                      const updated = prev.map(c => c.id === config.id ? {
+                        ...c,
+                        perSqFtRate: e.target.value
+                      } : c);
+                      // Save to localStorage
+                      const savedConfigKey = `paint_configs_${projectId}_${selectedPaintType}`;
+                      try {
+                        localStorage.setItem(savedConfigKey, JSON.stringify(updated));
+                      } catch (e) {
+                        console.error('Error saving configs:', e);
+                      }
+                      return updated;
+                    });
+                  }} className="h-10" />
                           </div>
                         </div>
                       </CardContent>
-                    </Card>
-                  ))}
+                    </Card>)}
                 </CardContent>
-              </Card>
-            )}
+              </Card>}
 
             {/* Area to be Painted Section */}
-            {(floorConfigs.length > 0 || wallConfigs.length > 0 || ceilingConfigs.length > 0 || customSectionConfigs.length > 0) && (
-              <div className="space-y-4">
+            {(floorConfigs.length > 0 || wallConfigs.length > 0 || ceilingConfigs.length > 0 || customSectionConfigs.length > 0) && <div className="space-y-4">
                 <h2 className="text-lg font-semibold">Area to be Painted</h2>
                 
                 {/* Main Floor, Wall and Ceiling Areas - Clickable Cards */}
                 <div className="grid grid-cols-2 gap-4">
-                  {floorConfigs.filter(c => !c.isAdditional).map(config => (
-                    <div 
-                      key={config.id} 
-                      className={`border-2 border-dashed rounded-lg p-4 text-center space-y-2 cursor-pointer transition-all ${
-                        config.paintingSystem 
-                          ? 'border-primary bg-primary/5' 
-                          : 'border-border hover:border-primary/50'
-                      }`}
-                      onClick={() => handleEditConfig(config.id)}
-                    >
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-primary hover:text-primary/80 pointer-events-none"
-                      >
+                  {floorConfigs.filter(c => !c.isAdditional).map(config => <div key={config.id} className={`border-2 border-dashed rounded-lg p-4 text-center space-y-2 cursor-pointer transition-all ${config.paintingSystem ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`} onClick={() => handleEditConfig(config.id)}>
+                      <Button variant="ghost" size="sm" className="text-primary hover:text-primary/80 pointer-events-none">
                         {config.paintingSystem ? config.paintingSystem : 'Select System'}
                       </Button>
                       <div>
                         <p className="text-3xl font-bold">{config.area ? config.area.toFixed(1) : '0.0'}</p>
                         <p className="text-sm text-muted-foreground">{config.label}</p>
                       </div>
-                    </div>
-                  ))}
+                    </div>)}
                   
-                  {wallConfigs.filter(c => !c.isAdditional).map(config => (
-                    <div 
-                      key={config.id} 
-                      className={`border-2 border-dashed rounded-lg p-4 text-center space-y-2 cursor-pointer transition-all ${
-                        config.paintingSystem 
-                          ? 'border-primary bg-primary/5' 
-                          : 'border-border hover:border-primary/50'
-                      }`}
-                      onClick={() => handleEditConfig(config.id)}
-                    >
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-primary hover:text-primary/80 pointer-events-none"
-                      >
+                  {wallConfigs.filter(c => !c.isAdditional).map(config => <div key={config.id} className={`border-2 border-dashed rounded-lg p-4 text-center space-y-2 cursor-pointer transition-all ${config.paintingSystem ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`} onClick={() => handleEditConfig(config.id)}>
+                      <Button variant="ghost" size="sm" className="text-primary hover:text-primary/80 pointer-events-none">
                         {config.paintingSystem ? config.paintingSystem : 'Select System'}
                       </Button>
                       <div>
                         <p className="text-3xl font-bold">{config.area ? config.area.toFixed(1) : '0.0'}</p>
                         <p className="text-sm text-muted-foreground">{config.label}</p>
                       </div>
-                    </div>
-                  ))}
+                    </div>)}
                   
-                  {ceilingConfigs.filter(c => !c.isAdditional).map(config => (
-                    <div 
-                      key={config.id} 
-                      className={`border-2 border-dashed rounded-lg p-4 text-center space-y-2 cursor-pointer transition-all ${
-                        config.paintingSystem 
-                          ? 'border-primary bg-primary/5' 
-                          : 'border-border hover:border-primary/50'
-                      }`}
-                      onClick={() => handleEditConfig(config.id)}
-                    >
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-primary hover:text-primary/80 pointer-events-none"
-                      >
+                  {ceilingConfigs.filter(c => !c.isAdditional).map(config => <div key={config.id} className={`border-2 border-dashed rounded-lg p-4 text-center space-y-2 cursor-pointer transition-all ${config.paintingSystem ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`} onClick={() => handleEditConfig(config.id)}>
+                      <Button variant="ghost" size="sm" className="text-primary hover:text-primary/80 pointer-events-none">
                         {config.paintingSystem ? config.paintingSystem : 'Select System'}
                       </Button>
                       <div>
                         <p className="text-3xl font-bold">{config.area ? config.area.toFixed(1) : '0.0'}</p>
                         <p className="text-sm text-muted-foreground">{config.label}</p>
                       </div>
-                    </div>
-                  ))}
+                    </div>)}
                 </div>
 
                 {/* Additional Floor, Wall and Ceiling Areas - Compact Half-Width Layout */}
-                {[...floorConfigs, ...wallConfigs, ...ceilingConfigs].filter(c => c.isAdditional).length > 0 && (
-                  <div className="grid grid-cols-2 gap-4">
-                    {[...floorConfigs, ...wallConfigs, ...ceilingConfigs].filter(c => c.isAdditional).map(config => (
-                      <div 
-                        key={config.id} 
-                        className={`border-2 border-dashed rounded-lg p-3 text-center space-y-2 cursor-pointer transition-all relative ${
-                          config.paintingSystem 
-                            ? 'border-primary bg-primary/5' 
-                            : 'border-border hover:border-primary/50'
-                        }`}
-                        onClick={() => handleEditConfig(config.id)}
-                      >
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 text-destructive absolute top-2 right-2"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteConfig(config.id);
-                          }}
-                        >
+                {[...floorConfigs, ...wallConfigs, ...ceilingConfigs].filter(c => c.isAdditional).length > 0 && <div className="grid grid-cols-2 gap-4">
+                    {[...floorConfigs, ...wallConfigs, ...ceilingConfigs].filter(c => c.isAdditional).map(config => <div key={config.id} className={`border-2 border-dashed rounded-lg p-3 text-center space-y-2 cursor-pointer transition-all relative ${config.paintingSystem ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`} onClick={() => handleEditConfig(config.id)}>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive absolute top-2 right-2" onClick={e => {
+              e.stopPropagation();
+              handleDeleteConfig(config.id);
+            }}>
                           <Trash2 className="h-3 w-3" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-primary hover:text-primary/80 text-xs pointer-events-none"
-                        >
+                        <Button variant="ghost" size="sm" className="text-primary hover:text-primary/80 text-xs pointer-events-none">
                           {config.paintingSystem || 'Select System'}
                         </Button>
                         <div>
                           <p className="text-2xl font-bold">{config.area ? config.area.toFixed(1) : '0.0'}</p>
                           <p className="text-xs text-muted-foreground">{config.label}</p>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                      </div>)}
+                  </div>}
 
                 {/* Custom Sections - Separate Paint Areas created via (+) icon in Room Measurements */}
-                {customSectionConfigs.length > 0 && (
-                  <div className="space-y-3">
-                    <h3 className="text-base font-semibold text-primary">Separate Paint Sections</h3>
+                {customSectionConfigs.length > 0 && <div className="space-y-3">
+                    <h3 className="text-base font-semibold text-primary">Separate Paint Area</h3>
                     <div className="grid grid-cols-2 gap-4">
                       {customSectionConfigs.map(config => {
-                        // Get room name directly from rooms data
-                        const room = rooms.find(r => r.room_id === config.roomId);
-                        const displayName = room?.name || config.label || 'Section';
-                        
-                        return (
-                          <div 
-                            key={config.id} 
-                            className={`border-2 border-dashed rounded-lg p-4 text-center space-y-2 cursor-pointer transition-all relative ${
-                              config.paintingSystem 
-                                ? 'border-primary bg-primary/5' 
-                                : 'border-border hover:border-primary/50'
-                            }`}
-                            onClick={() => handleEditConfig(config.id)}
-                          >
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6 text-destructive absolute top-2 right-2"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteConfig(config.id);
-                              }}
-                            >
+              // Get room name directly from rooms data
+              const room = rooms.find(r => r.room_id === config.roomId);
+              const displayName = room?.name || config.label || 'Section';
+              return <div key={config.id} className={`border-2 border-dashed rounded-lg p-4 text-center space-y-2 cursor-pointer transition-all relative ${config.paintingSystem ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`} onClick={() => handleEditConfig(config.id)}>
+                            <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive absolute top-2 right-2" onClick={e => {
+                  e.stopPropagation();
+                  handleDeleteConfig(config.id);
+                }}>
                               <Trash2 className="h-3 w-3" />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-primary hover:text-primary/80 text-xs pointer-events-none"
-                            >
+                            <Button variant="ghost" size="sm" className="text-primary hover:text-primary/80 text-xs pointer-events-none">
                               {config.paintingSystem || 'Select System'}
                             </Button>
                             <p className="text-2xl font-bold">{config.area ? config.area.toFixed(1) : '0.0'}</p>
                             <p className="text-xs text-muted-foreground">{displayName}</p>
-                          </div>
-                        );
-                      })}
+                          </div>;
+            })}
                     </div>
-                  </div>
-                )}
+                  </div>}
 
                 {/* Total Area Summary */}
                 <div className="bg-destructive/10 border-l-4 border-destructive rounded-lg p-4 text-center">
@@ -1580,72 +1630,53 @@ export default function PaintEstimationScreen() {
                 </div>
 
                 {/* Add Additional Square Footage - Navigate to Room Measurement */}
-                <Button
-                  variant="outline"
-                  className="w-full border-dashed"
-                  onClick={() => {
-                    try {
-                      // Baseline must include ALL existing areas (main + previous additionals)
-                      const floorBase = floorConfigs.reduce((sum, c) => sum + c.area, 0);
-                      const wallBase = wallConfigs.reduce((sum, c) => sum + c.area, 0);
-                      const ceilingBase = ceilingConfigs.reduce((sum, c) => sum + c.area, 0);
-                      const enamelBase = enamelConfigs.reduce((sum, c) => sum + c.area, 0);
-                      // Store current room IDs to detect new rooms later
-                      const currentRoomIds = rooms
-                        .filter(room => {
-                          const projectType = room.project_type;
-                          if (selectedPaintType === "Interior") return projectType === "Interior";
-                          if (selectedPaintType === "Exterior") return projectType === "Exterior";
-                          if (selectedPaintType === "Waterproofing") return projectType === "Waterproofing";
-                          return false;
-                        })
-                        .map(r => r.id);
-                      localStorage.setItem(`additional_baseline_${projectId}_${selectedPaintType}`, JSON.stringify({ 
-                        floor: floorBase,
-                        wall: wallBase, 
-                        ceiling: ceilingBase, 
-                        enamel: enamelBase,
-                        roomIds: currentRoomIds
-                      }));
-                      localStorage.setItem(`additional_mode_${projectId}_${selectedPaintType}`, '1');
-                    } catch {}
-                    navigate(`/room-measurement/${projectId}`);
-                  }}
-                >
+                <Button variant="outline" className="w-full border-dashed" onClick={() => {
+          try {
+            // Baseline must include ALL existing areas (main + previous additionals)
+            const floorBase = floorConfigs.reduce((sum, c) => sum + c.area, 0);
+            const wallBase = wallConfigs.reduce((sum, c) => sum + c.area, 0);
+            const ceilingBase = ceilingConfigs.reduce((sum, c) => sum + c.area, 0);
+            const enamelBase = enamelConfigs.reduce((sum, c) => sum + c.area, 0);
+            // Store current room IDs to detect new rooms later
+            const currentRoomIds = rooms.filter(room => {
+              const projectType = room.project_type;
+              if (selectedPaintType === "Interior") return projectType === "Interior";
+              if (selectedPaintType === "Exterior") return projectType === "Exterior";
+              if (selectedPaintType === "Waterproofing") return projectType === "Waterproofing";
+              return false;
+            }).map(r => r.id);
+            localStorage.setItem(`additional_baseline_${projectId}_${selectedPaintType}`, JSON.stringify({
+              floor: floorBase,
+              wall: wallBase,
+              ceiling: ceilingBase,
+              enamel: enamelBase,
+              roomIds: currentRoomIds
+            }));
+            localStorage.setItem(`additional_mode_${projectId}_${selectedPaintType}`, '1');
+          } catch {}
+          navigate(`/room-measurement/${projectId}`);
+        }}>
                   <Plus className="mr-2 h-4 w-4" />
                   Add Additional Sq.ft Area
                 </Button>
-              </div>
-            )}
+              </div>}
 
             {/* Enamel Paint Configuration Summary - Moved above Door & Window Enamel */}
-            {areaConfigurations.some(c => c.areaType === 'Enamel' && (c.paintingSystem || c.enamelConfig)) && (
-              <Card className="eca-shadow border-2 border-orange-500/30">
+            {areaConfigurations.some(c => c.areaType === 'Enamel' && (c.paintingSystem || c.enamelConfig)) && <Card className="eca-shadow border-2 border-orange-500/30">
                 <CardHeader>
                   <CardTitle className="text-lg text-orange-700 dark:text-orange-300">Enamel Paint Configuration Summary</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {areaConfigurations.filter(c => c.areaType === 'Enamel' && (c.paintingSystem || c.enamelConfig)).map((config) => (
-                    <Card key={config.id} className="border-2 border-orange-500/20 bg-orange-50/50 dark:bg-orange-950/20">
+                  {areaConfigurations.filter(c => c.areaType === 'Enamel' && (c.paintingSystem || c.enamelConfig)).map(config => <Card key={config.id} className="border-2 border-orange-500/20 bg-orange-50/50 dark:bg-orange-950/20">
                       <CardContent className="p-4">
                         <div className="space-y-3">
                           <div className="flex items-center justify-between">
                             <h3 className="font-semibold text-base text-orange-700 dark:text-orange-300">{config.label}</h3>
                             <div className="flex gap-2">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20"
-                                onClick={() => handleDeleteConfig(config.id)}
-                              >
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20" onClick={() => handleDeleteConfig(config.id)}>
                                 <Trash2 className="h-4 w-4" />
                               </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() => handleEditConfig(config.id)}
-                              >
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEditConfig(config.id)}>
                                 <Settings className="h-4 w-4" />
                               </Button>
                             </div>
@@ -1675,39 +1706,31 @@ export default function PaintEstimationScreen() {
 
                           <div className="space-y-2">
                             <Label className="text-sm">Per Sq.ft Rate (₹)</Label>
-                            <Input
-                              type="number"
-                              placeholder="Enter rate per sq.ft"
-                              value={config.perSqFtRate}
-                              onChange={(e) => {
-                setAreaConfigurations(prev => {
-                  const updated = prev.map(c => 
-                    c.id === config.id ? { ...c, perSqFtRate: e.target.value } : c
-                  );
-                  // Save to localStorage
-                  const savedConfigKey = `paint_configs_${projectId}_${selectedPaintType}`;
-                  try {
-                    localStorage.setItem(savedConfigKey, JSON.stringify(updated));
-                  } catch (e) {
-                    console.error('Error saving configs:', e);
-                  }
-                  return updated;
-                });
-                              }}
-                              className="h-10"
-                            />
+                            <Input type="number" placeholder="Enter rate per sq.ft" value={config.perSqFtRate} onChange={e => {
+                    setAreaConfigurations(prev => {
+                      const updated = prev.map(c => c.id === config.id ? {
+                        ...c,
+                        perSqFtRate: e.target.value
+                      } : c);
+                      // Save to localStorage
+                      const savedConfigKey = `paint_configs_${projectId}_${selectedPaintType}`;
+                      try {
+                        localStorage.setItem(savedConfigKey, JSON.stringify(updated));
+                      } catch (e) {
+                        console.error('Error saving configs:', e);
+                      }
+                      return updated;
+                    });
+                  }} className="h-10" />
                           </div>
                         </div>
                       </CardContent>
-                    </Card>
-                  ))}
+                    </Card>)}
                 </CardContent>
-              </Card>
-            )}
+              </Card>}
 
             {/* Door & Window Enamel Section */}
-            {enamelConfigs.length > 0 && (
-              <div className="space-y-4">
+            {enamelConfigs.length > 0 && <div className="space-y-4">
                 <h2 className="text-lg font-semibold flex items-center">
                   <Settings className="mr-2 h-5 w-5 text-primary" />
                   Door & Window Enamel
@@ -1715,34 +1738,14 @@ export default function PaintEstimationScreen() {
                 
                 {/* Compact Half-Width Layout for Enamel */}
                 <div className="grid grid-cols-2 gap-4">
-                  {enamelConfigs.map(config => (
-                    <div 
-                      key={config.id} 
-                      className={`border-2 border-dashed rounded-lg p-3 text-center space-y-2 cursor-pointer transition-all relative ${
-                        config.paintingSystem 
-                          ? 'border-orange-500 bg-orange-50/50 dark:bg-orange-950/20' 
-                          : 'border-orange-300 hover:border-orange-500 bg-orange-50/30 dark:bg-orange-950/10'
-                      }`}
-                      onClick={() => handleEditConfig(config.id)}
-                    >
-                      {config.isAdditional && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 text-destructive absolute top-2 right-2"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteConfig(config.id);
-                          }}
-                        >
+                  {enamelConfigs.map(config => <div key={config.id} className={`border-2 border-dashed rounded-lg p-3 text-center space-y-2 cursor-pointer transition-all relative ${config.paintingSystem ? 'border-orange-500 bg-orange-50/50 dark:bg-orange-950/20' : 'border-orange-300 hover:border-orange-500 bg-orange-50/30 dark:bg-orange-950/10'}`} onClick={() => handleEditConfig(config.id)}>
+                      {config.isAdditional && <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive absolute top-2 right-2" onClick={e => {
+              e.stopPropagation();
+              handleDeleteConfig(config.id);
+            }}>
                           <Trash2 className="h-3 w-3" />
-                        </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-orange-700 dark:text-orange-300 text-xs pointer-events-none"
-                      >
+                        </Button>}
+                      <Button variant="ghost" size="sm" className="text-orange-700 dark:text-orange-300 text-xs pointer-events-none">
                         {config.paintingSystem || 'Configure Enamel'}
                       </Button>
                       <div>
@@ -1751,58 +1754,47 @@ export default function PaintEstimationScreen() {
                           {config.label || 'Enamel Area'}
                         </p>
                       </div>
-                    </div>
-                  ))}
+                    </div>)}
                 </div>
 
                 {/* Add Additional Enamel - Navigate to Door & Window tab */}
-                <Button
-                  variant="outline"
-                  className="w-full border-dashed border-orange-300 text-orange-700"
-                  onClick={() => {
-                    try {
-                      const enamelBase = enamelConfigs.reduce((sum, c) => sum + c.area, 0);
-                      const currentRoomIds = rooms
-                        .filter(room => {
-                          const projectType = room.project_type;
-                          if (selectedPaintType === "Interior") return projectType === "Interior";
-                          if (selectedPaintType === "Exterior") return projectType === "Exterior";
-                          if (selectedPaintType === "Waterproofing") return projectType === "Waterproofing";
-                          return false;
-                        })
-                        .map(r => r.id);
-                      localStorage.setItem(`additional_enamel_baseline_${projectId}_${selectedPaintType}`, JSON.stringify({ 
-                        enamel: enamelBase,
-                        roomIds: currentRoomIds
-                      }));
-                      localStorage.setItem(`additional_enamel_mode_${projectId}_${selectedPaintType}`, '1');
-                      // Set the tab to open "doorwindow" tab
-                      localStorage.setItem(`open_tab_${projectId}`, 'doorwindow');
-                    } catch {}
-                    navigate(`/room-measurement/${projectId}`);
-                  }}
-                >
+                <Button variant="outline" className="w-full border-dashed border-orange-300 text-orange-700" onClick={() => {
+          try {
+            const enamelBase = enamelConfigs.reduce((sum, c) => sum + c.area, 0);
+            const currentRoomIds = rooms.filter(room => {
+              const projectType = room.project_type;
+              if (selectedPaintType === "Interior") return projectType === "Interior";
+              if (selectedPaintType === "Exterior") return projectType === "Exterior";
+              if (selectedPaintType === "Waterproofing") return projectType === "Waterproofing";
+              return false;
+            }).map(r => r.id);
+            localStorage.setItem(`additional_enamel_baseline_${projectId}_${selectedPaintType}`, JSON.stringify({
+              enamel: enamelBase,
+              roomIds: currentRoomIds
+            }));
+            localStorage.setItem(`additional_enamel_mode_${projectId}_${selectedPaintType}`, '1');
+            // Set the tab to open "doorwindow" tab
+            localStorage.setItem(`open_tab_${projectId}`, 'doorwindow');
+          } catch {}
+          navigate(`/room-measurement/${projectId}`);
+        }}>
                   <Plus className="mr-2 h-4 w-4" />
                   Add Additional Enamel Area
                 </Button>
-              </div>
-            )}
+              </div>}
 
             {/* No areas message */}
-            {areaConfigurations.length === 0 && (
-              <Card className="eca-shadow">
+            {areaConfigurations.length === 0 && <Card className="eca-shadow">
                 <CardContent className="p-6 text-center">
                   <p className="text-muted-foreground">
                     No {selectedPaintType.toLowerCase()} areas found. Please add rooms for {selectedPaintType.toLowerCase()} in the Room Measurements section.
                   </p>
                 </CardContent>
-              </Card>
-            )}
+              </Card>}
 
 
             {/* Total Cost Summary */}
-            {areaConfigurations.some(c => c.perSqFtRate) && (
-              <Card className="eca-shadow border-2 border-primary">
+            {areaConfigurations.some(c => c.perSqFtRate) && <Card className="eca-shadow border-2 border-primary">
                 <CardContent className="p-6">
                   <div className="text-center">
                     <p className="text-sm text-muted-foreground mb-2">Total Project Cost</p>
@@ -1811,8 +1803,7 @@ export default function PaintEstimationScreen() {
                     </p>
                   </div>
                 </CardContent>
-              </Card>
-            )}
+              </Card>}
       </div>
 
       {/* Configuration Dialog */}
@@ -1823,82 +1814,62 @@ export default function PaintEstimationScreen() {
               Configure {selectedConfig?.label}
             </DialogTitle>
           </DialogHeader>
-          {selectedConfig && (
-            <div className="space-y-4">
-              {selectedConfig.areaType !== 'Enamel' && (
-                <div className="grid grid-cols-2 gap-3">
-                  <Button
-                    variant={selectedConfig.paintingSystem === "Fresh Painting" ? "default" : "outline"}
-                    onClick={() => handleUpdateConfig({ paintingSystem: "Fresh Painting" })}
-                    className="h-20 flex flex-col items-center justify-center"
-                  >
+          {selectedConfig && <div className="space-y-4">
+              {selectedConfig.areaType !== 'Enamel' && <div className="grid grid-cols-2 gap-3">
+                  <Button variant={selectedConfig.paintingSystem === "Fresh Painting" ? "default" : "outline"} onClick={() => handleUpdateConfig({
+              paintingSystem: "Fresh Painting"
+            })} className="h-20 flex flex-col items-center justify-center">
                     <p className="font-medium">Fresh Painting</p>
                     <p className="text-xs opacity-80">Complete system</p>
                   </Button>
-                  <Button
-                    variant={selectedConfig.paintingSystem === "Repainting" ? "default" : "outline"}
-                    onClick={() => handleUpdateConfig({ paintingSystem: "Repainting" })}
-                    className="h-20 flex flex-col items-center justify-center"
-                  >
+                  <Button variant={selectedConfig.paintingSystem === "Repainting" ? "default" : "outline"} onClick={() => handleUpdateConfig({
+              paintingSystem: "Repainting"
+            })} className="h-20 flex flex-col items-center justify-center">
                     <p className="font-medium">Repainting</p>
                     <p className="text-xs opacity-80">Refresh system</p>
                   </Button>
-                </div>
-              )}
+                </div>}
 
-              {selectedConfig.areaType === 'Enamel' && (
-                <>
-                  {!selectedConfig.paintingSystem ? (
-                    /* Step 1: Fresh Painting / Repainting Selection for Enamel */
-                    <div className="grid grid-cols-2 gap-3">
-                      <Button
-                        variant="outline"
-                        onClick={() => handleUpdateConfig({ paintingSystem: "Fresh Painting" })}
-                        className="h-20 flex flex-col items-center justify-center"
-                      >
+              {selectedConfig.areaType === 'Enamel' && <>
+                  {!selectedConfig.paintingSystem ? (/* Step 1: Fresh Painting / Repainting Selection for Enamel */
+            <div className="grid grid-cols-2 gap-3">
+                      <Button variant="outline" onClick={() => handleUpdateConfig({
+                paintingSystem: "Fresh Painting"
+              })} className="h-20 flex flex-col items-center justify-center">
                         <p className="font-medium">Fresh Painting</p>
                         <p className="text-xs opacity-80">Complete system</p>
                       </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => handleUpdateConfig({ paintingSystem: "Repainting" })}
-                        className="h-20 flex flex-col items-center justify-center"
-                      >
+                      <Button variant="outline" onClick={() => handleUpdateConfig({
+                paintingSystem: "Repainting"
+              })} className="h-20 flex flex-col items-center justify-center">
                         <p className="font-medium">Repainting</p>
                         <p className="text-xs opacity-80">Refresh system</p>
                       </Button>
-                    </div>
-                  ) : (
-                    /* Step 2: Enamel Configuration after system selection */
-                    <>
+                    </div>) : (/* Step 2: Enamel Configuration after system selection */
+            <>
                       <div className="flex items-center justify-between mb-4">
                         <p className="text-sm text-muted-foreground">
                           System: <span className="font-medium text-foreground">{selectedConfig.paintingSystem}</span>
                         </p>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setAreaConfigurations(prev => {
-                              const updated = prev.map(c => 
-                                c.id === selectedConfig.id 
-                                  ? { ...c, paintingSystem: '' as "Fresh Painting" | "Repainting" } 
-                                  : c
-                              );
-                              const savedConfigKey = `paint_configs_${projectId}_${selectedPaintType}`;
-                              try {
-                                localStorage.setItem(savedConfigKey, JSON.stringify(updated));
-                              } catch (e) {
-                                console.error('Error saving configs:', e);
-                              }
-                              return updated;
-                            });
-                            const updatedConfig = areaConfigurations.find(c => c.id === selectedConfig.id);
-                            if (updatedConfig) {
-                              setSelectedConfigId(selectedConfig.id);
-                            }
-                          }}
-                        >
+                        <Button variant="ghost" size="sm" onClick={() => {
+                  setAreaConfigurations(prev => {
+                    const updated = prev.map(c => c.id === selectedConfig.id ? {
+                      ...c,
+                      paintingSystem: '' as "Fresh Painting" | "Repainting"
+                    } : c);
+                    const savedConfigKey = `paint_configs_${projectId}_${selectedPaintType}`;
+                    try {
+                      localStorage.setItem(savedConfigKey, JSON.stringify(updated));
+                    } catch (e) {
+                      console.error('Error saving configs:', e);
+                    }
+                    return updated;
+                  });
+                  const updatedConfig = areaConfigurations.find(c => c.id === selectedConfig.id);
+                  if (updatedConfig) {
+                    setSelectedConfigId(selectedConfig.id);
+                  }
+                }}>
                           Change System
                         </Button>
                       </div>
@@ -1909,17 +1880,14 @@ export default function PaintEstimationScreen() {
                         {/* Primer Type and Coats */}
                         <div className="space-y-2">
                           <Label className="text-sm font-medium">Primer</Label>
-                          <Select 
-                            value={selectedConfig.enamelConfig?.primerType || ''}
-                            onValueChange={(value) => handleUpdateConfig({
-                              enamelConfig: {
-                                primerType: value,
-                                primerCoats: selectedConfig.enamelConfig?.primerCoats ?? 0,
-                                enamelType: selectedConfig.enamelConfig?.enamelType || '',
-                                enamelCoats: selectedConfig.enamelConfig?.enamelCoats ?? 0,
-                              }
-                            })}
-                          >
+                          <Select value={selectedConfig.enamelConfig?.primerType || ''} onValueChange={value => handleUpdateConfig({
+                    enamelConfig: {
+                      primerType: value,
+                      primerCoats: selectedConfig.enamelConfig?.primerCoats ?? 0,
+                      enamelType: selectedConfig.enamelConfig?.enamelType || '',
+                      enamelCoats: selectedConfig.enamelConfig?.enamelCoats ?? 0
+                    }
+                  })}>
                             <SelectTrigger className="h-9">
                               <SelectValue placeholder="Select Primer Type" />
                             </SelectTrigger>
@@ -1932,37 +1900,27 @@ export default function PaintEstimationScreen() {
                           <div className="flex items-center justify-between">
                             <span className="text-sm text-muted-foreground">Coats</span>
                             <div className="flex items-center gap-2">
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() => handleUpdateConfig({
-                                  enamelConfig: {
-                                    primerType: selectedConfig.enamelConfig?.primerType || '',
-                                    primerCoats: Math.max(0, (selectedConfig.enamelConfig?.primerCoats ?? 0) - 1),
-                                    enamelType: selectedConfig.enamelConfig?.enamelType || '',
-                                    enamelCoats: selectedConfig.enamelConfig?.enamelCoats ?? 0,
-                                  }
-                                })}
-                              >
+                              <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleUpdateConfig({
+                        enamelConfig: {
+                          primerType: selectedConfig.enamelConfig?.primerType || '',
+                          primerCoats: Math.max(0, (selectedConfig.enamelConfig?.primerCoats ?? 0) - 1),
+                          enamelType: selectedConfig.enamelConfig?.enamelType || '',
+                          enamelCoats: selectedConfig.enamelConfig?.enamelCoats ?? 0
+                        }
+                      })}>
                                 <Minus className="h-3 w-3" />
                               </Button>
                               <span className="w-8 text-center font-medium">
                                 {selectedConfig.enamelConfig?.primerCoats ?? 0}
                               </span>
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() => handleUpdateConfig({
-                                  enamelConfig: {
-                                    primerType: selectedConfig.enamelConfig?.primerType || '',
-                                    primerCoats: Math.min(5, (selectedConfig.enamelConfig?.primerCoats ?? 0) + 1),
-                                    enamelType: selectedConfig.enamelConfig?.enamelType || '',
-                                    enamelCoats: selectedConfig.enamelConfig?.enamelCoats ?? 0,
-                                  }
-                                })}
-                              >
+                              <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleUpdateConfig({
+                        enamelConfig: {
+                          primerType: selectedConfig.enamelConfig?.primerType || '',
+                          primerCoats: Math.min(5, (selectedConfig.enamelConfig?.primerCoats ?? 0) + 1),
+                          enamelType: selectedConfig.enamelConfig?.enamelType || '',
+                          enamelCoats: selectedConfig.enamelConfig?.enamelCoats ?? 0
+                        }
+                      })}>
                                 <Plus className="h-3 w-3" />
                               </Button>
                             </div>
@@ -1972,17 +1930,14 @@ export default function PaintEstimationScreen() {
                         {/* Enamel Type and Coats */}
                         <div className="space-y-2">
                           <Label className="text-sm font-medium">Enamel</Label>
-                          <Select 
-                            value={selectedConfig.enamelConfig?.enamelType || ''}
-                            onValueChange={(value) => handleUpdateConfig({
-                              enamelConfig: {
-                                primerType: selectedConfig.enamelConfig?.primerType || '',
-                                primerCoats: selectedConfig.enamelConfig?.primerCoats ?? 0,
-                                enamelType: value,
-                                enamelCoats: selectedConfig.enamelConfig?.enamelCoats ?? 0,
-                              }
-                            })}
-                          >
+                          <Select value={selectedConfig.enamelConfig?.enamelType || ''} onValueChange={value => handleUpdateConfig({
+                    enamelConfig: {
+                      primerType: selectedConfig.enamelConfig?.primerType || '',
+                      primerCoats: selectedConfig.enamelConfig?.primerCoats ?? 0,
+                      enamelType: value,
+                      enamelCoats: selectedConfig.enamelConfig?.enamelCoats ?? 0
+                    }
+                  })}>
                             <SelectTrigger className="h-9">
                               <SelectValue placeholder="Select Enamel Type" />
                             </SelectTrigger>
@@ -1995,50 +1950,37 @@ export default function PaintEstimationScreen() {
                           <div className="flex items-center justify-between">
                             <span className="text-sm text-muted-foreground">Coats</span>
                             <div className="flex items-center gap-2">
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() => handleUpdateConfig({
-                                  enamelConfig: {
-                                    primerType: selectedConfig.enamelConfig?.primerType || '',
-                                    primerCoats: selectedConfig.enamelConfig?.primerCoats ?? 0,
-                                    enamelType: selectedConfig.enamelConfig?.enamelType || '',
-                                    enamelCoats: Math.max(0, (selectedConfig.enamelConfig?.enamelCoats ?? 0) - 1),
-                                  }
-                                })}
-                              >
+                              <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleUpdateConfig({
+                        enamelConfig: {
+                          primerType: selectedConfig.enamelConfig?.primerType || '',
+                          primerCoats: selectedConfig.enamelConfig?.primerCoats ?? 0,
+                          enamelType: selectedConfig.enamelConfig?.enamelType || '',
+                          enamelCoats: Math.max(0, (selectedConfig.enamelConfig?.enamelCoats ?? 0) - 1)
+                        }
+                      })}>
                                 <Minus className="h-3 w-3" />
                               </Button>
                               <span className="w-8 text-center font-medium">
                                 {selectedConfig.enamelConfig?.enamelCoats ?? 0}
                               </span>
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() => handleUpdateConfig({
-                                  enamelConfig: {
-                                    primerType: selectedConfig.enamelConfig?.primerType || '',
-                                    primerCoats: selectedConfig.enamelConfig?.primerCoats ?? 0,
-                                    enamelType: selectedConfig.enamelConfig?.enamelType || '',
-                                    enamelCoats: Math.min(5, (selectedConfig.enamelConfig?.enamelCoats ?? 0) + 1),
-                                  }
-                                })}
-                              >
+                              <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleUpdateConfig({
+                        enamelConfig: {
+                          primerType: selectedConfig.enamelConfig?.primerType || '',
+                          primerCoats: selectedConfig.enamelConfig?.primerCoats ?? 0,
+                          enamelType: selectedConfig.enamelConfig?.enamelType || '',
+                          enamelCoats: Math.min(5, (selectedConfig.enamelConfig?.enamelCoats ?? 0) + 1)
+                        }
+                      })}>
                                 <Plus className="h-3 w-3" />
                               </Button>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </>
-                  )}
-                </>
-              )}
+                    </>)}
+                </>}
 
-              {selectedConfig.areaType !== 'Enamel' && selectedConfig.paintingSystem === "Fresh Painting" && (
-                <div className="bg-muted rounded-lg p-4 space-y-4">
+              {selectedConfig.areaType !== 'Enamel' && selectedConfig.paintingSystem === "Fresh Painting" && <div className="bg-muted rounded-lg p-4 space-y-4">
                   <h4 className="font-medium text-sm">Fresh Painting Configuration</h4>
                   
                   {/* Putty Section */}
@@ -2046,57 +1988,40 @@ export default function PaintEstimationScreen() {
                     <div className="flex items-center justify-between">
                       <Label className="text-sm font-medium">Putty Coats</Label>
                       <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => handleUpdateConfig({
-                            coatConfiguration: {
-                              ...selectedConfig.coatConfiguration,
-                              putty: Math.max(0, selectedConfig.coatConfiguration.putty - 1)
-                            }
-                          })}
-                        >
+                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleUpdateConfig({
+                    coatConfiguration: {
+                      ...selectedConfig.coatConfiguration,
+                      putty: Math.max(0, selectedConfig.coatConfiguration.putty - 1)
+                    }
+                  })}>
                           <Minus className="h-3 w-3" />
                         </Button>
                         <span className="w-8 text-center font-medium">
                           {selectedConfig.coatConfiguration.putty}
                         </span>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => handleUpdateConfig({
-                            coatConfiguration: {
-                              ...selectedConfig.coatConfiguration,
-                              putty: Math.min(5, selectedConfig.coatConfiguration.putty + 1)
-                            }
-                          })}
-                        >
+                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleUpdateConfig({
+                    coatConfiguration: {
+                      ...selectedConfig.coatConfiguration,
+                      putty: Math.min(5, selectedConfig.coatConfiguration.putty + 1)
+                    }
+                  })}>
                           <Plus className="h-3 w-3" />
                         </Button>
                       </div>
                     </div>
-                    <Select 
-                      value={selectedConfig.selectedMaterials.putty} 
-                      onValueChange={(value) => handleUpdateConfig({
-                        selectedMaterials: { ...selectedConfig.selectedMaterials, putty: value }
-                      })}
-                    >
+                    <Select value={selectedConfig.selectedMaterials.putty} onValueChange={value => handleUpdateConfig({
+                selectedMaterials: {
+                  ...selectedConfig.selectedMaterials,
+                  putty: value
+                }
+              })}>
                       <SelectTrigger className="h-9">
                         <SelectValue placeholder="Select putty type" />
                       </SelectTrigger>
                       <SelectContent>
-                        {coverageData
-                          .filter(item => item.category === "Putty")
-                          .map(item => item.product_name)
-                          .filter((value, index, self) => self.indexOf(value) === index)
-                          .sort((a, b) => a.localeCompare(b))
-                          .map((puttyName) => (
-                            <SelectItem key={puttyName} value={puttyName}>
+                        {coverageData.filter(item => item.category === "Putty").map(item => item.product_name).filter((value, index, self) => self.indexOf(value) === index).sort((a, b) => a.localeCompare(b)).map(puttyName => <SelectItem key={puttyName} value={puttyName}>
                               {puttyName}
-                            </SelectItem>
-                          ))}
+                            </SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
@@ -2106,57 +2031,40 @@ export default function PaintEstimationScreen() {
                     <div className="flex items-center justify-between">
                       <Label className="text-sm font-medium">Primer Coats</Label>
                       <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => handleUpdateConfig({
-                            coatConfiguration: {
-                              ...selectedConfig.coatConfiguration,
-                              primer: Math.max(0, selectedConfig.coatConfiguration.primer - 1)
-                            }
-                          })}
-                        >
+                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleUpdateConfig({
+                    coatConfiguration: {
+                      ...selectedConfig.coatConfiguration,
+                      primer: Math.max(0, selectedConfig.coatConfiguration.primer - 1)
+                    }
+                  })}>
                           <Minus className="h-3 w-3" />
                         </Button>
                         <span className="w-8 text-center font-medium">
                           {selectedConfig.coatConfiguration.primer}
                         </span>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => handleUpdateConfig({
-                            coatConfiguration: {
-                              ...selectedConfig.coatConfiguration,
-                              primer: Math.min(5, selectedConfig.coatConfiguration.primer + 1)
-                            }
-                          })}
-                        >
+                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleUpdateConfig({
+                    coatConfiguration: {
+                      ...selectedConfig.coatConfiguration,
+                      primer: Math.min(5, selectedConfig.coatConfiguration.primer + 1)
+                    }
+                  })}>
                           <Plus className="h-3 w-3" />
                         </Button>
                       </div>
                     </div>
-                    <Select 
-                      value={selectedConfig.selectedMaterials.primer} 
-                      onValueChange={(value) => handleUpdateConfig({
-                        selectedMaterials: { ...selectedConfig.selectedMaterials, primer: value }
-                      })}
-                    >
+                    <Select value={selectedConfig.selectedMaterials.primer} onValueChange={value => handleUpdateConfig({
+                selectedMaterials: {
+                  ...selectedConfig.selectedMaterials,
+                  primer: value
+                }
+              })}>
                       <SelectTrigger className="h-9">
                         <SelectValue placeholder="Select primer type" />
                       </SelectTrigger>
                       <SelectContent>
-                        {coverageData
-                          .filter(item => item.category === "Primer")
-                          .map(item => item.product_name)
-                          .filter((value, index, self) => self.indexOf(value) === index)
-                          .sort((a, b) => a.localeCompare(b))
-                          .map((primerName) => (
-                            <SelectItem key={primerName} value={primerName}>
+                        {coverageData.filter(item => item.category === "Primer").map(item => item.product_name).filter((value, index, self) => self.indexOf(value) === index).sort((a, b) => a.localeCompare(b)).map(primerName => <SelectItem key={primerName} value={primerName}>
                               {primerName}
-                            </SelectItem>
-                          ))}
+                            </SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
@@ -2166,45 +2074,30 @@ export default function PaintEstimationScreen() {
                     <div className="flex items-center justify-between">
                       <Label className="text-sm font-medium">Emulsion Coats</Label>
                       <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => handleUpdateConfig({
-                            coatConfiguration: {
-                              ...selectedConfig.coatConfiguration,
-                              emulsion: Math.max(0, selectedConfig.coatConfiguration.emulsion - 1)
-                            }
-                          })}
-                        >
+                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleUpdateConfig({
+                    coatConfiguration: {
+                      ...selectedConfig.coatConfiguration,
+                      emulsion: Math.max(0, selectedConfig.coatConfiguration.emulsion - 1)
+                    }
+                  })}>
                           <Minus className="h-3 w-3" />
                         </Button>
                         <span className="w-8 text-center font-medium">
                           {selectedConfig.coatConfiguration.emulsion}
                         </span>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => handleUpdateConfig({
-                            coatConfiguration: {
-                              ...selectedConfig.coatConfiguration,
-                              emulsion: Math.min(5, selectedConfig.coatConfiguration.emulsion + 1)
-                            }
-                          })}
-                        >
+                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleUpdateConfig({
+                    coatConfiguration: {
+                      ...selectedConfig.coatConfiguration,
+                      emulsion: Math.min(5, selectedConfig.coatConfiguration.emulsion + 1)
+                    }
+                  })}>
                           <Plus className="h-3 w-3" />
                         </Button>
                       </div>
                     </div>
                     <Popover open={emulsionComboOpen} onOpenChange={setEmulsionComboOpen}>
                       <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          aria-expanded={emulsionComboOpen}
-                          className="h-9 w-full justify-between"
-                        >
+                        <Button variant="outline" role="combobox" aria-expanded={emulsionComboOpen} className="h-9 w-full justify-between">
                           {selectedConfig.selectedMaterials.emulsion || "Select emulsion type"}
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
@@ -2214,40 +2107,22 @@ export default function PaintEstimationScreen() {
                           <CommandList className="max-h-[300px]">
                             <CommandEmpty>No emulsion found.</CommandEmpty>
                             <CommandGroup>
-                              {sortProductNames(
-                                coverageData
-                                .filter(item => {
-                                  // Map paint type to correct category names in database
-                                  const category = selectedPaintType === "Interior" ? "Interior Emulsion" :
-                                                 selectedPaintType === "Exterior" ? "Exterior Emulsion" : 
-                                                 "Waterproofing";
-                                  return item.category === category;
-                                })
-                                .map(item => item.product_name)
-                                .filter((value, index, self) => self.indexOf(value) === index)
-                              ).map((emulsionName) => (
-                                  <CommandItem
-                                    key={emulsionName}
-                                    value={emulsionName}
-                                    onSelect={(currentValue) => {
-                                      handleUpdateConfig({
-                                        selectedMaterials: { 
-                                          ...selectedConfig.selectedMaterials, 
-                                          emulsion: currentValue === selectedConfig.selectedMaterials.emulsion ? "" : currentValue 
-                                        }
-                                      });
-                                      setEmulsionComboOpen(false);
-                                    }}
-                                  >
-                                    <Check
-                                      className={cn(
-                                        "mr-2 h-4 w-4",
-                                        selectedConfig.selectedMaterials.emulsion === emulsionName ? "opacity-100" : "opacity-0"
-                                      )}
-                                    />
+                              {sortProductNames(coverageData.filter(item => {
+                          // Map paint type to correct category names in database
+                          const category = selectedPaintType === "Interior" ? "Interior Emulsion" : selectedPaintType === "Exterior" ? "Exterior Emulsion" : "Waterproofing";
+                          return item.category === category;
+                        }).map(item => item.product_name).filter((value, index, self) => self.indexOf(value) === index)).map(emulsionName => <CommandItem key={emulsionName} value={emulsionName} onSelect={currentValue => {
+                          handleUpdateConfig({
+                            selectedMaterials: {
+                              ...selectedConfig.selectedMaterials,
+                              emulsion: currentValue === selectedConfig.selectedMaterials.emulsion ? "" : currentValue
+                            }
+                          });
+                          setEmulsionComboOpen(false);
+                        }}>
+                                    <Check className={cn("mr-2 h-4 w-4", selectedConfig.selectedMaterials.emulsion === emulsionName ? "opacity-100" : "opacity-0")} />
                                     {emulsionName}
-                                  </CommandItem>
-                                ))}
+                                  </CommandItem>)}
                             </CommandGroup>
                           </CommandList>
                           <CommandInput placeholder="Search emulsion..." className="border-t" />
@@ -2255,11 +2130,9 @@ export default function PaintEstimationScreen() {
                       </PopoverContent>
                     </Popover>
                   </div>
-                </div>
-              )}
+                </div>}
 
-              {selectedConfig.areaType !== 'Enamel' && selectedConfig.paintingSystem === "Repainting" && (
-                <div className="bg-muted rounded-lg p-4 space-y-4">
+              {selectedConfig.areaType !== 'Enamel' && selectedConfig.paintingSystem === "Repainting" && <div className="bg-muted rounded-lg p-4 space-y-4">
                   <h4 className="font-medium text-sm">Repainting Configuration</h4>
                   
                   {/* Primer Section */}
@@ -2267,57 +2140,40 @@ export default function PaintEstimationScreen() {
                     <div className="flex items-center justify-between">
                       <Label className="text-sm font-medium">Primer Coats</Label>
                       <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => handleUpdateConfig({
-                            repaintingConfiguration: {
-                              ...selectedConfig.repaintingConfiguration,
-                              primer: Math.max(0, selectedConfig.repaintingConfiguration.primer - 1)
-                            }
-                          })}
-                        >
+                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleUpdateConfig({
+                    repaintingConfiguration: {
+                      ...selectedConfig.repaintingConfiguration,
+                      primer: Math.max(0, selectedConfig.repaintingConfiguration.primer - 1)
+                    }
+                  })}>
                           <Minus className="h-3 w-3" />
                         </Button>
                         <span className="w-8 text-center font-medium">
                           {selectedConfig.repaintingConfiguration.primer}
                         </span>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => handleUpdateConfig({
-                            repaintingConfiguration: {
-                              ...selectedConfig.repaintingConfiguration,
-                              primer: Math.min(5, selectedConfig.repaintingConfiguration.primer + 1)
-                            }
-                          })}
-                        >
+                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleUpdateConfig({
+                    repaintingConfiguration: {
+                      ...selectedConfig.repaintingConfiguration,
+                      primer: Math.min(5, selectedConfig.repaintingConfiguration.primer + 1)
+                    }
+                  })}>
                           <Plus className="h-3 w-3" />
                         </Button>
                       </div>
                     </div>
-                    <Select 
-                      value={selectedConfig.selectedMaterials.primer} 
-                      onValueChange={(value) => handleUpdateConfig({
-                        selectedMaterials: { ...selectedConfig.selectedMaterials, primer: value }
-                      })}
-                    >
+                    <Select value={selectedConfig.selectedMaterials.primer} onValueChange={value => handleUpdateConfig({
+                selectedMaterials: {
+                  ...selectedConfig.selectedMaterials,
+                  primer: value
+                }
+              })}>
                       <SelectTrigger className="h-9">
                         <SelectValue placeholder="Select primer type" />
                       </SelectTrigger>
                       <SelectContent>
-                        {coverageData
-                          .filter(item => item.category === "Primer")
-                          .map(item => item.product_name)
-                          .filter((value, index, self) => self.indexOf(value) === index)
-                          .sort((a, b) => a.localeCompare(b))
-                          .map((primerName) => (
-                            <SelectItem key={primerName} value={primerName}>
+                        {coverageData.filter(item => item.category === "Primer").map(item => item.product_name).filter((value, index, self) => self.indexOf(value) === index).sort((a, b) => a.localeCompare(b)).map(primerName => <SelectItem key={primerName} value={primerName}>
                               {primerName}
-                            </SelectItem>
-                          ))}
+                            </SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
@@ -2327,45 +2183,30 @@ export default function PaintEstimationScreen() {
                     <div className="flex items-center justify-between">
                       <Label className="text-sm font-medium">Emulsion Coats</Label>
                       <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => handleUpdateConfig({
-                            repaintingConfiguration: {
-                              ...selectedConfig.repaintingConfiguration,
-                              emulsion: Math.max(0, selectedConfig.repaintingConfiguration.emulsion - 1)
-                            }
-                          })}
-                        >
+                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleUpdateConfig({
+                    repaintingConfiguration: {
+                      ...selectedConfig.repaintingConfiguration,
+                      emulsion: Math.max(0, selectedConfig.repaintingConfiguration.emulsion - 1)
+                    }
+                  })}>
                           <Minus className="h-3 w-3" />
                         </Button>
                         <span className="w-8 text-center font-medium">
                           {selectedConfig.repaintingConfiguration.emulsion}
                         </span>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => handleUpdateConfig({
-                            repaintingConfiguration: {
-                              ...selectedConfig.repaintingConfiguration,
-                              emulsion: Math.min(5, selectedConfig.repaintingConfiguration.emulsion + 1)
-                            }
-                          })}
-                        >
+                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleUpdateConfig({
+                    repaintingConfiguration: {
+                      ...selectedConfig.repaintingConfiguration,
+                      emulsion: Math.min(5, selectedConfig.repaintingConfiguration.emulsion + 1)
+                    }
+                  })}>
                           <Plus className="h-3 w-3" />
                         </Button>
                       </div>
                     </div>
                     <Popover open={emulsionComboOpen} onOpenChange={setEmulsionComboOpen}>
                       <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          aria-expanded={emulsionComboOpen}
-                          className="h-9 w-full justify-between"
-                        >
+                        <Button variant="outline" role="combobox" aria-expanded={emulsionComboOpen} className="h-9 w-full justify-between">
                           {selectedConfig.selectedMaterials.emulsion || "Select emulsion type"}
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
@@ -2375,40 +2216,22 @@ export default function PaintEstimationScreen() {
                           <CommandList className="max-h-[300px]">
                             <CommandEmpty>No emulsion found.</CommandEmpty>
                             <CommandGroup>
-                                {sortProductNames(
-                                coverageData
-                                .filter(item => {
-                                  // Map paint type to correct category names in database
-                                  const category = selectedPaintType === "Interior" ? "Interior Emulsion" :
-                                                 selectedPaintType === "Exterior" ? "Exterior Emulsion" : 
-                                                 "Waterproofing";
-                                  return item.category === category;
-                                })
-                                .map(item => item.product_name)
-                                .filter((value, index, self) => self.indexOf(value) === index)
-                              ).map((emulsionName) => (
-                                  <CommandItem
-                                    key={emulsionName}
-                                    value={emulsionName}
-                                    onSelect={(currentValue) => {
-                                      handleUpdateConfig({
-                                        selectedMaterials: { 
-                                          ...selectedConfig.selectedMaterials, 
-                                          emulsion: currentValue === selectedConfig.selectedMaterials.emulsion ? "" : currentValue 
-                                        }
-                                      });
-                                      setEmulsionComboOpen(false);
-                                    }}
-                                  >
-                                    <Check
-                                      className={cn(
-                                        "mr-2 h-4 w-4",
-                                        selectedConfig.selectedMaterials.emulsion === emulsionName ? "opacity-100" : "opacity-0"
-                                      )}
-                                    />
+                                {sortProductNames(coverageData.filter(item => {
+                          // Map paint type to correct category names in database
+                          const category = selectedPaintType === "Interior" ? "Interior Emulsion" : selectedPaintType === "Exterior" ? "Exterior Emulsion" : "Waterproofing";
+                          return item.category === category;
+                        }).map(item => item.product_name).filter((value, index, self) => self.indexOf(value) === index)).map(emulsionName => <CommandItem key={emulsionName} value={emulsionName} onSelect={currentValue => {
+                          handleUpdateConfig({
+                            selectedMaterials: {
+                              ...selectedConfig.selectedMaterials,
+                              emulsion: currentValue === selectedConfig.selectedMaterials.emulsion ? "" : currentValue
+                            }
+                          });
+                          setEmulsionComboOpen(false);
+                        }}>
+                                    <Check className={cn("mr-2 h-4 w-4", selectedConfig.selectedMaterials.emulsion === emulsionName ? "opacity-100" : "opacity-0")} />
                                     {emulsionName}
-                                  </CommandItem>
-                                ))}
+                                  </CommandItem>)}
                             </CommandGroup>
                           </CommandList>
                           <CommandInput placeholder="Search emulsion..." className="border-t" />
@@ -2416,38 +2239,23 @@ export default function PaintEstimationScreen() {
                       </PopoverContent>
                     </Popover>
                   </div>
-                </div>
-              )}
+                </div>}
 
-              <Button
-                className="w-full"
-                onClick={() => setDialogOpen(false)}
-                disabled={selectedConfig.areaType !== 'Enamel' && !selectedConfig.paintingSystem}
-              >
+              <Button className="w-full" onClick={() => setDialogOpen(false)} disabled={selectedConfig.areaType !== 'Enamel' && !selectedConfig.paintingSystem}>
                 Save Configuration
               </Button>
-            </div>
-          )}
+            </div>}
         </DialogContent>
       </Dialog>
 
       {/* Fixed Bottom Button */}
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border">
-        <Button 
-          className="w-full h-12 text-base font-medium"
-          onClick={handleContinue}
-          disabled={!areaConfigurations.some(c => c.paintingSystem && c.perSqFtRate) || isCalculating}
-        >
-          {isCalculating ? (
-            <div className="flex items-center gap-2">
+        <Button className="w-full h-12 text-base font-medium" onClick={handleContinue} disabled={!areaConfigurations.some(c => c.paintingSystem && c.perSqFtRate) || isCalculating}>
+          {isCalculating ? <div className="flex items-center gap-2">
               <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
               <span>Generating...</span>
-            </div>
-          ) : (
-            'Generate Summary'
-          )}
+            </div> : 'Generate Summary'}
         </Button>
       </div>
-    </div>
-  );
+    </div>;
 }
