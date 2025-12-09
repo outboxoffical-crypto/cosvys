@@ -2510,18 +2510,6 @@ export default function RoomMeasurementScreen() {
               </div>
             )}
 
-            {/* Room Name Input */}
-            <div className="space-y-2">
-              <Label htmlFor="room-name">Room Name</Label>
-              <Input
-                id="room-name"
-                placeholder="e.g., outside, living room"
-                value={doorWindowRoomName}
-                onChange={(e) => setDoorWindowRoomName(e.target.value)}
-                className="h-12"
-              />
-            </div>
-
             {/* Section Name Input (Optional) - Creates separate box in Paint Estimation */}
             <div className="space-y-2">
               <Label htmlFor="dw-section-name">Section Name (Optional)</Label>
@@ -2535,6 +2523,18 @@ export default function RoomMeasurementScreen() {
               <p className="text-xs text-muted-foreground">
                 Add a section name to create a separate box in Paint Estimation
               </p>
+            </div>
+
+            {/* Room Name Input */}
+            <div className="space-y-2">
+              <Label htmlFor="room-name">Room Name</Label>
+              <Input
+                id="room-name"
+                placeholder="e.g., outside, living room"
+                value={doorWindowRoomName}
+                onChange={(e) => setDoorWindowRoomName(e.target.value)}
+                className="h-12"
+              />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <Input
