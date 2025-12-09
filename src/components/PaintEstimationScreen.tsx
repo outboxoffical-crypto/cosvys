@@ -1603,9 +1603,9 @@ export default function PaintEstimationScreen() {
                     <h3 className="text-base font-semibold text-primary">Separate Paint Area</h3>
                     <div className="grid grid-cols-2 gap-4">
                       {customSectionConfigs.map(config => {
-              // Get room name directly from rooms data
+              // Show section name user typed, not room name
               const room = rooms.find(r => r.room_id === config.roomId);
-              const displayName = room?.name || config.label || 'Section';
+              const displayName = room?.section_name || config.label || 'Section';
               return <div key={config.id} className={`border-2 border-dashed rounded-lg p-4 text-center space-y-2 cursor-pointer transition-all relative ${config.paintingSystem ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`} onClick={() => handleEditConfig(config.id)}>
                             <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive absolute top-2 right-2" onClick={e => {
                   e.stopPropagation();
@@ -1763,7 +1763,8 @@ export default function PaintEstimationScreen() {
                     <div className="grid grid-cols-2 gap-4">
                       {enamelConfigs.filter(c => c.isCustomSection).map(config => {
               const room = rooms.find(r => r.room_id === config.roomId);
-              const displayName = room?.name || config.label || 'Section';
+              // Show section name user typed, not room name
+              const displayName = room?.section_name || config.label || 'Section';
               return <div key={config.id} className={`border-2 border-dashed rounded-lg p-4 text-center space-y-2 cursor-pointer transition-all relative ${config.paintingSystem ? 'border-orange-500 bg-orange-50/50 dark:bg-orange-950/20' : 'border-orange-300 hover:border-orange-500 bg-orange-50/30 dark:bg-orange-950/10'}`} onClick={() => handleEditConfig(config.id)}>
                             <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive absolute top-2 right-2" onClick={e => {
                   e.stopPropagation();
