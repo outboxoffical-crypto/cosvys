@@ -2268,7 +2268,7 @@ export default function RoomMeasurementScreen() {
                         {room.sectionName && (
                           <div className="w-full px-3 py-1.5 bg-primary/10 rounded-t-lg border border-b-0 border-primary/20">
                             <span className="text-xs font-semibold text-primary uppercase tracking-wide">
-                              SECTION: {room.sectionName}
+                              {room.sectionName}
                             </span>
                           </div>
                         )}
