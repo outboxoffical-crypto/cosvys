@@ -2113,38 +2113,38 @@ export default function RoomMeasurementScreen() {
             {/* Section Name Input (Optional) - Creates separate box in Paint Estimation */}
             <div className="space-y-2">
               <Label htmlFor="dw-section-name">Section Name (Optional)</Label>
-              <Input id="dw-section-name" value={doorWindowSectionName} onChange={e => setDoorWindowSectionName(e.target.value)} className="h-12" placeholder="" />
+              <Input id="dw-section-name" value={doorWindowSectionName} onChange={e => setDoorWindowSectionName(e.target.value)} className="h-12 border-2 border-gray-300" placeholder="" />
             </div>
 
             {/* Room Name Input */}
             <div className="space-y-2">
               <Label htmlFor="room-name">Room Name</Label>
-              <Input id="room-name" placeholder="e.g., outside, living room" value={doorWindowRoomName} onChange={e => setDoorWindowRoomName(e.target.value)} className="h-12" />
+              <Input id="room-name" placeholder="e.g., outside, living room" value={doorWindowRoomName} onChange={e => setDoorWindowRoomName(e.target.value)} className="h-12 border-2 border-gray-300" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <Input placeholder="e.g., Main Door, Window 1" value={dialogDoorWindowGrill.name} onChange={e => setDialogDoorWindowGrill(prev => ({
               ...prev,
               name: e.target.value
-            }))} className="h-12" />
+            }))} className="h-12 border-2 border-gray-300" />
               <Input type="number" placeholder="Sides" value={dialogDoorWindowGrill.sides} onChange={e => setDialogDoorWindowGrill(prev => ({
               ...prev,
               sides: e.target.value
-            }))} className="h-12" step="1" />
+            }))} className="h-12 border-2 border-gray-300" step="1" />
             </div>
 
             <div className="grid grid-cols-3 gap-3">
               <Input type="number" placeholder="Height" value={dialogDoorWindowGrill.height} onChange={e => setDialogDoorWindowGrill(prev => ({
               ...prev,
               height: e.target.value
-            }))} className="h-12" step="0.1" />
+            }))} className="h-12 border-2 border-gray-300" step="0.1" />
               <Input type="number" placeholder="Width" value={dialogDoorWindowGrill.width} onChange={e => setDialogDoorWindowGrill(prev => ({
               ...prev,
               width: e.target.value
-            }))} className="h-12" step="0.1" />
+            }))} className="h-12 border-2 border-gray-300" step="0.1" />
               <Input type="number" placeholder="Grill Multiplier" value={dialogDoorWindowGrill.grillMultiplier} onChange={e => setDialogDoorWindowGrill(prev => ({
               ...prev,
               grillMultiplier: e.target.value
-            }))} className="h-12" step="0.1" />
+            }))} className="h-12 border-2 border-gray-300" step="0.1" />
             </div>
 
             <Button className="w-full h-12" onClick={handleAddDoorWindowFromDialog} disabled={!doorWindowRoomName.trim() || !doorWindowProjectType || !dialogDoorWindowGrill.height || !dialogDoorWindowGrill.width || !dialogDoorWindowGrill.sides}>
