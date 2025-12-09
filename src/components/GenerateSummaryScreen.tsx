@@ -530,6 +530,16 @@ export default function GenerateSummaryScreen() {
               {projectTypes.map(projectType => {
               const typeRooms = roomsByType[projectType];
               if (!typeRooms || typeRooms.length === 0) return null;
+              
+              // Filter out rooms that only have enamel areas (no floor/wall/ceiling selected)
+              const filteredRooms = typeRooms.filter(room => {
+                const selectedAreas = room.selected_areas || { floor: false, wall: false, ceiling: false };
+                // Only include rooms that have at least one of floor/wall/ceiling selected
+                return selectedAreas.floor || selectedAreas.wall || selectedAreas.ceiling;
+              });
+              
+              if (filteredRooms.length === 0) return null;
+              
               return <div key={projectType} className="space-y-2">
                     {/* Project Type Header */}
                     <div className="flex items-center gap-2 mt-3">
@@ -540,7 +550,7 @@ export default function GenerateSummaryScreen() {
                     
                     {/* Rooms under this type */}
                     <div className="space-y-3">
-                      {typeRooms.map(room => {
+                      {filteredRooms.map(room => {
                     const selectedAreas = room.selected_areas || {
                       floor: false,
                       wall: true,
