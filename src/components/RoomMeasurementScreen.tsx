@@ -1914,8 +1914,8 @@ export default function RoomMeasurementScreen() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                {getRoomsByProjectType(activeProjectType).length > 0 && <div className="space-y-4">
-                    {getRoomsByProjectType(activeProjectType).map(room => <div key={`dwg-${room.id}`} className="space-y-0">
+                {getRoomsByProjectType(activeProjectType).filter(room => room.doorWindowGrills && room.doorWindowGrills.length > 0).length > 0 && <div className="space-y-4">
+                    {getRoomsByProjectType(activeProjectType).filter(room => room.doorWindowGrills && room.doorWindowGrills.length > 0).map(room => <div key={`dwg-${room.id}`} className="space-y-0">
                         {/* Section Header - shown if sectionName exists */}
                         {room.sectionName && <div className="w-full px-3 py-1.5 bg-primary/10 rounded-t-lg border border-b-0 border-primary/20">
                             <span className="text-xs font-semibold text-primary uppercase tracking-wide">
