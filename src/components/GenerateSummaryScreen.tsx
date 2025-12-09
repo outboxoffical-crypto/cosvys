@@ -59,7 +59,7 @@ export default function GenerateSummaryScreen() {
   const [projectData, setProjectData] = useState<any>(null);
   const [coverageData, setCoverageData] = useState<any>({});
   const [productPricing, setProductPricing] = useState<any>({});
-  
+
   // Loading states for progressive rendering
   const [isLoadingPaintConfig, setIsLoadingPaintConfig] = useState(true);
   const [isLoadingLabour, setIsLoadingLabour] = useState(true);
@@ -108,13 +108,11 @@ export default function GenerateSummaryScreen() {
             user: currentUser
           }
         } = await supabase.auth.getUser();
-        
-        // Parallel load only what's needed for initial render
-        const [coverageResults, dealerData] = await Promise.all([
-          supabase.from('coverage_data').select('product_name, coverage_range'),
-          currentUser ? supabase.from('dealer_info').select('margin').eq('user_id', currentUser.id).maybeSingle() : Promise.resolve({ data: null })
-        ]);
 
+        // Parallel load only what's needed for initial render
+        const [coverageResults, dealerData] = await Promise.all([supabase.from('coverage_data').select('product_name, coverage_range'), currentUser ? supabase.from('dealer_info').select('margin').eq('user_id', currentUser.id).maybeSingle() : Promise.resolve({
+          data: null
+        })]);
         if (coverageResults.data) {
           const coverageMap: any = {};
           coverageResults.data.forEach(item => {
@@ -122,23 +120,18 @@ export default function GenerateSummaryScreen() {
           });
           setCoverageData(coverageMap);
         }
-
         if (dealerData.data) {
           setDealerMargin(Number(dealerData.data.margin) || 0);
         }
-
         return currentUser;
       };
-
       const currentUser = await loadEssentialData();
 
       // Load project data from Supabase with correct field names
-      const { data: projectFromDb, error: projectError } = await supabase
-        .from('projects')
-        .select('customer_name, phone, location, project_type')
-        .eq('id', projectId)
-        .single();
-      
+      const {
+        data: projectFromDb,
+        error: projectError
+      } = await supabase.from('projects').select('customer_name, phone, location, project_type').eq('id', projectId).single();
       if (projectFromDb && !projectError) {
         setProjectData({
           customerName: projectFromDb.customer_name,
@@ -234,11 +227,7 @@ export default function GenerateSummaryScreen() {
       // OPTIMIZED: Load only essential room fields (not full pictures/opening arrays)
       const {
         data: roomsData
-      } = await supabase
-        .from('rooms')
-        .select('id, name, project_type, floor_area, wall_area, adjusted_wall_area, ceiling_area, total_door_window_grill_area, selected_areas')
-        .eq('project_id', projectId);
-      
+      } = await supabase.from('rooms').select('id, name, project_type, floor_area, wall_area, adjusted_wall_area, ceiling_area, total_door_window_grill_area, selected_areas').eq('project_id', projectId);
       if (roomsData) {
         setRooms(roomsData);
 
@@ -463,14 +452,12 @@ export default function GenerateSummaryScreen() {
           <p className="text-sm text-muted-foreground mt-1">All configured paint types</p>
         </CardHeader>
         <CardContent>
-          {isLoadingPaintConfig ? (
-            <div className="flex items-center justify-center py-8">
+          {isLoadingPaintConfig ? <div className="flex items-center justify-center py-8">
               <div className="flex flex-col items-center gap-3">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                 <p className="text-sm text-muted-foreground">Loading configurations...</p>
               </div>
-            </div>
-          ) : areaConfigs.length === 0 ? <div className="text-sm text-muted-foreground p-4 border rounded-md bg-muted/30">
+            </div> : areaConfigs.length === 0 ? <div className="text-sm text-muted-foreground p-4 border rounded-md bg-muted/30">
               No paint configurations found. Please add them in Paint Estimation and click Generate Summary.
             </div> : <div className="space-y-4">
               {renderConfigGroup(interiorConfigs, 'Interior Paint Configurations')}
@@ -800,15 +787,12 @@ export default function GenerateSummaryScreen() {
           <p className="text-sm text-muted-foreground mt-1">Based on {workingHours} working hours per day</p>
         </CardHeader>
         <CardContent>
-          {isLoadingLabour ? (
-            <div className="flex items-center justify-center py-8">
+          {isLoadingLabour ? <div className="flex items-center justify-center py-8">
               <div className="flex flex-col items-center gap-3">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                 <p className="text-sm text-muted-foreground">Calculating labour requirements...</p>
               </div>
-            </div>
-          ) : (
-          <div className="space-y-3">
+            </div> : <div className="space-y-3">
             {/* Mode Selector */}
             <div className="flex gap-2 p-1 bg-muted rounded-lg w-fit">
               <Button variant={labourMode === 'auto' ? 'default' : 'ghost'} size="sm" onClick={() => setLabourMode('auto')} className="text-xs">
@@ -1101,64 +1085,84 @@ export default function GenerateSummaryScreen() {
                 </div>
               </>}
 
-          </div>
-          )}
+          </div>}
         </CardContent>
       </Card>;
   };
 
   // Helper function to get product pricing from database
-  const getProductPricingFromDB = (productName: string): { sizes: { [key: string]: number }, unit: string } | null => {
+  const getProductPricingFromDB = (productName: string): {
+    sizes: {
+      [key: string]: number;
+    };
+    unit: string;
+  } | null => {
     // Normalize product name for matching
     const normalizedName = productName.trim().toLowerCase();
-    
+
     // Try exact match first
     let pricing = productPricing[normalizedName];
-    
+
     // If no exact match, try partial match
     if (!pricing) {
-      const matchKey = Object.keys(productPricing).find(key => 
-        normalizedName.includes(key) || key.includes(normalizedName)
-      );
+      const matchKey = Object.keys(productPricing).find(key => normalizedName.includes(key) || key.includes(normalizedName));
       if (matchKey) {
         pricing = productPricing[matchKey];
       }
     }
-    
     if (pricing && typeof pricing === 'object') {
       // Determine unit based on product type
       let unit = 'L';
       if (productName.toLowerCase().includes('putty') || productName.toLowerCase().includes('polymer')) {
         unit = 'kg';
       }
-      return { sizes: pricing as { [key: string]: number }, unit };
+      return {
+        sizes: pricing as {
+          [key: string]: number;
+        },
+        unit
+      };
     }
     return null;
   };
 
   // Helper function to calculate optimal pack combination for maximum quantity
-  const calculateOptimalPackCombination = (
-    availableSizes: { size: string, price: number }[], 
-    maxQuantity: number,
-    unit: string
-  ): { combination: { size: string, count: number, price: number }[], totalCost: number, error?: string } => {
+  const calculateOptimalPackCombination = (availableSizes: {
+    size: string;
+    price: number;
+  }[], maxQuantity: number, unit: string): {
+    combination: {
+      size: string;
+      count: number;
+      price: number;
+    }[];
+    totalCost: number;
+    error?: string;
+  } => {
     // Sort sizes in descending order
     const sortedSizes = [...availableSizes].sort((a, b) => {
       const sizeA = parseFloat(a.size.replace(/[^\d.]/g, ''));
       const sizeB = parseFloat(b.size.replace(/[^\d.]/g, ''));
       return sizeB - sizeA;
     });
-
     let remaining = maxQuantity;
-    const combination: { size: string, count: number, price: number }[] = [];
-    
+    const combination: {
+      size: string;
+      count: number;
+      price: number;
+    }[] = [];
+
     // Greedy algorithm: use largest packs first
     for (const pack of sortedSizes) {
       const packSize = parseFloat(pack.size.replace(/[^\d.]/g, ''));
       if (remaining >= packSize) {
         const count = Math.floor(remaining / packSize);
         if (count > 0) {
-          combination.push({ size: pack.size, count, price: pack.price });
+          combination.push({
+            size: pack.size,
+            count,
+            price: pack.price
+          });
           remaining -= count * packSize;
         }
       }
@@ -1171,28 +1175,33 @@ export default function GenerateSummaryScreen() {
       if (existing) {
         existing.count += 1;
       } else {
-        combination.push({ size: smallestPack.size, count: 1, price: smallestPack.price });
+        combination.push({
+          size: smallestPack.size,
+          count: 1,
+          price: smallestPack.price
+        });
       }
     }
 
     // Calculate total cost
-    const totalCost = combination.reduce((sum, c) => sum + (c.count * c.price), 0);
+    const totalCost = combination.reduce((sum, c) => sum + c.count * c.price, 0);
 
     // Check if we couldn't satisfy the quantity
     if (combination.length === 0 && maxQuantity > 0) {
-      return { 
-        combination: [], 
-        totalCost: 0, 
-        error: "⚠️ Pack combination not found for full quantity." 
+      return {
+        combination: [],
+        totalCost: 0,
+        error: "⚠️ Pack combination not found for full quantity."
       };
     }
-
-    return { combination, totalCost };
+    return {
+      combination,
+      totalCost
+    };
   };
 
   // Section 4: Material Section
   const renderMaterialSection = () => {
-
     // Helper function to get correct coverage data for a material
     const getMaterialCoverage = (materialName: string, materialType: string) => {
       // Remove pack sizes from material name (e.g., "20L", "10L", "4L", "1L")
@@ -1232,7 +1241,6 @@ export default function GenerateSummaryScreen() {
     const calculateMaterial = (material: string, quantity: number) => {
       // Get pricing from database
       const pricingData = getProductPricingFromDB(material);
-      
       if (!pricingData) {
         // Avoid triggering toasts during render to prevent re-render loops.
         // Log the issue and return safe defaults so the UI can still render.
@@ -1250,12 +1258,14 @@ export default function GenerateSummaryScreen() {
           error: "⚠️ Price data unavailable — please update Product Pricing tab."
         };
       }
+      const {
+        sizes,
+        unit
+      } = pricingData;
 
-      const { sizes, unit } = pricingData;
-      
       // Determine material type for quantity calculation
       const isPutty = material.toLowerCase().includes('putty');
-      
+
       // Calculate min and max quantities based on coverage variations
       const minQuantity = Math.ceil(quantity);
       // For putty, add fixed 10kg; for others, add 25%
@@ -1268,17 +1278,14 @@ export default function GenerateSummaryScreen() {
       }));
 
       // Calculate optimal pack combination for MAX quantity
-      const { combination, totalCost, error } = calculateOptimalPackCombination(
-        availablePacks,
-        maxQuantity,
-        unit
-      );
+      const {
+        combination,
+        totalCost,
+        error
+      } = calculateOptimalPackCombination(availablePacks, maxQuantity, unit);
 
       // Format pack combination string
-      const packCombination = combination.length > 0
-        ? combination.map(c => `(${c.size}/${c.count})`).join('')
-        : 'N/A';
-
+      const packCombination = combination.length > 0 ? combination.map(c => `(${c.size}/${c.count})`).join('') : 'N/A';
       return {
         quantity: quantity.toFixed(2),
         minQuantity,
@@ -1371,7 +1378,7 @@ export default function GenerateSummaryScreen() {
         totalCost
       });
     });
-    
+
     // Update ref with total material cost for use in other sections
     totalMaterialCostRef.current = configMaterials.reduce((sum, cm) => sum + cm.totalCost, 0);
     return <Card className="eca-shadow">
@@ -1382,14 +1389,12 @@ export default function GenerateSummaryScreen() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {isLoadingMaterial ? (
-            <div className="flex items-center justify-center py-8">
+          {isLoadingMaterial ? <div className="flex items-center justify-center py-8">
               <div className="flex flex-col items-center gap-3">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                 <p className="text-sm text-muted-foreground">Calculating material requirements...</p>
               </div>
-            </div>
-          ) : calculationConfigs.length === 0 ? <div className="text-sm text-muted-foreground p-4 border rounded-md bg-muted/30">
+            </div> : calculationConfigs.length === 0 ? <div className="text-sm text-muted-foreground p-4 border rounded-md bg-muted/30">
               No material configurations found.
             </div> : <div className="space-y-4">
               {/* Interior Configurations */}
@@ -1418,11 +1423,9 @@ export default function GenerateSummaryScreen() {
                             <div className="space-y-3">
                               {configMat.materials.map((mat: any, matIdx: number) => <div key={matIdx} className="space-y-2">
                                   <h4 className="text-base font-semibold text-foreground">{mat.name}</h4>
-                                  {mat.error && (
-                                    <div className="text-xs text-destructive bg-destructive/10 p-2 rounded">
+                                  {mat.error && <div className="text-xs text-destructive bg-destructive/10 p-2 rounded">
                                       ⚠️ {mat.error}
-                                    </div>
-                                  )}
+                                    </div>}
                                   <div className="flex items-baseline justify-between">
                                     <div className="flex-1">
                                       <p className="text-sm text-muted-foreground">
@@ -1483,11 +1486,9 @@ export default function GenerateSummaryScreen() {
                             <div className="space-y-3">
                               {configMat.materials.map((mat: any, matIdx: number) => <div key={matIdx} className="space-y-2">
                                   <h4 className="text-base font-semibold text-foreground">{mat.name}</h4>
-                                  {mat.error && (
-                                    <div className="text-xs text-destructive bg-destructive/10 p-2 rounded">
+                                  {mat.error && <div className="text-xs text-destructive bg-destructive/10 p-2 rounded">
                                       ⚠️ {mat.error}
-                                    </div>
-                                  )}
+                                    </div>}
                                   <div className="flex items-baseline justify-between">
                                     <div className="flex-1">
                                       <p className="text-sm text-muted-foreground">
@@ -1548,11 +1549,9 @@ export default function GenerateSummaryScreen() {
                             <div className="space-y-3">
                               {configMat.materials.map((mat: any, matIdx: number) => <div key={matIdx} className="space-y-2">
                                   <h4 className="text-base font-semibold text-foreground">{mat.name}</h4>
-                                  {mat.error && (
-                                    <div className="text-xs text-destructive bg-destructive/10 p-2 rounded">
+                                  {mat.error && <div className="text-xs text-destructive bg-destructive/10 p-2 rounded">
                                       ⚠️ {mat.error}
-                                    </div>
-                                  )}
+                                    </div>}
                                   <div className="flex items-baseline justify-between">
                                     <div className="flex-1">
                                       <p className="text-sm text-muted-foreground">
@@ -1609,7 +1608,7 @@ export default function GenerateSummaryScreen() {
       const rate = parseFloat(config.perSqFtRate) || 0;
       return sum + area * rate;
     }, 0);
-    
+
     // Margin Cost = 10% of Total Project Cost
     const marginCost = totalProjectCost * 0.1;
     return <Card className="eca-shadow">
@@ -1641,7 +1640,7 @@ export default function GenerateSummaryScreen() {
   // Calculate actual total project cost (used in both Generate Summary and Project Summary tabs)
   const calculateActualTotalCost = () => {
     const materialCost = totalMaterialCostRef.current;
-    
+
     // Calculate labour cost using same logic as renderTotalCost
     const workingHours = 7;
     const standardHours = 8;
@@ -1663,30 +1662,34 @@ export default function GenerateSummaryScreen() {
     areaConfigs.forEach(config => {
       const area = Number(config.area) || 0;
       const isFresh = config.paintingSystem === 'Fresh Painting';
-      const isOilBased = config.selectedMaterials.emulsion?.toLowerCase().includes('enamel') || 
-                        config.selectedMaterials.primer?.toLowerCase().includes('oxide') || 
-                        config.selectedMaterials.emulsion?.toLowerCase().includes('oil');
+      const isOilBased = config.selectedMaterials.emulsion?.toLowerCase().includes('enamel') || config.selectedMaterials.primer?.toLowerCase().includes('oxide') || config.selectedMaterials.emulsion?.toLowerCase().includes('oil');
       const tasks: any[] = [];
       if (isFresh) {
         if (config.coatConfiguration.putty > 0) {
           const totalWork = area * config.coatConfiguration.putty;
           const adjustedCoverage = coverageRates.waterBased.putty * (workingHours / standardHours);
           const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
-          tasks.push({ daysRequired });
+          tasks.push({
+            daysRequired
+          });
         }
         if (config.coatConfiguration.primer > 0) {
           const totalWork = area * config.coatConfiguration.primer;
           const coverage = isOilBased ? coverageRates.oilBased.redOxide : coverageRates.waterBased.primer;
           const adjustedCoverage = coverage * (workingHours / standardHours);
           const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
-          tasks.push({ daysRequired });
+          tasks.push({
+            daysRequired
+          });
         }
         if (config.coatConfiguration.emulsion > 0) {
           const totalWork = area * config.coatConfiguration.emulsion;
           const coverage = isOilBased ? coverageRates.oilBased.enamelTop : coverageRates.waterBased.emulsion;
           const adjustedCoverage = coverage * (workingHours / standardHours);
           const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
-          tasks.push({ daysRequired });
+          tasks.push({
+            daysRequired
+          });
         }
       } else {
         if (config.repaintingConfiguration?.primer && config.repaintingConfiguration.primer > 0) {
@@ -1694,14 +1697,18 @@ export default function GenerateSummaryScreen() {
           const coverage = isOilBased ? coverageRates.oilBased.redOxide : coverageRates.waterBased.primer;
           const adjustedCoverage = coverage * (workingHours / standardHours);
           const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
-          tasks.push({ daysRequired });
+          tasks.push({
+            daysRequired
+          });
         }
         if (config.repaintingConfiguration?.emulsion && config.repaintingConfiguration.emulsion > 0) {
           const totalWork = area * config.repaintingConfiguration.emulsion;
           const coverage = isOilBased ? coverageRates.oilBased.enamelTop : coverageRates.waterBased.emulsion;
           const adjustedCoverage = coverage * (workingHours / standardHours);
           const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
-          tasks.push({ daysRequired });
+          tasks.push({
+            daysRequired
+          });
         }
       }
       configTasks.push({
@@ -1709,12 +1716,10 @@ export default function GenerateSummaryScreen() {
         totalDays: tasks.reduce((sum, task) => sum + task.daysRequired, 0)
       });
     });
-    
     const totalDays = configTasks.reduce((sum, ct) => sum + ct.totalDays, 0);
     const allTasks = configTasks.flatMap(ct => ct.tasks);
     const totalWorkAllTasks = allTasks.reduce((sum, task) => sum + task.daysRequired, 0);
     const laboursNeeded = manualDays > 0 ? Math.ceil(totalWorkAllTasks / manualDays) : 1;
-
     let labourCost = 0;
     if (labourMode === 'auto') {
       const displayDays = Math.ceil(totalDays / autoLabourPerDay);
@@ -1725,7 +1730,7 @@ export default function GenerateSummaryScreen() {
       const displayLabours = laboursNeeded;
       labourCost = perDayLabourCost * displayLabours * displayDays;
     }
-    
+
     // Calculate margin cost from Paint Configuration Details (10% of Paint Configuration Total)
     const totalProjectCostFromConfig = areaConfigs.reduce((sum, config) => {
       const area = Number(config.area) || 0;
@@ -1733,7 +1738,6 @@ export default function GenerateSummaryScreen() {
       return sum + area * rate;
     }, 0);
     const marginCost = totalProjectCostFromConfig * 0.1;
-    
     return materialCost + marginCost + labourCost;
   };
 
@@ -1837,7 +1841,7 @@ export default function GenerateSummaryScreen() {
       displayLabours = laboursNeeded;
       labourCost = perDayLabourCost * displayLabours * displayDays;
     }
-    
+
     // Calculate margin cost from Paint Configuration Details (same as Dealer Margin section)
     const totalProjectCostFromConfig = areaConfigs.reduce((sum, config) => {
       const area = Number(config.area) || 0;
@@ -1845,7 +1849,6 @@ export default function GenerateSummaryScreen() {
       return sum + area * rate;
     }, 0);
     const marginCost = totalProjectCostFromConfig * 0.1;
-    
     const totalCost = calculateActualTotalCost();
     return <Card className="eca-shadow bg-card border-primary/20">
         <CardHeader className="pb-3">
@@ -1997,16 +2000,18 @@ export default function GenerateSummaryScreen() {
     const url = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.open(url);
   };
-
   const handleSaveProject = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
       if (!user) {
         toast({
           title: "Error",
           description: "You must be logged in to save projects",
-          variant: "destructive",
+          variant: "destructive"
         });
         return;
       }
@@ -2022,32 +2027,30 @@ export default function GenerateSummaryScreen() {
 
       // Determine project types
       const projectTypes = Array.from(new Set(rooms.map(room => room.project_type).filter(Boolean)));
-      const projectTypeString = projectTypes.length > 0 ? projectTypes.join(', ') : (projectData?.projectTypes?.join(', ') || 'Interior');
+      const projectTypeString = projectTypes.length > 0 ? projectTypes.join(', ') : projectData?.projectTypes?.join(', ') || 'Interior';
 
       // Insert project into database
-      const { error } = await supabase
-        .from('projects')
-        .insert({
-          user_id: user.id,
-          lead_id: projectId || Date.now().toString(),
-          customer_name: projectData?.customerName || 'Unknown',
-          phone: projectData?.mobile || '',
-          location: projectData?.address || '',
-          project_type: projectTypeString,
-          project_status: 'Quoted',
-          quotation_value: quotationValue,
-          area_sqft: totalArea,
-          project_date: new Date().toISOString(),
-          approval_status: 'Pending',
-          reminder_sent: false,
-          notification_count: 0,
-        });
-
+      const {
+        error
+      } = await supabase.from('projects').insert({
+        user_id: user.id,
+        lead_id: projectId || Date.now().toString(),
+        customer_name: projectData?.customerName || 'Unknown',
+        phone: projectData?.mobile || '',
+        location: projectData?.address || '',
+        project_type: projectTypeString,
+        project_status: 'Quoted',
+        quotation_value: quotationValue,
+        area_sqft: totalArea,
+        project_date: new Date().toISOString(),
+        approval_status: 'Pending',
+        reminder_sent: false,
+        notification_count: 0
+      });
       if (error) throw error;
-
       toast({
         title: "Success",
-        description: "Project saved successfully!",
+        description: "Project saved successfully!"
       });
 
       // Navigate to dashboard
@@ -2057,11 +2060,10 @@ export default function GenerateSummaryScreen() {
       toast({
         title: "Error",
         description: error.message || "Failed to save project",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
-
   return <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="eca-gradient text-white p-4">
@@ -2172,14 +2174,14 @@ export default function GenerateSummaryScreen() {
                   const activeAreas = [hasFloor, hasWall, hasCeiling].filter(Boolean).length;
                   if (activeAreas === 0) return null;
                   return <div key={projectType} className="space-y-2">
-                        <div className="text-sm font-semibold text-white/90 border-b border-white/20 pb-1">
+                        <div className="text-sm font-semibold border-b border-white/20 pb-1 text-black/90">
                           {projectType}
                         </div>
                         <div className={`grid gap-4 text-center ${activeAreas === 1 ? 'grid-cols-1' : activeAreas === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
                           {hasWall && <div>
-                              <p className="text-white/80 text-sm">Total Wall</p>
+                              <p className="text-sm text-black/80">Total Wall</p>
                               <p className="text-xl font-bold">{areas.wallArea.toFixed(1)}</p>
-                              <p className="text-white/80 text-xs">sq.ft</p>
+                              <p className="text-xs text-black/80">sq.ft</p>
                             </div>}
                           {hasFloor && <div>
                               <p className="text-white/80 text-sm">Total Floor</p>
@@ -2187,9 +2189,9 @@ export default function GenerateSummaryScreen() {
                               <p className="text-white/80 text-xs">sq.ft</p>
                             </div>}
                           {hasCeiling && <div>
-                              <p className="text-white/80 text-sm">Total Ceiling</p>
+                              <p className="text-sm text-black/80">Total Ceiling</p>
                               <p className="text-xl font-bold">{areas.ceilingArea.toFixed(1)}</p>
-                              <p className="text-white/80 text-xs">sq.ft</p>
+                              <p className="text-xs text-[#010101]/80">sq.ft</p>
                             </div>}
                         </div>
                       </div>;
@@ -2233,13 +2235,13 @@ export default function GenerateSummaryScreen() {
                 <div className="p-4 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 rounded-lg border border-red-200 dark:border-red-800">
                   <p className="text-sm text-red-700 dark:text-red-300 mb-2 font-medium">Average Value</p>
                   <p className="text-3xl font-bold text-red-700 dark:text-red-300">
-                    ₹{Math.abs(
-                      areaConfigs.reduce((sum, config) => {
-                        const area = Number(config.area) || 0;
-                        const rate = parseFloat(config.perSqFtRate) || 0;
-                        return sum + area * rate;
-                      }, 0) - calculateActualTotalCost()
-                    ).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                    ₹{Math.abs(areaConfigs.reduce((sum, config) => {
+                    const area = Number(config.area) || 0;
+                    const rate = parseFloat(config.perSqFtRate) || 0;
+                    return sum + area * rate;
+                  }, 0) - calculateActualTotalCost()).toLocaleString('en-IN', {
+                    maximumFractionDigits: 0
+                  })}
                   </p>
                 </div>
               </CardContent>
@@ -2275,11 +2277,7 @@ export default function GenerateSummaryScreen() {
 
             {/* Save Project */}
             <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border">
-              <Button 
-                onClick={handleSaveProject}
-                className="w-full h-12 text-base font-medium"
-                size="lg"
-              >
+              <Button onClick={handleSaveProject} className="w-full h-12 text-base font-medium" size="lg">
                 Save Project
               </Button>
             </div>
