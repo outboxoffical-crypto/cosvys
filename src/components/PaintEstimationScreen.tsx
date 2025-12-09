@@ -1382,8 +1382,8 @@ export default function PaintEstimationScreen() {
   const wallConfigs = areaConfigurations.filter(c => c.areaType === 'Wall' && !c.isCustomSection);
   const ceilingConfigs = areaConfigurations.filter(c => c.areaType === 'Ceiling' && !c.isCustomSection);
   const enamelConfigs = areaConfigurations.filter(c => c.areaType === 'Enamel');
-  // Custom sections created via (+) icon - completely separate from Wall Area
-  const customSectionConfigs = areaConfigurations.filter(c => c.isCustomSection);
+  // Custom sections created via (+) icon - completely separate from Wall Area, exclude Enamel types
+  const customSectionConfigs = areaConfigurations.filter(c => c.isCustomSection && c.areaType !== 'Enamel');
 
   // Get configuration description
   const getConfigDescription = (config: AreaConfiguration) => {
