@@ -541,35 +541,36 @@ export default function PaintEstimationScreen() {
       }));
     } catch {}
 
-    // Main areas default to current totals (only if > 0)
-    let floorMain = floorAreaTotal;
-    let wallMain = wallAreaTotal;
-    let ceilingMain = ceilingAreaTotal;
-    let enamelMain = enamelAreaTotal;
+    // Main areas default to current totals (only if selected)
+    let floorMain = hasFloorSelected ? floorAreaTotal : 0;
+    let wallMain = hasWallSelected ? wallAreaTotal : 0;
+    let ceilingMain = hasCeilingSelected ? ceilingAreaTotal : 0;
+    let enamelMain = hasEnamelSelected ? enamelAreaTotal : 0;
 
     // Collect additional configs (new separate boxes)
     const additional: AreaConfiguration[] = [];
 
-    // If NOT in additional mode, split totals into main + stored additionals
+    // If NOT in additional mode, split totals into main + stored additionals (only for selected area types)
     if (!isAdditionalMode && storedAdditional.length > 0) {
-      const sumStoredFloor = storedAdditional.filter(a => a.areaType === 'Floor').reduce((sum, a) => sum + (Number(a.area) || 0), 0);
-      const sumStoredWall = storedAdditional.filter(a => a.areaType === 'Wall').reduce((sum, a) => sum + (Number(a.area) || 0), 0);
-      const sumStoredCeiling = storedAdditional.filter(a => a.areaType === 'Ceiling').reduce((sum, a) => sum + (Number(a.area) || 0), 0);
-      const sumStoredEnamel = storedAdditional.filter(a => a.areaType === 'Enamel').reduce((sum, a) => sum + (Number(a.area) || 0), 0);
-      floorMain = Math.max(0, floorAreaTotal - sumStoredFloor);
-      wallMain = Math.max(0, wallAreaTotal - sumStoredWall);
-      ceilingMain = Math.max(0, ceilingAreaTotal - sumStoredCeiling);
-      enamelMain = Math.max(0, enamelAreaTotal - sumStoredEnamel);
+      const sumStoredFloor = hasFloorSelected ? storedAdditional.filter(a => a.areaType === 'Floor').reduce((sum, a) => sum + (Number(a.area) || 0), 0) : 0;
+      const sumStoredWall = hasWallSelected ? storedAdditional.filter(a => a.areaType === 'Wall').reduce((sum, a) => sum + (Number(a.area) || 0), 0) : 0;
+      const sumStoredCeiling = hasCeilingSelected ? storedAdditional.filter(a => a.areaType === 'Ceiling').reduce((sum, a) => sum + (Number(a.area) || 0), 0) : 0;
+      const sumStoredEnamel = hasEnamelSelected ? storedAdditional.filter(a => a.areaType === 'Enamel').reduce((sum, a) => sum + (Number(a.area) || 0), 0) : 0;
+      floorMain = hasFloorSelected ? Math.max(0, floorAreaTotal - sumStoredFloor) : 0;
+      wallMain = hasWallSelected ? Math.max(0, wallAreaTotal - sumStoredWall) : 0;
+      ceilingMain = hasCeilingSelected ? Math.max(0, ceilingAreaTotal - sumStoredCeiling) : 0;
+      enamelMain = hasEnamelSelected ? Math.max(0, enamelAreaTotal - sumStoredEnamel) : 0;
     }
     if (isAdditionalMode && baseline) {
-      const addFloor = Math.max(0, floorAreaTotal - (baseline.floor || 0));
-      const addWall = Math.max(0, wallAreaTotal - (baseline.wall || 0));
-      const addCeiling = Math.max(0, ceilingAreaTotal - (baseline.ceiling || 0));
+      // Only calculate additional for area types that are selected
+      const addFloor = hasFloorSelected ? Math.max(0, floorAreaTotal - (baseline.floor || 0)) : 0;
+      const addWall = hasWallSelected ? Math.max(0, wallAreaTotal - (baseline.wall || 0)) : 0;
+      const addCeiling = hasCeilingSelected ? Math.max(0, ceilingAreaTotal - (baseline.ceiling || 0)) : 0;
 
-      // Keep main as baseline so the new difference becomes a new box
-      floorMain = baseline.floor || 0;
-      wallMain = baseline.wall || 0;
-      ceilingMain = baseline.ceiling || 0;
+      // Keep main as baseline so the new difference becomes a new box (only for selected areas)
+      floorMain = hasFloorSelected ? (baseline.floor || 0) : 0;
+      wallMain = hasWallSelected ? (baseline.wall || 0) : 0;
+      ceilingMain = hasCeilingSelected ? (baseline.ceiling || 0) : 0;
 
       // Get the baseline room IDs to detect new rooms
       const baselineRoomIds = baseline.roomIds || [];
@@ -733,15 +734,15 @@ export default function PaintEstimationScreen() {
       const currentRoomIds = filteredRooms.map(r => r.id);
       const newRoomIds = currentRoomIds.filter(id => !baselineRoomIds.includes(id));
       if (newRoomIds.length > 0) {
-        // New rooms detected! Calculate the difference
-        const addFloor = Math.max(0, floorAreaTotal - (baseline.floor || 0));
-        const addWall = Math.max(0, wallAreaTotal - (baseline.wall || 0));
-        const addCeiling = Math.max(0, ceilingAreaTotal - (baseline.ceiling || 0));
+        // New rooms detected! Calculate the difference (only for selected area types)
+        const addFloor = hasFloorSelected ? Math.max(0, floorAreaTotal - (baseline.floor || 0)) : 0;
+        const addWall = hasWallSelected ? Math.max(0, wallAreaTotal - (baseline.wall || 0)) : 0;
+        const addCeiling = hasCeilingSelected ? Math.max(0, ceilingAreaTotal - (baseline.ceiling || 0)) : 0;
 
-        // Keep main as baseline
-        floorMain = baseline.floor || 0;
-        wallMain = baseline.wall || 0;
-        ceilingMain = baseline.ceiling || 0;
+        // Keep main as baseline (only for selected area types)
+        floorMain = hasFloorSelected ? (baseline.floor || 0) : 0;
+        wallMain = hasWallSelected ? (baseline.wall || 0) : 0;
+        ceilingMain = hasCeilingSelected ? (baseline.ceiling || 0) : 0;
         const newRooms = filteredRooms.filter(r => newRoomIds.includes(r.id));
         if (addFloor > 0) {
           let newRoomName = 'Additional Floor Area';
@@ -1064,12 +1065,12 @@ export default function PaintEstimationScreen() {
       });
     }
 
-    // Append any additional configs detected (persisted + new) but only keep area types that still have totals > 0
+    // Append any additional configs detected (persisted + new) but only keep area types that were SELECTED (not just > 0)
     const filteredStored = storedAdditional.filter(a => {
-      if (a.areaType === 'Floor') return floorAreaTotal > 0;
-      if (a.areaType === 'Wall') return wallAreaTotal > 0;
-      if (a.areaType === 'Ceiling') return ceilingAreaTotal > 0;
-      if (a.areaType === 'Enamel') return enamelAreaTotal > 0;
+      if (a.areaType === 'Floor') return hasFloorSelected;
+      if (a.areaType === 'Wall') return hasWallSelected;
+      if (a.areaType === 'Ceiling') return hasCeilingSelected;
+      if (a.areaType === 'Enamel') return hasEnamelSelected;
       return true;
     });
     configs.push(...filteredStored, ...additional);
