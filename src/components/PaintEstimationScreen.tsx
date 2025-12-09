@@ -1736,9 +1736,9 @@ export default function PaintEstimationScreen() {
                   Door & Window Enamel
                 </h2>
                 
-                {/* Compact Half-Width Layout for Enamel */}
-                <div className="grid grid-cols-2 gap-4">
-                  {enamelConfigs.map(config => <div key={config.id} className={`border-2 border-dashed rounded-lg p-3 text-center space-y-2 cursor-pointer transition-all relative ${config.paintingSystem ? 'border-orange-500 bg-orange-50/50 dark:bg-orange-950/20' : 'border-orange-300 hover:border-orange-500 bg-orange-50/30 dark:bg-orange-950/10'}`} onClick={() => handleEditConfig(config.id)}>
+                {/* Main Enamel Areas (non-custom sections) */}
+                {enamelConfigs.filter(c => !c.isCustomSection).length > 0 && <div className="grid grid-cols-2 gap-4">
+                  {enamelConfigs.filter(c => !c.isCustomSection).map(config => <div key={config.id} className={`border-2 border-dashed rounded-lg p-4 text-center space-y-2 cursor-pointer transition-all relative ${config.paintingSystem ? 'border-orange-500 bg-orange-50/50 dark:bg-orange-950/20' : 'border-orange-300 hover:border-orange-500 bg-orange-50/30 dark:bg-orange-950/10'}`} onClick={() => handleEditConfig(config.id)}>
                       {config.isAdditional && <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive absolute top-2 right-2" onClick={e => {
               e.stopPropagation();
               handleDeleteConfig(config.id);
@@ -1749,13 +1749,37 @@ export default function PaintEstimationScreen() {
                         {config.paintingSystem || 'Configure Enamel'}
                       </Button>
                       <div>
-                        <p className="text-2xl font-bold text-orange-700 dark:text-orange-300">{config.area ? config.area.toFixed(1) : '0.0'}</p>
-                        <p className="text-xs text-orange-600 dark:text-orange-400">
+                        <p className="text-3xl font-bold text-orange-700 dark:text-orange-300">{config.area ? config.area.toFixed(1) : '0.0'}</p>
+                        <p className="text-sm text-orange-600 dark:text-orange-400">
                           {config.label || 'Enamel Area'}
                         </p>
                       </div>
                     </div>)}
-                </div>
+                </div>}
+
+                {/* Separate Enamel Area - Custom sections with section_name */}
+                {enamelConfigs.filter(c => c.isCustomSection).length > 0 && <div className="space-y-3">
+                    <h3 className="text-base font-semibold text-orange-700 dark:text-orange-300">Separate Enamel Area</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      {enamelConfigs.filter(c => c.isCustomSection).map(config => {
+              const room = rooms.find(r => r.room_id === config.roomId);
+              const displayName = room?.name || config.label || 'Section';
+              return <div key={config.id} className={`border-2 border-dashed rounded-lg p-4 text-center space-y-2 cursor-pointer transition-all relative ${config.paintingSystem ? 'border-orange-500 bg-orange-50/50 dark:bg-orange-950/20' : 'border-orange-300 hover:border-orange-500 bg-orange-50/30 dark:bg-orange-950/10'}`} onClick={() => handleEditConfig(config.id)}>
+                            <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive absolute top-2 right-2" onClick={e => {
+                  e.stopPropagation();
+                  handleDeleteConfig(config.id);
+                }}>
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                            <Button variant="ghost" size="sm" className="text-orange-700 dark:text-orange-300 text-xs pointer-events-none">
+                              {config.paintingSystem || 'Configure Enamel'}
+                            </Button>
+                            <p className="text-3xl font-bold text-orange-700 dark:text-orange-300">{config.area ? config.area.toFixed(1) : '0.0'}</p>
+                            <p className="text-sm text-orange-600 dark:text-orange-400">{displayName}</p>
+                          </div>;
+            })}
+                    </div>
+                  </div>}
 
                 {/* Add Additional Enamel - Navigate to Door & Window tab */}
                 <Button variant="outline" className="w-full border-dashed border-orange-300 text-orange-700" onClick={() => {
