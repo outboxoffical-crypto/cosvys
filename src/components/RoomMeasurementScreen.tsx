@@ -2520,9 +2520,6 @@ export default function RoomMeasurementScreen() {
                 onChange={(e) => setDoorWindowSectionName(e.target.value)}
                 className="h-12"
               />
-              <p className="text-xs text-muted-foreground">
-                Add a section name to create a separate box in Paint Estimation
-              </p>
             </div>
 
             {/* Room Name Input */}
