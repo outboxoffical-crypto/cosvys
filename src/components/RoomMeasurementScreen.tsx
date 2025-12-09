@@ -141,6 +141,7 @@ export default function RoomMeasurementScreen() {
   const [doorWindowDialogOpen, setDoorWindowDialogOpen] = useState(false);
   const [doorWindowRoomName, setDoorWindowRoomName] = useState("");
   const [doorWindowProjectType, setDoorWindowProjectType] = useState<string>("");
+  const [doorWindowSectionName, setDoorWindowSectionName] = useState(""); // Section name for separate Paint Estimation box
   
   // Sub-Area Dialog state
   const [subAreaDialogOpen, setSubAreaDialogOpen] = useState(false);
@@ -1084,9 +1085,11 @@ export default function RoomMeasurementScreen() {
     } else {
       // Create new room with just door/window data
       const roomId = Date.now().toString();
+      const sectionNameTrimmed = doorWindowSectionName.trim() || undefined;
       const newRoom: Room = {
         id: roomId,
         name: roomName,
+        sectionName: sectionNameTrimmed, // Section header for separate Paint Estimation box
         length: 0,
         width: 0,
         height: 0,
@@ -1118,6 +1121,7 @@ export default function RoomMeasurementScreen() {
             project_id: projectId!,
             room_id: roomId,
             name: newRoom.name,
+            section_name: sectionNameTrimmed || null, // Section header for Paint Estimation
             length: newRoom.length,
             width: newRoom.width,
             height: newRoom.height,
@@ -1161,6 +1165,7 @@ export default function RoomMeasurementScreen() {
     });
     setDoorWindowRoomName("");
     setDoorWindowProjectType("");
+    setDoorWindowSectionName(""); // Reset section name
     setDoorWindowDialogOpen(false);
   };
 
@@ -2505,6 +2510,21 @@ export default function RoomMeasurementScreen() {
                 onChange={(e) => setDoorWindowRoomName(e.target.value)}
                 className="h-12"
               />
+            </div>
+
+            {/* Section Name Input (Optional) - Creates separate box in Paint Estimation */}
+            <div className="space-y-2">
+              <Label htmlFor="dw-section-name">Section Name (Optional)</Label>
+              <Input
+                id="dw-section-name"
+                placeholder="e.g., Damp Wall, Front Door Section"
+                value={doorWindowSectionName}
+                onChange={(e) => setDoorWindowSectionName(e.target.value)}
+                className="h-12"
+              />
+              <p className="text-xs text-muted-foreground">
+                Add a section name to create a separate box in Paint Estimation
+              </p>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <Input
