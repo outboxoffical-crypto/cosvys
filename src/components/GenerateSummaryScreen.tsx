@@ -339,10 +339,10 @@ export default function GenerateSummaryScreen() {
       setActiveConfigIndex(newIndex);
     };
 
-    // Group configurations by paint type
-    const interiorConfigs = areaConfigs.filter(c => c.paintTypeCategory === 'Interior');
-    const exteriorConfigs = areaConfigs.filter(c => c.paintTypeCategory === 'Exterior');
-    const waterproofingConfigs = areaConfigs.filter(c => c.paintTypeCategory === 'Waterproofing');
+    // Group configurations by paint type - exclude Enamel from paint configs
+    const interiorConfigs = areaConfigs.filter(c => c.paintTypeCategory === 'Interior' && c.areaType !== 'Enamel');
+    const exteriorConfigs = areaConfigs.filter(c => c.paintTypeCategory === 'Exterior' && c.areaType !== 'Enamel');
+    const waterproofingConfigs = areaConfigs.filter(c => c.paintTypeCategory === 'Waterproofing' && c.areaType !== 'Enamel');
     const renderConfigGroup = (configs: AreaConfig[], typeLabel: string) => {
       if (configs.length === 0) return null;
       return <div key={typeLabel} className="space-y-3 mb-6">
