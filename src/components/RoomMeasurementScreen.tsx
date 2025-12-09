@@ -2263,7 +2263,16 @@ export default function RoomMeasurementScreen() {
                 {getRoomsByProjectType(activeProjectType).length > 0 && (
                   <div className="space-y-4">
                     {getRoomsByProjectType(activeProjectType).map((room) => (
-                      <Card key={`dwg-${room.id}`} className="border-amber-200 dark:border-amber-800">
+                      <div key={`dwg-${room.id}`} className="space-y-0">
+                        {/* Section Header - shown if sectionName exists */}
+                        {room.sectionName && (
+                          <div className="w-full px-3 py-1.5 bg-primary/10 rounded-t-lg border border-b-0 border-primary/20">
+                            <span className="text-xs font-semibold text-primary uppercase tracking-wide">
+                              SECTION: {room.sectionName}
+                            </span>
+                          </div>
+                        )}
+                        <Card className={`border-amber-200 dark:border-amber-800 ${room.sectionName ? 'rounded-t-none' : ''}`}>
                         <CardContent className="p-4">
                           <div className="flex items-center justify-between mb-3">
                             <h3 className="font-semibold text-foreground">{room.name}</h3>
@@ -2374,6 +2383,7 @@ export default function RoomMeasurementScreen() {
                           </Button>
                         </CardContent>
                       </Card>
+                      </div>
                     ))}
                   </div>
                 )}
