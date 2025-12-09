@@ -1667,7 +1667,8 @@ export default function PaintEstimationScreen() {
                   <CardTitle className="text-lg text-orange-700 dark:text-orange-300">Enamel Paint Configuration Summary</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {areaConfigurations.filter(c => c.areaType === 'Enamel' && (c.paintingSystem || c.enamelConfig)).map(config => <Card key={config.id} className="border-2 border-orange-500/20 bg-orange-50/50 dark:bg-orange-950/20">
+                  {/* Main Enamel Areas first (non-custom sections) */}
+                  {areaConfigurations.filter(c => c.areaType === 'Enamel' && (c.paintingSystem || c.enamelConfig) && !c.isCustomSection).map(config => <Card key={config.id} className="border-2 border-orange-500/20 bg-orange-50/50 dark:bg-orange-950/20">
                       <CardContent className="p-4">
                         <div className="space-y-3">
                           <div className="flex items-center justify-between">
@@ -1726,6 +1727,71 @@ export default function PaintEstimationScreen() {
                         </div>
                       </CardContent>
                     </Card>)}
+                  
+                  {/* Separate Enamel Areas (custom sections) - shown after main enamel */}
+                  {areaConfigurations.filter(c => c.areaType === 'Enamel' && (c.paintingSystem || c.enamelConfig) && c.isCustomSection).map(config => {
+                    const room = rooms.find(r => r.room_id === config.roomId);
+                    const displayName = room?.section_name || config.label || 'Section';
+                    return <Card key={config.id} className="border-2 border-orange-500/20 bg-orange-50/50 dark:bg-orange-950/20">
+                      <CardContent className="p-4">
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <h3 className="font-semibold text-base text-orange-700 dark:text-orange-300">{displayName}</h3>
+                            <div className="flex gap-2">
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20" onClick={() => handleDeleteConfig(config.id)}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEditConfig(config.id)}>
+                                <Settings className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+
+                          <div className="space-y-1">
+                            <p className="text-sm text-muted-foreground">Paint Type</p>
+                            <p className="font-medium">{config.enamelConfig?.enamelType || 'Not Selected'}</p>
+                          </div>
+
+                          <div className="space-y-1">
+                            <p className="text-sm text-muted-foreground">Painting System</p>
+                            <p className="font-medium">{config.paintingSystem || 'Not Selected'}</p>
+                          </div>
+
+                          <div className="space-y-1">
+                            <p className="text-sm text-muted-foreground">Coats</p>
+                            <p className="font-medium text-sm leading-relaxed">
+                              {getConfigDescription(config) || 'Not configured'}
+                            </p>
+                          </div>
+
+                          <div className="space-y-1">
+                            <p className="text-sm text-muted-foreground">Area Sq.ft</p>
+                            <p className="font-medium">{config.area ? config.area.toFixed(2) : '0.00'}</p>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label className="text-sm">Per Sq.ft Rate (₹)</Label>
+                            <Input type="number" placeholder="Enter rate per sq.ft" value={config.perSqFtRate} onChange={e => {
+                    setAreaConfigurations(prev => {
+                      const updated = prev.map(c => c.id === config.id ? {
+                        ...c,
+                        perSqFtRate: e.target.value
+                      } : c);
+                      // Save to localStorage
+                      const savedConfigKey = `paint_configs_${projectId}_${selectedPaintType}`;
+                      try {
+                        localStorage.setItem(savedConfigKey, JSON.stringify(updated));
+                      } catch (e) {
+                        console.error('Error saving configs:', e);
+                      }
+                      return updated;
+                    });
+                  }} className="h-10" />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>;
+                  })}
                 </CardContent>
               </Card>}
 
