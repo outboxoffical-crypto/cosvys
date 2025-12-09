@@ -2230,14 +2230,9 @@ export default function RoomMeasurementScreen() {
           <DialogHeader>
             <DialogTitle>Add Section Header</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <p className="text-sm text-muted-foreground">
-              Add a section header to this room (e.g., "Damp Wall Only Putty", "Ground Floor Royale"). The header will appear above the room card.
-            </p>
-            <div className="space-y-2">
-              <Label htmlFor="section-name">Section Name</Label>
-              <Input id="section-name" placeholder="e.g., Damp Wall Only Putty, Ground Floor Royale" value={addSectionName} onChange={e => setAddSectionName(e.target.value)} className="h-12" autoFocus />
-            </div>
+          <div className="space-y-2 py-2">
+            <Label htmlFor="section-name">Section Name</Label>
+            <Input id="section-name" placeholder="e.g., Damp Wall Only Putty" value={addSectionName} onChange={e => setAddSectionName(e.target.value)} className="h-12" autoFocus />
           </div>
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => {
