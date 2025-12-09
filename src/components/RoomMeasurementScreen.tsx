@@ -1449,14 +1449,6 @@ export default function RoomMeasurementScreen() {
                       <Ruler className="mr-2 h-5 w-5 text-primary" />
                       Add Room
                     </div>
-                    <div className="flex flex-col items-center">
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10" onClick={() => handleOpenCustomSectionDialog()} title="Create a separate area for different paint configuration inside this room">
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                      <span className="text-[9px] text-muted-foreground text-center max-w-[80px] leading-tight">
-                        Separate Section
-                      </span>
-                    </div>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
