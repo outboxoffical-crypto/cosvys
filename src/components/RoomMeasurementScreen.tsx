@@ -1615,16 +1615,44 @@ export default function RoomMeasurementScreen() {
                 </CardContent>
               </Card>}
 
-            {/* Show Rooms for Active Project Type - Filter out rooms that only have door/window data */}
-            {activeProjectType && getRoomsByProjectType(activeProjectType).filter(room => room.length > 0 || room.width > 0 || room.height > 0).length > 0 && <div className="space-y-4">
+            {/* Show Rooms for Active Project Type - Filter out rooms that only have door/window data AND enamel-type sections */}
+            {activeProjectType && getRoomsByProjectType(activeProjectType).filter(room => {
+              // Exclude rooms that are enamel-type sections (should only appear in Enamel section)
+              const isEnamelSection = room.sectionName && (
+                room.sectionName.toLowerCase().includes('enamel') || 
+                room.sectionName.toLowerCase().includes('varnish') ||
+                room.sectionName.toLowerCase().includes('door') ||
+                room.sectionName.toLowerCase().includes('window') ||
+                room.sectionName.toLowerCase().includes('grill')
+              );
+              return (room.length > 0 || room.width > 0 || room.height > 0) && !isEnamelSection;
+            }).length > 0 && <div className="space-y-4">
                 <div>
                   <h3 className="text-lg font-semibold text-foreground">{activeProjectType} - Rooms</h3>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Total: {getRoomsByProjectType(activeProjectType).filter(room => room.length > 0 || room.width > 0 || room.height > 0).length} room(s)
+                    Total: {getRoomsByProjectType(activeProjectType).filter(room => {
+                      const isEnamelSection = room.sectionName && (
+                        room.sectionName.toLowerCase().includes('enamel') || 
+                        room.sectionName.toLowerCase().includes('varnish') ||
+                        room.sectionName.toLowerCase().includes('door') ||
+                        room.sectionName.toLowerCase().includes('window') ||
+                        room.sectionName.toLowerCase().includes('grill')
+                      );
+                      return (room.length > 0 || room.width > 0 || room.height > 0) && !isEnamelSection;
+                    }).length} room(s)
                   </p>
                 </div>
                 <div className="space-y-4">
-                  {getRoomsByProjectType(activeProjectType).filter(room => room.length > 0 || room.width > 0 || room.height > 0 || room.sectionName).map(room => <div key={room.id} className="space-y-0">
+                  {getRoomsByProjectType(activeProjectType).filter(room => {
+                    const isEnamelSection = room.sectionName && (
+                      room.sectionName.toLowerCase().includes('enamel') || 
+                      room.sectionName.toLowerCase().includes('varnish') ||
+                      room.sectionName.toLowerCase().includes('door') ||
+                      room.sectionName.toLowerCase().includes('window') ||
+                      room.sectionName.toLowerCase().includes('grill')
+                    );
+                    return (room.length > 0 || room.width > 0 || room.height > 0 || room.sectionName) && !isEnamelSection;
+                  }).map(room => <div key={room.id} className="space-y-0">
                       {/* Section Header - shown if sectionName exists */}
                       {room.sectionName && <div className="w-full px-3 py-1.5 bg-primary/10 rounded-t-lg border border-b-0 border-primary/20">
                           <span className="text-xs font-semibold text-primary uppercase tracking-wide">
