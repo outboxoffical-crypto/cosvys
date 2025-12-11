@@ -12,8 +12,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { RoomCard, SubArea } from "./RoomCard";
 import { SubAreaDialog } from "./SubAreaDialog";
-
-// Removed debounce utility - all saves are now immediate for instant sync
+import { usePrefetchProjectData } from "@/hooks/usePrefetch";
+import { useProjectCache } from "@/hooks/useProjectCache";
+import { useDebouncedCallback } from "@/hooks/useDebounce";
+import { calculateRoomAreas as calcAreas } from "@/lib/calculations";
 
 // Utility function for safe numeric parsing - always returns a valid number
 const safeParseFloat = (value: string | number | null | undefined, defaultValue: number = 0): number => {
@@ -81,6 +83,13 @@ export default function RoomMeasurementScreen() {
   const {
     projectId
   } = useParams();
+  
+  // Prefetch data for Paint Estimation screen in background
+  usePrefetchProjectData(projectId);
+  
+  // Use project cache for optimized calculations
+  const { getCachedRoomAreas, invalidateRoomCache, invalidateProjectTotals } = useProjectCache(projectId);
+  
   const [projectData, setProjectData] = useState<ProjectData | null>(null);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [activeTab, setActiveTab] = useState<string>("sqft");
