@@ -119,7 +119,7 @@ export default function RoomMeasurementScreen() {
   });
   const [tempOpeningAreas, setTempOpeningAreas] = useState<OpeningArea[]>([]);
   const [tempExtraSurfaces, setTempExtraSurfaces] = useState<ExtraSurface[]>([]);
-  const [isSyncing, setIsSyncing] = useState(false);
+  // isSyncing removed - navigation is now instant
   // Track opening areas and extra surfaces per room
   const [roomOpeningInputs, setRoomOpeningInputs] = useState<Record<string, {
     height: string;
@@ -547,6 +547,7 @@ export default function RoomMeasurementScreen() {
 
       // INSTANT UI UPDATE - no waiting
       setRooms(prev => [...prev, room]);
+      markRoomDirty(roomId); // Mark as dirty for background sync
       setNewRoom({
         name: "",
         length: "",
@@ -641,6 +642,7 @@ export default function RoomMeasurementScreen() {
       openingAreas: updatedOpeningAreas,
       ...areas
     } : room));
+    markRoomDirty(roomId); // Mark as dirty for background sync
 
     // Clear inputs for this room
     setRoomOpeningInputs(prev => ({
@@ -692,6 +694,7 @@ export default function RoomMeasurementScreen() {
       extraSurfaces: updatedExtraSurfaces,
       ...areas
     } : room));
+    markRoomDirty(roomId); // Mark as dirty for background sync
 
     // Clear inputs for this room
     setRoomExtraSurfaceInputs(prev => ({
@@ -790,6 +793,7 @@ export default function RoomMeasurementScreen() {
       ...room,
       subAreas: updatedSubAreas
     } : room));
+    markRoomDirty(subAreaRoomId);
 
     // Save to database
     try {
@@ -822,6 +826,7 @@ export default function RoomMeasurementScreen() {
       ...room,
       subAreas: updatedSubAreas
     } : room));
+    markRoomDirty(roomId);
 
     // Save to database
     try {
@@ -919,6 +924,7 @@ export default function RoomMeasurementScreen() {
       ...r,
       sectionName: sectionNameTrimmed
     } : r));
+    markRoomDirty(addSectionRoomId);
     setAddSectionDialogOpen(false);
     setAddSectionName("");
     setAddSectionRoomId(null);
@@ -968,6 +974,7 @@ export default function RoomMeasurementScreen() {
       ...room,
       subAreas: updatedSubAreas
     } : room));
+    markRoomDirty(separateSectionRoomId);
 
     // Close dialog
     setSeparateSectionDialogOpen(false);
@@ -1034,6 +1041,7 @@ export default function RoomMeasurementScreen() {
           doorWindowGrills: updatedDoorWindowGrills,
           ...areas
         } : room));
+        markRoomDirty(targetRoom!.id);
         toast.success(`Door/Window added to ${targetRoom.name}`);
       } catch (error) {
         console.error('Error:', error);
@@ -1104,6 +1112,7 @@ export default function RoomMeasurementScreen() {
           return;
         }
         setRooms(prev => [...prev, newRoom]);
+        markRoomDirty(roomId);
         toast.success(`Door/Window added to new room: ${newRoom.name}`);
       } catch (error) {
         console.error('Error:', error);
@@ -1137,6 +1146,7 @@ export default function RoomMeasurementScreen() {
       openingAreas: updatedOpeningAreas,
       ...areas
     } : room));
+    markRoomDirty(roomId);
 
     // Immediate save for instant sync
     updateRoomInDatabase(roomId, {
@@ -1157,6 +1167,7 @@ export default function RoomMeasurementScreen() {
       extraSurfaces: updatedExtraSurfaces,
       ...areas
     } : room));
+    markRoomDirty(roomId);
 
     // Immediate save for instant sync
     updateRoomInDatabase(roomId, {
@@ -1177,6 +1188,7 @@ export default function RoomMeasurementScreen() {
       doorWindowGrills: updatedDoorWindowGrills,
       ...areas
     } : room));
+    markRoomDirty(roomId);
 
     // Immediate save for instant sync
     updateRoomInDatabase(roomId, {
@@ -1198,6 +1210,7 @@ export default function RoomMeasurementScreen() {
       ...room,
       doorWindowGrills: updatedDoorWindowGrills
     } : room));
+    markRoomDirty(roomId);
 
     // Immediate save for instant sync
     updateRoomInDatabase(roomId, {
@@ -1220,6 +1233,7 @@ export default function RoomMeasurementScreen() {
       ...room,
       selectedAreas: updatedSelectedAreas
     } : room));
+    markRoomDirty(roomId); // Mark as dirty for background sync
 
     // Immediate save for instant sync
     updateRoomInDatabase(roomId, {
@@ -1245,60 +1259,75 @@ export default function RoomMeasurementScreen() {
       ceiling: 0
     });
   }, []);
+  // Track which rooms have been modified and need syncing
+  const dirtyRoomsRef = useRef<Set<string>>(new Set());
+  
+  // Mark room as dirty when modified
+  const markRoomDirty = useCallback((roomId: string) => {
+    dirtyRoomsRef.current.add(roomId);
+  }, []);
+
   const handleContinue = async () => {
     if (rooms.length === 0) {
       toast.error('Please add at least one room');
       return;
     }
-    try {
-      setIsSyncing(true);
-      const {
-        data: {
-          session
-        }
-      } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error('Please log in');
-        setIsSyncing(false);
-        return;
-      }
-
-      // Force immediate sync of ALL rooms before navigation
-      const syncPromises = rooms.map(room => supabase.from('rooms').upsert({
-        user_id: session.user.id,
-        project_id: projectId!,
-        room_id: room.id,
-        name: room.name,
-        length: room.length,
-        width: room.width,
-        height: room.height,
-        project_type: room.projectType,
-        pictures: room.pictures as any,
-        opening_areas: room.openingAreas as any,
-        extra_surfaces: room.extraSurfaces as any,
-        door_window_grills: room.doorWindowGrills as any,
-        floor_area: room.floorArea,
-        wall_area: room.wallArea,
-        ceiling_area: room.ceilingArea,
-        adjusted_wall_area: room.adjustedWallArea,
-        total_opening_area: room.totalOpeningArea,
-        total_extra_surface: room.totalExtraSurface,
-        total_door_window_grill_area: room.totalDoorWindowGrillArea,
-        selected_areas: room.selectedAreas as any
-      }, {
-        onConflict: 'room_id,project_id'
-      }));
-
-      // Wait for all rooms to sync before navigating
-      await Promise.all(syncPromises);
-      setIsSyncing(false);
-      // Navigate only after all data is saved
-      navigate(`/paint-estimation/${projectId}`);
-    } catch (error) {
-      console.error('Error syncing rooms:', error);
-      toast.error('Failed to sync data');
-      setIsSyncing(false);
+    
+    // Navigate IMMEDIATELY for instant feel
+    navigate(`/paint-estimation/${projectId}`);
+    
+    // Run background sync only for dirty rooms (non-blocking)
+    const dirtyRoomIds = Array.from(dirtyRoomsRef.current);
+    if (dirtyRoomIds.length === 0) {
+      // No changes, skip sync entirely
+      return;
     }
+    
+    // Background sync - don't await, let it run async
+    (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+
+        // Only sync rooms that were actually changed
+        const dirtyRooms = rooms.filter(r => dirtyRoomIds.includes(r.id));
+        
+        if (dirtyRooms.length > 0) {
+          // Batch upsert for efficiency
+          const roomsToSync = dirtyRooms.map(room => ({
+            user_id: session.user.id,
+            project_id: projectId!,
+            room_id: room.id,
+            name: room.name,
+            length: room.length,
+            width: room.width,
+            height: room.height,
+            project_type: room.projectType,
+            pictures: room.pictures as any,
+            opening_areas: room.openingAreas as any,
+            extra_surfaces: room.extraSurfaces as any,
+            door_window_grills: room.doorWindowGrills as any,
+            floor_area: room.floorArea,
+            wall_area: room.wallArea,
+            ceiling_area: room.ceilingArea,
+            adjusted_wall_area: room.adjustedWallArea,
+            total_opening_area: room.totalOpeningArea,
+            total_extra_surface: room.totalExtraSurface,
+            total_door_window_grill_area: room.totalDoorWindowGrillArea,
+            selected_areas: room.selectedAreas as any
+          }));
+
+          await supabase.from('rooms').upsert(roomsToSync, {
+            onConflict: 'room_id,project_id'
+          });
+          
+          // Clear dirty rooms after successful sync
+          dirtyRoomsRef.current.clear();
+        }
+      } catch (error) {
+        console.error('Background sync error:', error);
+      }
+    })();
   };
 
   // Handle edit room
@@ -1380,6 +1409,7 @@ export default function RoomMeasurementScreen() {
       height,
       ...areas
     } : room));
+    markRoomDirty(editingRoom.id); // Mark as dirty for background sync
     setEditDialogOpen(false);
     setEditingRoom(null);
     toast.success('Room updated');
@@ -2061,8 +2091,8 @@ export default function RoomMeasurementScreen() {
 
         {/* Continue Button */}
         {rooms.length > 0 && <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm border-t p-4 -mx-4">
-            <Button onClick={handleContinue} disabled={isSyncing} className="w-full h-12">
-              {isSyncing ? 'Syncing data...' : 'Continue to Paint Estimation'}
+            <Button onClick={handleContinue} className="w-full h-12">
+              Continue to Paint Estimation
               <ArrowLeft className="ml-2 h-4 w-4 rotate-180" />
             </Button>
           </div>}
