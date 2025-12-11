@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +12,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { getOrFetchRooms, getOrFetchCoverageData } from "@/hooks/usePrefetch";
+import { useProjectCache } from "@/hooks/useProjectCache";
+import { safeNumber, calculateProjectTotals } from "@/lib/calculations";
 interface CoverageData {
   id: string;
   category: string;
@@ -58,6 +61,13 @@ export default function PaintEstimationScreen() {
   const {
     projectId
   } = useParams();
+  
+  // Use project cache for memoized calculations
+  const { getCachedProjectTotals } = useProjectCache(projectId);
+  
+  // Track if initial load is done to prevent re-fetching
+  const initialLoadDone = useRef(false);
+  
   const [selectedPaintType, setSelectedPaintType] = useState<"Interior" | "Exterior" | "Waterproofing">("Interior");
   const [rooms, setRooms] = useState<any[]>([]);
   const [coverageData, setCoverageData] = useState<CoverageData[]>([]);
@@ -67,9 +77,16 @@ export default function PaintEstimationScreen() {
   const [exteriorConfigurations, setExteriorConfigurations] = useState<AreaConfiguration[]>([]);
   const [waterproofingConfigurations, setWaterproofingConfigurations] = useState<AreaConfiguration[]>([]);
 
-  // Current configurations based on selected paint type
-  const areaConfigurations = selectedPaintType === "Interior" ? interiorConfigurations : selectedPaintType === "Exterior" ? exteriorConfigurations : waterproofingConfigurations;
-  const setAreaConfigurations = (updater: AreaConfiguration[] | ((prev: AreaConfiguration[]) => AreaConfiguration[])) => {
+  // Current configurations based on selected paint type - memoized
+  const areaConfigurations = useMemo(() => {
+    return selectedPaintType === "Interior" 
+      ? interiorConfigurations 
+      : selectedPaintType === "Exterior" 
+        ? exteriorConfigurations 
+        : waterproofingConfigurations;
+  }, [selectedPaintType, interiorConfigurations, exteriorConfigurations, waterproofingConfigurations]);
+  
+  const setAreaConfigurations = useCallback((updater: AreaConfiguration[] | ((prev: AreaConfiguration[]) => AreaConfiguration[])) => {
     if (selectedPaintType === "Interior") {
       setInteriorConfigurations(updater);
     } else if (selectedPaintType === "Exterior") {
@@ -77,7 +94,8 @@ export default function PaintEstimationScreen() {
     } else {
       setWaterproofingConfigurations(updater);
     }
-  };
+  }, [selectedPaintType]);
+  
   const [selectedConfigId, setSelectedConfigId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -182,49 +200,26 @@ export default function PaintEstimationScreen() {
     });
   };
 
-  // Optimized coverage data fetch - only relevant categories
+  // Optimized coverage data fetch - use prefetched data if available
   useEffect(() => {
-    fetchCoverageData();
+    const loadCoverage = async () => {
+      const data = await getOrFetchCoverageData();
+      setCoverageData(data);
+    };
+    loadCoverage();
   }, []);
-  const fetchCoverageData = async () => {
-    try {
-      // Fetch only essential categories - NOT all rows
-      const categories = ['Putty', 'Primer', 'Interior Emulsion', 'Exterior Emulsion', 'Waterproofing'];
-      const {
-        data,
-        error
-      } = await supabase.from('coverage_data').select('id, category, product_name, coats, coverage_range, surface_type, notes').in('category', categories).order('product_name');
-      if (error) {
-        console.error('Error fetching coverage data:', error);
-        return;
-      }
-      setCoverageData(data || []);
-    } catch (error) {
-      console.error('Error:', error);
-    }
-  };
 
-  // Optimized room loading with background calculations and real-time updates
+  // Optimized room loading - use prefetched data, then set up real-time
   useEffect(() => {
     const loadRooms = async () => {
-      try {
-        const {
-          data: roomsData,
-          error
-        } = await supabase.from('rooms').select('id, room_id, name, project_type, floor_area, wall_area, ceiling_area, adjusted_wall_area, selected_areas, door_window_grills, total_door_window_grill_area, sub_areas, section_name').eq('project_id', projectId);
-        if (error) {
-          console.error('Error loading rooms:', error);
-          return;
-        }
-        if (roomsData) {
-          // Set rooms immediately for instant UI render; calculations run in separate effect
-          setRooms(roomsData);
-        }
-      } catch (error) {
-        console.error('Error:', error);
+      // Try prefetched data first for instant load
+      const prefetchedRooms = await getOrFetchRooms(projectId!);
+      if (prefetchedRooms.length > 0) {
+        setRooms(prefetchedRooms);
+        initialLoadDone.current = true;
       }
     };
-    loadRooms();
+    if (projectId) loadRooms();
 
     // Set up real-time subscription to detect new rooms
     const channel = supabase.channel('rooms-changes').on('postgres_changes', {
