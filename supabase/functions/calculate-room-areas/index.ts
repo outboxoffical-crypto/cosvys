@@ -20,6 +20,15 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Verify authentication
+  const authHeader = req.headers.get('authorization');
+  if (!authHeader) {
+    return new Response(
+      JSON.stringify({ error: 'Authentication required' }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
   try {
     const { length, width, height, opening_areas = [], extra_surfaces = [], door_window_grills = [] }: CalculateAreasRequest = await req.json();
 
