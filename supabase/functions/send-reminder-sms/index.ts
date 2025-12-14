@@ -60,11 +60,17 @@ ${companyName}`;
     const twilioAuthToken = Deno.env.get('AuthToken');
     const twilioPhone = Deno.env.get('Twiliophonenumber');
 
+    // Mask phone number for logging (show only first 2 and last 2 digits)
+    const maskPhone = (phone: string) => {
+      if (phone.length <= 4) return '****';
+      return phone.slice(0, 2) + '****' + phone.slice(-2);
+    };
+
     console.log('Twilio Configuration Check:');
     console.log('- Account SID exists:', !!twilioAccountSid);
     console.log('- Auth Token exists:', !!twilioAuthToken);
-    console.log('- Phone Number:', twilioPhone);
-    console.log('- Recipient:', `+91${project.phone}`);
+    console.log('- Phone configured:', !!twilioPhone);
+    console.log('- Recipient (masked):', `+91${maskPhone(project.phone)}`);
 
     if (!twilioAccountSid || !twilioAuthToken || !twilioPhone) {
       throw new Error('Missing Twilio credentials. Please check AccountSID, AuthToken, and Twiliophonenumber secrets.');
@@ -90,7 +96,7 @@ ${companyName}`;
 
     const responseText = await twilioResponse.text();
     console.log('Twilio Response Status:', twilioResponse.status);
-    console.log('Twilio Response Body:', responseText);
+    // Don't log full response body to avoid exposing sensitive details
 
     if (!twilioResponse.ok) {
       throw new Error(`Twilio API error (${twilioResponse.status}): ${responseText}`);
