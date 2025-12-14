@@ -11,6 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { getPrefetchedData } from "@/hooks/useProjectCache";
 import { safeNumber, parseCoverageRange, calculateLabourDays, calculateLabourCost, calculateMaterialQuantity } from "@/lib/calculations";
 import LabourCalculationDetails from "@/components/LabourCalculationDetails";
+import MaterialCalculationDetails from "@/components/MaterialCalculationDetails";
 interface AreaConfig {
   id: string;
   areaType: string;
@@ -1298,11 +1299,15 @@ export default function GenerateSummaryScreen() {
         // Putty
         if (config.selectedMaterials.putty && config.coatConfiguration.putty > 0) {
           const coverage = 20; // sq ft per kg
-          const kgNeeded = area / coverage * config.coatConfiguration.putty;
+          const coats = config.coatConfiguration.putty;
+          const kgNeeded = area / coverage * coats;
           const calc = calculateMaterial(config.selectedMaterials.putty, kgNeeded);
           materials.push({
             name: config.selectedMaterials.putty,
             type: 'Putty',
+            area,
+            coats,
+            coverageRate: coverage,
             ...calc
           });
         }
@@ -1312,11 +1317,15 @@ export default function GenerateSummaryScreen() {
           // Use enamel-specific coverage for enamel primer
           const isEnamel = config.selectedMaterials.primer?.toLowerCase().includes('enamel') || config.selectedMaterials.emulsion?.toLowerCase().includes('enamel');
           const coverage = isEnamel ? 100 : 120; // sq ft per liter (enamel has lower coverage)
-          const litersNeeded = area / coverage * config.coatConfiguration.primer;
+          const coats = config.coatConfiguration.primer;
+          const litersNeeded = area / coverage * coats;
           const calc = calculateMaterial(config.selectedMaterials.primer, litersNeeded);
           materials.push({
             name: config.selectedMaterials.primer,
-            type: isEnamel ? 'Enamel' : 'Primer',
+            type: isEnamel ? 'Enamel Primer' : 'Primer',
+            area,
+            coats,
+            coverageRate: coverage,
             ...calc
           });
         }
@@ -1325,11 +1334,15 @@ export default function GenerateSummaryScreen() {
         if (config.selectedMaterials.emulsion && config.coatConfiguration.emulsion > 0) {
           const isEnamel = config.selectedMaterials.emulsion.toLowerCase().includes('enamel');
           const coverage = isEnamel ? 100 : 120; // sq ft per liter (enamel has lower coverage)
-          const litersNeeded = area / coverage * config.coatConfiguration.emulsion;
+          const coats = config.coatConfiguration.emulsion;
+          const litersNeeded = area / coverage * coats;
           const calc = calculateMaterial(config.selectedMaterials.emulsion, litersNeeded);
           materials.push({
             name: config.selectedMaterials.emulsion,
             type: isEnamel ? 'Enamel' : 'Emulsion',
+            area,
+            coats,
+            coverageRate: coverage,
             ...calc
           });
         }
@@ -1337,21 +1350,29 @@ export default function GenerateSummaryScreen() {
         // Repainting
         if (config.selectedMaterials.primer && config.repaintingConfiguration?.primer && config.repaintingConfiguration.primer > 0) {
           const coverage = 120;
-          const litersNeeded = area / coverage * config.repaintingConfiguration.primer;
+          const coats = config.repaintingConfiguration.primer;
+          const litersNeeded = area / coverage * coats;
           const calc = calculateMaterial(config.selectedMaterials.primer, litersNeeded);
           materials.push({
             name: config.selectedMaterials.primer,
             type: 'Primer',
+            area,
+            coats,
+            coverageRate: coverage,
             ...calc
           });
         }
         if (config.selectedMaterials.emulsion && config.repaintingConfiguration?.emulsion && config.repaintingConfiguration.emulsion > 0) {
           const coverage = 120;
-          const litersNeeded = area / coverage * config.repaintingConfiguration.emulsion;
+          const coats = config.repaintingConfiguration.emulsion;
+          const litersNeeded = area / coverage * coats;
           const calc = calculateMaterial(config.selectedMaterials.emulsion, litersNeeded);
           materials.push({
             name: config.selectedMaterials.emulsion,
             type: config.selectedMaterials.emulsion.toLowerCase().includes('enamel') ? 'Enamel' : 'Emulsion',
+            area,
+            coats,
+            coverageRate: coverage,
             ...calc
           });
         }
@@ -1407,28 +1428,28 @@ export default function GenerateSummaryScreen() {
                             
                             {/* Materials List */}
                             <div className="space-y-3">
-                              {configMat.materials.map((mat: any, matIdx: number) => <div key={matIdx} className="space-y-2">
-                                  <h4 className="text-base font-semibold text-foreground">{mat.name}</h4>
-                                  {mat.error && <div className="text-xs text-destructive bg-destructive/10 p-2 rounded">
+                              {configMat.materials.map((mat: any, matIdx: number) => (
+                                <div key={matIdx}>
+                                  {mat.error && (
+                                    <div className="text-xs text-destructive bg-destructive/10 p-2 rounded mb-2">
                                       ⚠️ {mat.error}
-                                    </div>}
-                                  <div className="flex items-baseline justify-between">
-                                    <div className="flex-1">
-                                      <p className="text-sm text-muted-foreground">
-                                        Quantity: <span className="font-medium text-foreground">{mat.minQuantity} to <strong>{mat.maxQuantity}</strong> {mat.unit}</span>
-                                      </p>
-                                      <p className="text-xs text-muted-foreground mt-0.5">
-                                        (Cost calculated for max: {mat.maxQuantity} {mat.unit})
-                                      </p>
-                                      <p className="text-sm text-muted-foreground mt-1">
-                                        Coverage: <span className="font-medium text-foreground">{getMaterialCoverage(mat.name, mat.type)}</span>
-                                      </p>
                                     </div>
-                                    <div className="text-right">
-                                      <p className="text-xl font-bold text-[#EA384C]">₹{mat.totalCost.toLocaleString('en-IN')}</p>
-                                    </div>
-                                  </div>
-                                </div>)}
+                                  )}
+                                  <MaterialCalculationDetails
+                                    materialName={mat.name}
+                                    materialType={mat.type}
+                                    area={mat.area || 0}
+                                    coats={mat.coats || 1}
+                                    coverageRate={mat.coverageRate || 0}
+                                    coverageDisplay={getMaterialCoverage(mat.name, mat.type)}
+                                    unit={mat.unit}
+                                    minQuantity={mat.minQuantity}
+                                    maxQuantity={mat.maxQuantity}
+                                    totalCost={mat.totalCost}
+                                    hasError={!!mat.error}
+                                  />
+                                </div>
+                              ))}
                             </div>
                             
                             {/* Total Cost */}
@@ -1470,28 +1491,28 @@ export default function GenerateSummaryScreen() {
                             
                             {/* Materials List */}
                             <div className="space-y-3">
-                              {configMat.materials.map((mat: any, matIdx: number) => <div key={matIdx} className="space-y-2">
-                                  <h4 className="text-base font-semibold text-foreground">{mat.name}</h4>
-                                  {mat.error && <div className="text-xs text-destructive bg-destructive/10 p-2 rounded">
+                              {configMat.materials.map((mat: any, matIdx: number) => (
+                                <div key={matIdx}>
+                                  {mat.error && (
+                                    <div className="text-xs text-destructive bg-destructive/10 p-2 rounded mb-2">
                                       ⚠️ {mat.error}
-                                    </div>}
-                                  <div className="flex items-baseline justify-between">
-                                    <div className="flex-1">
-                                      <p className="text-sm text-muted-foreground">
-                                        Quantity: <span className="font-medium text-foreground">{mat.minQuantity} to <strong>{mat.maxQuantity}</strong> {mat.unit}</span>
-                                      </p>
-                                      <p className="text-xs text-muted-foreground mt-0.5">
-                                        (Cost calculated for max: {mat.maxQuantity} {mat.unit})
-                                      </p>
-                                      <p className="text-sm text-muted-foreground mt-1">
-                                        Coverage: <span className="font-medium text-foreground">{getMaterialCoverage(mat.name, mat.type)}</span>
-                                      </p>
                                     </div>
-                                    <div className="text-right">
-                                      <p className="text-xl font-bold text-[#EA384C]">₹{mat.totalCost.toLocaleString('en-IN')}</p>
-                                    </div>
-                                  </div>
-                                </div>)}
+                                  )}
+                                  <MaterialCalculationDetails
+                                    materialName={mat.name}
+                                    materialType={mat.type}
+                                    area={mat.area || 0}
+                                    coats={mat.coats || 1}
+                                    coverageRate={mat.coverageRate || 0}
+                                    coverageDisplay={getMaterialCoverage(mat.name, mat.type)}
+                                    unit={mat.unit}
+                                    minQuantity={mat.minQuantity}
+                                    maxQuantity={mat.maxQuantity}
+                                    totalCost={mat.totalCost}
+                                    hasError={!!mat.error}
+                                  />
+                                </div>
+                              ))}
                             </div>
                             
                             {/* Total Cost */}
@@ -1533,28 +1554,28 @@ export default function GenerateSummaryScreen() {
                             
                             {/* Materials List */}
                             <div className="space-y-3">
-                              {configMat.materials.map((mat: any, matIdx: number) => <div key={matIdx} className="space-y-2">
-                                  <h4 className="text-base font-semibold text-foreground">{mat.name}</h4>
-                                  {mat.error && <div className="text-xs text-destructive bg-destructive/10 p-2 rounded">
+                              {configMat.materials.map((mat: any, matIdx: number) => (
+                                <div key={matIdx}>
+                                  {mat.error && (
+                                    <div className="text-xs text-destructive bg-destructive/10 p-2 rounded mb-2">
                                       ⚠️ {mat.error}
-                                    </div>}
-                                  <div className="flex items-baseline justify-between">
-                                    <div className="flex-1">
-                                      <p className="text-sm text-muted-foreground">
-                                        Quantity: <span className="font-medium text-foreground">{mat.minQuantity} to <strong>{mat.maxQuantity}</strong> {mat.unit}</span>
-                                      </p>
-                                      <p className="text-xs text-muted-foreground mt-0.5">
-                                        (Cost calculated for max: {mat.maxQuantity} {mat.unit})
-                                      </p>
-                                      <p className="text-sm text-muted-foreground mt-1">
-                                        Coverage: <span className="font-medium text-foreground">{getMaterialCoverage(mat.name, mat.type)}</span>
-                                      </p>
                                     </div>
-                                    <div className="text-right">
-                                      <p className="text-xl font-bold text-[#EA384C]">₹{mat.totalCost.toLocaleString('en-IN')}</p>
-                                    </div>
-                                  </div>
-                                </div>)}
+                                  )}
+                                  <MaterialCalculationDetails
+                                    materialName={mat.name}
+                                    materialType={mat.type}
+                                    area={mat.area || 0}
+                                    coats={mat.coats || 1}
+                                    coverageRate={mat.coverageRate || 0}
+                                    coverageDisplay={getMaterialCoverage(mat.name, mat.type)}
+                                    unit={mat.unit}
+                                    minQuantity={mat.minQuantity}
+                                    maxQuantity={mat.maxQuantity}
+                                    totalCost={mat.totalCost}
+                                    hasError={!!mat.error}
+                                  />
+                                </div>
+                              ))}
                             </div>
                             
                             {/* Total Cost */}
