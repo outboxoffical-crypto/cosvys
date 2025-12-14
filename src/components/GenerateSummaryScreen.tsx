@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { getPrefetchedData } from "@/hooks/useProjectCache";
 import { safeNumber, parseCoverageRange, calculateLabourDays, calculateLabourCost, calculateMaterialQuantity } from "@/lib/calculations";
+import LabourCalculationDetails from "@/components/LabourCalculationDetails";
 interface AreaConfig {
   id: string;
   areaType: string;
@@ -892,25 +893,16 @@ export default function GenerateSummaryScreen() {
                               
                               {/* Tasks List */}
                               <div className="space-y-3">
-                                {configTask.tasks.map((task: any, taskIdx: number) => {
-                            const adjustedDays = Math.ceil(task.daysRequired / autoLabourPerDay);
-                            return <div key={taskIdx} className="space-y-2">
-                                      <h4 className="text-base font-semibold text-foreground">{task.name}</h4>
-                                      <div className="flex items-baseline justify-between">
-                                        <div className="flex-1">
-                                          <p className="text-sm text-muted-foreground">
-                                            Area: <span className="font-medium text-foreground">{task.area.toFixed(0)} sq.ft</span>
-                                          </p>
-                                          <p className="text-sm text-muted-foreground">
-                                            Coats: <span className="font-medium text-foreground">{task.coats}</span>
-                                          </p>
-                                        </div>
-                                        <div className="text-right">
-                                          <p className="text-xl font-bold text-primary">{adjustedDays} days</p>
-                                        </div>
-                                      </div>
-                                    </div>;
-                          })}
+                                {configTask.tasks.map((task: any, taskIdx: number) => (
+                                  <LabourCalculationDetails
+                                    key={taskIdx}
+                                    task={task}
+                                    workingHours={workingHours}
+                                    standardHours={standardHours}
+                                    numberOfLabours={numberOfLabours}
+                                    autoLabourPerDay={autoLabourPerDay}
+                                  />
+                                ))}
                               </div>
                               
                               {/* Total Days */}
@@ -952,25 +944,16 @@ export default function GenerateSummaryScreen() {
                               
                               {/* Tasks List */}
                               <div className="space-y-3">
-                                {configTask.tasks.map((task: any, taskIdx: number) => {
-                            const adjustedDays = Math.ceil(task.daysRequired / autoLabourPerDay);
-                            return <div key={taskIdx} className="space-y-2">
-                                      <h4 className="text-base font-semibold text-foreground">{task.name}</h4>
-                                      <div className="flex items-baseline justify-between">
-                                        <div className="flex-1">
-                                          <p className="text-sm text-muted-foreground">
-                                            Area: <span className="font-medium text-foreground">{task.area.toFixed(0)} sq.ft</span>
-                                          </p>
-                                          <p className="text-sm text-muted-foreground">
-                                            Coats: <span className="font-medium text-foreground">{task.coats}</span>
-                                          </p>
-                                        </div>
-                                        <div className="text-right">
-                                          <p className="text-xl font-bold text-primary">{adjustedDays} days</p>
-                                        </div>
-                                      </div>
-                                    </div>;
-                          })}
+                                {configTask.tasks.map((task: any, taskIdx: number) => (
+                                  <LabourCalculationDetails
+                                    key={taskIdx}
+                                    task={task}
+                                    workingHours={workingHours}
+                                    standardHours={standardHours}
+                                    numberOfLabours={numberOfLabours}
+                                    autoLabourPerDay={autoLabourPerDay}
+                                  />
+                                ))}
                               </div>
                               
                               {/* Total Days */}
@@ -1012,25 +995,16 @@ export default function GenerateSummaryScreen() {
                               
                               {/* Tasks List */}
                               <div className="space-y-3">
-                                {configTask.tasks.map((task: any, taskIdx: number) => {
-                            const adjustedDays = Math.ceil(task.daysRequired / autoLabourPerDay);
-                            return <div key={taskIdx} className="space-y-2">
-                                      <h4 className="text-base font-semibold text-foreground">{task.name}</h4>
-                                      <div className="flex items-baseline justify-between">
-                                        <div className="flex-1">
-                                          <p className="text-sm text-muted-foreground">
-                                            Area: <span className="font-medium text-foreground">{task.area.toFixed(0)} sq.ft</span>
-                                          </p>
-                                          <p className="text-sm text-muted-foreground">
-                                            Coats: <span className="font-medium text-foreground">{task.coats}</span>
-                                          </p>
-                                        </div>
-                                        <div className="text-right">
-                                          <p className="text-xl font-bold text-primary">{adjustedDays} days</p>
-                                        </div>
-                                      </div>
-                                    </div>;
-                          })}
+                                {configTask.tasks.map((task: any, taskIdx: number) => (
+                                  <LabourCalculationDetails
+                                    key={taskIdx}
+                                    task={task}
+                                    workingHours={workingHours}
+                                    standardHours={standardHours}
+                                    numberOfLabours={numberOfLabours}
+                                    autoLabourPerDay={autoLabourPerDay}
+                                  />
+                                ))}
                               </div>
                               
                               {/* Total Days */}
