@@ -209,17 +209,29 @@ export default function PaintEstimationScreen() {
     loadCoverage();
   }, []);
 
-  // Optimized room loading - use prefetched data, then set up real-time
+  // Force fresh room loading from database - NEVER rely on cached data for areas
   useEffect(() => {
     const loadRooms = async () => {
-      // Try prefetched data first for instant load
-      const prefetchedRooms = await getOrFetchRooms(projectId!);
-      if (prefetchedRooms.length > 0) {
-        setRooms(prefetchedRooms);
+      if (!projectId) return;
+      
+      // ALWAYS fetch fresh from database to ensure enamel areas are included
+      const { data: freshRooms, error } = await supabase
+        .from('rooms')
+        .select('*')
+        .eq('project_id', projectId);
+      
+      if (error) {
+        console.error('Error fetching rooms:', error);
+        return;
+      }
+      
+      if (freshRooms && freshRooms.length > 0) {
+        setRooms(freshRooms);
         initialLoadDone.current = true;
       }
     };
-    if (projectId) loadRooms();
+    
+    loadRooms();
 
     // Set up real-time subscription to detect new rooms
     const channel = supabase.channel('rooms-changes').on('postgres_changes', {
@@ -234,7 +246,7 @@ export default function PaintEstimationScreen() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [projectId, selectedPaintType]);
+  }, [projectId]);
 
   // Initialize configurations based on rooms
   const initializeConfigurations = (roomsData: any[]) => {
@@ -283,13 +295,12 @@ export default function PaintEstimationScreen() {
         ceilingAreaTotal += Number(room.ceiling_area || 0);
         hasCeilingSelected = true;
       }
-      // Enamel is auto-included if door/window/grill areas exist with actual area
-      if (room.door_window_grills && Array.isArray(room.door_window_grills) && room.door_window_grills.length > 0) {
-        const enamelArea = Number(room.total_door_window_grill_area || 0);
-        if (enamelArea > 0) {
-          enamelAreaTotal += enamelArea;
-          hasEnamelSelected = true;
-        }
+      // Enamel is ALWAYS included if door/window/grill areas exist with actual area
+      // This is the single source of truth from Room Measurements - no filtering
+      const enamelArea = Number(room.total_door_window_grill_area || 0);
+      if (enamelArea > 0) {
+        enamelAreaTotal += enamelArea;
+        hasEnamelSelected = true;
       }
 
       // Process sub-areas (custom sections) as completely independent paintable sections
@@ -425,36 +436,34 @@ export default function PaintEstimationScreen() {
         });
       }
 
-      // Enamel for section rooms
-      if (room.door_window_grills && Array.isArray(room.door_window_grills) && room.door_window_grills.length > 0) {
-        const enamelArea = Number(room.total_door_window_grill_area || 0);
-        if (enamelArea > 0) {
-          configs.push({
-            id: `section-enamel-${room.room_id}`,
-            areaType: 'Enamel' as const,
-            paintingSystem: null,
-            coatConfiguration: {
-              putty: 0,
-              primer: 0,
-              emulsion: 0
-            },
-            repaintingConfiguration: {
-              primer: 0,
-              emulsion: 0
-            },
-            selectedMaterials: {
-              putty: '',
-              primer: '',
-              emulsion: ''
-            },
-            area: enamelArea,
-            perSqFtRate: '',
-            label: roomName,
-            isAdditional: false,
-            isCustomSection: true,
-            roomId: room.room_id
-          });
-        }
+      // Enamel for section rooms - ALWAYS include if total_door_window_grill_area > 0
+      const sectionEnamelArea = Number(room.total_door_window_grill_area || 0);
+      if (sectionEnamelArea > 0) {
+        configs.push({
+          id: `section-enamel-${room.room_id}`,
+          areaType: 'Enamel' as const,
+          paintingSystem: null,
+          coatConfiguration: {
+            putty: 0,
+            primer: 0,
+            emulsion: 0
+          },
+          repaintingConfiguration: {
+            primer: 0,
+            emulsion: 0
+          },
+          selectedMaterials: {
+            putty: '',
+            primer: '',
+            emulsion: ''
+          },
+          area: sectionEnamelArea,
+          perSqFtRate: '',
+          label: roomName,
+          isAdditional: false,
+          isCustomSection: true,
+          roomId: room.room_id
+        });
       }
 
       // Process sub-areas for section rooms
@@ -1034,7 +1043,10 @@ export default function PaintEstimationScreen() {
         isAdditional: false
       });
     }
-    if (enamelMain > 0) {
+    // FAIL-SAFE: Enamel MUST always appear if enamelAreaTotal > 0, regardless of hasEnamelSelected
+    // This ensures enamel from Room Measurements ALWAYS shows in Paint Estimation
+    const effectiveEnamelMain = enamelAreaTotal > 0 ? (enamelMain > 0 ? enamelMain : enamelAreaTotal) : 0;
+    if (effectiveEnamelMain > 0) {
       configs.push({
         id: 'enamel-main',
         areaType: 'Enamel',
@@ -1053,7 +1065,7 @@ export default function PaintEstimationScreen() {
           primer: '',
           emulsion: ''
         },
-        area: enamelMain,
+        area: effectiveEnamelMain,
         perSqFtRate: '',
         label: 'Enamel Area',
         isAdditional: false
@@ -1061,11 +1073,12 @@ export default function PaintEstimationScreen() {
     }
 
     // Append any additional configs detected (persisted + new) but only keep area types that were SELECTED (not just > 0)
+    // FAIL-SAFE: Enamel uses enamelAreaTotal > 0 check to ensure it's never filtered out incorrectly
     const filteredStored = storedAdditional.filter(a => {
       if (a.areaType === 'Floor') return hasFloorSelected;
       if (a.areaType === 'Wall') return hasWallSelected;
       if (a.areaType === 'Ceiling') return hasCeilingSelected;
-      if (a.areaType === 'Enamel') return hasEnamelSelected;
+      if (a.areaType === 'Enamel') return enamelAreaTotal > 0; // Use total, not hasEnamelSelected
       return true;
     });
     configs.push(...filteredStored, ...additional);
