@@ -128,16 +128,54 @@ export default function Dashboard() {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // Validate file type (only allow images)
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast({
+        title: "Invalid file type",
+        description: "Please upload a JPG, PNG, or WebP image",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    const maxSizeBytes = 2 * 1024 * 1024;
+    if (file.size > maxSizeBytes) {
+      toast({
+        title: "File too large",
+        description: "Please upload an image smaller than 2MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file extension matches content type
+    const fileExt = file.name.split('.').pop()?.toLowerCase();
+    const validExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+    if (!fileExt || !validExtensions.includes(fileExt)) {
+      toast({
+        title: "Invalid file extension",
+        description: "Please upload a file with .jpg, .jpeg, .png, or .webp extension",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const fileExt = file.name.split('.').pop();
-      const filePath = `${user.id}/avatar.${fileExt}`;
+      // Sanitize filename - use fixed extension based on content type
+      const safeExt = file.type === 'image/jpeg' ? 'jpg' : file.type === 'image/png' ? 'png' : 'webp';
+      const filePath = `${user.id}/avatar.${safeExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, file, { upsert: true });
+        .upload(filePath, file, { 
+          upsert: true,
+          contentType: file.type 
+        });
 
       if (uploadError) throw uploadError;
 
@@ -158,7 +196,6 @@ export default function Dashboard() {
         description: "Profile picture updated!",
       });
     } catch (error) {
-      console.error('Error uploading avatar:', error);
       toast({
         title: "Error",
         description: "Failed to upload profile picture",
