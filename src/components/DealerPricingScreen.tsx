@@ -69,7 +69,7 @@ const productCategories: ProductCategory[] = [
   {
     name: "Enamel Primer",
     products: [
-      "AP TruCare Wood Primer", "AP TruCare Red Oxide Metal Primer", "AP SmartCare Yellow Metal Primer"
+      "AP TruCare Wood Primer", "AP TruCare Red Oxide Metal Primer", "AP TruCare Yellow Metal Primer"
     ]
   },
   {
