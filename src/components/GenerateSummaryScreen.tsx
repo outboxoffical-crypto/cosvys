@@ -1261,13 +1261,8 @@ export default function GenerateSummaryScreen() {
         unit
       } = pricingData;
 
-      // Determine material type for quantity calculation
-      const isPutty = material.toLowerCase().includes('putty');
-
-      // Calculate min and max quantities based on coverage variations
-      const minQuantity = Math.ceil(quantity);
-      // For putty, add fixed 10kg; for others, add 25%
-      const maxQuantity = isPutty ? Math.ceil(quantity + 10) : Math.ceil(quantity * 1.25);
+      // Calculate required quantity (ceiling of raw calculation - NO buffer)
+      const requiredQuantity = Math.ceil(quantity);
 
       // Prepare available pack sizes with prices
       const availablePacks = Object.entries(sizes).map(([size, price]) => ({
@@ -1275,19 +1270,18 @@ export default function GenerateSummaryScreen() {
         price: price as number
       }));
 
-      // Calculate optimal pack combination for MAX quantity
+      // Calculate optimal pack combination for EXACT required quantity (no buffer)
       const {
         combination,
         totalCost,
         error
-      } = calculateOptimalPackCombination(availablePacks, maxQuantity, unit);
+      } = calculateOptimalPackCombination(availablePacks, requiredQuantity, unit);
 
       // Format pack combination string
       const packCombination = combination.length > 0 ? combination.map(c => `(${c.size}/${c.count})`).join('') : 'N/A';
       return {
         quantity: quantity.toFixed(2),
-        minQuantity,
-        maxQuantity,
+        requiredQuantity,
         unit,
         packsNeeded: combination.reduce((sum, c) => sum + c.count, 0),
         packSize: combination.length > 0 ? combination[0].size : 'N/A',
@@ -1473,9 +1467,9 @@ export default function GenerateSummaryScreen() {
                                     coverageRate={mat.coverageRate || 0}
                                     coverageDisplay={getMaterialCoverage(mat.name, mat.type)}
                                     unit={mat.unit}
-                                    minQuantity={mat.minQuantity}
-                                    maxQuantity={mat.maxQuantity}
+                                    requiredQuantity={mat.requiredQuantity}
                                     totalCost={mat.totalCost}
+                                    packCombination={mat.combination || []}
                                     hasError={!!mat.error}
                                   />
                                 </div>
@@ -1536,9 +1530,9 @@ export default function GenerateSummaryScreen() {
                                     coverageRate={mat.coverageRate || 0}
                                     coverageDisplay={getMaterialCoverage(mat.name, mat.type)}
                                     unit={mat.unit}
-                                    minQuantity={mat.minQuantity}
-                                    maxQuantity={mat.maxQuantity}
+                                    requiredQuantity={mat.requiredQuantity}
                                     totalCost={mat.totalCost}
+                                    packCombination={mat.combination || []}
                                     hasError={!!mat.error}
                                   />
                                 </div>
@@ -1599,9 +1593,9 @@ export default function GenerateSummaryScreen() {
                                     coverageRate={mat.coverageRate || 0}
                                     coverageDisplay={getMaterialCoverage(mat.name, mat.type)}
                                     unit={mat.unit}
-                                    minQuantity={mat.minQuantity}
-                                    maxQuantity={mat.maxQuantity}
+                                    requiredQuantity={mat.requiredQuantity}
                                     totalCost={mat.totalCost}
+                                    packCombination={mat.combination || []}
                                     hasError={!!mat.error}
                                   />
                                 </div>

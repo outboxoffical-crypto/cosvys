@@ -3,6 +3,12 @@ import { ChevronDown, ChevronUp, Calculator, Info, AlertCircle } from "lucide-re
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
+interface PackItem {
+  size: string;
+  count: number;
+  price: number;
+}
+
 interface MaterialCalculationDetailsProps {
   materialName: string;
   materialType: string;
@@ -11,9 +17,9 @@ interface MaterialCalculationDetailsProps {
   coverageRate: number;
   coverageDisplay: string;
   unit: string;
-  minQuantity: number;
-  maxQuantity: number;
+  requiredQuantity: number;
   totalCost: number;
+  packCombination: PackItem[];
   hasError?: boolean;
 }
 
@@ -25,22 +31,21 @@ export default function MaterialCalculationDetails({
   coverageRate,
   coverageDisplay,
   unit,
-  minQuantity,
-  maxQuantity,
+  requiredQuantity,
   totalCost,
+  packCombination = [],
   hasError = false,
 }: MaterialCalculationDetailsProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Simple coverage-based calculation
-  // Coverage table already has separate values for 1 coat and 2 coats
-  // Required Quantity = Total Sq.ft ÷ Coverage (NO multiplication by coats)
+  // Calculate raw quantity for display
   const rawQuantity = coverageRate > 0 ? area / coverageRate : 0;
-  const minQty = Math.floor(rawQuantity);
-  const maxQty = Math.ceil(rawQuantity);
 
   // Failsafe: If data exists but something is off
   const showFailsafe = hasError || (area > 0 && coverageRate === 0);
+  
+  // Check if pack pricing is missing
+  const hasPricing = packCombination.length > 0 && totalCost > 0;
 
   return (
     <div className="space-y-2">
@@ -70,11 +75,15 @@ export default function MaterialCalculationDetails({
             Type: <span className="font-medium text-foreground">{materialType}</span>
           </p>
           <p className="text-sm text-muted-foreground">
-            Quantity: <span className="font-medium text-foreground">{maxQty} {unit}</span>
+            Quantity: <span className="font-medium text-foreground">{requiredQuantity} {unit}</span>
           </p>
         </div>
         <div className="text-right">
-          <p className="text-xl font-bold text-[#EA384C]">₹{totalCost.toLocaleString('en-IN')}</p>
+          {hasPricing ? (
+            <p className="text-xl font-bold text-[#EA384C]">₹{totalCost.toLocaleString('en-IN')}</p>
+          ) : (
+            <p className="text-sm text-yellow-600">Price not configured</p>
+          )}
         </div>
       </div>
 
@@ -124,42 +133,71 @@ export default function MaterialCalculationDetails({
                 <span className="font-medium text-foreground">{area.toFixed(0)} sq.ft</span>
               </div>
 
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Selected Coverage ({coats} coat{coats > 1 ? 's' : ''}):</span>
-                <span className="font-medium text-foreground">{coverageRate} sq.ft/{unit}</span>
-              </div>
-
               <div className="my-2 border-t border-border/50" />
 
               {/* Calculation */}
               <div className="space-y-2">
-                <p className="font-semibold text-foreground">Calculation:</p>
+                <p className="font-semibold text-foreground">Quantity Calculation:</p>
                 
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Required Quantity = Total Sq.ft ÷ Coverage</span>
-                </div>
                 <div className="flex justify-between items-center pl-4">
                   <span className="text-muted-foreground">= {area.toFixed(0)} ÷ {coverageRate}</span>
                   <span className="font-medium text-foreground">= {rawQuantity.toFixed(2)} {unit}</span>
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Required Quantity (rounded up):</span>
+                  <span className="font-bold text-primary">{requiredQuantity} {unit}</span>
                 </div>
               </div>
 
               <div className="my-2 border-t border-border/50" />
 
-              {/* Final Quantity */}
+              {/* Pack Breakdown */}
+              <div className="space-y-2">
+                <p className="font-semibold text-foreground">Pack Breakdown:</p>
+                
+                {packCombination.length > 0 ? (
+                  <div className="space-y-1 pl-4">
+                    {packCombination.map((pack, idx) => {
+                      const packTotal = pack.count * pack.price;
+                      return (
+                        <div key={idx} className="flex justify-between items-center">
+                          <span className="text-muted-foreground">
+                            {pack.size} × {pack.count} @ ₹{pack.price.toLocaleString('en-IN')}
+                          </span>
+                          <span className="font-medium text-foreground">= ₹{packTotal.toLocaleString('en-IN')}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 p-2 bg-yellow-500/10 rounded text-yellow-700">
+                    <AlertCircle className="h-4 w-4" />
+                    <span>Price not configured for required pack sizes</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="my-2 border-t border-border/50" />
+
+              {/* Total Cost */}
               <div className="flex justify-between items-center pt-2">
-                <span className="font-semibold text-foreground">Final Quantity:</span>
-                <span className="font-bold text-primary">{maxQty} {unit}</span>
+                <span className="font-semibold text-foreground">Total Material Cost:</span>
+                {hasPricing ? (
+                  <span className="font-bold text-primary text-lg">₹{totalCost.toLocaleString('en-IN')}</span>
+                ) : (
+                  <span className="text-yellow-600">Not available</span>
+                )}
               </div>
 
               {/* Formula summary */}
               <div className="mt-3 p-2 bg-primary/5 rounded text-xs text-muted-foreground">
-                <span className="font-medium">Formula:</span> {area.toFixed(0)} ÷ {coverageRate} = {rawQuantity.toFixed(2)} → {maxQty} {unit}
+                <span className="font-medium">Formula:</span> {area.toFixed(0)} sq.ft ÷ {coverageRate} = {rawQuantity.toFixed(2)} → {requiredQuantity} {unit}
               </div>
 
               {/* Note about coverage */}
               <div className="mt-2 p-2 bg-blue-500/5 rounded text-xs text-blue-700">
-                <span className="font-medium">Note:</span> Coverage value is fetched from Data Coverage table based on product and number of coats. No multiplication by coats is applied.
+                <span className="font-medium">Note:</span> Pack prices are from Product Pricing tab. Largest packs are used first for optimal cost.
               </div>
             </>
           )}
