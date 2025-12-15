@@ -70,8 +70,8 @@ export default function LabourCalculationDetails({
           </p>
         </div>
         <div className="text-right">
-          <p className="text-lg font-bold text-primary">
-            Approx. {minDays} to {maxDays} working days
+          <p className="text-sm font-bold text-primary">
+            {maxDays} {maxDays === 1 ? 'Day' : 'Days'}
           </p>
         </div>
       </div>
@@ -133,12 +133,12 @@ export default function LabourCalculationDetails({
           {/* Final Result */}
           <div className="flex justify-between items-center pt-2">
             <span className="font-semibold text-foreground">Final Result:</span>
-            <span className="font-bold text-primary text-lg">Approx. {minDays} to {maxDays} working days</span>
+            <span className="font-bold text-primary">{maxDays} {maxDays === 1 ? 'Day' : 'Days'}</span>
           </div>
 
           {/* Formula summary */}
           <div className="mt-3 p-2 bg-primary/5 rounded text-xs text-muted-foreground">
-            <span className="font-medium">Formula:</span> ({task.area.toFixed(0)} × {task.coats}) ÷ {workingCapacity.toFixed(0)} = {rawDays.toFixed(2)} days → Approx. {minDays} to {maxDays} working days
+            <span className="font-medium">Formula:</span> ({task.area.toFixed(0)} × {task.coats}) ÷ {workingCapacity.toFixed(0)} = {rawDays.toFixed(2)} → {maxDays} {maxDays === 1 ? 'Day' : 'Days'}
           </div>
         </div>
       )}
