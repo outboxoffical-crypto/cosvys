@@ -1090,13 +1090,65 @@ export default function GenerateSummaryScreen() {
     // Try exact match first
     let pricing = productPricing[normalizedName];
 
-    // If no exact match, try partial match
+    // If no exact match, try partial match with various strategies
     if (!pricing) {
-      const matchKey = Object.keys(productPricing).find(key => normalizedName.includes(key) || key.includes(normalizedName));
+      // Strategy 1: Check if any pricing key is contained in the product name
+      const matchKey = Object.keys(productPricing).find(key => 
+        normalizedName.includes(key.toLowerCase())
+      );
       if (matchKey) {
         pricing = productPricing[matchKey];
       }
     }
+    
+    // Strategy 2: Extract key words and match
+    if (!pricing) {
+      // Remove common prefixes like "AP ", "Asian Paints " etc.
+      const cleanedName = normalizedName
+        .replace(/^ap\s+/i, '')
+        .replace(/^asian\s+paints\s+/i, '')
+        .replace(/trucare\s+/i, '')
+        .replace(/smartcare\s+/i, '')
+        .trim();
+      
+      const matchKey = Object.keys(productPricing).find(key => 
+        cleanedName.includes(key.toLowerCase()) || key.toLowerCase().includes(cleanedName)
+      );
+      if (matchKey) {
+        pricing = productPricing[matchKey];
+      }
+    }
+    
+    // Strategy 3: Match by product type keywords
+    if (!pricing) {
+      const productKeywords = [
+        { keywords: ['putty', 'wall putty'], matchKey: 'putty' },
+        { keywords: ['interior wall primer', 'trucare interior'], matchKey: 'interior wall primer' },
+        { keywords: ['exterior wall primer', 'trucare exterior'], matchKey: 'exterior wall primer' },
+        { keywords: ['damp sheath interior', 'damp proof interior'], matchKey: 'damp sheath interior' },
+        { keywords: ['damp sheath exterior', 'damp proof exterior'], matchKey: 'damp sheath exterior' },
+        { keywords: ['ultima protek base', 'durolife base'], matchKey: 'ultima protek base coat' },
+        { keywords: ['royale emulsion', 'royale health'], matchKey: 'royale emulsion' },
+        { keywords: ['royale shyne', 'royale shine'], matchKey: 'royale shyne' },
+        { keywords: ['royale glitz'], matchKey: 'royale glitz' },
+        { keywords: ['premium emulsion', 'apcolite premium'], matchKey: 'premium emulsion' },
+        { keywords: ['tractor emulsion'], matchKey: 'tractor emulsion' },
+        { keywords: ['tractor sparc'], matchKey: 'tractor sparc' },
+        { keywords: ['ace emulsion'], matchKey: 'ace emulsion' },
+        { keywords: ['ace shyne', 'ace shine'], matchKey: 'ace shyne' },
+        { keywords: ['apex emulsion'], matchKey: 'apex emulsion' },
+      ];
+      
+      for (const { keywords, matchKey } of productKeywords) {
+        if (keywords.some(kw => normalizedName.includes(kw))) {
+          if (productPricing[matchKey]) {
+            pricing = productPricing[matchKey];
+            break;
+          }
+        }
+      }
+    }
+    
     if (pricing && typeof pricing === 'object') {
       // Determine unit based on product type
       let unit = 'L';
@@ -1432,7 +1484,7 @@ export default function GenerateSummaryScreen() {
               No material configurations found.
             </div> : <div className="space-y-4">
               {/* Interior Configurations */}
-              {configMaterials.filter(cm => cm.paintTypeCategory === 'Interior' && cm.totalCost > 0).length > 0 && <div className="space-y-3">
+              {configMaterials.filter(cm => cm.paintTypeCategory === 'Interior' && cm.materials.length > 0).length > 0 && <div className="space-y-3">
                   <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                     Interior Paint Configurations
                   </Badge>
@@ -1440,7 +1492,7 @@ export default function GenerateSummaryScreen() {
               scrollbarWidth: 'none',
               msOverflowStyle: 'none'
             }}>
-                    {configMaterials.filter(cm => cm.paintTypeCategory === 'Interior' && cm.totalCost > 0).map((configMat, index) => {
+                    {configMaterials.filter(cm => cm.paintTypeCategory === 'Interior' && cm.materials.length > 0).map((configMat, index) => {
                 const isEnamelConfig = configMat.configLabel.toLowerCase().includes('enamel') || configMat.materials.some((m: any) => m.name.toLowerCase().includes('enamel'));
                 return <Card key={index} className={`flex-none w-72 border-2 snap-start ${isEnamelConfig ? 'bg-orange-50 border-orange-300' : 'border-primary/20 bg-primary/5'}`}>
                         <CardContent className="p-4">
@@ -1495,7 +1547,7 @@ export default function GenerateSummaryScreen() {
                 </div>}
 
               {/* Exterior Configurations */}
-              {configMaterials.filter(cm => cm.paintTypeCategory === 'Exterior' && cm.totalCost > 0).length > 0 && <div className="space-y-3">
+              {configMaterials.filter(cm => cm.paintTypeCategory === 'Exterior' && cm.materials.length > 0).length > 0 && <div className="space-y-3">
                   <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                     Exterior Paint Configurations
                   </Badge>
@@ -1503,7 +1555,7 @@ export default function GenerateSummaryScreen() {
               scrollbarWidth: 'none',
               msOverflowStyle: 'none'
             }}>
-                    {configMaterials.filter(cm => cm.paintTypeCategory === 'Exterior' && cm.totalCost > 0).map((configMat, index) => {
+                    {configMaterials.filter(cm => cm.paintTypeCategory === 'Exterior' && cm.materials.length > 0).map((configMat, index) => {
                 const isEnamelConfig = configMat.configLabel.toLowerCase().includes('enamel') || configMat.materials.some((m: any) => m.name.toLowerCase().includes('enamel'));
                 return <Card key={index} className={`flex-none w-72 border-2 snap-start ${isEnamelConfig ? 'bg-orange-50 border-orange-300' : 'border-primary/20 bg-primary/5'}`}>
                         <CardContent className="p-4">
@@ -1558,7 +1610,7 @@ export default function GenerateSummaryScreen() {
                 </div>}
 
               {/* Waterproofing Configurations */}
-              {configMaterials.filter(cm => cm.paintTypeCategory === 'Waterproofing' && cm.totalCost > 0).length > 0 && <div className="space-y-3">
+              {configMaterials.filter(cm => cm.paintTypeCategory === 'Waterproofing' && cm.materials.length > 0).length > 0 && <div className="space-y-3">
                   <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                     Waterproofing Configurations
                   </Badge>
@@ -1566,7 +1618,7 @@ export default function GenerateSummaryScreen() {
               scrollbarWidth: 'none',
               msOverflowStyle: 'none'
             }}>
-                    {configMaterials.filter(cm => cm.paintTypeCategory === 'Waterproofing' && cm.totalCost > 0).map((configMat, index) => {
+                    {configMaterials.filter(cm => cm.paintTypeCategory === 'Waterproofing' && cm.materials.length > 0).map((configMat, index) => {
                 const isEnamelConfig = configMat.configLabel.toLowerCase().includes('enamel') || configMat.materials.some((m: any) => m.name.toLowerCase().includes('enamel'));
                 return <Card key={index} className={`flex-none w-72 border-2 snap-start ${isEnamelConfig ? 'bg-orange-50 border-orange-300' : 'border-primary/20 bg-primary/5'}`}>
                         <CardContent className="p-4">
