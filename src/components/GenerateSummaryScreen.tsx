@@ -1507,11 +1507,18 @@ export default function GenerateSummaryScreen() {
         }
       }
       const totalCost = materials.reduce((sum, m) => sum + m.totalCost, 0);
+      // Check if this is an enamel configuration
+      const isEnamelConfig = String(config.paintTypeCategory).toLowerCase() === 'enamel' || 
+        config.areaType === 'Enamel' ||
+        config.label?.toLowerCase().includes('enamel') ||
+        materials.some((m: any) => m.type === 'Enamel' || m.type === 'Enamel Primer');
+      
       configMaterials.push({
         configLabel: config.label || config.areaType,
         paintTypeCategory: config.paintTypeCategory,
         materials,
-        totalCost
+        totalCost,
+        isEnamel: isEnamelConfig
       });
     });
 
@@ -1533,8 +1540,8 @@ export default function GenerateSummaryScreen() {
             </div> : calculationConfigs.length === 0 ? <div className="text-sm text-muted-foreground p-4 border rounded-md bg-muted/30">
               No material configurations found.
             </div> : <div className="space-y-4">
-              {/* Interior Configurations */}
-              {configMaterials.filter(cm => cm.paintTypeCategory === 'Interior' && cm.totalCost > 0).length > 0 && <div className="space-y-3">
+              {/* Interior Configurations - Exclude Enamel */}
+              {configMaterials.filter(cm => cm.paintTypeCategory === 'Interior' && !cm.isEnamel && cm.totalCost > 0).length > 0 && <div className="space-y-3">
                   <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                     Interior Paint Configurations
                   </Badge>
@@ -1542,7 +1549,7 @@ export default function GenerateSummaryScreen() {
               scrollbarWidth: 'none',
               msOverflowStyle: 'none'
             }}>
-                    {configMaterials.filter(cm => cm.paintTypeCategory === 'Interior' && cm.totalCost > 0).map((configMat, index) => {
+                    {configMaterials.filter(cm => cm.paintTypeCategory === 'Interior' && !cm.isEnamel && cm.totalCost > 0).map((configMat, index) => {
                 const isEnamelConfig = configMat.configLabel.toLowerCase().includes('enamel') || configMat.materials.some((m: any) => m.name.toLowerCase().includes('enamel'));
                 return <Card key={index} className={`flex-none w-72 border-2 snap-start ${isEnamelConfig ? 'bg-orange-50 border-orange-300' : 'border-primary/20 bg-primary/5'}`}>
                         <CardContent className="p-4">
@@ -1580,8 +1587,8 @@ export default function GenerateSummaryScreen() {
                   </div>
                 </div>}
 
-              {/* Exterior Configurations */}
-              {configMaterials.filter(cm => cm.paintTypeCategory === 'Exterior' && cm.totalCost > 0).length > 0 && <div className="space-y-3">
+              {/* Exterior Configurations - Exclude Enamel */}
+              {configMaterials.filter(cm => cm.paintTypeCategory === 'Exterior' && !cm.isEnamel && cm.totalCost > 0).length > 0 && <div className="space-y-3">
                   <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                     Exterior Paint Configurations
                   </Badge>
@@ -1589,7 +1596,7 @@ export default function GenerateSummaryScreen() {
               scrollbarWidth: 'none',
               msOverflowStyle: 'none'
             }}>
-                    {configMaterials.filter(cm => cm.paintTypeCategory === 'Exterior' && cm.totalCost > 0).map((configMat, index) => {
+                    {configMaterials.filter(cm => cm.paintTypeCategory === 'Exterior' && !cm.isEnamel && cm.totalCost > 0).map((configMat, index) => {
                 const isEnamelConfig = configMat.configLabel.toLowerCase().includes('enamel') || configMat.materials.some((m: any) => m.name.toLowerCase().includes('enamel'));
                 return <Card key={index} className={`flex-none w-72 border-2 snap-start ${isEnamelConfig ? 'bg-orange-50 border-orange-300' : 'border-primary/20 bg-primary/5'}`}>
                         <CardContent className="p-4">
@@ -1627,8 +1634,8 @@ export default function GenerateSummaryScreen() {
                   </div>
                 </div>}
 
-              {/* Waterproofing Configurations */}
-              {configMaterials.filter(cm => cm.paintTypeCategory === 'Waterproofing' && cm.totalCost > 0).length > 0 && <div className="space-y-3">
+              {/* Waterproofing Configurations - Exclude Enamel */}
+              {configMaterials.filter(cm => cm.paintTypeCategory === 'Waterproofing' && !cm.isEnamel && cm.totalCost > 0).length > 0 && <div className="space-y-3">
                   <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                     Waterproofing Configurations
                   </Badge>
@@ -1636,7 +1643,7 @@ export default function GenerateSummaryScreen() {
               scrollbarWidth: 'none',
               msOverflowStyle: 'none'
             }}>
-                    {configMaterials.filter(cm => cm.paintTypeCategory === 'Waterproofing' && cm.totalCost > 0).map((configMat, index) => {
+                    {configMaterials.filter(cm => cm.paintTypeCategory === 'Waterproofing' && !cm.isEnamel && cm.totalCost > 0).map((configMat, index) => {
                 const isEnamelConfig = configMat.configLabel.toLowerCase().includes('enamel') || configMat.materials.some((m: any) => m.name.toLowerCase().includes('enamel'));
                 return <Card key={index} className={`flex-none w-72 border-2 snap-start ${isEnamelConfig ? 'bg-orange-50 border-orange-300' : 'border-primary/20 bg-primary/5'}`}>
                         <CardContent className="p-4">
@@ -1672,6 +1679,52 @@ export default function GenerateSummaryScreen() {
               })}
                     
                    </div>
+                </div>}
+
+              {/* Enamel (Door & Window) Configurations - Separate Category at Bottom */}
+              {configMaterials.filter(cm => cm.isEnamel && cm.totalCost > 0).length > 0 && <div className="space-y-3">
+                  <Badge variant="outline" className="bg-orange-500/10 text-orange-600 border-orange-500/20">
+                    Enamel Paint Configurations
+                  </Badge>
+                  <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide" style={{
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none'
+            }}>
+                    {configMaterials.filter(cm => cm.isEnamel && cm.totalCost > 0).map((configMat, index) => {
+                return <Card key={index} className="flex-none w-72 border-2 snap-start bg-orange-50 border-orange-300 dark:bg-orange-900/20 dark:border-orange-500/50">
+                        <CardContent className="p-4">
+                          <div className="space-y-4">
+                            {/* Header with Enamel Badge */}
+                            <div className="flex items-center justify-between pb-2 border-b border-orange-300 dark:border-orange-500/50">
+                              <h3 className="font-semibold text-base">{configMat.configLabel}</h3>
+                              <Badge variant="secondary" className="text-xs bg-orange-500 text-white">
+                                Enamel
+                              </Badge>
+                            </div>
+                            
+                            {/* Materials List */}
+                            <div className="space-y-3">
+                              {configMat.materials.map((mat: any, matIdx: number) => <div key={matIdx}>
+                                  {mat.error && <div className="text-xs text-destructive bg-destructive/10 p-2 rounded mb-2">
+                                      ⚠️ {mat.error}
+                                    </div>}
+                                  <MaterialCalculationDetails materialName={mat.name} materialType={mat.type} area={mat.area || 0} coats={mat.coats || 1} coverageRate={mat.coverageRate || 0} coverageDisplay={getMaterialCoverage(mat.name, mat.type)} unit={mat.unit} requiredQuantity={mat.requiredQuantity} totalCost={mat.totalCost} packCombination={mat.combination || []} hasError={!!mat.error} />
+                                </div>)}
+                            </div>
+                            
+                            {/* Total Cost */}
+                            <div className="pt-3 border-t-2 border-orange-300 dark:border-orange-500/50">
+                              <div className="flex items-center justify-between">
+                                <p className="text-sm font-medium text-muted-foreground">Total Material Cost:</p>
+                                <p className="text-2xl font-bold text-orange-600">₹{configMat.totalCost.toLocaleString('en-IN')}</p>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>;
+              })}
+                    
+                  </div>
                 </div>}
 
           {/* Total Material Cost Summary */}
