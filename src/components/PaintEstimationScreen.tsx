@@ -61,13 +61,14 @@ export default function PaintEstimationScreen() {
   const {
     projectId
   } = useParams();
-  
+
   // Use project cache for memoized calculations
-  const { getCachedProjectTotals } = useProjectCache(projectId);
-  
+  const {
+    getCachedProjectTotals
+  } = useProjectCache(projectId);
+
   // Track if initial load is done to prevent re-fetching
   const initialLoadDone = useRef(false);
-  
   const [selectedPaintType, setSelectedPaintType] = useState<"Interior" | "Exterior" | "Waterproofing">("Interior");
   const [rooms, setRooms] = useState<any[]>([]);
   const [coverageData, setCoverageData] = useState<CoverageData[]>([]);
@@ -81,13 +82,8 @@ export default function PaintEstimationScreen() {
 
   // Current configurations based on selected paint type - memoized
   const areaConfigurations = useMemo(() => {
-    return selectedPaintType === "Interior" 
-      ? interiorConfigurations 
-      : selectedPaintType === "Exterior" 
-        ? exteriorConfigurations 
-        : waterproofingConfigurations;
+    return selectedPaintType === "Interior" ? interiorConfigurations : selectedPaintType === "Exterior" ? exteriorConfigurations : waterproofingConfigurations;
   }, [selectedPaintType, interiorConfigurations, exteriorConfigurations, waterproofingConfigurations]);
-  
   const setAreaConfigurations = useCallback((updater: AreaConfiguration[] | ((prev: AreaConfiguration[]) => AreaConfiguration[])) => {
     if (selectedPaintType === "Interior") {
       setInteriorConfigurations(updater);
@@ -97,7 +93,6 @@ export default function PaintEstimationScreen() {
       setWaterproofingConfigurations(updater);
     }
   }, [selectedPaintType]);
-  
   const [selectedConfigId, setSelectedConfigId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -214,31 +209,25 @@ export default function PaintEstimationScreen() {
   // Fetch Enamel Primer and Apcolite Enamel products from product_pricing table
   useEffect(() => {
     const loadEnamelProducts = async () => {
-      const { data: session } = await supabase.auth.getSession();
+      const {
+        data: session
+      } = await supabase.auth.getSession();
       if (!session?.session?.user?.id) return;
-      
+
       // Fetch Enamel Primer products
-      const { data: primerData, error: primerError } = await supabase
-        .from('product_pricing')
-        .select('product_name')
-        .eq('user_id', session.session.user.id)
-        .eq('category', 'Enamel Primer')
-        .eq('is_visible', true)
-        .order('product_name');
-      
+      const {
+        data: primerData,
+        error: primerError
+      } = await supabase.from('product_pricing').select('product_name').eq('user_id', session.session.user.id).eq('category', 'Enamel Primer').eq('is_visible', true).order('product_name');
       if (!primerError && primerData) {
         setEnamelPrimerProducts(primerData.map(p => p.product_name));
       }
 
       // Fetch Apcolite Enamel products
-      const { data: enamelData, error: enamelError } = await supabase
-        .from('product_pricing')
-        .select('product_name')
-        .eq('user_id', session.session.user.id)
-        .eq('category', 'Apcolite Enamel')
-        .eq('is_visible', true)
-        .order('product_name');
-      
+      const {
+        data: enamelData,
+        error: enamelError
+      } = await supabase.from('product_pricing').select('product_name').eq('user_id', session.session.user.id).eq('category', 'Apcolite Enamel').eq('is_visible', true).order('product_name');
       if (!enamelError && enamelData) {
         setApcoliteEnamelProducts(enamelData.map(p => p.product_name));
       }
@@ -250,24 +239,21 @@ export default function PaintEstimationScreen() {
   useEffect(() => {
     const loadRooms = async () => {
       if (!projectId) return;
-      
+
       // ALWAYS fetch fresh from database to ensure enamel areas are included
-      const { data: freshRooms, error } = await supabase
-        .from('rooms')
-        .select('*')
-        .eq('project_id', projectId);
-      
+      const {
+        data: freshRooms,
+        error
+      } = await supabase.from('rooms').select('*').eq('project_id', projectId);
       if (error) {
         console.error('Error fetching rooms:', error);
         return;
       }
-      
       if (freshRooms && freshRooms.length > 0) {
         setRooms(freshRooms);
         initialLoadDone.current = true;
       }
     };
-    
     loadRooms();
 
     // Set up real-time subscription to detect new rooms
@@ -609,9 +595,9 @@ export default function PaintEstimationScreen() {
       const addCeiling = hasCeilingSelected ? Math.max(0, ceilingAreaTotal - (baseline.ceiling || 0)) : 0;
 
       // Keep main as baseline so the new difference becomes a new box (only for selected areas)
-      floorMain = hasFloorSelected ? (baseline.floor || 0) : 0;
-      wallMain = hasWallSelected ? (baseline.wall || 0) : 0;
-      ceilingMain = hasCeilingSelected ? (baseline.ceiling || 0) : 0;
+      floorMain = hasFloorSelected ? baseline.floor || 0 : 0;
+      wallMain = hasWallSelected ? baseline.wall || 0 : 0;
+      ceilingMain = hasCeilingSelected ? baseline.ceiling || 0 : 0;
 
       // Get the baseline room IDs to detect new rooms
       const baselineRoomIds = baseline.roomIds || [];
@@ -781,9 +767,9 @@ export default function PaintEstimationScreen() {
         const addCeiling = hasCeilingSelected ? Math.max(0, ceilingAreaTotal - (baseline.ceiling || 0)) : 0;
 
         // Keep main as baseline (only for selected area types)
-        floorMain = hasFloorSelected ? (baseline.floor || 0) : 0;
-        wallMain = hasWallSelected ? (baseline.wall || 0) : 0;
-        ceilingMain = hasCeilingSelected ? (baseline.ceiling || 0) : 0;
+        floorMain = hasFloorSelected ? baseline.floor || 0 : 0;
+        wallMain = hasWallSelected ? baseline.wall || 0 : 0;
+        ceilingMain = hasCeilingSelected ? baseline.ceiling || 0 : 0;
         const newRooms = filteredRooms.filter(r => newRoomIds.includes(r.id));
         if (addFloor > 0) {
           let newRoomName = 'Additional Floor Area';
@@ -1082,7 +1068,7 @@ export default function PaintEstimationScreen() {
     }
     // FAIL-SAFE: Enamel MUST always appear if enamelAreaTotal > 0, regardless of hasEnamelSelected
     // This ensures enamel from Room Measurements ALWAYS shows in Paint Estimation
-    const effectiveEnamelMain = enamelAreaTotal > 0 ? (enamelMain > 0 ? enamelMain : enamelAreaTotal) : 0;
+    const effectiveEnamelMain = enamelAreaTotal > 0 ? enamelMain > 0 ? enamelMain : enamelAreaTotal : 0;
     if (effectiveEnamelMain > 0) {
       configs.push({
         id: 'enamel-main',
@@ -1776,9 +1762,9 @@ export default function PaintEstimationScreen() {
                   
                   {/* Separate Enamel Areas (custom sections) - shown after main enamel */}
                   {areaConfigurations.filter(c => c.areaType === 'Enamel' && (c.paintingSystem || c.enamelConfig) && c.isCustomSection).map(config => {
-                    const room = rooms.find(r => r.room_id === config.roomId);
-                    const displayName = room?.section_name || config.label || 'Section';
-                    return <Card key={config.id} className="border-2 border-orange-500/20 bg-orange-50/50 dark:bg-orange-950/20">
+            const room = rooms.find(r => r.room_id === config.roomId);
+            const displayName = room?.section_name || config.label || 'Section';
+            return <Card key={config.id} className="border-2 border-orange-500/20 bg-orange-50/50 dark:bg-orange-950/20">
                       <CardContent className="p-4">
                         <div className="space-y-3">
                           <div className="flex items-center justify-between">
@@ -1818,26 +1804,26 @@ export default function PaintEstimationScreen() {
                           <div className="space-y-2">
                             <Label className="text-sm">Per Sq.ft Rate (₹)</Label>
                             <Input type="number" placeholder="Enter rate per sq.ft" value={config.perSqFtRate} onChange={e => {
-                    setAreaConfigurations(prev => {
-                      const updated = prev.map(c => c.id === config.id ? {
-                        ...c,
-                        perSqFtRate: e.target.value
-                      } : c);
-                      // Save to localStorage
-                      const savedConfigKey = `paint_configs_${projectId}_${selectedPaintType}`;
-                      try {
-                        localStorage.setItem(savedConfigKey, JSON.stringify(updated));
-                      } catch (e) {
-                        console.error('Error saving configs:', e);
-                      }
-                      return updated;
-                    });
-                  }} className="h-10" />
+                      setAreaConfigurations(prev => {
+                        const updated = prev.map(c => c.id === config.id ? {
+                          ...c,
+                          perSqFtRate: e.target.value
+                        } : c);
+                        // Save to localStorage
+                        const savedConfigKey = `paint_configs_${projectId}_${selectedPaintType}`;
+                        try {
+                          localStorage.setItem(savedConfigKey, JSON.stringify(updated));
+                        } catch (e) {
+                          console.error('Error saving configs:', e);
+                        }
+                        return updated;
+                      });
+                    }} className="h-10" />
                           </div>
                         </div>
                       </CardContent>
                     </Card>;
-                  })}
+          })}
                 </CardContent>
               </Card>}
 
@@ -2019,7 +2005,7 @@ export default function PaintEstimationScreen() {
                           <div className="flex items-center justify-between">
                             <Label className="text-sm font-medium">Primer</Label>
                             <div className="flex items-center gap-2">
-                              <span className="text-sm text-muted-foreground">Coats</span>
+                              <span className="text-sm text-muted-foreground">​</span>
                               <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleUpdateConfig({
                         enamelConfig: {
                           primerType: selectedConfig.enamelConfig?.primerType || '',
@@ -2057,17 +2043,11 @@ export default function PaintEstimationScreen() {
                               <SelectValue placeholder="Select Primer Type" />
                             </SelectTrigger>
                             <SelectContent>
-                              {enamelPrimerProducts.length > 0 ? (
-                                enamelPrimerProducts.map(product => (
-                                  <SelectItem key={product} value={product}>{product}</SelectItem>
-                                ))
-                              ) : (
-                                <>
+                              {enamelPrimerProducts.length > 0 ? enamelPrimerProducts.map(product => <SelectItem key={product} value={product}>{product}</SelectItem>) : <>
                                   <SelectItem value="AP TruCare Wood Primer">AP TruCare Wood Primer</SelectItem>
                                   <SelectItem value="AP TruCare Red Oxide Metal Primer">AP TruCare Red Oxide Metal Primer</SelectItem>
                                   <SelectItem value="AP TruCare Yellow Metal Primer">AP TruCare Yellow Metal Primer</SelectItem>
-                                </>
-                              )}
+                                </>}
                             </SelectContent>
                           </Select>
                         </div>
@@ -2077,7 +2057,8 @@ export default function PaintEstimationScreen() {
                           <div className="flex items-center justify-between">
                             <Label className="text-sm font-medium">Enamel</Label>
                             <div className="flex items-center gap-2">
-                              <span className="text-sm text-muted-foreground">Coats</span>
+                              <span className="text-sm text-muted-foreground">
+                      </span>
                               <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleUpdateConfig({
                         enamelConfig: {
                           primerType: selectedConfig.enamelConfig?.primerType || '',
@@ -2115,19 +2096,13 @@ export default function PaintEstimationScreen() {
                               <SelectValue placeholder="Select Enamel Type" />
                             </SelectTrigger>
                             <SelectContent>
-                              {apcoliteEnamelProducts.length > 0 ? (
-                                apcoliteEnamelProducts.map(product => (
-                                  <SelectItem key={product} value={product}>{product}</SelectItem>
-                                ))
-                              ) : (
-                                <>
+                              {apcoliteEnamelProducts.length > 0 ? apcoliteEnamelProducts.map(product => <SelectItem key={product} value={product}>{product}</SelectItem>) : <>
                                   <SelectItem value="AP Apcolite Premium Gloss Enamel">AP Apcolite Premium Gloss Enamel</SelectItem>
                                   <SelectItem value="AP Apcolite Premium Satin Enamel">AP Apcolite Premium Satin Enamel</SelectItem>
                                   <SelectItem value="AP Apcolite Premium Advanced Enamel">AP Apcolite Premium Advanced Enamel</SelectItem>
                                   <SelectItem value="AP Apcolite Rust Shield PU Enamel">AP Apcolite Rust Shield PU Enamel</SelectItem>
                                   <SelectItem value="AP Apcolite Insect Shield Enamel">AP Apcolite Insect Shield Enamel</SelectItem>
-                                </>
-                              )}
+                                </>}
                             </SelectContent>
                           </Select>
                         </div>
