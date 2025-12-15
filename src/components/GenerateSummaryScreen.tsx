@@ -877,11 +877,17 @@ export default function GenerateSummaryScreen() {
           });
         }
       }
+      // Identify if this is an enamel configuration (Door & Window)
+      const isEnamel = config.areaType === 'Door & Window' || 
+        config.label?.toLowerCase().includes('enamel') ||
+        config.selectedMaterials?.emulsion?.toLowerCase().includes('enamel');
+      
       configTasks.push({
         configLabel: config.label || config.areaType,
         paintTypeCategory: config.paintTypeCategory,
         tasks,
-        totalDays: tasks.reduce((sum, task) => sum + task.daysRequired, 0)
+        totalDays: tasks.reduce((sum, task) => sum + task.daysRequired, 0),
+        isEnamel
       });
     });
     const totalDays = configTasks.reduce((sum, ct) => sum + ct.totalDays, 0);
@@ -972,8 +978,8 @@ export default function GenerateSummaryScreen() {
             {labourMode === 'auto' && configTasks.length > 0 && <div className="space-y-4">
                 <p className="font-semibold text-sm text-foreground">Labour Calculation Breakdown</p>
                 
-                {/* Interior Configurations */}
-                {configTasks.filter(ct => ct.paintTypeCategory === 'Interior' && ct.totalDays > 0).length > 0 && <div className="space-y-3">
+                {/* Interior Configurations - Exclude Enamel */}
+                {configTasks.filter(ct => ct.paintTypeCategory === 'Interior' && ct.totalDays > 0 && !ct.isEnamel).length > 0 && <div className="space-y-3">
                     <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                       Interior Paint Configurations
                     </Badge>
@@ -981,9 +987,8 @@ export default function GenerateSummaryScreen() {
                 scrollbarWidth: 'none',
                 msOverflowStyle: 'none'
               }}>
-                      {configTasks.filter(ct => ct.paintTypeCategory === 'Interior' && ct.totalDays > 0).map((configTask, index) => {
-                  const isEnamelConfig = configTask.configLabel.toLowerCase().includes('enamel') || configTask.tasks.some((t: any) => t.name.toLowerCase().includes('enamel'));
-                  return <Card key={index} className={`flex-none w-72 border-2 snap-start ${isEnamelConfig ? 'bg-orange-50 border-orange-300' : 'border-primary/20 bg-primary/5'}`}>
+                      {configTasks.filter(ct => ct.paintTypeCategory === 'Interior' && ct.totalDays > 0 && !ct.isEnamel).map((configTask, index) => {
+                  return <Card key={index} className="flex-none w-72 border-2 snap-start border-primary/20 bg-primary/5">
                           <CardContent className="p-4">
                             <div className="space-y-4">
                               {/* Header with Type Badge */}
@@ -1014,8 +1019,8 @@ export default function GenerateSummaryScreen() {
                     </div>
                   </div>}
 
-                {/* Exterior Configurations */}
-                {configTasks.filter(ct => ct.paintTypeCategory === 'Exterior' && ct.totalDays > 0).length > 0 && <div className="space-y-3">
+                {/* Exterior Configurations - Exclude Enamel */}
+                {configTasks.filter(ct => ct.paintTypeCategory === 'Exterior' && ct.totalDays > 0 && !ct.isEnamel).length > 0 && <div className="space-y-3">
                     <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                       Exterior Paint Configurations
                     </Badge>
@@ -1023,9 +1028,8 @@ export default function GenerateSummaryScreen() {
                 scrollbarWidth: 'none',
                 msOverflowStyle: 'none'
               }}>
-                      {configTasks.filter(ct => ct.paintTypeCategory === 'Exterior' && ct.totalDays > 0).map((configTask, index) => {
-                  const isEnamelConfig = configTask.configLabel.toLowerCase().includes('enamel') || configTask.tasks.some((t: any) => t.name.toLowerCase().includes('enamel'));
-                  return <Card key={index} className={`flex-none w-72 border-2 snap-start ${isEnamelConfig ? 'bg-orange-50 border-orange-300' : 'border-primary/20 bg-primary/5'}`}>
+                      {configTasks.filter(ct => ct.paintTypeCategory === 'Exterior' && ct.totalDays > 0 && !ct.isEnamel).map((configTask, index) => {
+                  return <Card key={index} className="flex-none w-72 border-2 snap-start border-primary/20 bg-primary/5">
                           <CardContent className="p-4">
                             <div className="space-y-4">
                               {/* Header with Type Badge */}
@@ -1056,8 +1060,8 @@ export default function GenerateSummaryScreen() {
                     </div>
                   </div>}
 
-                {/* Waterproofing Configurations */}
-                {configTasks.filter(ct => ct.paintTypeCategory === 'Waterproofing' && ct.totalDays > 0).length > 0 && <div className="space-y-3">
+                {/* Waterproofing Configurations - Exclude Enamel */}
+                {configTasks.filter(ct => ct.paintTypeCategory === 'Waterproofing' && ct.totalDays > 0 && !ct.isEnamel).length > 0 && <div className="space-y-3">
                     <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                       Waterproofing Configurations
                     </Badge>
@@ -1065,9 +1069,8 @@ export default function GenerateSummaryScreen() {
                 scrollbarWidth: 'none',
                 msOverflowStyle: 'none'
               }}>
-                      {configTasks.filter(ct => ct.paintTypeCategory === 'Waterproofing' && ct.totalDays > 0).map((configTask, index) => {
-                  const isEnamelConfig = configTask.configLabel.toLowerCase().includes('enamel') || configTask.tasks.some((t: any) => t.name.toLowerCase().includes('enamel'));
-                  return <Card key={index} className={`flex-none w-72 border-2 snap-start ${isEnamelConfig ? 'bg-orange-50 border-orange-300' : 'border-primary/20 bg-primary/5'}`}>
+                      {configTasks.filter(ct => ct.paintTypeCategory === 'Waterproofing' && ct.totalDays > 0 && !ct.isEnamel).map((configTask, index) => {
+                  return <Card key={index} className="flex-none w-72 border-2 snap-start border-primary/20 bg-primary/5">
                           <CardContent className="p-4">
                             <div className="space-y-4">
                               {/* Header with Type Badge */}
@@ -1088,6 +1091,47 @@ export default function GenerateSummaryScreen() {
                                 <div className="flex items-center justify-between">
                                   <p className="text-sm font-medium text-muted-foreground">Total Days:</p>
                                   <p className="text-2xl font-bold text-primary">{Math.ceil(configTask.totalDays / autoLabourPerDay)} days</p>
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>;
+                })}
+                      
+                    </div>
+                  </div>}
+
+                {/* Enamel Configurations - Separate Category at Bottom */}
+                {configTasks.filter(ct => ct.isEnamel && ct.totalDays > 0).length > 0 && <div className="space-y-3">
+                    <Badge variant="outline" className="bg-orange-500/10 text-orange-600 border-orange-500/20">
+                      Enamel (Door & Window) Configurations
+                    </Badge>
+                    <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide" style={{
+                scrollbarWidth: 'none',
+                msOverflowStyle: 'none'
+              }}>
+                      {configTasks.filter(ct => ct.isEnamel && ct.totalDays > 0).map((configTask, index) => {
+                  return <Card key={index} className="flex-none w-72 border-2 snap-start bg-orange-50 border-orange-300 dark:bg-orange-900/20 dark:border-orange-500/50">
+                          <CardContent className="p-4">
+                            <div className="space-y-4">
+                              {/* Header with Enamel Badge */}
+                              <div className="flex items-center justify-between pb-2 border-b border-orange-300 dark:border-orange-500/50">
+                                <h3 className="font-semibold text-base">{configTask.configLabel}</h3>
+                                <Badge variant="secondary" className="text-xs bg-orange-500 text-white">
+                                  Enamel
+                                </Badge>
+                              </div>
+                              
+                              {/* Tasks List */}
+                              <div className="space-y-3">
+                                {configTask.tasks.map((task: any, taskIdx: number) => <LabourCalculationDetails key={taskIdx} task={task} workingHours={workingHours} standardHours={standardHours} numberOfLabours={numberOfLabours} autoLabourPerDay={autoLabourPerDay} />)}
+                              </div>
+                              
+                              {/* Total Days */}
+                              <div className="pt-3 border-t-2 border-orange-300 dark:border-orange-500/50">
+                                <div className="flex items-center justify-between">
+                                  <p className="text-sm font-medium text-muted-foreground">Total Days:</p>
+                                  <p className="text-2xl font-bold text-orange-600">{Math.ceil(configTask.totalDays / autoLabourPerDay)} days</p>
                                 </div>
                               </div>
                             </div>
