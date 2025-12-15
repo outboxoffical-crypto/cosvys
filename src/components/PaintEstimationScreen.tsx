@@ -371,9 +371,10 @@ export default function PaintEstimationScreen() {
         ceiling: false
       };
       const sectionLabel = room.section_name;
-      const roomName = room.name || 'Room';
+      // Prioritize section_name over room.name for display (user wants to see section name like "Varnish")
+      const roomName = room.section_name || room.name || 'Room';
 
-      // Create separate config boxes for each selected area type - show only room name
+      // Create separate config boxes for each selected area type - show section name if exists
       if (selectedAreas.floor) {
         const floorArea = Number(room.floor_area || 0);
         configs.push({
@@ -940,13 +941,14 @@ export default function PaintEstimationScreen() {
       // Find the newly added room(s)
       const newRooms = filteredRooms.filter(r => newRoomIds.includes(r.id));
       if (addEnamel > 0) {
-        // Get the room name from the newly added room with enamel area
+        // Get the section/room name from the newly added room with enamel area - prioritize section_name
         let newRoomName = 'Additional Enamel Area';
         const newEnamelRoom = newRooms.find(room => {
           return room.door_window_grills && Array.isArray(room.door_window_grills) && room.door_window_grills.length > 0;
         });
         if (newEnamelRoom) {
-          newRoomName = `${newEnamelRoom.name} (Enamel Area)`;
+          // Prioritize section_name (e.g., "Varnish") over room.name (e.g., "Living Room")
+          newRoomName = newEnamelRoom.section_name || newEnamelRoom.name || 'Additional Enamel Area';
         }
         const newConfig: AreaConfiguration = {
           id: `enamel-additional-${Date.now()}`,
@@ -1836,11 +1838,15 @@ export default function PaintEstimationScreen() {
                 
                 {/* Main Enamel Areas (non-custom sections) */}
                 {enamelConfigs.filter(c => !c.isCustomSection).length > 0 && <div className="grid grid-cols-2 gap-4">
-                  {enamelConfigs.filter(c => !c.isCustomSection).map(config => <div key={config.id} className={`border-2 border-dashed rounded-lg p-4 text-center space-y-2 cursor-pointer transition-all relative ${config.paintingSystem ? 'border-orange-500 bg-orange-50/50 dark:bg-orange-950/20' : 'border-orange-300 hover:border-orange-500 bg-orange-50/30 dark:bg-orange-950/10'}`} onClick={() => handleEditConfig(config.id)}>
+                  {enamelConfigs.filter(c => !c.isCustomSection).map(config => {
+                    const room = rooms.find(r => r.room_id === config.roomId);
+                    // Prioritize section_name (e.g., "Varnish") over config.label/room.name
+                    const displayName = room?.section_name || config.label || 'Enamel Area';
+                    return <div key={config.id} className={`border-2 border-dashed rounded-lg p-4 text-center space-y-2 cursor-pointer transition-all relative ${config.paintingSystem ? 'border-orange-500 bg-orange-50/50 dark:bg-orange-950/20' : 'border-orange-300 hover:border-orange-500 bg-orange-50/30 dark:bg-orange-950/10'}`} onClick={() => handleEditConfig(config.id)}>
                       {config.isAdditional && <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive absolute top-2 right-2" onClick={e => {
-              e.stopPropagation();
-              handleDeleteConfig(config.id);
-            }}>
+                        e.stopPropagation();
+                        handleDeleteConfig(config.id);
+                      }}>
                           <Trash2 className="h-3 w-3" />
                         </Button>}
                       <Button variant="ghost" size="sm" className="text-orange-700 dark:text-orange-300 text-xs pointer-events-none">
@@ -1849,10 +1855,11 @@ export default function PaintEstimationScreen() {
                       <div>
                         <p className="text-3xl font-bold text-orange-700 dark:text-orange-300">{config.area ? config.area.toFixed(1) : '0.0'}</p>
                         <p className="text-sm text-orange-600 dark:text-orange-400">
-                          {config.label || 'Enamel Area'}
+                          {displayName}
                         </p>
                       </div>
-                    </div>)}
+                    </div>;
+                  })}
                 </div>}
 
                 {/* Separate Enamel Area - Custom sections with section_name */}
