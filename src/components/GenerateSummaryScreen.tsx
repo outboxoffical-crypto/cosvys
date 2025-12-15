@@ -2169,7 +2169,7 @@ export default function GenerateSummaryScreen() {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-4 bg-muted/30 rounded-lg border border-border text-center">
-                    <p className="text-sm text-muted-foreground mb-2 font-semibold">Company Project Cost</p>
+                    <p className="text-sm mb-2 font-normal text-foreground">Company Project Cost</p>
                     <p className="text-xl font-bold text-foreground">
                       ₹{areaConfigs.reduce((sum, config) => {
                       const area = Number(config.area) || 0;
@@ -2181,7 +2181,7 @@ export default function GenerateSummaryScreen() {
                     </p>
                   </div>
                   <div className="p-4 bg-muted/30 rounded-lg border border-border text-center">
-                    <p className="text-sm text-muted-foreground mb-2 font-semibold">
+                    <p className="text-sm mb-2 font-normal text-foreground">
                       Actual<br />Project Cost
                     </p>
                     <p className="text-xl font-bold text-foreground">
