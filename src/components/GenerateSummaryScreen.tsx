@@ -274,8 +274,10 @@ export default function GenerateSummaryScreen() {
               paintTypeCategory: room.project_type as 'Interior' | 'Exterior' | 'Waterproofing',
               selectedMaterials: {
                 putty: '',
-                primer: 'Enamel Primer',
-                emulsion: 'Enamel Paint'
+                // Use actual enamel primer product name from database
+                primer: 'AP TruCare Wood Primer',
+                // Use actual enamel topcoat product name from database
+                emulsion: 'AP Apcolite Premium Gloss Enamel'
               },
               coatConfiguration: {
                 putty: 0,
@@ -1682,7 +1684,8 @@ export default function GenerateSummaryScreen() {
                 </div>}
 
               {/* Enamel (Door & Window) Configurations - Separate Category at Bottom */}
-              {configMaterials.filter(cm => cm.isEnamel && cm.totalCost > 0).length > 0 && <div className="space-y-3">
+              {/* Show enamel even if totalCost is 0 to display error messages */}
+              {configMaterials.filter(cm => cm.isEnamel && cm.materials.length > 0).length > 0 && <div className="space-y-3">
                   <Badge variant="outline" className="bg-orange-500/10 text-orange-600 border-orange-500/20">
                     Enamel Paint Configurations
                   </Badge>
@@ -1690,7 +1693,7 @@ export default function GenerateSummaryScreen() {
               scrollbarWidth: 'none',
               msOverflowStyle: 'none'
             }}>
-                    {configMaterials.filter(cm => cm.isEnamel && cm.totalCost > 0).map((configMat, index) => {
+                    {configMaterials.filter(cm => cm.isEnamel && cm.materials.length > 0).map((configMat, index) => {
                 return <Card key={index} className="flex-none w-72 border-2 snap-start bg-orange-50 border-orange-300 dark:bg-orange-900/20 dark:border-orange-500/50">
                         <CardContent className="p-4">
                           <div className="space-y-4">
