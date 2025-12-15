@@ -71,6 +71,13 @@ const productCategories: ProductCategory[] = [
     products: [
       "AP TruCare Wood Primer", "AP TruCare Red Oxide Metal Primer", "AP SmartCare Yellow Metal Primer"
     ]
+  },
+  {
+    name: "Apcolite Enamel",
+    products: [
+      "AP Apcolite Premium Gloss Enamel", "AP Apcolite Premium Satin Enamel", "AP Apcolite Premium Advanced Enamel",
+      "AP Apcolite Rust Shield PU Enamel", "AP Apcolite Insect Shield Enamel"
+    ]
   }
 ];
 
