@@ -72,6 +72,7 @@ export default function PaintEstimationScreen() {
   const [rooms, setRooms] = useState<any[]>([]);
   const [coverageData, setCoverageData] = useState<CoverageData[]>([]);
   const [enamelPrimerProducts, setEnamelPrimerProducts] = useState<string[]>([]);
+  const [apcoliteEnamelProducts, setApcoliteEnamelProducts] = useState<string[]>([]);
 
   // Separate state for each paint type to prevent mixing
   const [interiorConfigurations, setInteriorConfigurations] = useState<AreaConfiguration[]>([]);
@@ -210,13 +211,14 @@ export default function PaintEstimationScreen() {
     loadCoverage();
   }, []);
 
-  // Fetch Enamel Primer products from product_pricing table
+  // Fetch Enamel Primer and Apcolite Enamel products from product_pricing table
   useEffect(() => {
-    const loadEnamelPrimers = async () => {
+    const loadEnamelProducts = async () => {
       const { data: session } = await supabase.auth.getSession();
       if (!session?.session?.user?.id) return;
       
-      const { data, error } = await supabase
+      // Fetch Enamel Primer products
+      const { data: primerData, error: primerError } = await supabase
         .from('product_pricing')
         .select('product_name')
         .eq('user_id', session.session.user.id)
@@ -224,11 +226,24 @@ export default function PaintEstimationScreen() {
         .eq('is_visible', true)
         .order('product_name');
       
-      if (!error && data) {
-        setEnamelPrimerProducts(data.map(p => p.product_name));
+      if (!primerError && primerData) {
+        setEnamelPrimerProducts(primerData.map(p => p.product_name));
+      }
+
+      // Fetch Apcolite Enamel products
+      const { data: enamelData, error: enamelError } = await supabase
+        .from('product_pricing')
+        .select('product_name')
+        .eq('user_id', session.session.user.id)
+        .eq('category', 'Apcolite Enamel')
+        .eq('is_visible', true)
+        .order('product_name');
+      
+      if (!enamelError && enamelData) {
+        setApcoliteEnamelProducts(enamelData.map(p => p.product_name));
       }
     };
-    loadEnamelPrimers();
+    loadEnamelProducts();
   }, []);
 
   // Force fresh room loading from database - NEVER rely on cached data for areas
@@ -2072,9 +2087,19 @@ export default function PaintEstimationScreen() {
                               <SelectValue placeholder="Select Enamel Type" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="Apcolite Premium Enamel Gloss">Apcolite Premium Enamel Gloss</SelectItem>
-                              <SelectItem value="Apcolite Premium Enamel Satin">Apcolite Premium Enamel Satin</SelectItem>
-                              <SelectItem value="Apcolite Premium Enamel Matt">Apcolite Premium Enamel Matt</SelectItem>
+                              {apcoliteEnamelProducts.length > 0 ? (
+                                apcoliteEnamelProducts.map(product => (
+                                  <SelectItem key={product} value={product}>{product}</SelectItem>
+                                ))
+                              ) : (
+                                <>
+                                  <SelectItem value="AP Apcolite Premium Gloss Enamel">AP Apcolite Premium Gloss Enamel</SelectItem>
+                                  <SelectItem value="AP Apcolite Premium Satin Enamel">AP Apcolite Premium Satin Enamel</SelectItem>
+                                  <SelectItem value="AP Apcolite Premium Advanced Enamel">AP Apcolite Premium Advanced Enamel</SelectItem>
+                                  <SelectItem value="AP Apcolite Rust Shield PU Enamel">AP Apcolite Rust Shield PU Enamel</SelectItem>
+                                  <SelectItem value="AP Apcolite Insect Shield Enamel">AP Apcolite Insect Shield Enamel</SelectItem>
+                                </>
+                              )}
                             </SelectContent>
                           </Select>
                           <div className="flex items-center justify-between">
