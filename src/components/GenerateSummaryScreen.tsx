@@ -250,7 +250,9 @@ export default function GenerateSummaryScreen() {
       // Order by created_at to preserve Room Measurements order
       const {
         data: roomsData
-      } = await supabase.from('rooms').select('id, name, project_type, floor_area, wall_area, adjusted_wall_area, ceiling_area, total_door_window_grill_area, selected_areas, section_name, created_at').eq('project_id', projectId).order('created_at', { ascending: true });
+      } = await supabase.from('rooms').select('id, name, project_type, floor_area, wall_area, adjusted_wall_area, ceiling_area, total_door_window_grill_area, selected_areas, section_name, created_at').eq('project_id', projectId).order('created_at', {
+        ascending: true
+      });
       if (roomsData) {
         setRooms(roomsData);
 
@@ -385,7 +387,6 @@ export default function GenerateSummaryScreen() {
     const waterproofingConfigs = sortConfigs(areaConfigs.filter(c => c.paintTypeCategory === 'Waterproofing' && c.areaType !== 'Enamel'));
     // Get Enamel configs
     const enamelConfigs = sortConfigs(areaConfigs.filter(c => c.areaType === 'Enamel'));
-    
     const renderConfigGroup = (configs: AreaConfig[], typeLabel: string) => {
       if (configs.length === 0) return null;
       return <div key={typeLabel} className="space-y-3 mb-6">
@@ -509,7 +510,6 @@ export default function GenerateSummaryScreen() {
               }
               return parts.length > 0 ? parts.join(' + ') : 'Not configured';
             };
-
             return <Card key={config.id} className="flex-none w-72 border-2 border-orange-500/30 bg-orange-50/50 dark:bg-orange-950/20 snap-start">
                   <CardContent className="p-4">
                     <div className="space-y-3">
@@ -878,10 +878,7 @@ export default function GenerateSummaryScreen() {
         }
       }
       // Identify if this is an enamel configuration (Door & Window)
-      const isEnamel = config.areaType === 'Door & Window' || 
-        config.label?.toLowerCase().includes('enamel') ||
-        config.selectedMaterials?.emulsion?.toLowerCase().includes('enamel');
-      
+      const isEnamel = config.areaType === 'Door & Window' || config.label?.toLowerCase().includes('enamel') || config.selectedMaterials?.emulsion?.toLowerCase().includes('enamel');
       configTasks.push({
         configLabel: config.label || config.areaType,
         paintTypeCategory: config.paintTypeCategory,
@@ -1104,7 +1101,7 @@ export default function GenerateSummaryScreen() {
                 {/* Enamel Configurations - Separate Category at Bottom */}
                 {configTasks.filter(ct => ct.isEnamel && ct.totalDays > 0).length > 0 && <div className="space-y-3">
                     <Badge variant="outline" className="bg-orange-500/10 text-orange-600 border-orange-500/20">
-                      Enamel (Door & Window) Configurations
+                      Enamel Paint Configurations
                     </Badge>
                     <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide" style={{
                 scrollbarWidth: 'none',
