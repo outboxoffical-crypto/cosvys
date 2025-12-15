@@ -2084,7 +2084,7 @@ export default function PaintEstimationScreen() {
                               </Button>
                             </div>
                           </div>
-                          <Select value={selectedConfig.enamelConfig?.enamelType || ''} onValueChange={value => handleUpdateConfig({
+                          <Select value={selectedConfig.enamelConfig?.enamelType || undefined} onValueChange={value => handleUpdateConfig({
                     enamelConfig: {
                       primerType: selectedConfig.enamelConfig?.primerType || '',
                       primerCoats: selectedConfig.enamelConfig?.primerCoats ?? 0,
