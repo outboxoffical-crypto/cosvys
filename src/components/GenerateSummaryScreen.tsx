@@ -19,6 +19,7 @@ interface AreaConfig {
   area: number;
   perSqFtRate: string;
   label?: string;
+  sectionName?: string;
   paintTypeCategory?: 'Interior' | 'Exterior' | 'Waterproofing';
   selectedMaterials: {
     putty: string;
@@ -496,7 +497,7 @@ export default function GenerateSummaryScreen() {
                     <div className="space-y-3">
                       {/* Header with Type Badge */}
                       <div className="flex items-center justify-between">
-                        <h3 className="font-semibold text-base">{config.label || 'Door & Window'}</h3>
+                        <h3 className="font-semibold text-base">{config.sectionName || config.label || 'Door & Window'}</h3>
                         <Badge variant="secondary" className="text-xs bg-orange-500/20 text-orange-700 dark:text-orange-300">
                           Enamel
                         </Badge>
