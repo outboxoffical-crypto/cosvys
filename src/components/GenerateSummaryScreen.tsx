@@ -34,6 +34,12 @@ interface AreaConfig {
     primer: number;
     emulsion: number;
   };
+  enamelConfig?: {
+    primerType: string;
+    primerCoats: number;
+    enamelType: string;
+    enamelCoats: number;
+  };
 }
 export default function GenerateSummaryScreen() {
   const navigate = useNavigate();
@@ -358,6 +364,9 @@ export default function GenerateSummaryScreen() {
     const interiorConfigs = areaConfigs.filter(c => c.paintTypeCategory === 'Interior' && c.areaType !== 'Enamel');
     const exteriorConfigs = areaConfigs.filter(c => c.paintTypeCategory === 'Exterior' && c.areaType !== 'Enamel');
     const waterproofingConfigs = areaConfigs.filter(c => c.paintTypeCategory === 'Waterproofing' && c.areaType !== 'Enamel');
+    // Get Enamel configs
+    const enamelConfigs = areaConfigs.filter(c => c.areaType === 'Enamel');
+    
     const renderConfigGroup = (configs: AreaConfig[], typeLabel: string) => {
       if (configs.length === 0) return null;
       return <div key={typeLabel} className="space-y-3 mb-6">
@@ -452,6 +461,88 @@ export default function GenerateSummaryScreen() {
         </div>;
     };
 
+    // Render Enamel config group with yellow/orange styling
+    const renderEnamelConfigGroup = () => {
+      if (enamelConfigs.length === 0) return null;
+      return <div className="space-y-3 mb-6">
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="bg-orange-500/10 text-orange-600 border-orange-500/20">
+              Enamel Paint Configurations
+            </Badge>
+          </div>
+          <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide" style={{
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none'
+        }}>
+            {enamelConfigs.map(config => {
+            const area = Number(config.area) || 0;
+            const rate = parseFloat(config.perSqFtRate) || 0;
+            const totalCost = area * rate;
+
+            // Get enamel coat details from enamelConfig
+            const getEnamelCoatDetails = () => {
+              const parts = [];
+              if (config.enamelConfig?.primerCoats && config.enamelConfig.primerCoats > 0) {
+                parts.push(`${config.enamelConfig.primerCoats} coat${config.enamelConfig.primerCoats > 1 ? 's' : ''} of ${config.enamelConfig.primerType || 'Primer'}`);
+              }
+              if (config.enamelConfig?.enamelCoats && config.enamelConfig.enamelCoats > 0) {
+                parts.push(`${config.enamelConfig.enamelCoats} coat${config.enamelConfig.enamelCoats > 1 ? 's' : ''} of ${config.enamelConfig.enamelType || 'Enamel'}`);
+              }
+              return parts.length > 0 ? parts.join(' + ') : 'Not configured';
+            };
+
+            return <Card key={config.id} className="flex-none w-72 border-2 border-orange-500/30 bg-orange-50/50 dark:bg-orange-950/20 snap-start">
+                  <CardContent className="p-4">
+                    <div className="space-y-3">
+                      {/* Header with Type Badge */}
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold text-base">{config.label || 'Door & Window'}</h3>
+                        <Badge variant="secondary" className="text-xs bg-orange-500/20 text-orange-700 dark:text-orange-300">
+                          Enamel
+                        </Badge>
+                      </div>
+                      
+                      <div className="space-y-1">
+                        <p className="text-sm text-muted-foreground">Enamel Type</p>
+                        <p className="font-medium">{config.enamelConfig?.enamelType || 'Not Selected'}</p>
+                      </div>
+                      
+                      <div className="space-y-1">
+                        <p className="text-sm text-muted-foreground">Primer Type</p>
+                        <p className="font-medium">{config.enamelConfig?.primerType || 'Not Selected'}</p>
+                      </div>
+
+                      <div className="space-y-1">
+                        <p className="text-sm text-muted-foreground">Coats</p>
+                        <p className="font-medium text-sm leading-relaxed">{getEnamelCoatDetails()}</p>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">Area</p>
+                          <p className="font-medium">{area.toFixed(2)} Sq.ft</p>
+                        </div>
+
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">Rate/Sq.ft</p>
+                          <p className="font-medium">₹{rate.toFixed(2)}</p>
+                        </div>
+                      </div>
+
+                      <div className="pt-2 border-t border-orange-500/30">
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">Total Cost</p>
+                          <p className="font-semibold text-lg text-orange-600">₹{totalCost.toFixed(2)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>;
+          })}
+          </div>
+        </div>;
+    };
+
     // Calculate total project cost from all configurations
     const totalProjectCost = areaConfigs.reduce((sum, config) => {
       const area = Number(config.area) || 0;
@@ -478,6 +569,7 @@ export default function GenerateSummaryScreen() {
               {renderConfigGroup(interiorConfigs, 'Interior Paint Configurations')}
               {renderConfigGroup(exteriorConfigs, 'Exterior Paint Configurations')}
               {renderConfigGroup(waterproofingConfigs, 'Waterproofing Configurations')}
+              {renderEnamelConfigGroup()}
               
               {/* Total Project Cost Summary */}
               {areaConfigs.length > 0 && <Card className="border-2 border-primary bg-primary/5 mt-4">
