@@ -71,6 +71,7 @@ export default function PaintEstimationScreen() {
   const [selectedPaintType, setSelectedPaintType] = useState<"Interior" | "Exterior" | "Waterproofing">("Interior");
   const [rooms, setRooms] = useState<any[]>([]);
   const [coverageData, setCoverageData] = useState<CoverageData[]>([]);
+  const [enamelPrimerProducts, setEnamelPrimerProducts] = useState<string[]>([]);
 
   // Separate state for each paint type to prevent mixing
   const [interiorConfigurations, setInteriorConfigurations] = useState<AreaConfiguration[]>([]);
@@ -207,6 +208,27 @@ export default function PaintEstimationScreen() {
       setCoverageData(data);
     };
     loadCoverage();
+  }, []);
+
+  // Fetch Enamel Primer products from product_pricing table
+  useEffect(() => {
+    const loadEnamelPrimers = async () => {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session?.user?.id) return;
+      
+      const { data, error } = await supabase
+        .from('product_pricing')
+        .select('product_name')
+        .eq('user_id', session.session.user.id)
+        .eq('category', 'Enamel Primer')
+        .eq('is_visible', true)
+        .order('product_name');
+      
+      if (!error && data) {
+        setEnamelPrimerProducts(data.map(p => p.product_name));
+      }
+    };
+    loadEnamelPrimers();
   }, []);
 
   // Force fresh room loading from database - NEVER rely on cached data for areas
@@ -1992,9 +2014,17 @@ export default function PaintEstimationScreen() {
                               <SelectValue placeholder="Select Primer Type" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="Trucare Wood Primer">Trucare Wood Primer</SelectItem>
-                              <SelectItem value="Trucare Yellow Metal Primer">Trucare Yellow Metal Primer</SelectItem>
-                              <SelectItem value="Trucare Red Oxide Metal Primer">Trucare Red Oxide Metal Primer</SelectItem>
+                              {enamelPrimerProducts.length > 0 ? (
+                                enamelPrimerProducts.map(product => (
+                                  <SelectItem key={product} value={product}>{product}</SelectItem>
+                                ))
+                              ) : (
+                                <>
+                                  <SelectItem value="AP TruCare Wood Primer">AP TruCare Wood Primer</SelectItem>
+                                  <SelectItem value="AP TruCare Red Oxide Metal Primer">AP TruCare Red Oxide Metal Primer</SelectItem>
+                                  <SelectItem value="AP SmartCare Yellow Metal Primer">AP SmartCare Yellow Metal Primer</SelectItem>
+                                </>
+                              )}
                             </SelectContent>
                           </Select>
                           <div className="flex items-center justify-between">
