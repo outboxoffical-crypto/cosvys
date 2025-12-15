@@ -2170,7 +2170,7 @@ export default function GenerateSummaryScreen() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-4 bg-muted/30 rounded-lg border border-border text-center">
                     <p className="text-sm mb-2 font-normal text-foreground">Company Project Cost</p>
-                    <p className="text-xl font-bold text-foreground">
+                    <p className="font-bold text-foreground text-2xl">
                       ₹{areaConfigs.reduce((sum, config) => {
                       const area = Number(config.area) || 0;
                       const rate = parseFloat(config.perSqFtRate) || 0;
@@ -2184,7 +2184,7 @@ export default function GenerateSummaryScreen() {
                     <p className="text-sm mb-2 font-normal text-foreground">
                       Actual<br />Project Cost
                     </p>
-                    <p className="text-xl font-bold text-foreground">
+                    <p className="font-bold text-foreground text-2xl">
                       ₹{Math.round(calculateActualTotalCost()).toLocaleString('en-IN')}
                     </p>
                   </div>
