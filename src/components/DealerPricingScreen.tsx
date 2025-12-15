@@ -65,6 +65,12 @@ const productCategories: ProductCategory[] = [
       "AP SmartCare Damp Proof Ultra", "AP SmartCare Hydrolac Xtreme", "AP SmartCare Damp Block 2k", 
       "AP SmartCare Epoxy TriBlock 2k"
     ]
+  },
+  {
+    name: "Enamel Primer",
+    products: [
+      "AP TruCare Wood Primer", "AP TruCare Red Oxide Metal Primer", "AP SmartCare Yellow Metal Primer"
+    ]
   }
 ];
 
