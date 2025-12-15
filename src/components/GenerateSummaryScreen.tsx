@@ -259,13 +259,16 @@ export default function GenerateSummaryScreen() {
         roomsData.forEach(room => {
           const enamelArea = Number(room.total_door_window_grill_area || 0);
           if (enamelArea > 0) {
+            const displayName = room.section_name || room.name;
             enamelConfigs.push({
               id: `enamel_${room.id}`,
               areaType: 'Door & Window',
               paintingSystem: 'Fresh Painting',
               area: enamelArea,
               perSqFtRate: '0',
-              label: `${room.name} - Door & Window`,
+              // Always prefer section name (e.g., "Varnish") over room name
+              sectionName: room.section_name || undefined,
+              label: displayName,
               paintTypeCategory: room.project_type as 'Interior' | 'Exterior' | 'Waterproofing',
               selectedMaterials: {
                 putty: '',
