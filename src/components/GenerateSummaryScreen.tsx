@@ -362,12 +362,26 @@ export default function GenerateSummaryScreen() {
       setActiveConfigIndex(newIndex);
     };
 
+    // Sort configs: "Area to be Painted" (Wall, Floor, Ceiling without section) first, then "Separate Paint Area" (with section)
+    const sortConfigs = (configs: AreaConfig[]) => {
+      return [...configs].sort((a, b) => {
+        // Items without sectionName (Area to be Painted) come first
+        const aHasSection = !!a.sectionName;
+        const bHasSection = !!b.sectionName;
+        if (aHasSection !== bHasSection) {
+          return aHasSection ? 1 : -1; // No section comes first
+        }
+        // If both have or don't have section, maintain original order
+        return 0;
+      });
+    };
+
     // Group configurations by paint type - exclude Enamel from paint configs
-    const interiorConfigs = areaConfigs.filter(c => c.paintTypeCategory === 'Interior' && c.areaType !== 'Enamel');
-    const exteriorConfigs = areaConfigs.filter(c => c.paintTypeCategory === 'Exterior' && c.areaType !== 'Enamel');
-    const waterproofingConfigs = areaConfigs.filter(c => c.paintTypeCategory === 'Waterproofing' && c.areaType !== 'Enamel');
+    const interiorConfigs = sortConfigs(areaConfigs.filter(c => c.paintTypeCategory === 'Interior' && c.areaType !== 'Enamel'));
+    const exteriorConfigs = sortConfigs(areaConfigs.filter(c => c.paintTypeCategory === 'Exterior' && c.areaType !== 'Enamel'));
+    const waterproofingConfigs = sortConfigs(areaConfigs.filter(c => c.paintTypeCategory === 'Waterproofing' && c.areaType !== 'Enamel'));
     // Get Enamel configs
-    const enamelConfigs = areaConfigs.filter(c => c.areaType === 'Enamel');
+    const enamelConfigs = sortConfigs(areaConfigs.filter(c => c.areaType === 'Enamel'));
     
     const renderConfigGroup = (configs: AreaConfig[], typeLabel: string) => {
       if (configs.length === 0) return null;
