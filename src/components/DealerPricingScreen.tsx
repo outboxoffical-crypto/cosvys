@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { HorizontalTabs } from "@/components/ui/horizontal-tabs";
 import { ArrowLeft, Package, Plus, Edit, Check, X, Trash2, Search, ChevronDown } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
@@ -87,6 +87,7 @@ export default function DealerPricingScreen() {
   const [newCategoryName, setNewCategoryName] = useState<string>('');
   const [sizeSearchTerm, setSizeSearchTerm] = useState<string>('');
   const [sizeDropdownOpen, setSizeDropdownOpen] = useState<boolean>(false);
+  const [activeCategory, setActiveCategory] = useState<string>('');
 
   useEffect(() => {
     const loadData = async () => {
@@ -136,9 +137,25 @@ export default function DealerPricingScreen() {
     loadData();
   }, []);
 
+  // Set initial active category
+  useEffect(() => {
+    const categories = getAllCategoryNames();
+    if (categories.length > 0 && !activeCategory) {
+      setActiveCategory(categories[0]);
+    }
+  }, [customCategories]);
+
   const getAllCategories = () => {
     return [...productCategories, ...customCategories];
   };
+
+  const getAllCategoryNames = useCallback(() => {
+    return [...productCategories, ...customCategories].map(c => c.name);
+  }, [customCategories]);
+
+  const getActiveCategoryData = useCallback(() => {
+    return getAllCategories().find(c => c.name === activeCategory);
+  }, [activeCategory, customCategories]);
 
   const handleAddProduct = (productName: string) => {
     setEditingProduct(productName);
@@ -412,47 +429,22 @@ export default function DealerPricingScreen() {
       </div>
 
       <div className="p-4">
-        <Tabs defaultValue={getAllCategories()[0]?.name} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 gap-1 mb-4 h-auto p-1">
-            {getAllCategories().slice(0, 3).map((category) => (
-              <TabsTrigger 
-                key={category.name} 
-                value={category.name}
-                className="text-xs p-2 data-[state=active]:bg-primary data-[state=active]:text-white"
-              >
-                {category.name}
-              </TabsTrigger>
-            ))}
-          </TabsList>
+        {/* Horizontal Scrollable Category Tabs */}
+        <HorizontalTabs
+          categories={getAllCategoryNames()}
+          activeCategory={activeCategory}
+          onCategoryChange={setActiveCategory}
+          onAddCategory={handleAddNewCategory}
+          className="mb-4"
+        />
 
-          {/* Scrollable category tabs for remaining categories */}
-          <div className="flex items-center space-x-2 overflow-x-auto mb-4">
-            <TabsList className="flex space-x-2 min-w-max h-auto p-1">
-              {getAllCategories().slice(3).map((category) => (
-                <TabsTrigger 
-                  key={category.name} 
-                  value={category.name}
-                  className="text-xs p-2 whitespace-nowrap data-[state=active]:bg-primary data-[state=active]:text-white"
-                >
-                  {category.name}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-            
-            {/* Add Category Button */}
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleAddNewCategory}
-              className="text-xs h-8 whitespace-nowrap border-dashed border-primary text-primary hover:bg-primary/10"
-            >
-              <Plus className="h-3 w-3 mr-1" />
-              Add Tab
-            </Button>
-          </div>
-
-          {getAllCategories().map((category) => (
-            <TabsContent key={category.name} value={category.name} className="space-y-4">
+        {/* Active Category Content */}
+        {(() => {
+          const category = getActiveCategoryData();
+          if (!category) return null;
+          
+          return (
+            <div className="space-y-4">
               <Card className="eca-shadow">
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
@@ -912,9 +904,9 @@ export default function DealerPricingScreen() {
                   </div>
                 </CardContent>
               </Card>
-            </TabsContent>
-          ))}
-        </Tabs>
+            </div>
+          );
+        })()}
 
         {/* Summary & Continue */}
         <Card className="eca-shadow mt-6">
