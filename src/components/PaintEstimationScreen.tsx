@@ -2022,7 +2022,7 @@ export default function PaintEstimationScreen() {
                                 <>
                                   <SelectItem value="AP TruCare Wood Primer">AP TruCare Wood Primer</SelectItem>
                                   <SelectItem value="AP TruCare Red Oxide Metal Primer">AP TruCare Red Oxide Metal Primer</SelectItem>
-                                  <SelectItem value="AP SmartCare Yellow Metal Primer">AP SmartCare Yellow Metal Primer</SelectItem>
+                                  <SelectItem value="AP TruCare Yellow Metal Primer">AP TruCare Yellow Metal Primer</SelectItem>
                                 </>
                               )}
                             </SelectContent>
