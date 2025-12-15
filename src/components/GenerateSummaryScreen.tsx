@@ -114,12 +114,23 @@ export default function GenerateSummaryScreen() {
         } = await supabase.auth.getUser();
 
         // Parallel load only what's needed for initial render
-        const [coverageResults, dealerData] = await Promise.all([supabase.from('coverage_data').select('product_name, coverage_range'), currentUser ? supabase.from('dealer_info').select('margin').eq('user_id', currentUser.id).maybeSingle() : Promise.resolve({
+        const [coverageResults, dealerData] = await Promise.all([supabase.from('coverage_data').select('product_name, coverage_range, coats, unit'), currentUser ? supabase.from('dealer_info').select('margin').eq('user_id', currentUser.id).maybeSingle() : Promise.resolve({
           data: null
         })]);
         if (coverageResults.data) {
           const coverageMap: any = {};
           coverageResults.data.forEach(item => {
+            // Store coverage keyed by product_name + coats for accurate lookup
+            const key = `${item.product_name.toLowerCase()}_${item.coats}`;
+            // Parse coverage range to get minimum value (e.g., "10-15" -> 10)
+            const rangeMatch = item.coverage_range.match(/(\d+)/);
+            const minCoverage = rangeMatch ? parseInt(rangeMatch[1], 10) : 0;
+            coverageMap[key] = {
+              range: item.coverage_range,
+              minValue: minCoverage,
+              unit: item.unit
+            };
+            // Also store by product name only for display purposes
             coverageMap[item.product_name.toLowerCase()] = item.coverage_range;
           });
           setCoverageData(coverageMap);
@@ -1288,6 +1299,26 @@ export default function GenerateSummaryScreen() {
       };
     };
 
+    // Helper to get coverage from database based on product name and coats
+    const getCoverageFromDB = (productName: string, coats: number): number => {
+      const coatLabel = coats === 1 ? '1 coat' : `${coats} coats`;
+      const key = `${productName.toLowerCase()}_${coatLabel}`;
+      const coverageInfo = coverageData[key];
+      if (coverageInfo && typeof coverageInfo === 'object' && coverageInfo.minValue) {
+        return coverageInfo.minValue;
+      }
+      // Fallback: try with different coat format
+      const altKey = `${productName.toLowerCase()}_${coats} coat${coats > 1 ? 's' : ''}`;
+      const altCoverageInfo = coverageData[altKey];
+      if (altCoverageInfo && typeof altCoverageInfo === 'object' && altCoverageInfo.minValue) {
+        return altCoverageInfo.minValue;
+      }
+      // Default fallbacks if not found in database
+      if (productName.toLowerCase().includes('putty')) return 10; // 10-15 default
+      if (productName.toLowerCase().includes('primer')) return 100;
+      return 120; // Default for emulsion
+    };
+
     // Group materials by configuration
     const configMaterials: any[] = [];
     // Use calculationConfigs which includes Paint Estimation + Room Measurement enamel areas
@@ -1296,11 +1327,11 @@ export default function GenerateSummaryScreen() {
       const isFresh = config.paintingSystem === 'Fresh Painting';
       const materials: any[] = [];
       if (isFresh) {
-        // Putty
+        // Putty - coverage from DB, NO multiplication by coats (coverage already includes coat factor)
         if (config.selectedMaterials.putty && config.coatConfiguration.putty > 0) {
-          const coverage = 20; // sq ft per kg
           const coats = config.coatConfiguration.putty;
-          const kgNeeded = area / coverage * coats;
+          const coverage = getCoverageFromDB(config.selectedMaterials.putty, coats);
+          const kgNeeded = area / coverage; // NO * coats - coverage already accounts for coats
           const calc = calculateMaterial(config.selectedMaterials.putty, kgNeeded);
           materials.push({
             name: config.selectedMaterials.putty,
@@ -1312,13 +1343,12 @@ export default function GenerateSummaryScreen() {
           });
         }
 
-        // Primer
+        // Primer - coverage from DB, NO multiplication by coats
         if (config.selectedMaterials.primer && config.coatConfiguration.primer > 0) {
-          // Use enamel-specific coverage for enamel primer
           const isEnamel = config.selectedMaterials.primer?.toLowerCase().includes('enamel') || config.selectedMaterials.emulsion?.toLowerCase().includes('enamel');
-          const coverage = isEnamel ? 100 : 120; // sq ft per liter (enamel has lower coverage)
           const coats = config.coatConfiguration.primer;
-          const litersNeeded = area / coverage * coats;
+          const coverage = getCoverageFromDB(config.selectedMaterials.primer, coats);
+          const litersNeeded = area / coverage; // NO * coats
           const calc = calculateMaterial(config.selectedMaterials.primer, litersNeeded);
           materials.push({
             name: config.selectedMaterials.primer,
@@ -1330,12 +1360,12 @@ export default function GenerateSummaryScreen() {
           });
         }
 
-        // Emulsion
+        // Emulsion - coverage from DB, NO multiplication by coats
         if (config.selectedMaterials.emulsion && config.coatConfiguration.emulsion > 0) {
           const isEnamel = config.selectedMaterials.emulsion.toLowerCase().includes('enamel');
-          const coverage = isEnamel ? 100 : 120; // sq ft per liter (enamel has lower coverage)
           const coats = config.coatConfiguration.emulsion;
-          const litersNeeded = area / coverage * coats;
+          const coverage = getCoverageFromDB(config.selectedMaterials.emulsion, coats);
+          const litersNeeded = area / coverage; // NO * coats
           const calc = calculateMaterial(config.selectedMaterials.emulsion, litersNeeded);
           materials.push({
             name: config.selectedMaterials.emulsion,
@@ -1347,11 +1377,11 @@ export default function GenerateSummaryScreen() {
           });
         }
       } else {
-        // Repainting
+        // Repainting - coverage from DB, NO multiplication by coats
         if (config.selectedMaterials.primer && config.repaintingConfiguration?.primer && config.repaintingConfiguration.primer > 0) {
-          const coverage = 120;
           const coats = config.repaintingConfiguration.primer;
-          const litersNeeded = area / coverage * coats;
+          const coverage = getCoverageFromDB(config.selectedMaterials.primer, coats);
+          const litersNeeded = area / coverage; // NO * coats
           const calc = calculateMaterial(config.selectedMaterials.primer, litersNeeded);
           materials.push({
             name: config.selectedMaterials.primer,
@@ -1363,9 +1393,9 @@ export default function GenerateSummaryScreen() {
           });
         }
         if (config.selectedMaterials.emulsion && config.repaintingConfiguration?.emulsion && config.repaintingConfiguration.emulsion > 0) {
-          const coverage = 120;
           const coats = config.repaintingConfiguration.emulsion;
-          const litersNeeded = area / coverage * coats;
+          const coverage = getCoverageFromDB(config.selectedMaterials.emulsion, coats);
+          const litersNeeded = area / coverage; // NO * coats
           const calc = calculateMaterial(config.selectedMaterials.emulsion, litersNeeded);
           materials.push({
             name: config.selectedMaterials.emulsion,
