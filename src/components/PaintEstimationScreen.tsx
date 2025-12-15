@@ -2016,35 +2016,10 @@ export default function PaintEstimationScreen() {
 
                         {/* Primer Type and Coats */}
                         <div className="space-y-2">
-                          <Label className="text-sm font-medium">Primer</Label>
-                          <Select value={selectedConfig.enamelConfig?.primerType || ''} onValueChange={value => handleUpdateConfig({
-                    enamelConfig: {
-                      primerType: value,
-                      primerCoats: selectedConfig.enamelConfig?.primerCoats ?? 0,
-                      enamelType: selectedConfig.enamelConfig?.enamelType || '',
-                      enamelCoats: selectedConfig.enamelConfig?.enamelCoats ?? 0
-                    }
-                  })}>
-                            <SelectTrigger className="h-9">
-                              <SelectValue placeholder="Select Primer Type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {enamelPrimerProducts.length > 0 ? (
-                                enamelPrimerProducts.map(product => (
-                                  <SelectItem key={product} value={product}>{product}</SelectItem>
-                                ))
-                              ) : (
-                                <>
-                                  <SelectItem value="AP TruCare Wood Primer">AP TruCare Wood Primer</SelectItem>
-                                  <SelectItem value="AP TruCare Red Oxide Metal Primer">AP TruCare Red Oxide Metal Primer</SelectItem>
-                                  <SelectItem value="AP TruCare Yellow Metal Primer">AP TruCare Yellow Metal Primer</SelectItem>
-                                </>
-                              )}
-                            </SelectContent>
-                          </Select>
                           <div className="flex items-center justify-between">
-                            <span className="text-sm text-muted-foreground">Coats</span>
+                            <Label className="text-sm font-medium">Primer</Label>
                             <div className="flex items-center gap-2">
+                              <span className="text-sm text-muted-foreground">Coats</span>
                               <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleUpdateConfig({
                         enamelConfig: {
                           primerType: selectedConfig.enamelConfig?.primerType || '',
@@ -2070,11 +2045,64 @@ export default function PaintEstimationScreen() {
                               </Button>
                             </div>
                           </div>
+                          <Select value={selectedConfig.enamelConfig?.primerType || ''} onValueChange={value => handleUpdateConfig({
+                    enamelConfig: {
+                      primerType: value,
+                      primerCoats: selectedConfig.enamelConfig?.primerCoats ?? 0,
+                      enamelType: selectedConfig.enamelConfig?.enamelType || '',
+                      enamelCoats: selectedConfig.enamelConfig?.enamelCoats ?? 0
+                    }
+                  })}>
+                            <SelectTrigger className="h-9">
+                              <SelectValue placeholder="Select Primer Type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {enamelPrimerProducts.length > 0 ? (
+                                enamelPrimerProducts.map(product => (
+                                  <SelectItem key={product} value={product}>{product}</SelectItem>
+                                ))
+                              ) : (
+                                <>
+                                  <SelectItem value="AP TruCare Wood Primer">AP TruCare Wood Primer</SelectItem>
+                                  <SelectItem value="AP TruCare Red Oxide Metal Primer">AP TruCare Red Oxide Metal Primer</SelectItem>
+                                  <SelectItem value="AP TruCare Yellow Metal Primer">AP TruCare Yellow Metal Primer</SelectItem>
+                                </>
+                              )}
+                            </SelectContent>
+                          </Select>
                         </div>
 
                         {/* Enamel Type and Coats */}
                         <div className="space-y-2">
-                          <Label className="text-sm font-medium">Enamel</Label>
+                          <div className="flex items-center justify-between">
+                            <Label className="text-sm font-medium">Enamel</Label>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm text-muted-foreground">Coats</span>
+                              <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleUpdateConfig({
+                        enamelConfig: {
+                          primerType: selectedConfig.enamelConfig?.primerType || '',
+                          primerCoats: selectedConfig.enamelConfig?.primerCoats ?? 0,
+                          enamelType: selectedConfig.enamelConfig?.enamelType || '',
+                          enamelCoats: Math.max(0, (selectedConfig.enamelConfig?.enamelCoats ?? 0) - 1)
+                        }
+                      })}>
+                                <Minus className="h-3 w-3" />
+                              </Button>
+                              <span className="w-8 text-center font-medium">
+                                {selectedConfig.enamelConfig?.enamelCoats ?? 0}
+                              </span>
+                              <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleUpdateConfig({
+                        enamelConfig: {
+                          primerType: selectedConfig.enamelConfig?.primerType || '',
+                          primerCoats: selectedConfig.enamelConfig?.primerCoats ?? 0,
+                          enamelType: selectedConfig.enamelConfig?.enamelType || '',
+                          enamelCoats: Math.min(5, (selectedConfig.enamelConfig?.enamelCoats ?? 0) + 1)
+                        }
+                      })}>
+                                <Plus className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
                           <Select value={selectedConfig.enamelConfig?.enamelType || ''} onValueChange={value => handleUpdateConfig({
                     enamelConfig: {
                       primerType: selectedConfig.enamelConfig?.primerType || '',
@@ -2102,34 +2130,6 @@ export default function PaintEstimationScreen() {
                               )}
                             </SelectContent>
                           </Select>
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-muted-foreground">Coats</span>
-                            <div className="flex items-center gap-2">
-                              <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleUpdateConfig({
-                        enamelConfig: {
-                          primerType: selectedConfig.enamelConfig?.primerType || '',
-                          primerCoats: selectedConfig.enamelConfig?.primerCoats ?? 0,
-                          enamelType: selectedConfig.enamelConfig?.enamelType || '',
-                          enamelCoats: Math.max(0, (selectedConfig.enamelConfig?.enamelCoats ?? 0) - 1)
-                        }
-                      })}>
-                                <Minus className="h-3 w-3" />
-                              </Button>
-                              <span className="w-8 text-center font-medium">
-                                {selectedConfig.enamelConfig?.enamelCoats ?? 0}
-                              </span>
-                              <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleUpdateConfig({
-                        enamelConfig: {
-                          primerType: selectedConfig.enamelConfig?.primerType || '',
-                          primerCoats: selectedConfig.enamelConfig?.primerCoats ?? 0,
-                          enamelType: selectedConfig.enamelConfig?.enamelType || '',
-                          enamelCoats: Math.min(5, (selectedConfig.enamelConfig?.enamelCoats ?? 0) + 1)
-                        }
-                      })}>
-                                <Plus className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </div>
                         </div>
                       </div>
                     </>)}
