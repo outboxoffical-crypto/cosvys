@@ -545,16 +545,18 @@ export default function GenerateSummaryScreen() {
               {projectTypes.map(projectType => {
               const typeRooms = roomsByType[projectType];
               if (!typeRooms || typeRooms.length === 0) return null;
-              
+
               // Filter out rooms that only have enamel areas (no floor/wall/ceiling selected)
               const filteredRooms = typeRooms.filter(room => {
-                const selectedAreas = room.selected_areas || { floor: false, wall: false, ceiling: false };
+                const selectedAreas = room.selected_areas || {
+                  floor: false,
+                  wall: false,
+                  ceiling: false
+                };
                 // Only include rooms that have at least one of floor/wall/ceiling selected
                 return selectedAreas.floor || selectedAreas.wall || selectedAreas.ceiling;
               });
-              
               if (filteredRooms.length === 0) return null;
-              
               return <div key={projectType} className="space-y-2">
                     {/* Project Type Header */}
                     <div className="flex items-center gap-2 mt-3">
@@ -905,16 +907,7 @@ export default function GenerateSummaryScreen() {
                               
                               {/* Tasks List */}
                               <div className="space-y-3">
-                                {configTask.tasks.map((task: any, taskIdx: number) => (
-                                  <LabourCalculationDetails
-                                    key={taskIdx}
-                                    task={task}
-                                    workingHours={workingHours}
-                                    standardHours={standardHours}
-                                    numberOfLabours={numberOfLabours}
-                                    autoLabourPerDay={autoLabourPerDay}
-                                  />
-                                ))}
+                                {configTask.tasks.map((task: any, taskIdx: number) => <LabourCalculationDetails key={taskIdx} task={task} workingHours={workingHours} standardHours={standardHours} numberOfLabours={numberOfLabours} autoLabourPerDay={autoLabourPerDay} />)}
                               </div>
                               
                               {/* Total Days */}
@@ -956,16 +949,7 @@ export default function GenerateSummaryScreen() {
                               
                               {/* Tasks List */}
                               <div className="space-y-3">
-                                {configTask.tasks.map((task: any, taskIdx: number) => (
-                                  <LabourCalculationDetails
-                                    key={taskIdx}
-                                    task={task}
-                                    workingHours={workingHours}
-                                    standardHours={standardHours}
-                                    numberOfLabours={numberOfLabours}
-                                    autoLabourPerDay={autoLabourPerDay}
-                                  />
-                                ))}
+                                {configTask.tasks.map((task: any, taskIdx: number) => <LabourCalculationDetails key={taskIdx} task={task} workingHours={workingHours} standardHours={standardHours} numberOfLabours={numberOfLabours} autoLabourPerDay={autoLabourPerDay} />)}
                               </div>
                               
                               {/* Total Days */}
@@ -1007,16 +991,7 @@ export default function GenerateSummaryScreen() {
                               
                               {/* Tasks List */}
                               <div className="space-y-3">
-                                {configTask.tasks.map((task: any, taskIdx: number) => (
-                                  <LabourCalculationDetails
-                                    key={taskIdx}
-                                    task={task}
-                                    workingHours={workingHours}
-                                    standardHours={standardHours}
-                                    numberOfLabours={numberOfLabours}
-                                    autoLabourPerDay={autoLabourPerDay}
-                                  />
-                                ))}
+                                {configTask.tasks.map((task: any, taskIdx: number) => <LabourCalculationDetails key={taskIdx} task={task} workingHours={workingHours} standardHours={standardHours} numberOfLabours={numberOfLabours} autoLabourPerDay={autoLabourPerDay} />)}
                               </div>
                               
                               {/* Total Days */}
@@ -1452,28 +1427,12 @@ export default function GenerateSummaryScreen() {
                             
                             {/* Materials List */}
                             <div className="space-y-3">
-                              {configMat.materials.map((mat: any, matIdx: number) => (
-                                <div key={matIdx}>
-                                  {mat.error && (
-                                    <div className="text-xs text-destructive bg-destructive/10 p-2 rounded mb-2">
+                              {configMat.materials.map((mat: any, matIdx: number) => <div key={matIdx}>
+                                  {mat.error && <div className="text-xs text-destructive bg-destructive/10 p-2 rounded mb-2">
                                       ⚠️ {mat.error}
-                                    </div>
-                                  )}
-                                  <MaterialCalculationDetails
-                                    materialName={mat.name}
-                                    materialType={mat.type}
-                                    area={mat.area || 0}
-                                    coats={mat.coats || 1}
-                                    coverageRate={mat.coverageRate || 0}
-                                    coverageDisplay={getMaterialCoverage(mat.name, mat.type)}
-                                    unit={mat.unit}
-                                    requiredQuantity={mat.requiredQuantity}
-                                    totalCost={mat.totalCost}
-                                    packCombination={mat.combination || []}
-                                    hasError={!!mat.error}
-                                  />
-                                </div>
-                              ))}
+                                    </div>}
+                                  <MaterialCalculationDetails materialName={mat.name} materialType={mat.type} area={mat.area || 0} coats={mat.coats || 1} coverageRate={mat.coverageRate || 0} coverageDisplay={getMaterialCoverage(mat.name, mat.type)} unit={mat.unit} requiredQuantity={mat.requiredQuantity} totalCost={mat.totalCost} packCombination={mat.combination || []} hasError={!!mat.error} />
+                                </div>)}
                             </div>
                             
                             {/* Total Cost */}
@@ -1515,28 +1474,12 @@ export default function GenerateSummaryScreen() {
                             
                             {/* Materials List */}
                             <div className="space-y-3">
-                              {configMat.materials.map((mat: any, matIdx: number) => (
-                                <div key={matIdx}>
-                                  {mat.error && (
-                                    <div className="text-xs text-destructive bg-destructive/10 p-2 rounded mb-2">
+                              {configMat.materials.map((mat: any, matIdx: number) => <div key={matIdx}>
+                                  {mat.error && <div className="text-xs text-destructive bg-destructive/10 p-2 rounded mb-2">
                                       ⚠️ {mat.error}
-                                    </div>
-                                  )}
-                                  <MaterialCalculationDetails
-                                    materialName={mat.name}
-                                    materialType={mat.type}
-                                    area={mat.area || 0}
-                                    coats={mat.coats || 1}
-                                    coverageRate={mat.coverageRate || 0}
-                                    coverageDisplay={getMaterialCoverage(mat.name, mat.type)}
-                                    unit={mat.unit}
-                                    requiredQuantity={mat.requiredQuantity}
-                                    totalCost={mat.totalCost}
-                                    packCombination={mat.combination || []}
-                                    hasError={!!mat.error}
-                                  />
-                                </div>
-                              ))}
+                                    </div>}
+                                  <MaterialCalculationDetails materialName={mat.name} materialType={mat.type} area={mat.area || 0} coats={mat.coats || 1} coverageRate={mat.coverageRate || 0} coverageDisplay={getMaterialCoverage(mat.name, mat.type)} unit={mat.unit} requiredQuantity={mat.requiredQuantity} totalCost={mat.totalCost} packCombination={mat.combination || []} hasError={!!mat.error} />
+                                </div>)}
                             </div>
                             
                             {/* Total Cost */}
@@ -1578,28 +1521,12 @@ export default function GenerateSummaryScreen() {
                             
                             {/* Materials List */}
                             <div className="space-y-3">
-                              {configMat.materials.map((mat: any, matIdx: number) => (
-                                <div key={matIdx}>
-                                  {mat.error && (
-                                    <div className="text-xs text-destructive bg-destructive/10 p-2 rounded mb-2">
+                              {configMat.materials.map((mat: any, matIdx: number) => <div key={matIdx}>
+                                  {mat.error && <div className="text-xs text-destructive bg-destructive/10 p-2 rounded mb-2">
                                       ⚠️ {mat.error}
-                                    </div>
-                                  )}
-                                  <MaterialCalculationDetails
-                                    materialName={mat.name}
-                                    materialType={mat.type}
-                                    area={mat.area || 0}
-                                    coats={mat.coats || 1}
-                                    coverageRate={mat.coverageRate || 0}
-                                    coverageDisplay={getMaterialCoverage(mat.name, mat.type)}
-                                    unit={mat.unit}
-                                    requiredQuantity={mat.requiredQuantity}
-                                    totalCost={mat.totalCost}
-                                    packCombination={mat.combination || []}
-                                    hasError={!!mat.error}
-                                  />
-                                </div>
-                              ))}
+                                    </div>}
+                                  <MaterialCalculationDetails materialName={mat.name} materialType={mat.type} area={mat.area || 0} coats={mat.coats || 1} coverageRate={mat.coverageRate || 0} coverageDisplay={getMaterialCoverage(mat.name, mat.type)} unit={mat.unit} requiredQuantity={mat.requiredQuantity} totalCost={mat.totalCost} packCombination={mat.combination || []} hasError={!!mat.error} />
+                                </div>)}
                             </div>
                             
                             {/* Total Cost */}
@@ -2242,7 +2169,7 @@ export default function GenerateSummaryScreen() {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-4 bg-muted/30 rounded-lg border border-border text-center">
-                    <p className="text-sm text-muted-foreground mb-2">Company Project Cost</p>
+                    <p className="text-sm text-muted-foreground mb-2 font-semibold">Company Project Cost</p>
                     <p className="text-xl font-bold text-foreground">
                       ₹{areaConfigs.reduce((sum, config) => {
                       const area = Number(config.area) || 0;
@@ -2254,7 +2181,7 @@ export default function GenerateSummaryScreen() {
                     </p>
                   </div>
                   <div className="p-4 bg-muted/30 rounded-lg border border-border text-center">
-                    <p className="text-sm text-muted-foreground mb-2">
+                    <p className="text-sm text-muted-foreground mb-2 font-semibold">
                       Actual<br />Project Cost
                     </p>
                     <p className="text-xl font-bold text-foreground">
