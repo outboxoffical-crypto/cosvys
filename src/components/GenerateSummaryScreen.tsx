@@ -508,8 +508,8 @@ export default function GenerateSummaryScreen() {
                       </div>
                       
                       <div className="space-y-1">
-                        <p className="text-sm text-muted-foreground">Primer Type</p>
-                        <p className="font-medium">{config.enamelConfig?.primerType || 'Not Selected'}</p>
+                        <p className="text-sm text-muted-foreground">Painting System</p>
+                        <p className="font-medium">{config.paintingSystem || 'Fresh Painting'}</p>
                       </div>
 
                       <div className="space-y-1">
