@@ -70,7 +70,7 @@ export default function MaterialCalculationDetails({
             Type: <span className="font-medium text-foreground">{materialType}</span>
           </p>
           <p className="text-sm text-muted-foreground">
-            Quantity: <span className="font-medium text-foreground">Approx. {minQty} to <strong>{maxQty}</strong> {unit}</span>
+            Quantity: <span className="font-medium text-foreground">{maxQty} {unit}</span>
           </p>
         </div>
         <div className="text-right">
@@ -149,12 +149,12 @@ export default function MaterialCalculationDetails({
               {/* Final Quantity */}
               <div className="flex justify-between items-center pt-2">
                 <span className="font-semibold text-foreground">Final Quantity:</span>
-                <span className="font-bold text-primary text-lg">Approx. {minQty} to {maxQty} {unit}</span>
+                <span className="font-bold text-primary">{maxQty} {unit}</span>
               </div>
 
               {/* Formula summary */}
               <div className="mt-3 p-2 bg-primary/5 rounded text-xs text-muted-foreground">
-                <span className="font-medium">Formula:</span> {area.toFixed(0)} ÷ {coverageRate} = {rawQuantity.toFixed(2)} {unit} → Approx. {minQty} to {maxQty} {unit}
+                <span className="font-medium">Formula:</span> {area.toFixed(0)} ÷ {coverageRate} = {rawQuantity.toFixed(2)} → {maxQty} {unit}
               </div>
 
               {/* Note about coverage */}
