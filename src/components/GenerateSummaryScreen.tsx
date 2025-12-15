@@ -1090,65 +1090,13 @@ export default function GenerateSummaryScreen() {
     // Try exact match first
     let pricing = productPricing[normalizedName];
 
-    // If no exact match, try partial match with various strategies
+    // If no exact match, try partial match
     if (!pricing) {
-      // Strategy 1: Check if any pricing key is contained in the product name
-      const matchKey = Object.keys(productPricing).find(key => 
-        normalizedName.includes(key.toLowerCase())
-      );
+      const matchKey = Object.keys(productPricing).find(key => normalizedName.includes(key) || key.includes(normalizedName));
       if (matchKey) {
         pricing = productPricing[matchKey];
       }
     }
-    
-    // Strategy 2: Extract key words and match
-    if (!pricing) {
-      // Remove common prefixes like "AP ", "Asian Paints " etc.
-      const cleanedName = normalizedName
-        .replace(/^ap\s+/i, '')
-        .replace(/^asian\s+paints\s+/i, '')
-        .replace(/trucare\s+/i, '')
-        .replace(/smartcare\s+/i, '')
-        .trim();
-      
-      const matchKey = Object.keys(productPricing).find(key => 
-        cleanedName.includes(key.toLowerCase()) || key.toLowerCase().includes(cleanedName)
-      );
-      if (matchKey) {
-        pricing = productPricing[matchKey];
-      }
-    }
-    
-    // Strategy 3: Match by product type keywords
-    if (!pricing) {
-      const productKeywords = [
-        { keywords: ['putty', 'wall putty'], matchKey: 'putty' },
-        { keywords: ['interior wall primer', 'trucare interior'], matchKey: 'interior wall primer' },
-        { keywords: ['exterior wall primer', 'trucare exterior'], matchKey: 'exterior wall primer' },
-        { keywords: ['damp sheath interior', 'damp proof interior'], matchKey: 'damp sheath interior' },
-        { keywords: ['damp sheath exterior', 'damp proof exterior'], matchKey: 'damp sheath exterior' },
-        { keywords: ['ultima protek base', 'durolife base'], matchKey: 'ultima protek base coat' },
-        { keywords: ['royale emulsion', 'royale health'], matchKey: 'royale emulsion' },
-        { keywords: ['royale shyne', 'royale shine'], matchKey: 'royale shyne' },
-        { keywords: ['royale glitz'], matchKey: 'royale glitz' },
-        { keywords: ['premium emulsion', 'apcolite premium'], matchKey: 'premium emulsion' },
-        { keywords: ['tractor emulsion'], matchKey: 'tractor emulsion' },
-        { keywords: ['tractor sparc'], matchKey: 'tractor sparc' },
-        { keywords: ['ace emulsion'], matchKey: 'ace emulsion' },
-        { keywords: ['ace shyne', 'ace shine'], matchKey: 'ace shyne' },
-        { keywords: ['apex emulsion'], matchKey: 'apex emulsion' },
-      ];
-      
-      for (const { keywords, matchKey } of productKeywords) {
-        if (keywords.some(kw => normalizedName.includes(kw))) {
-          if (productPricing[matchKey]) {
-            pricing = productPricing[matchKey];
-            break;
-          }
-        }
-      }
-    }
-    
     if (pricing && typeof pricing === 'object') {
       // Determine unit based on product type
       let unit = 'L';
@@ -1350,16 +1298,9 @@ export default function GenerateSummaryScreen() {
       if (isFresh) {
         // Putty
         if (config.selectedMaterials.putty && config.coatConfiguration.putty > 0) {
-          // Fetch coverage from database instead of hardcoded value
-          const puttyName = config.selectedMaterials.putty.toLowerCase();
-          const coverageRange = coverageData[puttyName] || '10-15'; // Default to 10-15 if not found
-          // Use minimum value of coverage range as per user requirement
-          const coverageMatch = coverageRange.match(/(\d+(?:\.\d+)?)/);
-          const coverage = coverageMatch ? parseFloat(coverageMatch[1]) : 10; // Use min value (10 sq.ft/kg for putty)
+          const coverage = 20; // sq ft per kg
           const coats = config.coatConfiguration.putty;
-          // Per user requirement: Required Quantity = Total Sq.ft ÷ Coverage (NO multiplication by coats)
-          // Coverage table already has separate values for different coats
-          const kgNeeded = area / coverage;
+          const kgNeeded = area / coverage * coats;
           const calc = calculateMaterial(config.selectedMaterials.putty, kgNeeded);
           materials.push({
             name: config.selectedMaterials.putty,
@@ -1373,16 +1314,11 @@ export default function GenerateSummaryScreen() {
 
         // Primer
         if (config.selectedMaterials.primer && config.coatConfiguration.primer > 0) {
-          // Fetch coverage from database instead of hardcoded value
-          const primerName = config.selectedMaterials.primer.toLowerCase();
-          const isEnamel = primerName.includes('enamel') || config.selectedMaterials.emulsion?.toLowerCase().includes('enamel');
-          const coverageRange = coverageData[primerName] || (isEnamel ? '100' : '120');
-          // Use minimum value of coverage range
-          const coverageMatch = coverageRange.match(/(\d+(?:\.\d+)?)/);
-          const coverage = coverageMatch ? parseFloat(coverageMatch[1]) : (isEnamel ? 100 : 120);
+          // Use enamel-specific coverage for enamel primer
+          const isEnamel = config.selectedMaterials.primer?.toLowerCase().includes('enamel') || config.selectedMaterials.emulsion?.toLowerCase().includes('enamel');
+          const coverage = isEnamel ? 100 : 120; // sq ft per liter (enamel has lower coverage)
           const coats = config.coatConfiguration.primer;
-          // Per user requirement: Required Quantity = Total Sq.ft ÷ Coverage (NO multiplication by coats)
-          const litersNeeded = area / coverage;
+          const litersNeeded = area / coverage * coats;
           const calc = calculateMaterial(config.selectedMaterials.primer, litersNeeded);
           materials.push({
             name: config.selectedMaterials.primer,
@@ -1396,16 +1332,10 @@ export default function GenerateSummaryScreen() {
 
         // Emulsion
         if (config.selectedMaterials.emulsion && config.coatConfiguration.emulsion > 0) {
-          // Fetch coverage from database instead of hardcoded value
-          const emulsionName = config.selectedMaterials.emulsion.toLowerCase();
-          const isEnamel = emulsionName.includes('enamel');
-          const coverageRange = coverageData[emulsionName] || (isEnamel ? '100' : '120');
-          // Use minimum value of coverage range
-          const coverageMatch = coverageRange.match(/(\d+(?:\.\d+)?)/);
-          const coverage = coverageMatch ? parseFloat(coverageMatch[1]) : (isEnamel ? 100 : 120);
+          const isEnamel = config.selectedMaterials.emulsion.toLowerCase().includes('enamel');
+          const coverage = isEnamel ? 100 : 120; // sq ft per liter (enamel has lower coverage)
           const coats = config.coatConfiguration.emulsion;
-          // Per user requirement: Required Quantity = Total Sq.ft ÷ Coverage (NO multiplication by coats)
-          const litersNeeded = area / coverage;
+          const litersNeeded = area / coverage * coats;
           const calc = calculateMaterial(config.selectedMaterials.emulsion, litersNeeded);
           materials.push({
             name: config.selectedMaterials.emulsion,
@@ -1416,16 +1346,12 @@ export default function GenerateSummaryScreen() {
             ...calc
           });
         }
+      } else {
         // Repainting
         if (config.selectedMaterials.primer && config.repaintingConfiguration?.primer && config.repaintingConfiguration.primer > 0) {
-          // Fetch coverage from database
-          const primerName = config.selectedMaterials.primer.toLowerCase();
-          const coverageRange = coverageData[primerName] || '120';
-          const coverageMatch = coverageRange.match(/(\d+(?:\.\d+)?)/);
-          const coverage = coverageMatch ? parseFloat(coverageMatch[1]) : 120;
+          const coverage = 120;
           const coats = config.repaintingConfiguration.primer;
-          // Per user requirement: Required Quantity = Total Sq.ft ÷ Coverage (NO multiplication by coats)
-          const litersNeeded = area / coverage;
+          const litersNeeded = area / coverage * coats;
           const calc = calculateMaterial(config.selectedMaterials.primer, litersNeeded);
           materials.push({
             name: config.selectedMaterials.primer,
@@ -1437,14 +1363,9 @@ export default function GenerateSummaryScreen() {
           });
         }
         if (config.selectedMaterials.emulsion && config.repaintingConfiguration?.emulsion && config.repaintingConfiguration.emulsion > 0) {
-          // Fetch coverage from database
-          const emulsionName = config.selectedMaterials.emulsion.toLowerCase();
-          const coverageRange = coverageData[emulsionName] || '120';
-          const coverageMatch = coverageRange.match(/(\d+(?:\.\d+)?)/);
-          const coverage = coverageMatch ? parseFloat(coverageMatch[1]) : 120;
+          const coverage = 120;
           const coats = config.repaintingConfiguration.emulsion;
-          // Per user requirement: Required Quantity = Total Sq.ft ÷ Coverage (NO multiplication by coats)
-          const litersNeeded = area / coverage;
+          const litersNeeded = area / coverage * coats;
           const calc = calculateMaterial(config.selectedMaterials.emulsion, litersNeeded);
           materials.push({
             name: config.selectedMaterials.emulsion,
@@ -1484,7 +1405,7 @@ export default function GenerateSummaryScreen() {
               No material configurations found.
             </div> : <div className="space-y-4">
               {/* Interior Configurations */}
-              {configMaterials.filter(cm => cm.paintTypeCategory === 'Interior' && cm.materials.length > 0).length > 0 && <div className="space-y-3">
+              {configMaterials.filter(cm => cm.paintTypeCategory === 'Interior' && cm.totalCost > 0).length > 0 && <div className="space-y-3">
                   <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                     Interior Paint Configurations
                   </Badge>
@@ -1492,7 +1413,7 @@ export default function GenerateSummaryScreen() {
               scrollbarWidth: 'none',
               msOverflowStyle: 'none'
             }}>
-                    {configMaterials.filter(cm => cm.paintTypeCategory === 'Interior' && cm.materials.length > 0).map((configMat, index) => {
+                    {configMaterials.filter(cm => cm.paintTypeCategory === 'Interior' && cm.totalCost > 0).map((configMat, index) => {
                 const isEnamelConfig = configMat.configLabel.toLowerCase().includes('enamel') || configMat.materials.some((m: any) => m.name.toLowerCase().includes('enamel'));
                 return <Card key={index} className={`flex-none w-72 border-2 snap-start ${isEnamelConfig ? 'bg-orange-50 border-orange-300' : 'border-primary/20 bg-primary/5'}`}>
                         <CardContent className="p-4">
@@ -1547,7 +1468,7 @@ export default function GenerateSummaryScreen() {
                 </div>}
 
               {/* Exterior Configurations */}
-              {configMaterials.filter(cm => cm.paintTypeCategory === 'Exterior' && cm.materials.length > 0).length > 0 && <div className="space-y-3">
+              {configMaterials.filter(cm => cm.paintTypeCategory === 'Exterior' && cm.totalCost > 0).length > 0 && <div className="space-y-3">
                   <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                     Exterior Paint Configurations
                   </Badge>
@@ -1555,7 +1476,7 @@ export default function GenerateSummaryScreen() {
               scrollbarWidth: 'none',
               msOverflowStyle: 'none'
             }}>
-                    {configMaterials.filter(cm => cm.paintTypeCategory === 'Exterior' && cm.materials.length > 0).map((configMat, index) => {
+                    {configMaterials.filter(cm => cm.paintTypeCategory === 'Exterior' && cm.totalCost > 0).map((configMat, index) => {
                 const isEnamelConfig = configMat.configLabel.toLowerCase().includes('enamel') || configMat.materials.some((m: any) => m.name.toLowerCase().includes('enamel'));
                 return <Card key={index} className={`flex-none w-72 border-2 snap-start ${isEnamelConfig ? 'bg-orange-50 border-orange-300' : 'border-primary/20 bg-primary/5'}`}>
                         <CardContent className="p-4">
@@ -1610,7 +1531,7 @@ export default function GenerateSummaryScreen() {
                 </div>}
 
               {/* Waterproofing Configurations */}
-              {configMaterials.filter(cm => cm.paintTypeCategory === 'Waterproofing' && cm.materials.length > 0).length > 0 && <div className="space-y-3">
+              {configMaterials.filter(cm => cm.paintTypeCategory === 'Waterproofing' && cm.totalCost > 0).length > 0 && <div className="space-y-3">
                   <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                     Waterproofing Configurations
                   </Badge>
@@ -1618,7 +1539,7 @@ export default function GenerateSummaryScreen() {
               scrollbarWidth: 'none',
               msOverflowStyle: 'none'
             }}>
-                    {configMaterials.filter(cm => cm.paintTypeCategory === 'Waterproofing' && cm.materials.length > 0).map((configMat, index) => {
+                    {configMaterials.filter(cm => cm.paintTypeCategory === 'Waterproofing' && cm.totalCost > 0).map((configMat, index) => {
                 const isEnamelConfig = configMat.configLabel.toLowerCase().includes('enamel') || configMat.materials.some((m: any) => m.name.toLowerCase().includes('enamel'));
                 return <Card key={index} className={`flex-none w-72 border-2 snap-start ${isEnamelConfig ? 'bg-orange-50 border-orange-300' : 'border-primary/20 bg-primary/5'}`}>
                         <CardContent className="p-4">
