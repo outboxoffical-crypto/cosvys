@@ -1298,9 +1298,16 @@ export default function GenerateSummaryScreen() {
       if (isFresh) {
         // Putty
         if (config.selectedMaterials.putty && config.coatConfiguration.putty > 0) {
-          const coverage = 20; // sq ft per kg
+          // Fetch coverage from database instead of hardcoded value
+          const puttyName = config.selectedMaterials.putty.toLowerCase();
+          const coverageRange = coverageData[puttyName] || '10-15'; // Default to 10-15 if not found
+          // Use minimum value of coverage range as per user requirement
+          const coverageMatch = coverageRange.match(/(\d+(?:\.\d+)?)/);
+          const coverage = coverageMatch ? parseFloat(coverageMatch[1]) : 10; // Use min value (10 sq.ft/kg for putty)
           const coats = config.coatConfiguration.putty;
-          const kgNeeded = area / coverage * coats;
+          // Per user requirement: Required Quantity = Total Sq.ft ÷ Coverage (NO multiplication by coats)
+          // Coverage table already has separate values for different coats
+          const kgNeeded = area / coverage;
           const calc = calculateMaterial(config.selectedMaterials.putty, kgNeeded);
           materials.push({
             name: config.selectedMaterials.putty,
@@ -1314,11 +1321,16 @@ export default function GenerateSummaryScreen() {
 
         // Primer
         if (config.selectedMaterials.primer && config.coatConfiguration.primer > 0) {
-          // Use enamel-specific coverage for enamel primer
-          const isEnamel = config.selectedMaterials.primer?.toLowerCase().includes('enamel') || config.selectedMaterials.emulsion?.toLowerCase().includes('enamel');
-          const coverage = isEnamel ? 100 : 120; // sq ft per liter (enamel has lower coverage)
+          // Fetch coverage from database instead of hardcoded value
+          const primerName = config.selectedMaterials.primer.toLowerCase();
+          const isEnamel = primerName.includes('enamel') || config.selectedMaterials.emulsion?.toLowerCase().includes('enamel');
+          const coverageRange = coverageData[primerName] || (isEnamel ? '100' : '120');
+          // Use minimum value of coverage range
+          const coverageMatch = coverageRange.match(/(\d+(?:\.\d+)?)/);
+          const coverage = coverageMatch ? parseFloat(coverageMatch[1]) : (isEnamel ? 100 : 120);
           const coats = config.coatConfiguration.primer;
-          const litersNeeded = area / coverage * coats;
+          // Per user requirement: Required Quantity = Total Sq.ft ÷ Coverage (NO multiplication by coats)
+          const litersNeeded = area / coverage;
           const calc = calculateMaterial(config.selectedMaterials.primer, litersNeeded);
           materials.push({
             name: config.selectedMaterials.primer,
@@ -1332,10 +1344,16 @@ export default function GenerateSummaryScreen() {
 
         // Emulsion
         if (config.selectedMaterials.emulsion && config.coatConfiguration.emulsion > 0) {
-          const isEnamel = config.selectedMaterials.emulsion.toLowerCase().includes('enamel');
-          const coverage = isEnamel ? 100 : 120; // sq ft per liter (enamel has lower coverage)
+          // Fetch coverage from database instead of hardcoded value
+          const emulsionName = config.selectedMaterials.emulsion.toLowerCase();
+          const isEnamel = emulsionName.includes('enamel');
+          const coverageRange = coverageData[emulsionName] || (isEnamel ? '100' : '120');
+          // Use minimum value of coverage range
+          const coverageMatch = coverageRange.match(/(\d+(?:\.\d+)?)/);
+          const coverage = coverageMatch ? parseFloat(coverageMatch[1]) : (isEnamel ? 100 : 120);
           const coats = config.coatConfiguration.emulsion;
-          const litersNeeded = area / coverage * coats;
+          // Per user requirement: Required Quantity = Total Sq.ft ÷ Coverage (NO multiplication by coats)
+          const litersNeeded = area / coverage;
           const calc = calculateMaterial(config.selectedMaterials.emulsion, litersNeeded);
           materials.push({
             name: config.selectedMaterials.emulsion,
@@ -1346,12 +1364,16 @@ export default function GenerateSummaryScreen() {
             ...calc
           });
         }
-      } else {
         // Repainting
         if (config.selectedMaterials.primer && config.repaintingConfiguration?.primer && config.repaintingConfiguration.primer > 0) {
-          const coverage = 120;
+          // Fetch coverage from database
+          const primerName = config.selectedMaterials.primer.toLowerCase();
+          const coverageRange = coverageData[primerName] || '120';
+          const coverageMatch = coverageRange.match(/(\d+(?:\.\d+)?)/);
+          const coverage = coverageMatch ? parseFloat(coverageMatch[1]) : 120;
           const coats = config.repaintingConfiguration.primer;
-          const litersNeeded = area / coverage * coats;
+          // Per user requirement: Required Quantity = Total Sq.ft ÷ Coverage (NO multiplication by coats)
+          const litersNeeded = area / coverage;
           const calc = calculateMaterial(config.selectedMaterials.primer, litersNeeded);
           materials.push({
             name: config.selectedMaterials.primer,
@@ -1363,9 +1385,14 @@ export default function GenerateSummaryScreen() {
           });
         }
         if (config.selectedMaterials.emulsion && config.repaintingConfiguration?.emulsion && config.repaintingConfiguration.emulsion > 0) {
-          const coverage = 120;
+          // Fetch coverage from database
+          const emulsionName = config.selectedMaterials.emulsion.toLowerCase();
+          const coverageRange = coverageData[emulsionName] || '120';
+          const coverageMatch = coverageRange.match(/(\d+(?:\.\d+)?)/);
+          const coverage = coverageMatch ? parseFloat(coverageMatch[1]) : 120;
           const coats = config.repaintingConfiguration.emulsion;
-          const litersNeeded = area / coverage * coats;
+          // Per user requirement: Required Quantity = Total Sq.ft ÷ Coverage (NO multiplication by coats)
+          const litersNeeded = area / coverage;
           const calc = calculateMaterial(config.selectedMaterials.emulsion, litersNeeded);
           materials.push({
             name: config.selectedMaterials.emulsion,
