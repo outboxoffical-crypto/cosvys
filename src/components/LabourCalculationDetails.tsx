@@ -29,11 +29,14 @@ export default function LabourCalculationDetails({
 }: LabourCalculationDetailsProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Recalculate all values exactly as the system does
-  const adjustedCoverage = task.coverage * (workingHours / standardHours);
-  const perDayCapacity = adjustedCoverage * autoLabourPerDay;
-  const adjustedDays = Math.ceil(task.daysRequired / autoLabourPerDay);
-  const rawDaysCalculation = task.totalWork / perDayCapacity;
+  // Simple productivity-based calculation
+  // Total Work Area = Total Sq.ft × Number of Coats
+  // Labour Days = Total Work Area ÷ Labour Working Process (sq.ft/day)
+  const totalWorkArea = task.area * task.coats;
+  const workingCapacity = task.coverage; // sq.ft per day
+  const rawDays = workingCapacity > 0 ? totalWorkArea / workingCapacity : 0;
+  const minDays = Math.floor(rawDays);
+  const maxDays = Math.ceil(rawDays);
 
   return (
     <div className="space-y-2">
@@ -67,7 +70,9 @@ export default function LabourCalculationDetails({
           </p>
         </div>
         <div className="text-right">
-          <p className="text-xl font-bold text-primary">{adjustedDays} days</p>
+          <p className="text-lg font-bold text-primary">
+            Approx. {minDays} to {maxDays} working days
+          </p>
         </div>
       </div>
 
@@ -79,79 +84,61 @@ export default function LabourCalculationDetails({
             <span className="font-semibold text-foreground">How this was calculated</span>
           </div>
 
-          {/* Step 1: Area */}
+          {/* Inputs */}
           <div className="flex justify-between items-center">
-            <span className="text-muted-foreground">1. Area considered:</span>
-            <span className="font-medium text-foreground">{task.area.toFixed(2)} sq.ft</span>
+            <span className="text-muted-foreground">Total Sq.ft:</span>
+            <span className="font-medium text-foreground">{task.area.toFixed(0)} sq.ft</span>
           </div>
 
-          {/* Step 2: Coats */}
           <div className="flex justify-between items-center">
-            <span className="text-muted-foreground">2. Number of coats:</span>
+            <span className="text-muted-foreground">Number of Coats:</span>
             <span className="font-medium text-foreground">{task.coats}</span>
           </div>
 
-          {/* Step 3: Total work */}
           <div className="flex justify-between items-center">
-            <span className="text-muted-foreground">3. Total work (Area × Coats):</span>
-            <span className="font-medium text-foreground">{task.totalWork.toFixed(2)} sq.ft</span>
-          </div>
-
-          <div className="my-2 border-t border-border/50" />
-
-          {/* Step 4: Labour productivity */}
-          <div className="flex justify-between items-center">
-            <span className="text-muted-foreground">4. Labour productivity (8 hrs):</span>
+            <span className="text-muted-foreground">Labour Working Process:</span>
             <div className="flex items-center gap-1">
-              <span className="font-medium text-foreground">{task.coverage.toFixed(0)} sq.ft/day</span>
+              <span className="font-medium text-foreground">{workingCapacity.toFixed(0)} sq.ft/day</span>
               <Badge variant="outline" className="text-[10px] px-1 py-0 bg-yellow-500/10 text-yellow-700 border-yellow-500/30">
                 System Assumption
               </Badge>
             </div>
           </div>
 
-          {/* Step 5: Working hours adjustment */}
-          <div className="flex justify-between items-center">
-            <span className="text-muted-foreground">5. Adjusted for {workingHours} hrs/day:</span>
-            <span className="font-medium text-foreground">{adjustedCoverage.toFixed(0)} sq.ft/day</span>
-          </div>
+          <div className="my-2 border-t border-border/50" />
 
-          {/* Step 6: Number of labours */}
-          <div className="flex justify-between items-center">
-            <span className="text-muted-foreground">6. Number of labours:</span>
-            <div className="flex items-center gap-1">
-              <span className="font-medium text-foreground">{autoLabourPerDay}</span>
-              {autoLabourPerDay === 1 && (
-                <Badge variant="outline" className="text-[10px] px-1 py-0 bg-yellow-500/10 text-yellow-700 border-yellow-500/30">
-                  System Assumption
-                </Badge>
-              )}
+          {/* Calculation Steps */}
+          <div className="space-y-2">
+            <p className="font-semibold text-foreground">Calculation:</p>
+            
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Total Work Area = Total Sq.ft × Coats</span>
             </div>
-          </div>
+            <div className="flex justify-between items-center pl-4">
+              <span className="text-muted-foreground">= {task.area.toFixed(0)} × {task.coats}</span>
+              <span className="font-medium text-foreground">= {totalWorkArea.toFixed(0)} sq.ft</span>
+            </div>
 
-          {/* Step 7: Per-day capacity */}
-          <div className="flex justify-between items-center">
-            <span className="text-muted-foreground">7. Per-day capacity (Labour × Productivity):</span>
-            <span className="font-medium text-foreground">{perDayCapacity.toFixed(0)} sq.ft/day</span>
+            <div className="flex justify-between items-center mt-2">
+              <span className="text-muted-foreground">Labour Days = Total Work Area ÷ Working Capacity</span>
+            </div>
+            <div className="flex justify-between items-center pl-4">
+              <span className="text-muted-foreground">= {totalWorkArea.toFixed(0)} ÷ {workingCapacity.toFixed(0)}</span>
+              <span className="font-medium text-foreground">= {rawDays.toFixed(2)} days</span>
+            </div>
           </div>
 
           <div className="my-2 border-t border-border/50" />
 
-          {/* Step 8: Days calculation */}
-          <div className="flex justify-between items-center">
-            <span className="text-muted-foreground">8. Raw calculation (Work ÷ Capacity):</span>
-            <span className="font-medium text-foreground">{rawDaysCalculation.toFixed(2)} days</span>
-          </div>
-
-          {/* Step 9: Final result */}
-          <div className="flex justify-between items-center pt-2 border-t border-border/50">
-            <span className="font-semibold text-foreground">9. Days required (CEIL):</span>
-            <span className="font-bold text-primary text-lg">{adjustedDays} days</span>
+          {/* Final Result */}
+          <div className="flex justify-between items-center pt-2">
+            <span className="font-semibold text-foreground">Final Result:</span>
+            <span className="font-bold text-primary text-lg">Approx. {minDays} to {maxDays} working days</span>
           </div>
 
           {/* Formula summary */}
           <div className="mt-3 p-2 bg-primary/5 rounded text-xs text-muted-foreground">
-            <span className="font-medium">Formula:</span> CEIL({task.totalWork.toFixed(0)} ÷ {perDayCapacity.toFixed(0)}) = {adjustedDays} day{adjustedDays !== 1 ? 's' : ''}
+            <span className="font-medium">Formula:</span> ({task.area.toFixed(0)} × {task.coats}) ÷ {workingCapacity.toFixed(0)} = {rawDays.toFixed(2)} days → Approx. {minDays} to {maxDays} working days
           </div>
         </div>
       )}
