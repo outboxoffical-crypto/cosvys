@@ -247,9 +247,10 @@ export default function GenerateSummaryScreen() {
       }
 
       // OPTIMIZED: Load only essential room fields (not full pictures/opening arrays)
+      // Order by created_at to preserve Room Measurements order
       const {
         data: roomsData
-      } = await supabase.from('rooms').select('id, name, project_type, floor_area, wall_area, adjusted_wall_area, ceiling_area, total_door_window_grill_area, selected_areas').eq('project_id', projectId);
+      } = await supabase.from('rooms').select('id, name, project_type, floor_area, wall_area, adjusted_wall_area, ceiling_area, total_door_window_grill_area, selected_areas, section_name, created_at').eq('project_id', projectId).order('created_at', { ascending: true });
       if (roomsData) {
         setRooms(roomsData);
 
@@ -718,11 +719,13 @@ export default function GenerateSummaryScreen() {
                     {Object.entries(enamelAreas).map(([roomId, area]) => {
                   const room = rooms.find(r => r.id === roomId);
                   if (!room) return null;
+                  // Show section_name if exists, otherwise just room name (not "Door & Window")
+                  const displayName = room.section_name || room.name;
                   return <div key={roomId} className="group relative bg-card rounded border-l-2 border-orange-500 hover:border-l-4 eca-shadow hover:eca-shadow-medium eca-transition p-3 sm:p-4">
                           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-6">
                             <div className="flex-shrink-0">
                               <h3 className="font-bold text-xs sm:text-sm tracking-wider text-foreground">
-                                {room.name} - Door & Window
+                                {displayName}
                               </h3>
                             </div>
                             
@@ -741,30 +744,6 @@ export default function GenerateSummaryScreen() {
                 </div>}
             </div>
 
-            {/* Totals Second with Project Type */}
-            <div className="p-4 rounded-lg bg-gradient-to-r from-red-400/20 via-purple-400/20 to-blue-400/20 border border-primary/20">
-              <div className="flex items-center gap-2 mb-3">
-                <TrendingUp className="h-4 w-4 text-primary" />
-                <p className="font-semibold text-foreground text-base">Total Area Summary</p>
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div className="text-center">
-                  <p className="text-muted-foreground text-xs mb-1">Total Floor</p>
-                  <p className="text-foreground font-bold text-2xl">{totalFloor.toFixed(1)}</p>
-                  <p className="text-muted-foreground text-xs">sq.ft</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-muted-foreground text-xs mb-1">Total Wall</p>
-                  <p className="text-foreground font-bold text-2xl">{totalWall.toFixed(1)}</p>
-                  <p className="text-muted-foreground text-xs">sq.ft</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-muted-foreground text-xs mb-1">Total Ceiling</p>
-                  <p className="text-foreground font-bold text-2xl">{totalCeiling.toFixed(1)}</p>
-                  <p className="text-muted-foreground text-xs">sq.ft</p>
-                </div>
-              </div>
-            </div>
           </div>
         </CardContent>
       </Card>;
