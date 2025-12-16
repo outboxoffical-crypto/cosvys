@@ -1954,52 +1954,162 @@ export default function GenerateSummaryScreen() {
                    </div>
                 </div>}
 
-              {/* Enamel (Door & Window) Configurations - Separate Category at Bottom */}
-              {/* Show enamel even if totalCost is 0 to display error messages */}
-              {configMaterials.filter(cm => cm.isEnamel && cm.materials.length > 0).length > 0 && <div className="space-y-3">
-                  <Badge variant="outline" className="bg-orange-500/10 text-orange-600 border-orange-500/20">
-                    Enamel Paint Configurations
-                  </Badge>
-                  <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide" style={{
-              scrollbarWidth: 'none',
-              msOverflowStyle: 'none'
-            }}>
-                    {configMaterials.filter(cm => cm.isEnamel && cm.materials.length > 0).map((configMat, index) => {
-                return <Card key={index} className="flex-none w-72 border-2 snap-start bg-orange-50 border-orange-300 dark:bg-orange-900/20 dark:border-orange-500/50">
-                        <CardContent className="p-4">
-                          <div className="space-y-4">
-                            {/* Header with Enamel Badge */}
-                            <div className="flex items-center justify-between pb-2 border-b border-orange-300 dark:border-orange-500/50">
-                              <h3 className="font-semibold text-base">{configMat.configLabel}</h3>
-                              <Badge variant="secondary" className="text-xs bg-orange-500 text-white">
-                                Enamel
-                              </Badge>
-                            </div>
-                            
-                            {/* Materials List */}
-                            <div className="space-y-3">
-                              {configMat.materials.map((mat: any, matIdx: number) => <div key={matIdx}>
-                                  {mat.error && <div className="text-xs text-destructive bg-destructive/10 p-2 rounded mb-2">
-                                      ⚠️ {mat.error}
-                                    </div>}
-                                  <MaterialCalculationDetails materialName={mat.name} materialType={mat.type} area={mat.area || 0} coats={mat.coats || 1} coverageRate={mat.coverageRate || 0} coverageDisplay={getMaterialCoverage(mat.name, mat.type)} unit={mat.unit} requiredQuantity={mat.requiredQuantity} totalCost={mat.totalCost} packCombination={mat.combination || []} hasError={!!mat.error} />
-                                </div>)}
-                            </div>
-                            
-                            {/* Total Cost */}
-                            <div className="pt-3 border-t-2 border-orange-300 dark:border-orange-500/50">
-                              <div className="flex items-center justify-between">
-                                <p className="text-sm font-medium text-muted-foreground">Total Material Cost:</p>
-                                <p className="text-2xl font-bold text-orange-600">₹{configMat.totalCost.toLocaleString('en-IN')}</p>
+              {/* Enamel (Door & Window) Configurations - Aggregated into 2 boxes like Labour */}
+              {(() => {
+                const enamelMaterials = configMaterials.filter(cm => cm.isEnamel && cm.materials.length > 0);
+                if (enamelMaterials.length === 0) return null;
+                
+                // Aggregate materials into Main and Separate groups
+                interface MaterialGroup {
+                  primerMaterials: any[];
+                  enamelMaterials: any[];
+                  totalCost: number;
+                }
+                
+                const mainGroup: MaterialGroup = { primerMaterials: [], enamelMaterials: [], totalCost: 0 };
+                const separateGroup: MaterialGroup = { primerMaterials: [], enamelMaterials: [], totalCost: 0 };
+                
+                enamelMaterials.forEach(configMat => {
+                  const isSeparate = configMat.configLabel?.toLowerCase().includes('varnish') || 
+                                    configMat.configLabel?.toLowerCase().includes('separate');
+                  const target = isSeparate ? separateGroup : mainGroup;
+                  
+                  configMat.materials.forEach((mat: any) => {
+                    const matName = mat.name?.toLowerCase() || '';
+                    const isPrimer = matName.includes('primer');
+                    
+                    // Check if this is a real selected primer (not default)
+                    const isRealPrimer = isPrimer && 
+                      mat.name && 
+                      mat.name !== 'Primer' && 
+                      mat.name !== 'Enamel Primer' &&
+                      mat.name.toLowerCase() !== 'primer';
+                    
+                    if (isRealPrimer) {
+                      // Aggregate primer - find existing or add new
+                      const existing = target.primerMaterials.find((m: any) => m.name === mat.name);
+                      if (existing) {
+                        existing.area += mat.area || 0;
+                        existing.requiredQuantity += mat.requiredQuantity || 0;
+                        existing.totalCost += mat.totalCost || 0;
+                      } else {
+                        target.primerMaterials.push({ ...mat, area: mat.area || 0, requiredQuantity: mat.requiredQuantity || 0, totalCost: mat.totalCost || 0 });
+                      }
+                    } else if (!isPrimer) {
+                      // Aggregate enamel topcoat
+                      const existing = target.enamelMaterials.find((m: any) => m.name === mat.name);
+                      if (existing) {
+                        existing.area += mat.area || 0;
+                        existing.requiredQuantity += mat.requiredQuantity || 0;
+                        existing.totalCost += mat.totalCost || 0;
+                      } else {
+                        target.enamelMaterials.push({ ...mat, area: mat.area || 0, requiredQuantity: mat.requiredQuantity || 0, totalCost: mat.totalCost || 0 });
+                      }
+                    }
+                  });
+                  
+                  target.totalCost += configMat.totalCost || 0;
+                });
+                
+                const hasMainEnamel = mainGroup.primerMaterials.length > 0 || mainGroup.enamelMaterials.length > 0;
+                const hasSeparateEnamel = separateGroup.primerMaterials.length > 0 || separateGroup.enamelMaterials.length > 0;
+                
+                if (!hasMainEnamel && !hasSeparateEnamel) return null;
+                
+                return (
+                  <div className="space-y-3">
+                    <Badge variant="outline" className="bg-orange-500/10 text-orange-600 border-orange-500/20">
+                      Enamel Paint Configurations
+                    </Badge>
+                    <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide" style={{
+                      scrollbarWidth: 'none',
+                      msOverflowStyle: 'none'
+                    }}>
+                      {/* Main Enamel Area Card */}
+                      {hasMainEnamel && (
+                        <Card className="flex-none w-72 border-2 snap-start bg-orange-50 border-orange-300 dark:bg-orange-900/20 dark:border-orange-500/50">
+                          <CardContent className="p-4">
+                            <div className="space-y-4">
+                              {/* Header with Enamel Badge */}
+                              <div className="flex items-center justify-between pb-2 border-b border-orange-300 dark:border-orange-500/50">
+                                <h3 className="font-semibold text-base">Enamel Area (Main)</h3>
+                                <Badge variant="secondary" className="text-xs bg-orange-500 text-white">
+                                  Enamel
+                                </Badge>
+                              </div>
+                              
+                              {/* Materials List */}
+                              <div className="space-y-3">
+                                {mainGroup.primerMaterials.map((mat: any, matIdx: number) => (
+                                  <div key={`primer-${matIdx}`}>
+                                    {mat.error && <div className="text-xs text-destructive bg-destructive/10 p-2 rounded mb-2">⚠️ {mat.error}</div>}
+                                    <MaterialCalculationDetails materialName={mat.name} materialType={mat.type} area={mat.area || 0} coats={mat.coats || 1} coverageRate={mat.coverageRate || 0} coverageDisplay={getMaterialCoverage(mat.name, mat.type)} unit={mat.unit} requiredQuantity={mat.requiredQuantity} totalCost={mat.totalCost} packCombination={mat.combination || []} hasError={!!mat.error} />
+                                  </div>
+                                ))}
+                                {mainGroup.enamelMaterials.map((mat: any, matIdx: number) => (
+                                  <div key={`enamel-${matIdx}`}>
+                                    {mat.error && <div className="text-xs text-destructive bg-destructive/10 p-2 rounded mb-2">⚠️ {mat.error}</div>}
+                                    <MaterialCalculationDetails materialName={mat.name} materialType={mat.type} area={mat.area || 0} coats={mat.coats || 1} coverageRate={mat.coverageRate || 0} coverageDisplay={getMaterialCoverage(mat.name, mat.type)} unit={mat.unit} requiredQuantity={mat.requiredQuantity} totalCost={mat.totalCost} packCombination={mat.combination || []} hasError={!!mat.error} />
+                                  </div>
+                                ))}
+                              </div>
+                              
+                              {/* Total Cost */}
+                              <div className="pt-3 border-t-2 border-orange-300 dark:border-orange-500/50">
+                                <div className="flex items-center justify-between">
+                                  <p className="text-sm font-medium text-muted-foreground">Total Material Cost:</p>
+                                  <p className="text-2xl font-bold text-orange-600">₹{mainGroup.totalCost.toLocaleString('en-IN')}</p>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </CardContent>
-                      </Card>;
-              })}
-                    
+                          </CardContent>
+                        </Card>
+                      )}
+                      
+                      {/* Separate/Varnish Enamel Area Card */}
+                      {hasSeparateEnamel && (
+                        <Card className="flex-none w-72 border-2 snap-start bg-orange-50 border-orange-300 dark:bg-orange-900/20 dark:border-orange-500/50">
+                          <CardContent className="p-4">
+                            <div className="space-y-4">
+                              {/* Header with Enamel Badge */}
+                              <div className="flex items-center justify-between pb-2 border-b border-orange-300 dark:border-orange-500/50">
+                                <h3 className="font-semibold text-base">Varnish / Separate Area</h3>
+                                <Badge variant="secondary" className="text-xs bg-orange-500 text-white">
+                                  Enamel
+                                </Badge>
+                              </div>
+                              
+                              {/* Materials List */}
+                              <div className="space-y-3">
+                                {separateGroup.primerMaterials.map((mat: any, matIdx: number) => (
+                                  <div key={`primer-${matIdx}`}>
+                                    {mat.error && <div className="text-xs text-destructive bg-destructive/10 p-2 rounded mb-2">⚠️ {mat.error}</div>}
+                                    <MaterialCalculationDetails materialName={mat.name} materialType={mat.type} area={mat.area || 0} coats={mat.coats || 1} coverageRate={mat.coverageRate || 0} coverageDisplay={getMaterialCoverage(mat.name, mat.type)} unit={mat.unit} requiredQuantity={mat.requiredQuantity} totalCost={mat.totalCost} packCombination={mat.combination || []} hasError={!!mat.error} />
+                                  </div>
+                                ))}
+                                {separateGroup.enamelMaterials.map((mat: any, matIdx: number) => (
+                                  <div key={`enamel-${matIdx}`}>
+                                    {mat.error && <div className="text-xs text-destructive bg-destructive/10 p-2 rounded mb-2">⚠️ {mat.error}</div>}
+                                    <MaterialCalculationDetails materialName={mat.name} materialType={mat.type} area={mat.area || 0} coats={mat.coats || 1} coverageRate={mat.coverageRate || 0} coverageDisplay={getMaterialCoverage(mat.name, mat.type)} unit={mat.unit} requiredQuantity={mat.requiredQuantity} totalCost={mat.totalCost} packCombination={mat.combination || []} hasError={!!mat.error} />
+                                  </div>
+                                ))}
+                              </div>
+                              
+                              {/* Total Cost */}
+                              <div className="pt-3 border-t-2 border-orange-300 dark:border-orange-500/50">
+                                <div className="flex items-center justify-between">
+                                  <p className="text-sm font-medium text-muted-foreground">Total Material Cost:</p>
+                                  <p className="text-2xl font-bold text-orange-600">₹{separateGroup.totalCost.toLocaleString('en-IN')}</p>
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+                    </div>
                   </div>
-                </div>}
+                );
+              })()}
 
           {/* Total Material Cost Summary */}
           {configMaterials.length > 0 && <div className="p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border-2 border-primary mt-4">
