@@ -2391,6 +2391,24 @@ export default function GenerateSummaryScreen() {
                   );
                 })()}
 
+                {/* Glass Divider - Interior to Exterior */}
+                {(() => {
+                  const exteriorAreas = totalAreas['Exterior'];
+                  const hasExterior = exteriorAreas && exteriorAreas.wallArea > 0;
+                  if (!hasExterior) return null;
+                  return (
+                    <div className="py-3">
+                      <div 
+                        className="h-px w-full"
+                        style={{
+                          background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 15%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0.3) 85%, transparent 100%)',
+                          boxShadow: '0 1px 3px rgba(255,255,255,0.15), 0 0 8px rgba(255,255,255,0.08)'
+                        }}
+                      />
+                    </div>
+                  );
+                })()}
+
                 {/* Exterior Section */}
                 {(() => {
                   const exteriorAreas = totalAreas['Exterior'];
@@ -2399,7 +2417,7 @@ export default function GenerateSummaryScreen() {
                   if (!hasWall) return null;
                   
                   return (
-                    <div className="mb-4">
+                    <div className="mb-2">
                       <p className="text-sm font-semibold text-foreground mb-3">Exterior</p>
                       <div className="grid grid-cols-1">
                         <div className="text-center">
@@ -2411,6 +2429,19 @@ export default function GenerateSummaryScreen() {
                     </div>
                   );
                 })()}
+
+                {/* Glass Divider - Exterior to Enamel */}
+                {totalEnamelArea > 0 && (
+                  <div className="py-3">
+                    <div 
+                      className="h-px w-full"
+                      style={{
+                        background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 15%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0.3) 85%, transparent 100%)',
+                        boxShadow: '0 1px 3px rgba(255,255,255,0.15), 0 0 8px rgba(255,255,255,0.08)'
+                      }}
+                    />
+                  </div>
+                )}
 
                 {/* Enamel Section */}
                 {totalEnamelArea > 0 && (
