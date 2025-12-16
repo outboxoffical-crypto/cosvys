@@ -99,8 +99,8 @@ export default function LabourCalculationDetails({
             <span className="text-muted-foreground">Labour Working Process:</span>
             <div className="flex items-center gap-1">
               <span className="font-medium text-foreground">{workingCapacity.toFixed(0)} sq.ft/day</span>
-              <Badge variant="outline" className="text-[10px] px-1 py-0 bg-yellow-500/10 text-yellow-700 border-yellow-500/30">
-                System Assumption
+              <Badge variant="outline" className="text-[10px] px-1 py-0 bg-blue-500/10 text-blue-700 border-blue-500/30">
+                Standard Labour Rate
               </Badge>
             </div>
           </div>

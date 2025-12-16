@@ -797,17 +797,18 @@ export default function GenerateSummaryScreen() {
     const standardHours = 8;
     const numberOfLabours = 1;
 
-    // Coverage rates per labour per day (8 hrs) - using average values
+    // FIXED Labour Working Process rates per labour per day (8 hrs)
+    // These are standard rates - NOT system assumptions
     const coverageRates = {
       waterBased: {
-        putty: 800,
-        primer: 1050,
-        emulsion: 1050
+        putty: 400,      // FIXED: 400 sq.ft/day for Putty (Interior/Exterior)
+        primer: 700,     // FIXED: 700 sq.ft/day for Primer
+        emulsion: 700    // FIXED: 700 sq.ft/day for Interior/Exterior Emulsion
       },
       oilBased: {
-        redOxide: 350,
-        enamelBase: 250,
-        enamelTop: 200,
+        redOxide: 300,        // Enamel Red Oxide Metal Primer
+        enamelBase: 250,      // Enamel Wood Primer
+        enamelTop: 280,       // Apcolite Enamel Topcoat
         full3Coat: 275
       }
     };
