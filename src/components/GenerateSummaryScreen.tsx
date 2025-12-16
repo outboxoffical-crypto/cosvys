@@ -305,23 +305,24 @@ export default function GenerateSummaryScreen() {
             let enamelPrimer = '';
             let enamelPrimerCoats = 0;
             let enamelEmulsion = 'AP Apcolite Premium Gloss Enamel';
-            let enamelEmulsionCoats = 2;
+            let enamelEmulsionCoats = 1; // Default to 1 coat, not 2
             
             if (matchingEnamelConfig?.enamelConfig) {
               // User configured enamel in Paint Estimation - use their selections
               enamelPrimer = matchingEnamelConfig.enamelConfig.primerType || '';
-              enamelPrimerCoats = matchingEnamelConfig.enamelConfig.primerCoats || 0;
+              // Use nullish coalescing to preserve 0 and 1 values
+              enamelPrimerCoats = matchingEnamelConfig.enamelConfig.primerCoats ?? 0;
               enamelEmulsion = matchingEnamelConfig.enamelConfig.enamelType || 'AP Apcolite Premium Gloss Enamel';
-              enamelEmulsionCoats = matchingEnamelConfig.enamelConfig.enamelCoats || 2;
+              enamelEmulsionCoats = matchingEnamelConfig.enamelConfig.enamelCoats ?? 1;
             } else if (matchingEnamelConfig?.selectedMaterials) {
               // Fallback to selectedMaterials if no enamelConfig
               // Only use primer if explicitly set (not empty)
               if (matchingEnamelConfig.selectedMaterials.primer && matchingEnamelConfig.selectedMaterials.primer !== '') {
                 enamelPrimer = matchingEnamelConfig.selectedMaterials.primer;
-                enamelPrimerCoats = matchingEnamelConfig.coatConfiguration?.primer || 0;
+                enamelPrimerCoats = matchingEnamelConfig.coatConfiguration?.primer ?? 0;
               }
               enamelEmulsion = matchingEnamelConfig.selectedMaterials.emulsion || 'AP Apcolite Premium Gloss Enamel';
-              enamelEmulsionCoats = matchingEnamelConfig.coatConfiguration?.emulsion || 2;
+              enamelEmulsionCoats = matchingEnamelConfig.coatConfiguration?.emulsion ?? 1;
             }
             
             enamelConfigs.push({
