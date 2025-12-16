@@ -2,7 +2,6 @@ import { useState } from "react";
 import { ChevronDown, ChevronUp, Calculator, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-
 interface LabourTask {
   name: string;
   area: number;
@@ -11,7 +10,6 @@ interface LabourTask {
   coverage: number;
   daysRequired: number;
 }
-
 interface LabourCalculationDetailsProps {
   task: LabourTask;
   workingHours: number;
@@ -19,13 +17,12 @@ interface LabourCalculationDetailsProps {
   numberOfLabours: number;
   autoLabourPerDay: number;
 }
-
 export default function LabourCalculationDetails({
   task,
   workingHours,
   standardHours,
   numberOfLabours,
-  autoLabourPerDay,
+  autoLabourPerDay
 }: LabourCalculationDetailsProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -37,25 +34,14 @@ export default function LabourCalculationDetails({
   const rawDays = workingCapacity > 0 ? totalWorkArea / workingCapacity : 0;
   const minDays = Math.floor(rawDays);
   const maxDays = Math.ceil(rawDays);
-
-  return (
-    <div className="space-y-2">
+  return <div className="space-y-2">
       {/* Main task display */}
       <div className="flex items-center justify-between">
         <h4 className="text-base font-semibold text-foreground">{task.name}</h4>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="text-xs text-primary hover:text-primary/80 h-6 px-2 gap-1"
-        >
+        <Button variant="ghost" size="sm" onClick={() => setIsExpanded(!isExpanded)} className="text-xs text-primary hover:text-primary/80 h-6 px-2 gap-1">
           <Calculator className="h-3 w-3" />
           {isExpanded ? "Hide" : "View"} Calculation
-          {isExpanded ? (
-            <ChevronUp className="h-3 w-3" />
-          ) : (
-            <ChevronDown className="h-3 w-3" />
-          )}
+          {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
         </Button>
       </div>
 
@@ -70,15 +56,14 @@ export default function LabourCalculationDetails({
           </p>
         </div>
         <div className="text-right">
-          <p className="text-sm font-bold text-primary">
+          <p className="font-bold text-primary text-xl">
             {maxDays} {maxDays === 1 ? 'Day' : 'Days'}
           </p>
         </div>
       </div>
 
       {/* Expanded calculation details */}
-      {isExpanded && (
-        <div className="mt-3 p-3 bg-muted/50 rounded-lg border border-border space-y-2 text-sm">
+      {isExpanded && <div className="mt-3 p-3 bg-muted/50 rounded-lg border border-border space-y-2 text-sm">
           <div className="flex items-center gap-2 pb-2 border-b border-border/50">
             <Info className="h-4 w-4 text-primary" />
             <span className="font-semibold text-foreground">How this was calculated</span>
@@ -140,8 +125,6 @@ export default function LabourCalculationDetails({
           <div className="mt-3 p-2 bg-primary/5 rounded text-xs text-muted-foreground">
             <span className="font-medium">Formula:</span> ({task.area.toFixed(0)} × {task.coats}) ÷ {workingCapacity.toFixed(0)} = {rawDays.toFixed(2)} → {maxDays} {maxDays === 1 ? 'Day' : 'Days'}
           </div>
-        </div>
-      )}
-    </div>
-  );
+        </div>}
+    </div>;
 }
