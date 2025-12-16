@@ -76,27 +76,43 @@ export default function GenerateSummaryScreen() {
   const [isLoadingLabour, setIsLoadingLabour] = useState(true);
   const [isLoadingMaterial, setIsLoadingMaterial] = useState(true);
 
-  // Helper: Sort configs so Main Areas (Wall/Ceiling/Floor) come FIRST, Separate Paint Areas come LAST
-  const sortConfigsByAreaType = useCallback((configs: AreaConfig[]): AreaConfig[] => {
-    return [...configs].sort((a, b) => {
-      const isSeparateArea = (cfg: AreaConfig): boolean => {
-        if (cfg.sectionName) return true;
-        const label = (cfg.label || '').toLowerCase();
-        const areaType = (cfg.areaType || '').toLowerCase();
-        const mainAreaTypes = ['wall', 'ceiling', 'floor', 'wall area', 'ceiling area', 'floor area'];
-        if (mainAreaTypes.includes(areaType) && !cfg.sectionName) return false;
-        if (label.includes('separate')) return true;
-        if (label && !mainAreaTypes.some(t => label === t || label === `${t} area`)) return true;
-        return false;
-      };
-      const aIsSeparate = isSeparateArea(a);
-      const bIsSeparate = isSeparateArea(b);
-      if (aIsSeparate !== bIsSeparate) {
-        return aIsSeparate ? 1 : -1;
-      }
-      return 0;
-    });
+  // SINGLE SOURCE OF TRUTH: areaPriority-based sorting
+  // Priority: Wall(1) → Ceiling(2) → Floor(3) → Separate/Custom(4) → Enamel(5)
+  const getAreaPriority = useCallback((cfg: AreaConfig): number => {
+    // Custom sections (Separate Paint Area) always get priority 4
+    if (cfg.sectionName) return 4;
+    
+    // Check label for "Separate" keyword
+    const label = (cfg.label || '').toLowerCase();
+    if (label.includes('separate')) return 4;
+    
+    // Main areas by areaType
+    const areaType = (cfg.areaType || '').toLowerCase();
+    if (areaType === 'wall' || areaType === 'wall area') return 1;
+    if (areaType === 'ceiling' || areaType === 'ceiling area') return 2;
+    if (areaType === 'floor' || areaType === 'floor area') return 3;
+    if (areaType === 'enamel' || areaType === 'door & window') return 5;
+    
+    // If label doesn't match standard types, treat as separate area
+    const mainAreaTypes = ['wall', 'ceiling', 'floor', 'wall area', 'ceiling area', 'floor area'];
+    if (label && !mainAreaTypes.some(t => label === t || label === `${t} area`)) return 4;
+    
+    return 6; // Unknown
   }, []);
+
+  // Helper: Sort configs by areaPriority ASC (Wall→Ceiling→Floor→Separate→Enamel)
+  const sortConfigsByAreaType = useCallback((configs: AreaConfig[]): AreaConfig[] => {
+    return [...configs]
+      .map((config, index) => ({ ...config, _creationIndex: index }))
+      .sort((a, b) => {
+        const priorityA = getAreaPriority(a);
+        const priorityB = getAreaPriority(b);
+        // Primary sort: areaPriority ASC
+        if (priorityA !== priorityB) return priorityA - priorityB;
+        // Secondary sort: original creation index
+        return (a as any)._creationIndex - (b as any)._creationIndex;
+      });
+  }, [getAreaPriority]);
   useEffect(() => {
     loadData();
   }, [projectId]);
@@ -392,40 +408,8 @@ export default function GenerateSummaryScreen() {
       setActiveConfigIndex(newIndex);
     };
 
-    // Sort configs: "Main Area" (Wall, Ceiling, Floor without section) FIRST, then "Separate Paint Area" LAST
-    const sortConfigs = (configs: AreaConfig[]) => {
-      return [...configs].sort((a, b) => {
-        // Determine if config is a "Separate Paint Area" based on:
-        // 1. Has sectionName (user created via + icon)
-        // 2. Label contains "Separate" or custom section name like "Damp Wall Only Putty"
-        const isSeparateArea = (cfg: AreaConfig): boolean => {
-          // Has explicit section name = separate area
-          if (cfg.sectionName) return true;
-          // Check if label indicates a separate area (not standard Wall/Ceiling/Floor)
-          const label = (cfg.label || '').toLowerCase();
-          const areaType = (cfg.areaType || '').toLowerCase();
-          // Standard main areas
-          const mainAreaTypes = ['wall', 'ceiling', 'floor', 'wall area', 'ceiling area', 'floor area'];
-          // If areaType is a standard main area AND no sectionName, it's a main area
-          if (mainAreaTypes.includes(areaType) && !cfg.sectionName) return false;
-          // Labels containing "separate" or not matching standard types = separate area
-          if (label.includes('separate')) return true;
-          // If label exists but is not a standard area type, treat as separate
-          if (label && !mainAreaTypes.some(t => label === t || label === `${t} area`)) return true;
-          return false;
-        };
-        
-        const aIsSeparate = isSeparateArea(a);
-        const bIsSeparate = isSeparateArea(b);
-        
-        // Main areas (not separate) come FIRST
-        if (aIsSeparate !== bIsSeparate) {
-          return aIsSeparate ? 1 : -1; // Main area first, separate area last
-        }
-        // Within same category, maintain original order
-        return 0;
-      });
-    };
+    // SINGLE SOURCE OF TRUTH: Use areaPriority-based sorting (same as sortConfigsByAreaType)
+    const sortConfigs = (configs: AreaConfig[]) => sortConfigsByAreaType(configs);
 
     // Group configurations by paint type - exclude Enamel from paint configs
     const interiorConfigs = sortConfigs(areaConfigs.filter(c => c.paintTypeCategory === 'Interior' && c.areaType !== 'Enamel'));
