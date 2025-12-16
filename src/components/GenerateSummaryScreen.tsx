@@ -1150,13 +1150,14 @@ export default function GenerateSummaryScreen() {
                     primerSqft: number;
                     primerCoats: number;
                     primerProduct: string;
+                    primerSelected: boolean; // Track if primer was explicitly selected
                     enamelSqft: number;
                     enamelCoats: number;
                     enamelProduct: string;
                   }
                   
-                  const mainEnamel: EnamelGroup = { primerSqft: 0, primerCoats: 0, primerProduct: '', enamelSqft: 0, enamelCoats: 0, enamelProduct: '' };
-                  const separateEnamel: EnamelGroup = { primerSqft: 0, primerCoats: 0, primerProduct: '', enamelSqft: 0, enamelCoats: 0, enamelProduct: '' };
+                  const mainEnamel: EnamelGroup = { primerSqft: 0, primerCoats: 0, primerProduct: '', primerSelected: false, enamelSqft: 0, enamelCoats: 0, enamelProduct: '' };
+                  const separateEnamel: EnamelGroup = { primerSqft: 0, primerCoats: 0, primerProduct: '', primerSelected: false, enamelSqft: 0, enamelCoats: 0, enamelProduct: '' };
                   
                   enamelConfigs.forEach(config => {
                     const isSeparate = config.configLabel?.toLowerCase().includes('varnish') || 
@@ -1165,11 +1166,20 @@ export default function GenerateSummaryScreen() {
                     
                     config.tasks.forEach((task: any) => {
                       const taskName = task.name?.toLowerCase() || '';
-                      if (taskName.includes('primer')) {
+                      // Only count primer if it's a real selected product (not just "Primer" default)
+                      const isPrimerTask = taskName.includes('primer');
+                      const isRealPrimerProduct = isPrimerTask && 
+                        task.name && 
+                        task.name !== 'Primer' && 
+                        task.name !== 'Enamel Primer' &&
+                        task.name.toLowerCase() !== 'primer';
+                      
+                      if (isPrimerTask && isRealPrimerProduct) {
                         target.primerSqft += task.area || 0;
                         target.primerCoats = Math.max(target.primerCoats, task.coats || 1);
-                        if (!target.primerProduct) target.primerProduct = task.name || 'Enamel Primer';
-                      } else {
+                        target.primerProduct = task.name;
+                        target.primerSelected = true;
+                      } else if (!isPrimerTask) {
                         target.enamelSqft += task.area || 0;
                         target.enamelCoats = Math.max(target.enamelCoats, task.coats || 1);
                         if (!target.enamelProduct) target.enamelProduct = task.name || 'Enamel Topcoat';
@@ -1184,25 +1194,28 @@ export default function GenerateSummaryScreen() {
                     return Math.ceil(totalWork / (rate * autoLabourPerDay));
                   };
                   
-                  const mainPrimerDays = calcDays(mainEnamel.primerSqft, mainEnamel.primerCoats, enamelPrimerRate);
+                  // Only calculate primer days if primer was explicitly selected
+                  const mainPrimerDays = mainEnamel.primerSelected ? calcDays(mainEnamel.primerSqft, mainEnamel.primerCoats, enamelPrimerRate) : 0;
                   const mainEnamelDays = calcDays(mainEnamel.enamelSqft, mainEnamel.enamelCoats, enamelTopcoatRate);
                   const mainTotalDays = mainPrimerDays + mainEnamelDays;
                   
-                  const separatePrimerDays = calcDays(separateEnamel.primerSqft, separateEnamel.primerCoats, enamelPrimerRate);
+                  const separatePrimerDays = separateEnamel.primerSelected ? calcDays(separateEnamel.primerSqft, separateEnamel.primerCoats, enamelPrimerRate) : 0;
                   const separateEnamelTopDays = calcDays(separateEnamel.enamelSqft, separateEnamel.enamelCoats, enamelTopcoatRate);
                   const separateTotalDays = separatePrimerDays + separateEnamelTopDays;
                   
-                  const hasMainEnamel = mainEnamel.primerSqft > 0 || mainEnamel.enamelSqft > 0;
-                  const hasSeparateEnamel = separateEnamel.primerSqft > 0 || separateEnamel.enamelSqft > 0;
+                  // Check if we have any enamel work (primer only counts if explicitly selected)
+                  const hasMainEnamel = (mainEnamel.primerSelected && mainEnamel.primerSqft > 0) || mainEnamel.enamelSqft > 0;
+                  const hasSeparateEnamel = (separateEnamel.primerSelected && separateEnamel.primerSqft > 0) || separateEnamel.enamelSqft > 0;
                   
                   if (!hasMainEnamel && !hasSeparateEnamel) return null;
                   
-                  // Build aggregated tasks for display
+                  // Build aggregated tasks for display - only include primer if explicitly selected
                   const buildTasks = (group: EnamelGroup, primerDays: number, topcoatDays: number) => {
                     const tasks: any[] = [];
-                    if (group.primerSqft > 0) {
+                    // Only add primer task if primer was explicitly selected with a real product
+                    if (group.primerSelected && group.primerSqft > 0) {
                       tasks.push({
-                        name: group.primerProduct || 'Enamel Primer',
+                        name: group.primerProduct,
                         area: group.primerSqft,
                         coats: group.primerCoats || 1,
                         totalWork: group.primerSqft * (group.primerCoats || 1),
