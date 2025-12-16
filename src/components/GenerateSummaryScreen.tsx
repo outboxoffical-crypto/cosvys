@@ -2399,10 +2399,10 @@ export default function GenerateSummaryScreen() {
                   return (
                     <div className="py-3">
                       <div 
-                        className="h-px w-full"
+                        className="h-[2px] w-full rounded-full"
                         style={{
-                          background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 15%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0.3) 85%, transparent 100%)',
-                          boxShadow: '0 1px 3px rgba(255,255,255,0.15), 0 0 8px rgba(255,255,255,0.08)'
+                          background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.5) 10%, rgba(255,255,255,0.85) 50%, rgba(255,255,255,0.5) 90%, transparent 100%)',
+                          boxShadow: '0 0 6px rgba(255,255,255,0.4), 0 0 12px rgba(255,255,255,0.2)'
                         }}
                       />
                     </div>
@@ -2434,10 +2434,10 @@ export default function GenerateSummaryScreen() {
                 {totalEnamelArea > 0 && (
                   <div className="py-3">
                     <div 
-                      className="h-px w-full"
+                      className="h-[2px] w-full rounded-full"
                       style={{
-                        background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 15%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0.3) 85%, transparent 100%)',
-                        boxShadow: '0 1px 3px rgba(255,255,255,0.15), 0 0 8px rgba(255,255,255,0.08)'
+                        background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.5) 10%, rgba(255,255,255,0.85) 50%, rgba(255,255,255,0.5) 90%, transparent 100%)',
+                        boxShadow: '0 0 6px rgba(255,255,255,0.4), 0 0 12px rgba(255,255,255,0.2)'
                       }}
                     />
                   </div>
