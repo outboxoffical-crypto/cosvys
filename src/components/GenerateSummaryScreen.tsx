@@ -990,7 +990,32 @@ export default function GenerateSummaryScreen() {
     const averageCoverage = allTasks.length > 0 ? allTasks.reduce((sum, task) => sum + task.coverage, 0) / allTasks.length : 1000;
     const adjustedAverageCoverage = averageCoverage * (workingHours / standardHours);
     const laboursNeeded = manualDays > 0 ? Math.ceil(totalWorkAllTasks / (adjustedAverageCoverage * manualDays)) : 1;
-    const displayDays = labourMode === 'auto' ? Math.ceil(totalDays / autoLabourPerDay) : manualDays;
+    
+    // Calculate displayDays as SUM of individual card days (ceiling each first, then sum)
+    // This ensures Total Project Duration = sum of all individual card "Total Days"
+    // Only count non-enamel configs here (enamel has separate calculation)
+    const nonEnamelDisplayDays = configTasks
+      .filter(ct => !ct.isEnamel && ct.totalDays > 0)
+      .reduce((sum, ct) => sum + Math.ceil(ct.totalDays / autoLabourPerDay), 0);
+    
+    // For enamel, calculate aggregated days using same formula as enamel section
+    const enamelPrimerRate = 300; // Standard enamel primer rate
+    const enamelTopcoatRate = 280; // Standard enamel topcoat rate
+    
+    // Get enamel configs
+    const enamelConfigs = configTasks.filter(ct => ct.isEnamel);
+    let enamelTotalDays = 0;
+    
+    if (enamelConfigs.length > 0) {
+      // Aggregate all enamel areas and calculate days
+      const totalEnamelWork = enamelConfigs.reduce((sum, ct) => {
+        const taskWork = ct.tasks.reduce((tSum: number, task: any) => tSum + (task.totalWork || 0), 0);
+        return sum + taskWork;
+      }, 0);
+      enamelTotalDays = Math.ceil(totalEnamelWork / (enamelTopcoatRate * autoLabourPerDay));
+    }
+    
+    const displayDays = labourMode === 'auto' ? (nonEnamelDisplayDays + enamelTotalDays) : manualDays;
     const displayLabours = labourMode === 'auto' ? autoLabourPerDay : laboursNeeded;
     return <Card className="eca-shadow">
         <CardHeader className="pb-3">
