@@ -296,10 +296,31 @@ export default function GenerateSummaryScreen() {
             const displayName = room.section_name || room.name;
             // Check if user selected enamel configuration in Paint Estimation
             // Look for matching enamel config in paintEstimationConfigs
-            const matchingEnamelConfig = paintEstimationConfigs.find(cfg => 
-              cfg.areaType === 'Enamel' && 
-              (cfg.label === displayName || cfg.label === room.name || cfg.sectionName === room.section_name)
-            );
+            const isSeparateEnamel = room.section_name && room.section_name.toLowerCase().includes('varnish');
+            const isMainEnamel = !room.section_name || !isSeparateEnamel;
+            
+            // Match by label, name, section_name, OR by isCustomSection flag
+            const matchingEnamelConfig = paintEstimationConfigs.find(cfg => {
+              if (cfg.areaType !== 'Enamel') return false;
+              
+              // Direct label/name match
+              if (cfg.label === displayName || cfg.label === room.name) return true;
+              if (cfg.sectionName === room.section_name && room.section_name) return true;
+              
+              // For main enamel areas - match configs without custom section flag
+              if (isMainEnamel && !cfg.sectionName && cfg.label?.toLowerCase().includes('enamel area')) {
+                return true;
+              }
+              
+              // For separate/varnish areas - match by section name containing 'varnish'
+              if (isSeparateEnamel && cfg.sectionName?.toLowerCase().includes('varnish')) {
+                return true;
+              }
+              
+              return false;
+            });
+            
+            console.log('Enamel matching for room:', room.name, 'displayName:', displayName, 'found config:', matchingEnamelConfig?.label, 'coats:', matchingEnamelConfig?.coatConfiguration?.emulsion);
             
             // Use enamel config from Paint Estimation if available
             let enamelPrimer = '';
@@ -323,6 +344,10 @@ export default function GenerateSummaryScreen() {
               }
               enamelEmulsion = matchingEnamelConfig.selectedMaterials.emulsion || 'AP Apcolite Premium Gloss Enamel';
               enamelEmulsionCoats = matchingEnamelConfig.coatConfiguration?.emulsion ?? 1;
+            } else if (matchingEnamelConfig?.coatConfiguration) {
+              // Direct coatConfiguration access
+              enamelEmulsionCoats = matchingEnamelConfig.coatConfiguration.emulsion ?? 1;
+              enamelEmulsion = matchingEnamelConfig.selectedMaterials?.emulsion || 'AP Apcolite Premium Gloss Enamel';
             }
             
             enamelConfigs.push({
