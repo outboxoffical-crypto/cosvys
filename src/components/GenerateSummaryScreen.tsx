@@ -75,6 +75,28 @@ export default function GenerateSummaryScreen() {
   const [isLoadingPaintConfig, setIsLoadingPaintConfig] = useState(true);
   const [isLoadingLabour, setIsLoadingLabour] = useState(true);
   const [isLoadingMaterial, setIsLoadingMaterial] = useState(true);
+
+  // Helper: Sort configs so Main Areas (Wall/Ceiling/Floor) come FIRST, Separate Paint Areas come LAST
+  const sortConfigsByAreaType = useCallback((configs: AreaConfig[]): AreaConfig[] => {
+    return [...configs].sort((a, b) => {
+      const isSeparateArea = (cfg: AreaConfig): boolean => {
+        if (cfg.sectionName) return true;
+        const label = (cfg.label || '').toLowerCase();
+        const areaType = (cfg.areaType || '').toLowerCase();
+        const mainAreaTypes = ['wall', 'ceiling', 'floor', 'wall area', 'ceiling area', 'floor area'];
+        if (mainAreaTypes.includes(areaType) && !cfg.sectionName) return false;
+        if (label.includes('separate')) return true;
+        if (label && !mainAreaTypes.some(t => label === t || label === `${t} area`)) return true;
+        return false;
+      };
+      const aIsSeparate = isSeparateArea(a);
+      const bIsSeparate = isSeparateArea(b);
+      if (aIsSeparate !== bIsSeparate) {
+        return aIsSeparate ? 1 : -1;
+      }
+      return 0;
+    });
+  }, []);
   useEffect(() => {
     loadData();
   }, [projectId]);
@@ -223,7 +245,7 @@ export default function GenerateSummaryScreen() {
         }
         console.log('Loaded all configs from estimation:', allConfigs.length);
         paintEstimationConfigs = allConfigs;
-        setAreaConfigs(allConfigs);
+        setAreaConfigs(sortConfigsByAreaType(allConfigs));
       } else {
         // Fallback to per-type saved configs while still on estimation screen
         const pt = storedPaintType;
@@ -243,7 +265,7 @@ export default function GenerateSummaryScreen() {
         }));
         console.log('Loaded fallback configs:', configs);
         paintEstimationConfigs = Array.isArray(configs) ? configs : [];
-        setAreaConfigs(Array.isArray(configs) ? configs : []);
+        setAreaConfigs(sortConfigsByAreaType(Array.isArray(configs) ? configs : []));
       }
 
       // OPTIMIZED: Load only essential room fields (not full pictures/opening arrays)
@@ -325,12 +347,13 @@ export default function GenerateSummaryScreen() {
           return true;
         });
 
-        // Update both areaConfigs and calculationConfigs with filtered list
-        setAreaConfigs(filteredPaintConfigs);
-        setCalculationConfigs([...filteredPaintConfigs, ...enamelConfigs]);
+        // Update both areaConfigs and calculationConfigs with filtered and SORTED list
+        // Main Areas (Wall/Ceiling/Floor) FIRST, Separate Paint Areas LAST
+        setAreaConfigs(sortConfigsByAreaType(filteredPaintConfigs));
+        setCalculationConfigs(sortConfigsByAreaType([...filteredPaintConfigs, ...enamelConfigs]));
       } else {
-        // If no rooms data, just use paint estimation configs
-        setCalculationConfigs(paintEstimationConfigs);
+        // If no rooms data, just use paint estimation configs (sorted)
+        setCalculationConfigs(sortConfigsByAreaType(paintEstimationConfigs));
       }
 
       // Load dealer info
@@ -369,16 +392,37 @@ export default function GenerateSummaryScreen() {
       setActiveConfigIndex(newIndex);
     };
 
-    // Sort configs: "Area to be Painted" (Wall, Floor, Ceiling without section) first, then "Separate Paint Area" (with section)
+    // Sort configs: "Main Area" (Wall, Ceiling, Floor without section) FIRST, then "Separate Paint Area" LAST
     const sortConfigs = (configs: AreaConfig[]) => {
       return [...configs].sort((a, b) => {
-        // Items without sectionName (Area to be Painted) come first
-        const aHasSection = !!a.sectionName;
-        const bHasSection = !!b.sectionName;
-        if (aHasSection !== bHasSection) {
-          return aHasSection ? 1 : -1; // No section comes first
+        // Determine if config is a "Separate Paint Area" based on:
+        // 1. Has sectionName (user created via + icon)
+        // 2. Label contains "Separate" or custom section name like "Damp Wall Only Putty"
+        const isSeparateArea = (cfg: AreaConfig): boolean => {
+          // Has explicit section name = separate area
+          if (cfg.sectionName) return true;
+          // Check if label indicates a separate area (not standard Wall/Ceiling/Floor)
+          const label = (cfg.label || '').toLowerCase();
+          const areaType = (cfg.areaType || '').toLowerCase();
+          // Standard main areas
+          const mainAreaTypes = ['wall', 'ceiling', 'floor', 'wall area', 'ceiling area', 'floor area'];
+          // If areaType is a standard main area AND no sectionName, it's a main area
+          if (mainAreaTypes.includes(areaType) && !cfg.sectionName) return false;
+          // Labels containing "separate" or not matching standard types = separate area
+          if (label.includes('separate')) return true;
+          // If label exists but is not a standard area type, treat as separate
+          if (label && !mainAreaTypes.some(t => label === t || label === `${t} area`)) return true;
+          return false;
+        };
+        
+        const aIsSeparate = isSeparateArea(a);
+        const bIsSeparate = isSeparateArea(b);
+        
+        // Main areas (not separate) come FIRST
+        if (aIsSeparate !== bIsSeparate) {
+          return aIsSeparate ? 1 : -1; // Main area first, separate area last
         }
-        // If both have or don't have section, maintain original order
+        // Within same category, maintain original order
         return 0;
       });
     };
