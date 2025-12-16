@@ -2108,6 +2108,11 @@ export default function GenerateSummaryScreen() {
     floorArea: number;
     ceilingArea: number;
   }>);
+
+  // Calculate total Enamel area from all rooms
+  const totalEnamelArea = rooms.reduce((total, room) => {
+    return total + Number(room.total_door_window_grill_area || 0);
+  }, 0);
   const calculateTotalEstimatedCost = () => {
     // Use material cost from Material Requirements section (stored in ref)
     const materialCost = totalMaterialCostRef.current;
@@ -2384,6 +2389,22 @@ export default function GenerateSummaryScreen() {
                         </div>
                       </div>;
                 })}
+                
+                  {/* Enamel Section */}
+                  {totalEnamelArea > 0 && (
+                    <div className="space-y-2 mt-4">
+                      <div className="text-sm font-semibold border-b border-white/20 pb-1 text-black/90">
+                        Enamel
+                      </div>
+                      <div className="grid grid-cols-1 gap-4 text-center">
+                        <div>
+                          <p className="text-sm text-black/80">Total Area</p>
+                          <p className="text-xl font-bold text-black">{totalEnamelArea.toFixed(1)}</p>
+                          <p className="text-xs text-black/80">sq.ft</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
