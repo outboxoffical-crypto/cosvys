@@ -305,8 +305,24 @@ export default function GenerateSummaryScreen() {
             // ONLY use what user explicitly selected - NO defaults, NO assumptions
             const userSelectedPrimer = enamelCalc.primerType || '';
             const userSelectedEnamel = enamelCalc.enamelType || '';
-            const userSelectedPrimerCoats = Number(enamelCalc.primerCoats || 0);
-            const userSelectedEnamelCoats = Number(enamelCalc.enamelCoats || 0);
+            
+            // Coats: If product is selected but coats = 0, use sensible defaults
+            // Primer = 1 coat default IF primer product is selected
+            // Enamel = 2 coats default IF enamel product is selected
+            // If product NOT selected (empty string), coats must stay 0
+            const userSelectedPrimerCoats = userSelectedPrimer 
+              ? Math.max(Number(enamelCalc.primerCoats || 0), 1)  // At least 1 if primer selected
+              : 0;  // No primer selected = 0 coats
+            const userSelectedEnamelCoats = userSelectedEnamel 
+              ? Math.max(Number(enamelCalc.enamelCoats || 0), 2)  // At least 2 if enamel selected
+              : 0;  // No enamel selected = 0 coats
+            
+            // CRITICAL: Only add config if user selected at least ONE enamel product (primer OR enamel)
+            // This ensures enamel visibility is based on enamel selection, NOT primer selection
+            if (!userSelectedPrimer && !userSelectedEnamel) {
+              // User hasn't configured enamel at all - skip this config
+              return;
+            }
             
             enamelConfigs.push({
               id: `enamel_${room.id}`,
@@ -327,7 +343,7 @@ export default function GenerateSummaryScreen() {
               },
               coatConfiguration: {
                 putty: 0,
-                // ONLY include coats if user explicitly selected them (0 = not selected)
+                // Coats based on selection - 0 if product not selected
                 primer: userSelectedPrimerCoats,
                 emulsion: userSelectedEnamelCoats
               }
