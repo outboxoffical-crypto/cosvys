@@ -110,23 +110,41 @@ export default function PaintEstimationScreen() {
     return selectedPaintType === "Interior" ? interiorConfigurations : selectedPaintType === "Exterior" ? exteriorConfigurations : waterproofingConfigurations;
   }, [selectedPaintType, interiorConfigurations, exteriorConfigurations, waterproofingConfigurations]);
 
-  // CRITICAL: Sorted configurations for Paint Configuration Summary
-  // SINGLE SOURCE OF TRUTH for ordering: areaPriority ASC, then creation index
+  // CRITICAL: Frozen snapshot for Paint Configuration Summary - IMMUTABLE during render
+  // Prevents mobile incremental rendering from affecting order
+  const frozenOrderRef = useRef<AreaConfiguration[]>([]);
+  const lastConfigsHash = useRef<string>('');
+  
+  // Compute ordered snapshot ONCE and freeze it
   const sortedConfigurationsForSummary = useMemo(() => {
-    return [...areaConfigurations]
-      .map((config, index) => ({
-        ...config,
-        // Failsafe: Infer areaPriority if missing
-        areaPriority: config.areaPriority ?? getAreaPriority(config),
-        _creationIndex: index // Preserve original order as secondary sort
-      }))
-      .sort((a, b) => {
-        // Primary sort: areaPriority ASC
-        const priorityDiff = (a.areaPriority ?? 6) - (b.areaPriority ?? 6);
-        if (priorityDiff !== 0) return priorityDiff;
-        // Secondary sort: original creation index
-        return a._creationIndex - b._creationIndex;
-      });
+    // Create a hash of current configs to detect actual data changes
+    const configsHash = areaConfigurations.map(c => `${c.id}-${c.areaPriority ?? ''}-${c.areaType}`).join('|');
+    
+    // Only recompute if data actually changed (not during layout reflow)
+    if (configsHash !== lastConfigsHash.current || frozenOrderRef.current.length === 0) {
+      lastConfigsHash.current = configsHash;
+      
+      const sorted = [...areaConfigurations]
+        .map((config, index) => ({
+          ...config,
+          // Failsafe: Infer areaPriority if missing
+          areaPriority: config.areaPriority ?? getAreaPriority(config),
+          _creationIndex: index // Preserve original order as secondary sort
+        }))
+        .sort((a, b) => {
+          // Primary sort: areaPriority ASC (Wall=1, Ceiling=2, Floor=3, Separate=4, Enamel=5)
+          const priorityDiff = (a.areaPriority ?? 6) - (b.areaPriority ?? 6);
+          if (priorityDiff !== 0) return priorityDiff;
+          // Secondary sort: original creation index
+          return a._creationIndex - b._creationIndex;
+        });
+      
+      // FREEZE the order - this snapshot won't change during render
+      frozenOrderRef.current = sorted;
+    }
+    
+    // Always return the frozen snapshot
+    return frozenOrderRef.current;
   }, [areaConfigurations]);
 
   const setAreaConfigurations = useCallback((updater: AreaConfiguration[] | ((prev: AreaConfiguration[]) => AreaConfiguration[])) => {

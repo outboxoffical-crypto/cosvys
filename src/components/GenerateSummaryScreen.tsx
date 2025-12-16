@@ -66,6 +66,12 @@ export default function GenerateSummaryScreen() {
   const paintConfigRef = useRef<HTMLDivElement>(null);
   const topSectionRef = useRef<HTMLDivElement>(null);
   const totalMaterialCostRef = useRef<number>(0); // Store total material cost for access across sections
+  
+  // CRITICAL: Frozen snapshots to prevent mobile incremental rendering from affecting order
+  const frozenAreaConfigsRef = useRef<AreaConfig[]>([]);
+  const frozenCalculationConfigsRef = useRef<AreaConfig[]>([]);
+  const lastAreaConfigsHash = useRef<string>('');
+  const lastCalculationConfigsHash = useRef<string>('');
   const perDayLabourCost = 1100; // Fixed per day labour cost in rupees
   const [projectData, setProjectData] = useState<any>(null);
   const [coverageData, setCoverageData] = useState<any>({});
@@ -113,6 +119,26 @@ export default function GenerateSummaryScreen() {
         return (a as any)._creationIndex - (b as any)._creationIndex;
       });
   }, [getAreaPriority]);
+
+  // CRITICAL: Frozen snapshots for rendering - prevents mobile reflow from affecting order
+  const sortedAreaConfigs = useMemo(() => {
+    const configsHash = areaConfigs.map(c => `${c.id || ''}-${c.areaType || ''}`).join('|');
+    if (configsHash !== lastAreaConfigsHash.current || frozenAreaConfigsRef.current.length === 0) {
+      lastAreaConfigsHash.current = configsHash;
+      frozenAreaConfigsRef.current = sortConfigsByAreaType(areaConfigs);
+    }
+    return frozenAreaConfigsRef.current;
+  }, [areaConfigs, sortConfigsByAreaType]);
+
+  const sortedCalculationConfigs = useMemo(() => {
+    const configsHash = calculationConfigs.map(c => `${c.id || ''}-${c.areaType || ''}`).join('|');
+    if (configsHash !== lastCalculationConfigsHash.current || frozenCalculationConfigsRef.current.length === 0) {
+      lastCalculationConfigsHash.current = configsHash;
+      frozenCalculationConfigsRef.current = sortConfigsByAreaType(calculationConfigs);
+    }
+    return frozenCalculationConfigsRef.current;
+  }, [calculationConfigs, sortConfigsByAreaType]);
+
   useEffect(() => {
     loadData();
   }, [projectId]);
@@ -408,15 +434,16 @@ export default function GenerateSummaryScreen() {
       setActiveConfigIndex(newIndex);
     };
 
-    // SINGLE SOURCE OF TRUTH: Use areaPriority-based sorting (same as sortConfigsByAreaType)
-    const sortConfigs = (configs: AreaConfig[]) => sortConfigsByAreaType(configs);
+    // CRITICAL: Use frozen sortedAreaConfigs - NO re-sorting during render
+    // This prevents mobile incremental rendering from affecting order
 
     // Group configurations by paint type - exclude Enamel from paint configs
-    const interiorConfigs = sortConfigs(areaConfigs.filter(c => c.paintTypeCategory === 'Interior' && c.areaType !== 'Enamel'));
-    const exteriorConfigs = sortConfigs(areaConfigs.filter(c => c.paintTypeCategory === 'Exterior' && c.areaType !== 'Enamel'));
-    const waterproofingConfigs = sortConfigs(areaConfigs.filter(c => c.paintTypeCategory === 'Waterproofing' && c.areaType !== 'Enamel'));
-    // Get Enamel configs
-    const enamelConfigs = sortConfigs(areaConfigs.filter(c => c.areaType === 'Enamel'));
+    // Order is already frozen in sortedAreaConfigs
+    const interiorConfigs = sortedAreaConfigs.filter(c => c.paintTypeCategory === 'Interior' && c.areaType !== 'Enamel');
+    const exteriorConfigs = sortedAreaConfigs.filter(c => c.paintTypeCategory === 'Exterior' && c.areaType !== 'Enamel');
+    const waterproofingConfigs = sortedAreaConfigs.filter(c => c.paintTypeCategory === 'Waterproofing' && c.areaType !== 'Enamel');
+    // Get Enamel configs - order preserved from frozen snapshot
+    const enamelConfigs = sortedAreaConfigs.filter(c => c.areaType === 'Enamel');
     const renderConfigGroup = (configs: AreaConfig[], typeLabel: string) => {
       if (configs.length === 0) return null;
       return <div key={typeLabel} className="space-y-3 mb-6">
@@ -817,9 +844,9 @@ export default function GenerateSummaryScreen() {
       }
     };
 
-    // Group tasks by configuration
+    // Group tasks by configuration - USE FROZEN SNAPSHOT
     const configTasks: any[] = [];
-    calculationConfigs.forEach(config => {
+    sortedCalculationConfigs.forEach(config => {
       const area = Number(config.area) || 0;
       const isFresh = config.paintingSystem === 'Fresh Painting';
 
@@ -1448,10 +1475,10 @@ export default function GenerateSummaryScreen() {
       return 120; // Default for emulsion
     };
 
-    // Group materials by configuration
+    // Group materials by configuration - USE FROZEN SNAPSHOT
     const configMaterials: any[] = [];
-    // Use calculationConfigs which includes Paint Estimation + Room Measurement enamel areas
-    calculationConfigs.forEach(config => {
+    // Use sortedCalculationConfigs which includes Paint Estimation + Room Measurement enamel areas
+    sortedCalculationConfigs.forEach(config => {
       const area = Number(config.area) || 0;
       const isFresh = config.paintingSystem === 'Fresh Painting';
       const materials: any[] = [];
@@ -1567,7 +1594,7 @@ export default function GenerateSummaryScreen() {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                 <p className="text-sm text-muted-foreground">Calculating material requirements...</p>
               </div>
-            </div> : calculationConfigs.length === 0 ? <div className="text-sm text-muted-foreground p-4 border rounded-md bg-muted/30">
+            </div> : sortedCalculationConfigs.length === 0 ? <div className="text-sm text-muted-foreground p-4 border rounded-md bg-muted/30">
               No material configurations found.
             </div> : <div className="space-y-4">
               {/* Interior Configurations - Exclude Enamel */}
