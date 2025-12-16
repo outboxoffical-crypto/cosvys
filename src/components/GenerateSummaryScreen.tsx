@@ -294,6 +294,36 @@ export default function GenerateSummaryScreen() {
           const enamelArea = Number(room.total_door_window_grill_area || 0);
           if (enamelArea > 0) {
             const displayName = room.section_name || room.name;
+            // Check if user selected enamel configuration in Paint Estimation
+            // Look for matching enamel config in paintEstimationConfigs
+            const matchingEnamelConfig = paintEstimationConfigs.find(cfg => 
+              cfg.areaType === 'Enamel' && 
+              (cfg.label === displayName || cfg.label === room.name || cfg.sectionName === room.section_name)
+            );
+            
+            // Use enamel config from Paint Estimation if available
+            let enamelPrimer = '';
+            let enamelPrimerCoats = 0;
+            let enamelEmulsion = 'AP Apcolite Premium Gloss Enamel';
+            let enamelEmulsionCoats = 2;
+            
+            if (matchingEnamelConfig?.enamelConfig) {
+              // User configured enamel in Paint Estimation - use their selections
+              enamelPrimer = matchingEnamelConfig.enamelConfig.primerType || '';
+              enamelPrimerCoats = matchingEnamelConfig.enamelConfig.primerCoats || 0;
+              enamelEmulsion = matchingEnamelConfig.enamelConfig.enamelType || 'AP Apcolite Premium Gloss Enamel';
+              enamelEmulsionCoats = matchingEnamelConfig.enamelConfig.enamelCoats || 2;
+            } else if (matchingEnamelConfig?.selectedMaterials) {
+              // Fallback to selectedMaterials if no enamelConfig
+              // Only use primer if explicitly set (not empty)
+              if (matchingEnamelConfig.selectedMaterials.primer && matchingEnamelConfig.selectedMaterials.primer !== '') {
+                enamelPrimer = matchingEnamelConfig.selectedMaterials.primer;
+                enamelPrimerCoats = matchingEnamelConfig.coatConfiguration?.primer || 0;
+              }
+              enamelEmulsion = matchingEnamelConfig.selectedMaterials.emulsion || 'AP Apcolite Premium Gloss Enamel';
+              enamelEmulsionCoats = matchingEnamelConfig.coatConfiguration?.emulsion || 2;
+            }
+            
             enamelConfigs.push({
               id: `enamel_${room.id}`,
               areaType: 'Door & Window',
@@ -306,15 +336,16 @@ export default function GenerateSummaryScreen() {
               paintTypeCategory: room.project_type as 'Interior' | 'Exterior' | 'Waterproofing',
               selectedMaterials: {
                 putty: '',
-                // Use actual enamel primer product name from database
-                primer: 'AP TruCare Wood Primer',
-                // Use actual enamel topcoat product name from database
-                emulsion: 'AP Apcolite Premium Gloss Enamel'
+                // Only use primer if user explicitly selected one (not hardcoded)
+                primer: enamelPrimer,
+                // Use actual enamel topcoat product name
+                emulsion: enamelEmulsion
               },
               coatConfiguration: {
                 putty: 0,
-                primer: 1,
-                emulsion: 2
+                // Only show primer coats if user selected primer
+                primer: enamelPrimerCoats,
+                emulsion: enamelEmulsionCoats
               }
             });
           }
