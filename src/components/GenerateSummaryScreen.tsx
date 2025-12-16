@@ -285,37 +285,54 @@ export default function GenerateSummaryScreen() {
       } = await supabase.from('rooms').select('id, name, project_type, floor_area, wall_area, adjusted_wall_area, ceiling_area, total_door_window_grill_area, selected_areas, section_name, created_at').eq('project_id', projectId).order('created_at', {
         ascending: true
       });
+      // Create enamel configurations from Paint Estimation configs (RULE 1: Paint Estimation is the ONLY source of truth)
+      // Enamel configs are area-based, not room-based - extract BEFORE roomsData check
+      const enamelConfigs: AreaConfig[] = [];
+      
+      // Extract enamel configurations from Paint Estimation data
+      // Check for enamelConfig property OR areaType containing 'Enamel'
+      paintEstimationConfigs.forEach(config => {
+        const hasEnamelConfig = config.enamelConfig && (config.enamelConfig.primerType || config.enamelConfig.enamelType);
+        const isEnamelAreaType = config.areaType === 'Enamel' || config.areaType === 'Door & Window';
+        
+        if (hasEnamelConfig || isEnamelAreaType) {
+          // Get enamel products from enamelConfig if available
+          const primerType = config.enamelConfig?.primerType || '';
+          const primerCoats = config.enamelConfig?.primerCoats || 0;
+          const enamelType = config.enamelConfig?.enamelType || '';
+          const enamelCoats = config.enamelConfig?.enamelCoats || 0;
+          
+          // RULE 4 & 5: Only skip if BOTH product AND coats are missing
+          // If product + coats exist, Enamel must always appear
+          const hasPrimer = primerType && primerCoats > 0;
+          const hasEnamel = enamelType && enamelCoats > 0;
+          
+            if (hasPrimer || hasEnamel) {
+              enamelConfigs.push({
+                ...config,
+                areaType: 'Enamel',
+                // CRITICAL: Ensure paintingSystem is set so tasks are created
+                paintingSystem: config.paintingSystem || 'Fresh Painting',
+                // Use ONLY what user selected in Paint Estimation
+                selectedMaterials: {
+                  putty: '',
+                  primer: hasPrimer ? primerType : '',
+                  emulsion: hasEnamel ? enamelType : ''
+                },
+                coatConfiguration: {
+                  putty: 0,
+                  primer: hasPrimer ? primerCoats : 0,
+                  emulsion: hasEnamel ? enamelCoats : 0
+                }
+              });
+            }
+        }
+      });
+      
+      console.log('Enamel configs created:', enamelConfigs.length, enamelConfigs);
+
       if (roomsData) {
         setRooms(roomsData);
-
-        // Create enamel configurations from Paint Estimation configs only (RULE 1: Paint Estimation is the ONLY source of truth)
-        // Get enamel configs from Paint Estimation stored in localStorage
-        const enamelConfigs: AreaConfig[] = [];
-        
-        // Extract enamel configurations from Paint Estimation data
-        paintEstimationConfigs.forEach(config => {
-          if (config.areaType === 'Enamel' && config.enamelConfig) {
-            // Only include if user explicitly selected enamel products in Paint Estimation
-            enamelConfigs.push({
-              ...config,
-              // Use ONLY what user selected in Paint Estimation - no auto-added products
-              selectedMaterials: {
-                putty: '',
-                // RULE 2: Only include primer if user explicitly selected it
-                primer: config.enamelConfig.primerType || '',
-                // RULE 2: Only include enamel if user explicitly selected it
-                emulsion: config.enamelConfig.enamelType || ''
-              },
-              coatConfiguration: {
-                putty: 0,
-                // RULE 2: Only include primer coats if primer was selected
-                primer: config.enamelConfig.primerType ? (config.enamelConfig.primerCoats || 0) : 0,
-                // RULE 2: Only include enamel coats if enamel was selected
-                emulsion: config.enamelConfig.enamelType ? (config.enamelConfig.enamelCoats || 0) : 0
-              }
-            });
-          }
-        });
 
         // Before setting, filter out area types that have 0 selected area in Room Measurements
         const selectedTotalsByType: Record<string, {
@@ -346,7 +363,12 @@ export default function GenerateSummaryScreen() {
           if (sel.wall) selectedTotalsByType[type].wall += Number(room.adjusted_wall_area || room.wall_area || 0);
           if (sel.ceiling) selectedTotalsByType[type].ceiling += Number(room.ceiling_area || 0);
         });
+        // Filter paint configs - exclude enamel from this list (they're handled separately)
         const filteredPaintConfigs = (paintEstimationConfigs || []).filter(cfg => {
+          // Skip enamel configs here - they're processed separately above
+          if (cfg.areaType === 'Enamel' || cfg.areaType === 'Door & Window' || cfg.enamelConfig) {
+            return false;
+          }
           const type = cfg.paintTypeCategory || 'Interior';
           if (cfg.areaType === 'Floor') return (selectedTotalsByType[type]?.floor || 0) > 0;
           if (cfg.areaType === 'Wall') return (selectedTotalsByType[type]?.wall || 0) > 0;
@@ -355,12 +377,17 @@ export default function GenerateSummaryScreen() {
         });
 
         // Update both areaConfigs and calculationConfigs with filtered and SORTED list
-        // Main Areas (Wall/Ceiling/Floor) FIRST, Separate Paint Areas LAST
+        // Main Areas (Wall/Ceiling/Floor) FIRST, Separate Paint Areas LAST, then Enamel
+        // areaConfigs = paint configs (for Paint Configuration Details section)
+        // calculationConfigs = paint configs + enamel configs (for Labour & Material calculations)
         setAreaConfigs(sortByGlobalDisplayOrder(filteredPaintConfigs) as AreaConfig[]);
         setCalculationConfigs(sortByGlobalDisplayOrder([...filteredPaintConfigs, ...enamelConfigs]) as AreaConfig[]);
       } else {
-        // If no rooms data, just use paint estimation configs (sorted)
-        setCalculationConfigs(sortByGlobalDisplayOrder(paintEstimationConfigs) as AreaConfig[]);
+        // If no rooms data, extract enamel from paint estimation and use both
+        const nonEnamelConfigs = paintEstimationConfigs.filter(cfg => 
+          cfg.areaType !== 'Enamel' && cfg.areaType !== 'Door & Window' && !cfg.enamelConfig
+        );
+        setCalculationConfigs(sortByGlobalDisplayOrder([...nonEnamelConfigs, ...enamelConfigs]) as AreaConfig[]);
       }
 
       // Load dealer info
