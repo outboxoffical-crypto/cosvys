@@ -288,33 +288,30 @@ export default function GenerateSummaryScreen() {
       if (roomsData) {
         setRooms(roomsData);
 
-        // Create enamel configurations from door/window/grill areas for calculations only
+        // Create enamel configurations from Paint Estimation configs only (RULE 1: Paint Estimation is the ONLY source of truth)
+        // Get enamel configs from Paint Estimation stored in localStorage
         const enamelConfigs: AreaConfig[] = [];
-        roomsData.forEach(room => {
-          const enamelArea = Number(room.total_door_window_grill_area || 0);
-          if (enamelArea > 0) {
-            const displayName = room.section_name || room.name;
+        
+        // Extract enamel configurations from Paint Estimation data
+        paintEstimationConfigs.forEach(config => {
+          if (config.areaType === 'Enamel' && config.enamelConfig) {
+            // Only include if user explicitly selected enamel products in Paint Estimation
             enamelConfigs.push({
-              id: `enamel_${room.id}`,
-              areaType: 'Door & Window',
-              paintingSystem: 'Fresh Painting',
-              area: enamelArea,
-              perSqFtRate: '0',
-              // Always prefer section name (e.g., "Varnish") over room name
-              sectionName: room.section_name || undefined,
-              label: displayName,
-              paintTypeCategory: room.project_type as 'Interior' | 'Exterior' | 'Waterproofing',
+              ...config,
+              // Use ONLY what user selected in Paint Estimation - no auto-added products
               selectedMaterials: {
                 putty: '',
-                // Use actual enamel primer product name from database
-                primer: 'AP TruCare Wood Primer',
-                // Use actual enamel topcoat product name from database
-                emulsion: 'AP Apcolite Premium Gloss Enamel'
+                // RULE 2: Only include primer if user explicitly selected it
+                primer: config.enamelConfig.primerType || '',
+                // RULE 2: Only include enamel if user explicitly selected it
+                emulsion: config.enamelConfig.enamelType || ''
               },
               coatConfiguration: {
                 putty: 0,
-                primer: 1,
-                emulsion: 2
+                // RULE 2: Only include primer coats if primer was selected
+                primer: config.enamelConfig.primerType ? (config.enamelConfig.primerCoats || 0) : 0,
+                // RULE 2: Only include enamel coats if enamel was selected
+                emulsion: config.enamelConfig.enamelType ? (config.enamelConfig.enamelCoats || 0) : 0
               }
             });
           }
@@ -1163,16 +1160,22 @@ export default function GenerateSummaryScreen() {
                                       config.configLabel?.toLowerCase().includes('separate');
                     const target = isSeparate ? separateEnamel : mainEnamel;
                     
+                    // RULE 1 & 2: Only process tasks that have actual products selected in Paint Estimation
                     config.tasks.forEach((task: any) => {
                       const taskName = task.name?.toLowerCase() || '';
+                      // Only include task if it has a valid product name (not empty)
+                      if (!task.name || task.name === '') return;
+                      
                       if (taskName.includes('primer')) {
+                        // RULE 2: Only add primer if it was explicitly selected
                         target.primerSqft += task.area || 0;
-                        target.primerCoats = Math.max(target.primerCoats, task.coats || 1);
-                        if (!target.primerProduct) target.primerProduct = task.name || 'Enamel Primer';
+                        target.primerCoats = Math.max(target.primerCoats, task.coats || 0);
+                        if (!target.primerProduct && task.name) target.primerProduct = task.name;
                       } else {
+                        // RULE 2: Only add enamel topcoat if it was explicitly selected
                         target.enamelSqft += task.area || 0;
-                        target.enamelCoats = Math.max(target.enamelCoats, task.coats || 1);
-                        if (!target.enamelProduct) target.enamelProduct = task.name || 'Enamel Topcoat';
+                        target.enamelCoats = Math.max(target.enamelCoats, task.coats || 0);
+                        if (!target.enamelProduct && task.name) target.enamelProduct = task.name;
                       }
                     });
                   });
@@ -1192,30 +1195,35 @@ export default function GenerateSummaryScreen() {
                   const separateEnamelTopDays = calcDays(separateEnamel.enamelSqft, separateEnamel.enamelCoats, enamelTopcoatRate);
                   const separateTotalDays = separatePrimerDays + separateEnamelTopDays;
                   
-                  const hasMainEnamel = mainEnamel.primerSqft > 0 || mainEnamel.enamelSqft > 0;
-                  const hasSeparateEnamel = separateEnamel.primerSqft > 0 || separateEnamel.enamelSqft > 0;
+                  // RULE 2: Only show cards if user explicitly selected products (not just area > 0)
+                  const hasMainEnamel = (mainEnamel.primerSqft > 0 && mainEnamel.primerProduct && mainEnamel.primerCoats > 0) || 
+                                       (mainEnamel.enamelSqft > 0 && mainEnamel.enamelProduct && mainEnamel.enamelCoats > 0);
+                  const hasSeparateEnamel = (separateEnamel.primerSqft > 0 && separateEnamel.primerProduct && separateEnamel.primerCoats > 0) || 
+                                           (separateEnamel.enamelSqft > 0 && separateEnamel.enamelProduct && separateEnamel.enamelCoats > 0);
                   
                   if (!hasMainEnamel && !hasSeparateEnamel) return null;
                   
-                  // Build aggregated tasks for display
+                  // Build aggregated tasks for display - ONLY for products that were selected in Paint Estimation
                   const buildTasks = (group: EnamelGroup, primerDays: number, topcoatDays: number) => {
                     const tasks: any[] = [];
-                    if (group.primerSqft > 0) {
+                    // RULE 2: Only show primer task if user selected a primer product
+                    if (group.primerSqft > 0 && group.primerProduct && group.primerCoats > 0) {
                       tasks.push({
-                        name: group.primerProduct || 'Enamel Primer',
+                        name: group.primerProduct,
                         area: group.primerSqft,
-                        coats: group.primerCoats || 1,
-                        totalWork: group.primerSqft * (group.primerCoats || 1),
+                        coats: group.primerCoats,
+                        totalWork: group.primerSqft * group.primerCoats,
                         coverage: enamelPrimerRate,
                         daysRequired: primerDays
                       });
                     }
-                    if (group.enamelSqft > 0) {
+                    // RULE 2: Only show enamel task if user selected an enamel product
+                    if (group.enamelSqft > 0 && group.enamelProduct && group.enamelCoats > 0) {
                       tasks.push({
-                        name: group.enamelProduct || 'Enamel Topcoat',
+                        name: group.enamelProduct,
                         area: group.enamelSqft,
-                        coats: group.enamelCoats || 1,
-                        totalWork: group.enamelSqft * (group.enamelCoats || 1),
+                        coats: group.enamelCoats,
+                        totalWork: group.enamelSqft * group.enamelCoats,
                         coverage: enamelTopcoatRate,
                         daysRequired: topcoatDays
                       });
