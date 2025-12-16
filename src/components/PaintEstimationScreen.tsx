@@ -1505,50 +1505,6 @@ export default function PaintEstimationScreen() {
         </div>
       </div>
 
-      {/* Loading Gate - CRITICAL: Do NOT render content until ALL data is ready */}
-      {!dataReady ? (
-        <div className="p-4 space-y-6 pb-24">
-          {/* Loading Skeleton for Paint Type */}
-          <Card className="eca-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-center text-lg">
-                <Loader2 className="mr-2 h-5 w-5 text-primary animate-spin" />
-                Loading Paint Estimation...
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-3 gap-2">
-                <Skeleton className="h-12 w-full rounded-md" />
-                <Skeleton className="h-12 w-full rounded-md" />
-                <Skeleton className="h-12 w-full rounded-md" />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Loading Skeleton for Areas */}
-          <div className="space-y-4">
-            <Skeleton className="h-6 w-40" />
-            <div className="grid grid-cols-2 gap-4">
-              <Skeleton className="h-32 w-full rounded-lg" />
-              <Skeleton className="h-32 w-full rounded-lg" />
-              <Skeleton className="h-32 w-full rounded-lg" />
-              <Skeleton className="h-32 w-full rounded-lg" />
-            </div>
-          </div>
-
-          {/* Loading message */}
-          <Card className="border-2 border-primary/30 bg-primary/5">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-center space-x-3">
-                <Loader2 className="h-5 w-5 text-primary animate-spin" />
-                <p className="text-base font-medium text-primary">
-                  Preparing room data and configurations...
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      ) : (
       <div className="p-4 space-y-6 pb-24">
         {/* Paint Type Selection */}
         <Card className="eca-shadow">
@@ -2016,7 +1972,6 @@ export default function PaintEstimationScreen() {
                 </CardContent>
               </Card>}
       </div>
-      )}
 
       {/* Configuration Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
