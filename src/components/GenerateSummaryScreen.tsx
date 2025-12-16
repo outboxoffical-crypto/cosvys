@@ -1307,7 +1307,7 @@ export default function GenerateSummaryScreen() {
                       }}>
                         {/* Main Enamel Area Card */}
                         {hasMainEnamel && (
-                          <Card className="flex-none w-72 min-h-[280px] border-2 snap-start bg-orange-50 border-orange-300 dark:bg-orange-900/20 dark:border-orange-500/50">
+                          <Card className="flex-none w-72 min-h-[340px] border-2 snap-start bg-orange-50 border-orange-300 dark:bg-orange-900/20 dark:border-orange-500/50">
                             <CardContent className="p-4">
                               <div className="space-y-4">
                                 {/* Header with Enamel Badge */}
@@ -1346,7 +1346,7 @@ export default function GenerateSummaryScreen() {
                         
                         {/* Separate/Varnish Enamel Area Card */}
                         {hasSeparateEnamel && (
-                          <Card className="flex-none w-72 min-h-[280px] border-2 snap-start bg-orange-50 border-orange-300 dark:bg-orange-900/20 dark:border-orange-500/50">
+                          <Card className="flex-none w-72 min-h-[340px] border-2 snap-start bg-orange-50 border-orange-300 dark:bg-orange-900/20 dark:border-orange-500/50">
                             <CardContent className="p-4">
                               <div className="space-y-4">
                                 {/* Header with Enamel Badge */}
