@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Palette, Plus, Minus, Settings, Trash2, ChevronsUpDown, Check } from "lucide-react";
+import { ArrowLeft, Palette, Plus, Minus, Settings, Trash2, ChevronsUpDown, Check, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { getOrFetchRooms, getOrFetchCoverageData } from "@/hooks/usePrefetch";
 import { useProjectCache } from "@/hooks/useProjectCache";
 import { safeNumber, calculateProjectTotals } from "@/lib/calculations";
+import { Skeleton } from "@/components/ui/skeleton";
 interface CoverageData {
   id: string;
   category: string;
@@ -69,6 +70,14 @@ export default function PaintEstimationScreen() {
 
   // Track if initial load is done to prevent re-fetching
   const initialLoadDone = useRef(false);
+  const configsInitialized = useRef(false);
+  
+  // Data readiness tracking - CRITICAL for mobile hydration
+  const [dataReady, setDataReady] = useState(false);
+  const [roomsLoaded, setRoomsLoaded] = useState(false);
+  const [coverageLoaded, setCoverageLoaded] = useState(false);
+  const [localStorageHydrated, setLocalStorageHydrated] = useState(false);
+  
   const [selectedPaintType, setSelectedPaintType] = useState<"Interior" | "Exterior" | "Waterproofing">("Interior");
   const [rooms, setRooms] = useState<any[]>([]);
   const [coverageData, setCoverageData] = useState<CoverageData[]>([]);
@@ -95,9 +104,19 @@ export default function PaintEstimationScreen() {
   }, [selectedPaintType]);
   const [selectedConfigId, setSelectedConfigId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isCalculating, setIsCalculating] = useState(false);
   const [emulsionComboOpen, setEmulsionComboOpen] = useState(false);
+
+  // Data readiness check - ALL conditions must be true before rendering
+  useEffect(() => {
+    if (roomsLoaded && coverageLoaded && localStorageHydrated && !configsInitialized.current) {
+      // All data is ready - trigger final initialization
+      configsInitialized.current = true;
+      setDataReady(true);
+      setIsLoading(false);
+    }
+  }, [roomsLoaded, coverageLoaded, localStorageHydrated]);
 
   // Sync initial paint type, prefer snapshot from Generate Summary
   useEffect(() => {
@@ -182,8 +201,10 @@ export default function PaintEstimationScreen() {
           setWaterproofingConfigurations(list2);
         }
       }
-      setIsLoading(false);
-    } catch {}
+    } catch {} finally {
+      // Mark localStorage hydration complete
+      setLocalStorageHydrated(true);
+    }
   }, [projectId]);
 
   // Custom sort function for product names to handle specific ordering requirements
@@ -200,8 +221,14 @@ export default function PaintEstimationScreen() {
   // Optimized coverage data fetch - use prefetched data if available
   useEffect(() => {
     const loadCoverage = async () => {
-      const data = await getOrFetchCoverageData();
-      setCoverageData(data);
+      try {
+        const data = await getOrFetchCoverageData();
+        setCoverageData(data);
+      } catch (err) {
+        console.error('Error loading coverage data:', err);
+      } finally {
+        setCoverageLoaded(true);
+      }
     };
     loadCoverage();
   }, []);
@@ -238,20 +265,30 @@ export default function PaintEstimationScreen() {
   // Force fresh room loading from database - NEVER rely on cached data for areas
   useEffect(() => {
     const loadRooms = async () => {
-      if (!projectId) return;
-
-      // ALWAYS fetch fresh from database to ensure enamel areas are included
-      const {
-        data: freshRooms,
-        error
-      } = await supabase.from('rooms').select('*').eq('project_id', projectId);
-      if (error) {
-        console.error('Error fetching rooms:', error);
+      if (!projectId) {
+        setRoomsLoaded(true);
         return;
       }
-      if (freshRooms && freshRooms.length > 0) {
-        setRooms(freshRooms);
-        initialLoadDone.current = true;
+
+      try {
+        // ALWAYS fetch fresh from database to ensure enamel areas are included
+        const {
+          data: freshRooms,
+          error
+        } = await supabase.from('rooms').select('*').eq('project_id', projectId).order('created_at', { ascending: true });
+        if (error) {
+          console.error('Error fetching rooms:', error);
+          setRoomsLoaded(true);
+          return;
+        }
+        if (freshRooms && freshRooms.length > 0) {
+          setRooms(freshRooms);
+          initialLoadDone.current = true;
+        }
+      } catch (err) {
+        console.error('Error in loadRooms:', err);
+      } finally {
+        setRoomsLoaded(true);
       }
     };
     loadRooms();
@@ -1152,9 +1189,9 @@ export default function PaintEstimationScreen() {
     }
   };
 
-  // Re-initialize when rooms change or paint type changes
+  // Re-initialize when rooms change or paint type changes - ONLY after dataReady
   useEffect(() => {
-    if (rooms.length > 0 && !isLoading) {
+    if (rooms.length > 0 && dataReady) {
       // Run heavy calculations slightly deferred to avoid white screen
       setIsCalculating(true);
       requestAnimationFrame(() => {
@@ -1169,7 +1206,7 @@ export default function PaintEstimationScreen() {
         }, 50);
       });
     }
-  }, [rooms, selectedPaintType]);
+  }, [rooms, selectedPaintType, dataReady]);
 
   // Persist configurations so they survive navigation and reload
   useEffect(() => {
@@ -1468,6 +1505,50 @@ export default function PaintEstimationScreen() {
         </div>
       </div>
 
+      {/* Loading Gate - CRITICAL: Do NOT render content until ALL data is ready */}
+      {!dataReady ? (
+        <div className="p-4 space-y-6 pb-24">
+          {/* Loading Skeleton for Paint Type */}
+          <Card className="eca-shadow">
+            <CardHeader>
+              <CardTitle className="flex items-center text-lg">
+                <Loader2 className="mr-2 h-5 w-5 text-primary animate-spin" />
+                Loading Paint Estimation...
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-3 gap-2">
+                <Skeleton className="h-12 w-full rounded-md" />
+                <Skeleton className="h-12 w-full rounded-md" />
+                <Skeleton className="h-12 w-full rounded-md" />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Loading Skeleton for Areas */}
+          <div className="space-y-4">
+            <Skeleton className="h-6 w-40" />
+            <div className="grid grid-cols-2 gap-4">
+              <Skeleton className="h-32 w-full rounded-lg" />
+              <Skeleton className="h-32 w-full rounded-lg" />
+              <Skeleton className="h-32 w-full rounded-lg" />
+              <Skeleton className="h-32 w-full rounded-lg" />
+            </div>
+          </div>
+
+          {/* Loading message */}
+          <Card className="border-2 border-primary/30 bg-primary/5">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-center space-x-3">
+                <Loader2 className="h-5 w-5 text-primary animate-spin" />
+                <p className="text-base font-medium text-primary">
+                  Preparing room data and configurations...
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ) : (
       <div className="p-4 space-y-6 pb-24">
         {/* Paint Type Selection */}
         <Card className="eca-shadow">
@@ -1935,6 +2016,7 @@ export default function PaintEstimationScreen() {
                 </CardContent>
               </Card>}
       </div>
+      )}
 
       {/* Configuration Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
