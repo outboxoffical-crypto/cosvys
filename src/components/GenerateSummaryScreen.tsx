@@ -282,18 +282,32 @@ export default function GenerateSummaryScreen() {
       // Order by created_at to preserve Room Measurements order
       const {
         data: roomsData
-      } = await supabase.from('rooms').select('id, name, project_type, floor_area, wall_area, adjusted_wall_area, ceiling_area, total_door_window_grill_area, selected_areas, section_name, created_at').eq('project_id', projectId).order('created_at', {
+      } = await supabase.from('rooms').select('id, name, project_type, floor_area, wall_area, adjusted_wall_area, ceiling_area, total_door_window_grill_area, selected_areas, section_name, created_at, paint_calculations').eq('project_id', projectId).order('created_at', {
         ascending: true
       });
       if (roomsData) {
         setRooms(roomsData);
 
         // Create enamel configurations from door/window/grill areas for calculations only
+        // CRITICAL: Only include materials that user EXPLICITLY selected in Paint Estimation
         const enamelConfigs: AreaConfig[] = [];
         roomsData.forEach(room => {
           const enamelArea = Number(room.total_door_window_grill_area || 0);
           if (enamelArea > 0) {
             const displayName = room.section_name || room.name;
+            
+            // Get user's actual selections from paint_calculations stored in the room
+            const paintCalcs = (room.paint_calculations && typeof room.paint_calculations === 'object' && !Array.isArray(room.paint_calculations)) 
+              ? room.paint_calculations as Record<string, any>
+              : {};
+            const enamelCalc = paintCalcs.enamel || {};
+            
+            // ONLY use what user explicitly selected - NO defaults, NO assumptions
+            const userSelectedPrimer = enamelCalc.primerType || '';
+            const userSelectedEnamel = enamelCalc.enamelType || '';
+            const userSelectedPrimerCoats = Number(enamelCalc.primerCoats || 0);
+            const userSelectedEnamelCoats = Number(enamelCalc.enamelCoats || 0);
+            
             enamelConfigs.push({
               id: `enamel_${room.id}`,
               areaType: 'Door & Window',
@@ -306,15 +320,16 @@ export default function GenerateSummaryScreen() {
               paintTypeCategory: room.project_type as 'Interior' | 'Exterior' | 'Waterproofing',
               selectedMaterials: {
                 putty: '',
-                // Use actual enamel primer product name from database
-                primer: 'AP TruCare Wood Primer',
-                // Use actual enamel topcoat product name from database
-                emulsion: 'AP Apcolite Premium Gloss Enamel'
+                // ONLY include primer if user explicitly selected it
+                primer: userSelectedPrimer,
+                // ONLY include enamel if user explicitly selected it
+                emulsion: userSelectedEnamel
               },
               coatConfiguration: {
                 putty: 0,
-                primer: 1,
-                emulsion: 2
+                // ONLY include coats if user explicitly selected them (0 = not selected)
+                primer: userSelectedPrimerCoats,
+                emulsion: userSelectedEnamelCoats
               }
             });
           }
