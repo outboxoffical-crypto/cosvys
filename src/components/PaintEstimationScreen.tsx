@@ -16,6 +16,7 @@ import { getOrFetchRooms, getOrFetchCoverageData } from "@/hooks/usePrefetch";
 import { useProjectCache } from "@/hooks/useProjectCache";
 import { safeNumber, calculateProjectTotals } from "@/lib/calculations";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getGlobalDisplayOrder, sortByGlobalDisplayOrder, createConfigsHash } from "@/lib/configOrdering";
 interface CoverageData {
   id: string;
   category: string;
@@ -56,23 +57,10 @@ interface AreaConfiguration {
     enamelType: string;
     enamelCoats: number;
   };
-  areaPriority?: number; // CRITICAL: 1=Wall, 2=Ceiling, 3=Floor, 4=Separate/Custom, 5=Enamel
+  displayOrder?: number; // GLOBAL: 1=Wall, 2=Ceiling, 3=Floor, 4=Separate, 5=Enamel, 6=Separate Enamel
+  areaPriority?: number; // Legacy support
 }
 
-// SINGLE SOURCE OF TRUTH: Priority assignment function
-const getAreaPriority = (config: Partial<AreaConfiguration>): number => {
-  // Custom sections (Separate Paint Area) always get priority 4
-  if (config.isCustomSection) return 4;
-  
-  // Main areas by type
-  switch (config.areaType) {
-    case 'Wall': return 1;
-    case 'Ceiling': return 2;
-    case 'Floor': return 3;
-    case 'Enamel': return 5;
-    default: return 6;
-  }
-};
 export default function PaintEstimationScreen() {
   const navigate = useNavigate();
   const {
@@ -110,34 +98,22 @@ export default function PaintEstimationScreen() {
     return selectedPaintType === "Interior" ? interiorConfigurations : selectedPaintType === "Exterior" ? exteriorConfigurations : waterproofingConfigurations;
   }, [selectedPaintType, interiorConfigurations, exteriorConfigurations, waterproofingConfigurations]);
 
-  // CRITICAL: Frozen snapshot for Paint Configuration Summary - IMMUTABLE during render
+  // CRITICAL: Frozen snapshot using GLOBAL ordering - IMMUTABLE during render
   // Prevents mobile incremental rendering from affecting order
   const frozenOrderRef = useRef<AreaConfiguration[]>([]);
   const lastConfigsHash = useRef<string>('');
   
-  // Compute ordered snapshot ONCE and freeze it
+  // GLOBAL SORT: Compute ordered snapshot ONCE and freeze it
   const sortedConfigurationsForSummary = useMemo(() => {
-    // Create a hash of current configs to detect actual data changes
-    const configsHash = areaConfigurations.map(c => `${c.id}-${c.areaPriority ?? ''}-${c.areaType}`).join('|');
+    // Create hash to detect actual data changes
+    const configsHash = createConfigsHash(areaConfigurations);
     
     // Only recompute if data actually changed (not during layout reflow)
     if (configsHash !== lastConfigsHash.current || frozenOrderRef.current.length === 0) {
       lastConfigsHash.current = configsHash;
       
-      const sorted = [...areaConfigurations]
-        .map((config, index) => ({
-          ...config,
-          // Failsafe: Infer areaPriority if missing
-          areaPriority: config.areaPriority ?? getAreaPriority(config),
-          _creationIndex: index // Preserve original order as secondary sort
-        }))
-        .sort((a, b) => {
-          // Primary sort: areaPriority ASC (Wall=1, Ceiling=2, Floor=3, Separate=4, Enamel=5)
-          const priorityDiff = (a.areaPriority ?? 6) - (b.areaPriority ?? 6);
-          if (priorityDiff !== 0) return priorityDiff;
-          // Secondary sort: original creation index
-          return a._creationIndex - b._creationIndex;
-        });
+      // USE GLOBAL SORTING - Single source of truth
+      const sorted = sortByGlobalDisplayOrder(areaConfigurations) as AreaConfiguration[];
       
       // FREEZE the order - this snapshot won't change during render
       frozenOrderRef.current = sorted;
