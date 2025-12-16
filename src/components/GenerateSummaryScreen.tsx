@@ -801,9 +801,10 @@ export default function GenerateSummaryScreen() {
     // These are standard rates - NOT system assumptions
     const coverageRates = {
       waterBased: {
-        putty: 400,      // FIXED: 400 sq.ft/day for Putty (Interior/Exterior)
-        primer: 700,     // FIXED: 700 sq.ft/day for Primer
-        emulsion: 700    // FIXED: 700 sq.ft/day for Interior/Exterior Emulsion
+        putty: 400,              // FIXED: 400 sq.ft/day for Putty (Interior/Exterior)
+        primer: 700,             // FIXED: 700 sq.ft/day for Primer
+        interiorEmulsion: 700,   // FIXED: 700 sq.ft/day for Interior Emulsion (1 coat)
+        exteriorEmulsion: 550    // FIXED: 550 sq.ft/day for Exterior Emulsion (1 coat)
       },
       oilBased: {
         redOxide: 300,        // Enamel Red Oxide Metal Primer
@@ -860,7 +861,10 @@ export default function GenerateSummaryScreen() {
         if (config.coatConfiguration.emulsion > 0) {
           const totalWork = area * config.coatConfiguration.emulsion;
           const isEnamel = config.selectedMaterials.emulsion?.toLowerCase().includes('enamel');
-          const coverage = isEnamel ? coverageRates.oilBased.enamelTop : isOilBased ? coverageRates.oilBased.enamelTop : coverageRates.waterBased.emulsion;
+          const isExterior = config.paintTypeCategory === 'Exterior';
+          // Use category-specific emulsion rates: Interior=700, Exterior=550
+          const emulsionRate = isExterior ? coverageRates.waterBased.exteriorEmulsion : coverageRates.waterBased.interiorEmulsion;
+          const coverage = isEnamel ? coverageRates.oilBased.enamelTop : isOilBased ? coverageRates.oilBased.enamelTop : emulsionRate;
           const adjustedCoverage = coverage * (workingHours / standardHours);
           const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
           tasks.push({
@@ -890,7 +894,9 @@ export default function GenerateSummaryScreen() {
         }
         if (config.repaintingConfiguration?.emulsion && config.repaintingConfiguration.emulsion > 0) {
           const totalWork = area * config.repaintingConfiguration.emulsion;
-          const coverage = isOilBased ? coverageRates.oilBased.enamelTop : coverageRates.waterBased.emulsion;
+          const isExterior = config.paintTypeCategory === 'Exterior';
+          const emulsionRate = isExterior ? coverageRates.waterBased.exteriorEmulsion : coverageRates.waterBased.interiorEmulsion;
+          const coverage = isOilBased ? coverageRates.oilBased.enamelTop : emulsionRate;
           const adjustedCoverage = coverage * (workingHours / standardHours);
           const daysRequired = Math.ceil(totalWork / (adjustedCoverage * numberOfLabours));
           tasks.push({
