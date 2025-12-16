@@ -28,10 +28,11 @@ export default function LabourCalculationDetails({
 
   // Simple productivity-based calculation
   // Total Work Area = Total Sq.ft × Number of Coats
-  // Labour Days = Total Work Area ÷ Labour Working Process (sq.ft/day)
+  // Labour Days = Total Work Area ÷ (Labour Working Process × Number of Labourers per day)
   const totalWorkArea = task.area * task.coats;
-  const workingCapacity = task.coverage; // sq.ft per day
-  const rawDays = workingCapacity > 0 ? totalWorkArea / workingCapacity : 0;
+  const workingCapacity = task.coverage; // sq.ft per day per labourer
+  const effectiveCapacity = workingCapacity * autoLabourPerDay; // total capacity with all labourers
+  const rawDays = effectiveCapacity > 0 ? totalWorkArea / effectiveCapacity : 0;
   const minDays = Math.floor(rawDays);
   const maxDays = Math.ceil(rawDays);
   return <div className="space-y-2">
@@ -90,6 +91,11 @@ export default function LabourCalculationDetails({
             </div>
           </div>
 
+          <div className="flex justify-between items-center">
+            <span className="text-muted-foreground">Labourers per Day:</span>
+            <span className="font-medium text-foreground">{autoLabourPerDay}</span>
+          </div>
+
           <div className="my-2 border-t border-border/50" />
 
           {/* Calculation Steps */}
@@ -105,10 +111,18 @@ export default function LabourCalculationDetails({
             </div>
 
             <div className="flex justify-between items-center mt-2">
-              <span className="text-muted-foreground">Labour Days = Total Work Area ÷ Working Capacity</span>
+              <span className="text-muted-foreground">Effective Capacity = Rate × Labourers</span>
             </div>
             <div className="flex justify-between items-center pl-4">
-              <span className="text-muted-foreground">= {totalWorkArea.toFixed(0)} ÷ {workingCapacity.toFixed(0)}</span>
+              <span className="text-muted-foreground">= {workingCapacity.toFixed(0)} × {autoLabourPerDay}</span>
+              <span className="font-medium text-foreground">= {effectiveCapacity.toFixed(0)} sq.ft/day</span>
+            </div>
+
+            <div className="flex justify-between items-center mt-2">
+              <span className="text-muted-foreground">Labour Days = Total Work Area ÷ Effective Capacity</span>
+            </div>
+            <div className="flex justify-between items-center pl-4">
+              <span className="text-muted-foreground">= {totalWorkArea.toFixed(0)} ÷ {effectiveCapacity.toFixed(0)}</span>
               <span className="font-medium text-foreground">= {rawDays.toFixed(2)} days</span>
             </div>
           </div>
@@ -123,7 +137,7 @@ export default function LabourCalculationDetails({
 
           {/* Formula summary */}
           <div className="mt-3 p-2 bg-primary/5 rounded text-xs text-muted-foreground">
-            <span className="font-medium">Formula:</span> ({task.area.toFixed(0)} × {task.coats}) ÷ {workingCapacity.toFixed(0)} = {rawDays.toFixed(2)} → {maxDays} {maxDays === 1 ? 'Day' : 'Days'}
+            <span className="font-medium">Formula:</span> ({task.area.toFixed(0)} × {task.coats}) ÷ ({workingCapacity.toFixed(0)} × {autoLabourPerDay}) = {rawDays.toFixed(2)} → {maxDays} {maxDays === 1 ? 'Day' : 'Days'}
           </div>
         </div>}
     </div>;
