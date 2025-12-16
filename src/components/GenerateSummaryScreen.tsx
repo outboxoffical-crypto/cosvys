@@ -2353,19 +2353,32 @@ export default function GenerateSummaryScreen() {
     const adjustedAverageCoverage = averageCoverage * (workingHours / standardHours);
     const laboursNeeded = manualDays > 0 ? Math.ceil(totalWorkAllTasks / manualDays) : 1;
 
-    // Calculate labour cost - Formula: Per Day Labour Cost * Number of Labour * Days
-    let labourCost = 0;
-    let displayDays = 0;
-    let displayLabours = 0;
-    if (labourMode === 'auto') {
-      displayDays = Math.ceil(totalDays / autoLabourPerDay);
-      displayLabours = autoLabourPerDay;
-      labourCost = perDayLabourCost * displayLabours * displayDays;
-    } else {
-      displayDays = manualDays;
-      displayLabours = laboursNeeded;
-      labourCost = perDayLabourCost * displayLabours * displayDays;
+    // Calculate labour cost - Must match Total Labour Cost from Labour Calculation section
+    // Calculate displayDays same way as Labour Calculation section
+    const enamelPrimerRate = 300;
+    const enamelTopcoatRate = 280;
+    
+    // Identify enamel configs
+    const enamelConfigs = configTasks.filter(ct => ct.isEnamel);
+    
+    // Calculate non-enamel days (ceiling each, then sum)
+    const nonEnamelDisplayDays = configTasks
+      .filter(ct => !ct.isEnamel && ct.totalDays > 0)
+      .reduce((sum, ct) => sum + Math.ceil(ct.totalDays / autoLabourPerDay), 0);
+    
+    // Calculate enamel days using aggregated formula
+    let enamelTotalDays = 0;
+    if (enamelConfigs.length > 0) {
+      const totalEnamelWork = enamelConfigs.reduce((sum, ct) => {
+        const taskWork = ct.tasks.reduce((tSum: number, task: any) => tSum + (task.totalWork || 0), 0);
+        return sum + taskWork;
+      }, 0);
+      enamelTotalDays = Math.ceil(totalEnamelWork / (enamelTopcoatRate * autoLabourPerDay));
     }
+    
+    const displayDays = labourMode === 'auto' ? (nonEnamelDisplayDays + enamelTotalDays) : manualDays;
+    const displayLabours = labourMode === 'auto' ? autoLabourPerDay : laboursNeeded;
+    const labourCost = perDayLabourCost * displayLabours * displayDays;
 
     // Calculate margin cost from Paint Configuration Details (same as Dealer Margin section)
     const totalProjectCostFromConfig = areaConfigs.reduce((sum, config) => {
