@@ -1136,46 +1136,113 @@ export default function GenerateSummaryScreen() {
                     </div>
                   </div>}
 
-                {/* Enamel Configurations - Separate Category at Bottom */}
-                {configTasks.filter(ct => ct.isEnamel && ct.totalDays > 0).length > 0 && <div className="space-y-3">
-                    <Badge variant="outline" className="bg-orange-500/10 text-orange-600 border-orange-500/20">
-                      Enamel Paint Configurations
-                    </Badge>
-                    <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide" style={{
-                scrollbarWidth: 'none',
-                msOverflowStyle: 'none'
-              }}>
-                      {configTasks.filter(ct => ct.isEnamel && ct.totalDays > 0).map((configTask, index) => {
-                  return <Card key={index} className="flex-none w-72 border-2 snap-start bg-orange-50 border-orange-300 dark:bg-orange-900/20 dark:border-orange-500/50">
-                          <CardContent className="p-4">
-                            <div className="space-y-4">
-                              {/* Header with Enamel Badge */}
+                {/* Enamel Configurations - Aggregated Summary Cards */}
+                {(() => {
+                  const enamelConfigs = configTasks.filter(ct => ct.isEnamel);
+                  if (enamelConfigs.length === 0) return null;
+                  
+                  // Aggregate enamel areas into Main and Separate (Varnish) groups
+                  let mainEnamelTotalSqft = 0;
+                  let mainEnamelTotalWork = 0;
+                  let separateEnamelTotalSqft = 0;
+                  let separateEnamelTotalWork = 0;
+                  
+                  // Fixed enamel labour rate (sq.ft/day) - use average of primer and topcoat
+                  const enamelLabourRate = 300; // Standard Labour Rate for enamel work
+                  
+                  enamelConfigs.forEach(config => {
+                    const isSeparate = config.configLabel?.toLowerCase().includes('varnish') || 
+                                      config.configLabel?.toLowerCase().includes('separate');
+                    
+                    config.tasks.forEach((task: any) => {
+                      if (isSeparate) {
+                        separateEnamelTotalSqft += task.area || 0;
+                        separateEnamelTotalWork += task.totalWork || 0;
+                      } else {
+                        mainEnamelTotalSqft += task.area || 0;
+                        mainEnamelTotalWork += task.totalWork || 0;
+                      }
+                    });
+                  });
+                  
+                  // Calculate total days for each group (round only the final total)
+                  const mainEnamelDays = mainEnamelTotalWork > 0 
+                    ? Math.ceil(mainEnamelTotalWork / (enamelLabourRate * autoLabourPerDay)) 
+                    : 0;
+                  const separateEnamelDays = separateEnamelTotalWork > 0 
+                    ? Math.ceil(separateEnamelTotalWork / (enamelLabourRate * autoLabourPerDay)) 
+                    : 0;
+                  
+                  const hasMainEnamel = mainEnamelTotalSqft > 0;
+                  const hasSeparateEnamel = separateEnamelTotalSqft > 0;
+                  
+                  if (!hasMainEnamel && !hasSeparateEnamel) return null;
+                  
+                  return (
+                    <div className="space-y-3">
+                      <Badge variant="outline" className="bg-orange-500/10 text-orange-600 border-orange-500/20">
+                        Enamel Paint Configurations
+                      </Badge>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {/* Main Enamel Area Card */}
+                        {hasMainEnamel && (
+                          <Card className="border-2 bg-orange-50 border-orange-300 dark:bg-orange-900/20 dark:border-orange-500/50">
+                            <CardContent className="p-4">
                               <div className="flex items-center justify-between pb-2 border-b border-orange-300 dark:border-orange-500/50">
-                                <h3 className="font-semibold text-base">{configTask.configLabel}</h3>
+                                <h3 className="font-semibold text-sm">Enamel Area (Main)</h3>
                                 <Badge variant="secondary" className="text-xs bg-orange-500 text-white">
                                   Enamel
                                 </Badge>
                               </div>
-                              
-                              {/* Tasks List */}
-                              <div className="space-y-3">
-                                {configTask.tasks.map((task: any, taskIdx: number) => <LabourCalculationDetails key={taskIdx} task={task} workingHours={workingHours} standardHours={standardHours} numberOfLabours={numberOfLabours} autoLabourPerDay={autoLabourPerDay} />)}
-                              </div>
-                              
-                              {/* Total Days */}
-                              <div className="pt-3 border-t-2 border-orange-300 dark:border-orange-500/50">
-                                <div className="flex items-center justify-between">
-                                  <p className="text-sm font-medium text-muted-foreground">Total Days:</p>
-                                  <p className="text-2xl font-bold text-orange-600">{Math.ceil(configTask.totalDays / autoLabourPerDay)} days</p>
+                              <div className="mt-3 space-y-2">
+                                <div className="flex justify-between items-center">
+                                  <span className="text-xs text-muted-foreground">Total Sq.ft</span>
+                                  <span className="font-semibold text-sm">{mainEnamelTotalSqft.toFixed(0)} sq.ft</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-xs text-muted-foreground">Labour Rate</span>
+                                  <span className="text-xs">{enamelLabourRate} sq.ft/day</span>
+                                </div>
+                                <div className="flex justify-between items-center pt-2 border-t border-orange-200 dark:border-orange-500/30">
+                                  <span className="text-sm font-medium">Total Days</span>
+                                  <span className="text-xl font-bold text-orange-600">{mainEnamelDays} days</span>
                                 </div>
                               </div>
-                            </div>
-                          </CardContent>
-                        </Card>;
-                })}
-                      
+                            </CardContent>
+                          </Card>
+                        )}
+                        
+                        {/* Separate/Varnish Enamel Area Card */}
+                        {hasSeparateEnamel && (
+                          <Card className="border-2 bg-orange-50 border-orange-300 dark:bg-orange-900/20 dark:border-orange-500/50">
+                            <CardContent className="p-4">
+                              <div className="flex items-center justify-between pb-2 border-b border-orange-300 dark:border-orange-500/50">
+                                <h3 className="font-semibold text-sm">Varnish / Separate Area</h3>
+                                <Badge variant="secondary" className="text-xs bg-orange-500 text-white">
+                                  Enamel
+                                </Badge>
+                              </div>
+                              <div className="mt-3 space-y-2">
+                                <div className="flex justify-between items-center">
+                                  <span className="text-xs text-muted-foreground">Total Sq.ft</span>
+                                  <span className="font-semibold text-sm">{separateEnamelTotalSqft.toFixed(0)} sq.ft</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-xs text-muted-foreground">Labour Rate</span>
+                                  <span className="text-xs">{enamelLabourRate} sq.ft/day</span>
+                                </div>
+                                <div className="flex justify-between items-center pt-2 border-t border-orange-200 dark:border-orange-500/30">
+                                  <span className="text-sm font-medium">Total Days</span>
+                                  <span className="text-xl font-bold text-orange-600">{separateEnamelDays} days</span>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        )}
+                      </div>
                     </div>
-                  </div>}
+                  );
+                })()}
 
                 {/* Summary */}
                 <div className="p-4 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 rounded-lg border-2 border-red-500">
