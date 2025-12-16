@@ -2349,65 +2349,84 @@ export default function GenerateSummaryScreen() {
               </CardContent>
             </Card>
 
-            {/* Room Measurements */}
-            <Card className="eca-shadow">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg">Room Measurements</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="p-4 rounded-lg bg-gradient-to-r from-red-400/20 via-purple-400/20 to-blue-400/20 border border-primary/20">
-                  {Object.entries(totalAreas).map(([projectType, areas]: [string, {
-                  wallArea: number;
-                  floorArea: number;
-                  ceilingArea: number;
-                }]) => {
-                  const hasFloor = areas.floorArea > 0;
-                  const hasWall = areas.wallArea > 0;
-                  const hasCeiling = areas.ceilingArea > 0;
-                  const activeAreas = [hasFloor, hasWall, hasCeiling].filter(Boolean).length;
-                  if (activeAreas === 0) return null;
-                  return <div key={projectType} className="space-y-2">
-                        <div className="text-sm font-semibold border-b border-white/20 pb-1 text-black/90">
-                          {projectType}
-                        </div>
-                        <div className={`grid gap-4 text-center ${activeAreas === 1 ? 'grid-cols-1' : activeAreas === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
-                          {hasWall && <div>
-                              <p className="text-sm text-black/80">Total Wall</p>
-                              <p className="text-xl font-bold">{areas.wallArea.toFixed(1)}</p>
-                              <p className="text-xs text-black/80">sq.ft</p>
-                            </div>}
-                          {hasFloor && <div>
-                              <p className="text-white/80 text-sm">Total Floor</p>
-                              <p className="text-xl font-bold">{areas.floorArea.toFixed(1)}</p>
-                              <p className="text-white/80 text-xs">sq.ft</p>
-                            </div>}
-                          {hasCeiling && <div>
-                              <p className="text-sm text-black/80">Total Ceiling</p>
-                              <p className="text-xl font-bold">{areas.ceilingArea.toFixed(1)}</p>
-                              <p className="text-xs text-[#010101]/80">sq.ft</p>
-                            </div>}
-                        </div>
-                      </div>;
-                })}
+            {/* Room Measurements - Matching Total Area Summary Style */}
+            <div className="rounded-xl overflow-hidden" style={{
+              background: 'linear-gradient(135deg, #fce4ec 0%, #f3e5f5 50%, #e8eaf6 100%)',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+            }}>
+              <div className="p-5">
+                <div className="flex items-center mb-4">
+                  <TrendingUp className="mr-2 h-5 w-5 text-destructive" />
+                  <h3 className="font-semibold text-foreground">Room Measurements</h3>
+                </div>
                 
-                  {/* Enamel Section */}
-                  {totalEnamelArea > 0 && (
-                    <div className="space-y-2 mt-4">
-                      <div className="text-sm font-semibold border-b border-white/20 pb-1 text-black/90">
-                        Enamel
+                {/* Interior Section */}
+                {(() => {
+                  const interiorAreas = totalAreas['Interior'];
+                  if (!interiorAreas) return null;
+                  const hasWall = interiorAreas.wallArea > 0;
+                  const hasCeiling = interiorAreas.ceilingArea > 0;
+                  if (!hasWall && !hasCeiling) return null;
+                  
+                  return (
+                    <div className="mb-4">
+                      <p className="text-sm font-semibold text-foreground mb-3">Interior</p>
+                      <div className={`grid gap-6 ${hasWall && hasCeiling ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                        {hasWall && (
+                          <div className="text-center">
+                            <p className="text-xs text-muted-foreground mb-1">Total Wall</p>
+                            <p className="text-2xl font-bold text-foreground">{interiorAreas.wallArea.toFixed(1)}</p>
+                            <p className="text-xs text-muted-foreground">sq.ft</p>
+                          </div>
+                        )}
+                        {hasCeiling && (
+                          <div className="text-center">
+                            <p className="text-xs text-muted-foreground mb-1">Total Ceiling</p>
+                            <p className="text-2xl font-bold text-foreground">{interiorAreas.ceilingArea.toFixed(1)}</p>
+                            <p className="text-xs text-muted-foreground">sq.ft</p>
+                          </div>
+                        )}
                       </div>
-                      <div className="grid grid-cols-1 gap-4 text-center">
-                        <div>
-                          <p className="text-sm text-black/80">Total Area</p>
-                          <p className="text-xl font-bold text-black">{totalEnamelArea.toFixed(1)}</p>
-                          <p className="text-xs text-black/80">sq.ft</p>
+                    </div>
+                  );
+                })()}
+
+                {/* Exterior Section */}
+                {(() => {
+                  const exteriorAreas = totalAreas['Exterior'];
+                  if (!exteriorAreas) return null;
+                  const hasWall = exteriorAreas.wallArea > 0;
+                  if (!hasWall) return null;
+                  
+                  return (
+                    <div className="mb-4">
+                      <p className="text-sm font-semibold text-foreground mb-3">Exterior</p>
+                      <div className="grid grid-cols-1">
+                        <div className="text-center">
+                          <p className="text-xs text-muted-foreground mb-1">Total Wall</p>
+                          <p className="text-2xl font-bold text-foreground">{exteriorAreas.wallArea.toFixed(1)}</p>
+                          <p className="text-xs text-muted-foreground">sq.ft</p>
                         </div>
                       </div>
                     </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+                  );
+                })()}
+
+                {/* Enamel Section */}
+                {totalEnamelArea > 0 && (
+                  <div>
+                    <p className="text-sm font-semibold text-foreground mb-3">Enamel</p>
+                    <div className="grid grid-cols-1">
+                      <div className="text-center">
+                        <p className="text-xs text-muted-foreground mb-1">Total Area</p>
+                        <p className="text-2xl font-bold text-foreground">{totalEnamelArea.toFixed(1)}</p>
+                        <p className="text-xs text-muted-foreground">sq.ft</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
 
             {/* Average Cost Details */}
             <Card className="eca-shadow">
