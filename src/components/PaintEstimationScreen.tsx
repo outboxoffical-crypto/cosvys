@@ -56,7 +56,23 @@ interface AreaConfiguration {
     enamelType: string;
     enamelCoats: number;
   };
+  areaPriority?: number; // CRITICAL: 1=Wall, 2=Ceiling, 3=Floor, 4=Separate/Custom, 5=Enamel
 }
+
+// SINGLE SOURCE OF TRUTH: Priority assignment function
+const getAreaPriority = (config: Partial<AreaConfiguration>): number => {
+  // Custom sections (Separate Paint Area) always get priority 4
+  if (config.isCustomSection) return 4;
+  
+  // Main areas by type
+  switch (config.areaType) {
+    case 'Wall': return 1;
+    case 'Ceiling': return 2;
+    case 'Floor': return 3;
+    case 'Enamel': return 5;
+    default: return 6;
+  }
+};
 export default function PaintEstimationScreen() {
   const navigate = useNavigate();
   const {
@@ -93,6 +109,26 @@ export default function PaintEstimationScreen() {
   const areaConfigurations = useMemo(() => {
     return selectedPaintType === "Interior" ? interiorConfigurations : selectedPaintType === "Exterior" ? exteriorConfigurations : waterproofingConfigurations;
   }, [selectedPaintType, interiorConfigurations, exteriorConfigurations, waterproofingConfigurations]);
+
+  // CRITICAL: Sorted configurations for Paint Configuration Summary
+  // SINGLE SOURCE OF TRUTH for ordering: areaPriority ASC, then creation index
+  const sortedConfigurationsForSummary = useMemo(() => {
+    return [...areaConfigurations]
+      .map((config, index) => ({
+        ...config,
+        // Failsafe: Infer areaPriority if missing
+        areaPriority: config.areaPriority ?? getAreaPriority(config),
+        _creationIndex: index // Preserve original order as secondary sort
+      }))
+      .sort((a, b) => {
+        // Primary sort: areaPriority ASC
+        const priorityDiff = (a.areaPriority ?? 6) - (b.areaPriority ?? 6);
+        if (priorityDiff !== 0) return priorityDiff;
+        // Secondary sort: original creation index
+        return a._creationIndex - b._creationIndex;
+      });
+  }, [areaConfigurations]);
+
   const setAreaConfigurations = useCallback((updater: AreaConfiguration[] | ((prev: AreaConfiguration[]) => AreaConfiguration[])) => {
     if (selectedPaintType === "Interior") {
       setInteriorConfigurations(updater);
@@ -1052,7 +1088,8 @@ export default function PaintEstimationScreen() {
         area: floorMain,
         perSqFtRate: '',
         label: 'Floor Area',
-        isAdditional: false
+        isAdditional: false,
+        areaPriority: 3 // Floor priority
       });
     }
     if (wallMain > 0 && hasWallSelected) {
@@ -1077,7 +1114,8 @@ export default function PaintEstimationScreen() {
         area: wallMain,
         perSqFtRate: '',
         label: 'Wall Area',
-        isAdditional: false
+        isAdditional: false,
+        areaPriority: 1 // Wall priority (highest for main areas)
       });
     }
     if (ceilingMain > 0 && hasCeilingSelected) {
@@ -1102,7 +1140,8 @@ export default function PaintEstimationScreen() {
         area: ceilingMain,
         perSqFtRate: '',
         label: 'Ceiling Area',
-        isAdditional: false
+        isAdditional: false,
+        areaPriority: 2 // Ceiling priority
       });
     }
     // FAIL-SAFE: Enamel MUST always appear if enamelAreaTotal > 0, regardless of hasEnamelSelected
@@ -1130,7 +1169,8 @@ export default function PaintEstimationScreen() {
         area: effectiveEnamelMain,
         perSqFtRate: '',
         label: 'Enamel Area',
-        isAdditional: false
+        isAdditional: false,
+        areaPriority: 5 // Enamel priority (lowest)
       });
     }
 
@@ -1545,13 +1585,13 @@ export default function PaintEstimationScreen() {
             </CardContent>
           </Card>}
 
-        {/* Paint Configuration Summary - MOVED TO TOP (only non-enamel) */}
-        {areaConfigurations.some(c => (c.paintingSystem || c.areaType === 'Enamel') && c.areaType !== 'Enamel') && <Card className="eca-shadow border-2 border-primary/30">
+        {/* Paint Configuration Summary - SORTED BY areaPriority: Wall(1) → Ceiling(2) → Floor(3) → Separate(4) */}
+        {sortedConfigurationsForSummary.some(c => (c.paintingSystem || c.areaType === 'Enamel') && c.areaType !== 'Enamel') && <Card className="eca-shadow border-2 border-primary/30">
                 <CardHeader>
                   <CardTitle className="text-lg">Paint Configuration Summary</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {areaConfigurations.filter(c => (c.paintingSystem || c.areaType === 'Enamel') && c.areaType !== 'Enamel').map(config => <Card key={config.id} className="border-2 border-primary/20 bg-primary/5">
+                  {sortedConfigurationsForSummary.filter(c => (c.paintingSystem || c.areaType === 'Enamel') && c.areaType !== 'Enamel').map(config => <Card key={config.id} className="border-2 border-primary/20 bg-primary/5">
                       <CardContent className="p-4">
                         <div className="space-y-3">
                           <div className="flex items-center justify-between">
