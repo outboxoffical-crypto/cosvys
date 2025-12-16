@@ -12,6 +12,7 @@ import { getPrefetchedData } from "@/hooks/useProjectCache";
 import { safeNumber, parseCoverageRange, calculateLabourDays, calculateLabourCost, calculateMaterialQuantity } from "@/lib/calculations";
 import LabourCalculationDetails from "@/components/LabourCalculationDetails";
 import MaterialCalculationDetails from "@/components/MaterialCalculationDetails";
+import { getGlobalDisplayOrder, sortByGlobalDisplayOrder, createConfigsHash } from "@/lib/configOrdering";
 interface AreaConfig {
   id: string;
   areaType: string;
@@ -82,62 +83,29 @@ export default function GenerateSummaryScreen() {
   const [isLoadingLabour, setIsLoadingLabour] = useState(true);
   const [isLoadingMaterial, setIsLoadingMaterial] = useState(true);
 
-  // SINGLE SOURCE OF TRUTH: areaPriority-based sorting
-  // Priority: Wall(1) → Ceiling(2) → Floor(3) → Separate/Custom(4) → Enamel(5)
-  const getAreaPriority = useCallback((cfg: AreaConfig): number => {
-    // Custom sections (Separate Paint Area) always get priority 4
-    if (cfg.sectionName) return 4;
-    
-    // Check label for "Separate" keyword
-    const label = (cfg.label || '').toLowerCase();
-    if (label.includes('separate')) return 4;
-    
-    // Main areas by areaType
-    const areaType = (cfg.areaType || '').toLowerCase();
-    if (areaType === 'wall' || areaType === 'wall area') return 1;
-    if (areaType === 'ceiling' || areaType === 'ceiling area') return 2;
-    if (areaType === 'floor' || areaType === 'floor area') return 3;
-    if (areaType === 'enamel' || areaType === 'door & window') return 5;
-    
-    // If label doesn't match standard types, treat as separate area
-    const mainAreaTypes = ['wall', 'ceiling', 'floor', 'wall area', 'ceiling area', 'floor area'];
-    if (label && !mainAreaTypes.some(t => label === t || label === `${t} area`)) return 4;
-    
-    return 6; // Unknown
-  }, []);
-
-  // Helper: Sort configs by areaPriority ASC (Wall→Ceiling→Floor→Separate→Enamel)
-  const sortConfigsByAreaType = useCallback((configs: AreaConfig[]): AreaConfig[] => {
-    return [...configs]
-      .map((config, index) => ({ ...config, _creationIndex: index }))
-      .sort((a, b) => {
-        const priorityA = getAreaPriority(a);
-        const priorityB = getAreaPriority(b);
-        // Primary sort: areaPriority ASC
-        if (priorityA !== priorityB) return priorityA - priorityB;
-        // Secondary sort: original creation index
-        return (a as any)._creationIndex - (b as any)._creationIndex;
-      });
-  }, [getAreaPriority]);
+  // GLOBAL ORDERING: Use centralized sorting from configOrdering.ts
+  // Priority: Wall(1) → Ceiling(2) → Floor(3) → Separate(4) → Enamel(5) → Separate Enamel(6)
 
   // CRITICAL: Frozen snapshots for rendering - prevents mobile reflow from affecting order
   const sortedAreaConfigs = useMemo(() => {
-    const configsHash = areaConfigs.map(c => `${c.id || ''}-${c.areaType || ''}`).join('|');
+    const configsHash = createConfigsHash(areaConfigs);
     if (configsHash !== lastAreaConfigsHash.current || frozenAreaConfigsRef.current.length === 0) {
       lastAreaConfigsHash.current = configsHash;
-      frozenAreaConfigsRef.current = sortConfigsByAreaType(areaConfigs);
+      // USE GLOBAL SORTING - Single source of truth
+      frozenAreaConfigsRef.current = sortByGlobalDisplayOrder(areaConfigs) as AreaConfig[];
     }
     return frozenAreaConfigsRef.current;
-  }, [areaConfigs, sortConfigsByAreaType]);
+  }, [areaConfigs]);
 
   const sortedCalculationConfigs = useMemo(() => {
-    const configsHash = calculationConfigs.map(c => `${c.id || ''}-${c.areaType || ''}`).join('|');
+    const configsHash = createConfigsHash(calculationConfigs);
     if (configsHash !== lastCalculationConfigsHash.current || frozenCalculationConfigsRef.current.length === 0) {
       lastCalculationConfigsHash.current = configsHash;
-      frozenCalculationConfigsRef.current = sortConfigsByAreaType(calculationConfigs);
+      // USE GLOBAL SORTING - Single source of truth
+      frozenCalculationConfigsRef.current = sortByGlobalDisplayOrder(calculationConfigs) as AreaConfig[];
     }
     return frozenCalculationConfigsRef.current;
-  }, [calculationConfigs, sortConfigsByAreaType]);
+  }, [calculationConfigs]);
 
   useEffect(() => {
     loadData();
@@ -287,7 +255,7 @@ export default function GenerateSummaryScreen() {
         }
         console.log('Loaded all configs from estimation:', allConfigs.length);
         paintEstimationConfigs = allConfigs;
-        setAreaConfigs(sortConfigsByAreaType(allConfigs));
+        setAreaConfigs(sortByGlobalDisplayOrder(allConfigs) as AreaConfig[]);
       } else {
         // Fallback to per-type saved configs while still on estimation screen
         const pt = storedPaintType;
@@ -307,7 +275,7 @@ export default function GenerateSummaryScreen() {
         }));
         console.log('Loaded fallback configs:', configs);
         paintEstimationConfigs = Array.isArray(configs) ? configs : [];
-        setAreaConfigs(sortConfigsByAreaType(Array.isArray(configs) ? configs : []));
+        setAreaConfigs(sortByGlobalDisplayOrder(Array.isArray(configs) ? configs : []) as AreaConfig[]);
       }
 
       // OPTIMIZED: Load only essential room fields (not full pictures/opening arrays)
@@ -391,11 +359,11 @@ export default function GenerateSummaryScreen() {
 
         // Update both areaConfigs and calculationConfigs with filtered and SORTED list
         // Main Areas (Wall/Ceiling/Floor) FIRST, Separate Paint Areas LAST
-        setAreaConfigs(sortConfigsByAreaType(filteredPaintConfigs));
-        setCalculationConfigs(sortConfigsByAreaType([...filteredPaintConfigs, ...enamelConfigs]));
+        setAreaConfigs(sortByGlobalDisplayOrder(filteredPaintConfigs) as AreaConfig[]);
+        setCalculationConfigs(sortByGlobalDisplayOrder([...filteredPaintConfigs, ...enamelConfigs]) as AreaConfig[]);
       } else {
         // If no rooms data, just use paint estimation configs (sorted)
-        setCalculationConfigs(sortConfigsByAreaType(paintEstimationConfigs));
+        setCalculationConfigs(sortByGlobalDisplayOrder(paintEstimationConfigs) as AreaConfig[]);
       }
 
       // Load dealer info
