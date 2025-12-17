@@ -68,6 +68,7 @@ export default function GenerateSummaryScreen() {
   const topSectionRef = useRef<HTMLDivElement>(null);
   const totalMaterialCostRef = useRef<number>(0); // Store total material cost for access across sections
   const totalLabourCostRef = useRef<number>(0); // Store total labour cost for access across sections
+  const enamelMaterialTotalRef = useRef<number>(0); // Store enamel material total (aggregated) for accurate total calculation
 
   // CRITICAL: Frozen snapshots to prevent mobile incremental rendering from affecting order
   const frozenAreaConfigsRef = useRef<AreaConfig[]>([]);
@@ -2021,6 +2022,10 @@ export default function GenerateSummaryScreen() {
             // Recalculate group total costs
             mainGroup.totalCost = mainGroup.primerMaterials.reduce((sum, m) => sum + (m.totalCost || 0), 0) + mainGroup.enamelMaterials.reduce((sum, m) => sum + (m.totalCost || 0), 0);
             separateGroup.totalCost = separateGroup.primerMaterials.reduce((sum, m) => sum + (m.totalCost || 0), 0) + separateGroup.enamelMaterials.reduce((sum, m) => sum + (m.totalCost || 0), 0);
+            
+            // Store aggregated enamel total in ref for accurate Total Material Cost calculation
+            enamelMaterialTotalRef.current = mainGroup.totalCost + separateGroup.totalCost;
+            
             const hasMainEnamel = mainGroup.primerMaterials.length > 0 || mainGroup.enamelMaterials.length > 0;
             const hasSeparateEnamel = separateGroup.primerMaterials.length > 0 || separateGroup.enamelMaterials.length > 0;
             if (!hasMainEnamel && !hasSeparateEnamel) return null;
@@ -2105,75 +2110,21 @@ export default function GenerateSummaryScreen() {
                   </div>;
           })()}
 
-          {/* Total Material Cost Summary */}
-          {(() => {
-            // Calculate non-enamel total from configMaterials
+          {/* Total Material Cost Summary - Sum non-enamel + aggregated enamel totals */}
+          {configMaterials.length > 0 && (() => {
+            // Sum non-enamel costs from configMaterials
             const nonEnamelTotal = configMaterials
               .filter(cm => !cm.isEnamel)
-              .reduce((sum, cm) => sum + cm.totalCost, 0);
+              .reduce((sum, cm) => sum + (cm.totalCost || 0), 0);
             
-            // Get enamel totals from aggregated groups (already recalculated correctly)
-            const enamelConfigs = configMaterials.filter(cm => cm.isEnamel);
-            let enamelTotal = 0;
-            
-            if (enamelConfigs.length > 0) {
-              // Recalculate enamel aggregation for the total
-              const mainEnamelGroup = { primerMaterials: [] as any[], enamelMaterials: [] as any[], totalCost: 0 };
-              const separateEnamelGroup = { primerMaterials: [] as any[], enamelMaterials: [] as any[], totalCost: 0 };
-              
-              enamelConfigs.forEach(config => {
-                const isSeparateArea = config.areaType === 'Separate' || config.sectionName;
-                const target = isSeparateArea ? separateEnamelGroup : mainEnamelGroup;
-                
-                config.materials.forEach((mat: any) => {
-                  const isPrimer = mat.type?.toLowerCase().includes('primer');
-                  const targetArr = isPrimer ? target.primerMaterials : target.enamelMaterials;
-                  
-                  const existing = targetArr.find((m: any) => m.name === mat.name);
-                  if (existing) {
-                    existing.area += mat.area || 0;
-                    existing.coverageRate = mat.coverageRate || existing.coverageRate;
-                    existing.coats = mat.coats || existing.coats;
-                  } else {
-                    targetArr.push({
-                      ...mat,
-                      area: mat.area || 0,
-                      requiredQuantity: 0,
-                      totalCost: 0
-                    });
-                  }
-                });
-              });
-              
-              // Recalculate each aggregated material
-              const recalcMat = (mat: any) => {
-                if (mat.area > 0 && mat.coverageRate > 0) {
-                  const rawQty = mat.area / mat.coverageRate;
-                  mat.requiredQuantity = Math.ceil(rawQty);
-                  const calc = calculateMaterial(mat.name, rawQty);
-                  mat.totalCost = calc.totalCost || 0;
-                }
-              };
-              
-              mainEnamelGroup.primerMaterials.forEach(recalcMat);
-              mainEnamelGroup.enamelMaterials.forEach(recalcMat);
-              separateEnamelGroup.primerMaterials.forEach(recalcMat);
-              separateEnamelGroup.enamelMaterials.forEach(recalcMat);
-              
-              mainEnamelGroup.totalCost = mainEnamelGroup.primerMaterials.reduce((s, m) => s + (m.totalCost || 0), 0) 
-                + mainEnamelGroup.enamelMaterials.reduce((s, m) => s + (m.totalCost || 0), 0);
-              separateEnamelGroup.totalCost = separateEnamelGroup.primerMaterials.reduce((s, m) => s + (m.totalCost || 0), 0) 
-                + separateEnamelGroup.enamelMaterials.reduce((s, m) => s + (m.totalCost || 0), 0);
-              
-              enamelTotal = mainEnamelGroup.totalCost + separateEnamelGroup.totalCost;
-            }
-            
-            const grandTotal = nonEnamelTotal + enamelTotal;
+            // Use the aggregated enamel total from the ref (set during enamel section rendering)
+            // This ensures the total matches what's displayed in the enamel cards
+            const grandTotal = nonEnamelTotal + enamelMaterialTotalRef.current;
             
             // Update ref for use in other sections
             totalMaterialCostRef.current = grandTotal;
             
-            return configMaterials.length > 0 && (
+            return (
               <div className="p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border-2 border-primary mt-4">
                 <div className="flex justify-between items-center">
                   <span className="text-base font-semibold text-slate-950">Total Material Cost</span>
