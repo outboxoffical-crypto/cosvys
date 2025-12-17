@@ -2059,7 +2059,7 @@ export default function GenerateSummaryScreen() {
                               {/* Total Cost */}
                               <div className="pt-3 border-t-2 border-orange-300 dark:border-orange-500/50">
                                 <div className="flex items-center justify-between">
-                                  <p className="text-sm font-medium text-muted-foreground">Total Material Cost:</p>
+                                  <p className="text-sm font-medium text-muted-foreground">Total Cost:</p>
                                   <p className="text-2xl font-bold text-orange-600">₹{mainGroup.totalCost.toLocaleString('en-IN')}</p>
                                 </div>
                               </div>
@@ -2094,7 +2094,7 @@ export default function GenerateSummaryScreen() {
                               {/* Total Cost */}
                               <div className="pt-3 border-t-2 border-orange-300 dark:border-orange-500/50">
                                 <div className="flex items-center justify-between">
-                                  <p className="text-sm font-medium text-muted-foreground">Total Material Cost:</p>
+                                  <p className="text-sm font-medium text-muted-foreground">Total Cost:</p>
                                   <p className="text-2xl font-bold text-orange-600">₹{separateGroup.totalCost.toLocaleString('en-IN')}</p>
                                 </div>
                               </div>
