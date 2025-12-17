@@ -277,7 +277,7 @@ export const MaterialTracker = ({ projectId, isOpen, onClose }: MaterialTrackerP
     }
   }, [materials, toast]);
 
-  const totalMaterialCost = materials.reduce((sum, material) => sum + (material.quantity * material.rate), 0);
+  const totalMaterialCost = materials.reduce((sum, material) => sum + material.rate, 0);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -303,7 +303,7 @@ export const MaterialTracker = ({ projectId, isOpen, onClose }: MaterialTrackerP
                       <th className="border border-border px-4 py-3 text-left font-semibold">Material Name</th>
                       <th className="border border-border px-4 py-3 text-left font-semibold">Quantity</th>
                       <th className="border border-border px-4 py-3 text-left font-semibold">Unit</th>
-                      <th className="border border-border px-4 py-3 text-left font-semibold">Rate (₹)</th>
+                      <th className="border border-border px-4 py-3 text-left font-semibold">Total Cost (₹)</th>
                       <th className="border border-border px-4 py-3 text-left font-semibold">Delivery Date</th>
                       <th className="border border-border px-4 py-3 text-left font-semibold">Delivery Status</th>
                       <th className="border border-border px-4 py-3 text-center font-semibold">Delete</th>
