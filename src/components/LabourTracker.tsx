@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, memo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
@@ -96,29 +97,30 @@ const LabourRow = memo(({
         />
       </td>
       <td className="border border-border p-2">
-        <Input
-          type="text"
+        <Textarea
           value={localWorkPlan}
           onChange={(e) => setLocalWorkPlan(e.target.value)}
           onBlur={handleWorkPlanBlur}
           placeholder="Enter work plan..."
+          className="min-h-[60px] resize-y text-wrap"
+          rows={2}
         />
       </td>
       <td className="border border-border p-2 relative">
-        <div className="flex items-center gap-2">
-          <Input
-            type="text"
+        <div className="flex items-start gap-2">
+          <Textarea
             value={localWorkCompleted}
             onChange={(e) => setLocalWorkCompleted(e.target.value)}
             onBlur={handleWorkCompletedBlur}
             placeholder="Enter work completed..."
-            className="flex-1"
+            className="flex-1 min-h-[60px] resize-y text-wrap"
+            rows={2}
           />
           <Button
             variant="ghost"
             size="icon"
             onClick={() => onDelete(entry.id)}
-            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+            className="text-destructive hover:text-destructive hover:bg-destructive/10 mt-1"
           >
             <Trash2 className="h-4 w-4" />
           </Button>
