@@ -68,7 +68,7 @@ export default function GenerateSummaryScreen() {
   const topSectionRef = useRef<HTMLDivElement>(null);
   const totalMaterialCostRef = useRef<number>(0); // Store total material cost for access across sections
   const totalLabourCostRef = useRef<number>(0); // Store total labour cost for access across sections
-  
+
   // CRITICAL: Frozen snapshots to prevent mobile incremental rendering from affecting order
   const frozenAreaConfigsRef = useRef<AreaConfig[]>([]);
   const frozenCalculationConfigsRef = useRef<AreaConfig[]>([]);
@@ -97,7 +97,6 @@ export default function GenerateSummaryScreen() {
     }
     return frozenAreaConfigsRef.current;
   }, [areaConfigs]);
-
   const sortedCalculationConfigs = useMemo(() => {
     const configsHash = createConfigsHash(calculationConfigs);
     if (configsHash !== lastCalculationConfigsHash.current || frozenCalculationConfigsRef.current.length === 0) {
@@ -107,7 +106,6 @@ export default function GenerateSummaryScreen() {
     }
     return frozenCalculationConfigsRef.current;
   }, [calculationConfigs]);
-
   useEffect(() => {
     loadData();
   }, [projectId]);
@@ -299,36 +297,34 @@ export default function GenerateSummaryScreen() {
             // Look for matching enamel config in paintEstimationConfigs
             const isSeparateEnamel = room.section_name && room.section_name.toLowerCase().includes('varnish');
             const isMainEnamel = !room.section_name || !isSeparateEnamel;
-            
+
             // Match by label, name, section_name, OR by isCustomSection flag
             const matchingEnamelConfig = paintEstimationConfigs.find(cfg => {
               if (cfg.areaType !== 'Enamel') return false;
-              
+
               // Direct label/name match
               if (cfg.label === displayName || cfg.label === room.name) return true;
               if (cfg.sectionName === room.section_name && room.section_name) return true;
-              
+
               // For main enamel areas - match configs without custom section flag
               if (isMainEnamel && !cfg.sectionName && cfg.label?.toLowerCase().includes('enamel area')) {
                 return true;
               }
-              
+
               // For separate/varnish areas - match by section name containing 'varnish'
               if (isSeparateEnamel && cfg.sectionName?.toLowerCase().includes('varnish')) {
                 return true;
               }
-              
               return false;
             });
-            
             console.log('Enamel matching for room:', room.name, 'displayName:', displayName, 'found config:', matchingEnamelConfig?.label, 'coats:', matchingEnamelConfig?.coatConfiguration?.emulsion);
-            
+
             // Use enamel config from Paint Estimation if available
             let enamelPrimer = '';
             let enamelPrimerCoats = 0;
             let enamelEmulsion = 'AP Apcolite Premium Gloss Enamel';
             let enamelEmulsionCoats = 1; // Default to 1 coat, not 2
-            
+
             if (matchingEnamelConfig?.enamelConfig) {
               // User configured enamel in Paint Estimation - use their selections
               enamelPrimer = matchingEnamelConfig.enamelConfig.primerType || '';
@@ -350,7 +346,6 @@ export default function GenerateSummaryScreen() {
               enamelEmulsionCoats = matchingEnamelConfig.coatConfiguration.emulsion ?? 1;
               enamelEmulsion = matchingEnamelConfig.selectedMaterials?.emulsion || 'AP Apcolite Premium Gloss Enamel';
             }
-            
             enamelConfigs.push({
               id: `enamel_${room.id}`,
               areaType: 'Door & Window',
@@ -859,16 +854,23 @@ export default function GenerateSummaryScreen() {
     // These are standard rates - NOT system assumptions
     const coverageRates = {
       waterBased: {
-        putty: 400,              // FIXED: 400 sq.ft/day for Putty (Interior/Exterior)
-        interiorPrimer: 700,     // FIXED: 700 sq.ft/day for Interior Primer
-        exteriorPrimer: 550,     // FIXED: 550 sq.ft/day for Exterior Primer
-        interiorEmulsion: 700,   // FIXED: 700 sq.ft/day for Interior Emulsion (1 coat)
-        exteriorEmulsion: 550    // FIXED: 550 sq.ft/day for Exterior Emulsion (1 coat)
+        putty: 400,
+        // FIXED: 400 sq.ft/day for Putty (Interior/Exterior)
+        interiorPrimer: 700,
+        // FIXED: 700 sq.ft/day for Interior Primer
+        exteriorPrimer: 550,
+        // FIXED: 550 sq.ft/day for Exterior Primer
+        interiorEmulsion: 700,
+        // FIXED: 700 sq.ft/day for Interior Emulsion (1 coat)
+        exteriorEmulsion: 550 // FIXED: 550 sq.ft/day for Exterior Emulsion (1 coat)
       },
       oilBased: {
-        redOxide: 300,        // Enamel Red Oxide Metal Primer
-        enamelBase: 250,      // Enamel Wood Primer
-        enamelTop: 280,       // Apcolite Enamel Topcoat
+        redOxide: 300,
+        // Enamel Red Oxide Metal Primer
+        enamelBase: 250,
+        // Enamel Wood Primer
+        enamelTop: 280,
+        // Apcolite Enamel Topcoat
         full3Coat: 275
       }
     };
@@ -991,22 +993,19 @@ export default function GenerateSummaryScreen() {
     const averageCoverage = allTasks.length > 0 ? allTasks.reduce((sum, task) => sum + task.coverage, 0) / allTasks.length : 1000;
     const adjustedAverageCoverage = averageCoverage * (workingHours / standardHours);
     const laboursNeeded = manualDays > 0 ? Math.ceil(totalWorkAllTasks / (adjustedAverageCoverage * manualDays)) : 1;
-    
+
     // Calculate displayDays as SUM of individual card days (ceiling each first, then sum)
     // This ensures Total Project Duration = sum of all individual card "Total Days"
     // Only count non-enamel configs here (enamel has separate calculation)
-    const nonEnamelDisplayDays = configTasks
-      .filter(ct => !ct.isEnamel && ct.totalDays > 0)
-      .reduce((sum, ct) => sum + Math.ceil(ct.totalDays / autoLabourPerDay), 0);
-    
+    const nonEnamelDisplayDays = configTasks.filter(ct => !ct.isEnamel && ct.totalDays > 0).reduce((sum, ct) => sum + Math.ceil(ct.totalDays / autoLabourPerDay), 0);
+
     // For enamel, calculate aggregated days using same formula as enamel section
     const enamelPrimerRate = 300; // Standard enamel primer rate
     const enamelTopcoatRate = 280; // Standard enamel topcoat rate
-    
+
     // Get enamel configs
     const enamelConfigs = configTasks.filter(ct => ct.isEnamel);
     let enamelTotalDays = 0;
-    
     if (enamelConfigs.length > 0) {
       // Aggregate all enamel areas and calculate days
       const totalEnamelWork = enamelConfigs.reduce((sum, ct) => {
@@ -1015,13 +1014,11 @@ export default function GenerateSummaryScreen() {
       }, 0);
       enamelTotalDays = Math.ceil(totalEnamelWork / (enamelTopcoatRate * autoLabourPerDay));
     }
-    
-    const displayDays = labourMode === 'auto' ? (nonEnamelDisplayDays + enamelTotalDays) : manualDays;
+    const displayDays = labourMode === 'auto' ? nonEnamelDisplayDays + enamelTotalDays : manualDays;
     const displayLabours = labourMode === 'auto' ? autoLabourPerDay : laboursNeeded;
-    
+
     // Update ref with total labour cost for use in Actual Total Project Cost section
     totalLabourCostRef.current = displayLabours * displayDays * perDayLabourCost;
-    
     return <Card className="eca-shadow">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg font-semibold">
@@ -1225,119 +1222,120 @@ export default function GenerateSummaryScreen() {
 
                 {/* Enamel Configurations - Aggregated with Detailed Layout */}
                 {(() => {
-                  const enamelConfigs = configTasks.filter(ct => ct.isEnamel);
-                  if (enamelConfigs.length === 0) return null;
-                  
-                  // Fixed enamel labour rates (sq.ft/day)
-                  const enamelPrimerRate = 300; // Standard Labour Rate for enamel primer
-                  const enamelTopcoatRate = 300; // Standard Labour Rate for enamel topcoat
-                  
-                  // Aggregate enamel areas into Main and Separate (Varnish) groups
-                  interface EnamelGroup {
-                    primerSqft: number;
-                    primerCoats: number;
-                    primerProduct: string;
-                    primerSelected: boolean; // Track if primer was explicitly selected
-                    enamelSqft: number;
-                    enamelCoats: number;
-                    enamelProduct: string;
+              const enamelConfigs = configTasks.filter(ct => ct.isEnamel);
+              if (enamelConfigs.length === 0) return null;
+
+              // Fixed enamel labour rates (sq.ft/day)
+              const enamelPrimerRate = 300; // Standard Labour Rate for enamel primer
+              const enamelTopcoatRate = 300; // Standard Labour Rate for enamel topcoat
+
+              // Aggregate enamel areas into Main and Separate (Varnish) groups
+              interface EnamelGroup {
+                primerSqft: number;
+                primerCoats: number;
+                primerProduct: string;
+                primerSelected: boolean; // Track if primer was explicitly selected
+                enamelSqft: number;
+                enamelCoats: number;
+                enamelProduct: string;
+              }
+              const mainEnamel: EnamelGroup = {
+                primerSqft: 0,
+                primerCoats: 0,
+                primerProduct: '',
+                primerSelected: false,
+                enamelSqft: 0,
+                enamelCoats: 0,
+                enamelProduct: ''
+              };
+              const separateEnamel: EnamelGroup = {
+                primerSqft: 0,
+                primerCoats: 0,
+                primerProduct: '',
+                primerSelected: false,
+                enamelSqft: 0,
+                enamelCoats: 0,
+                enamelProduct: ''
+              };
+              enamelConfigs.forEach(config => {
+                const isSeparate = config.configLabel?.toLowerCase().includes('varnish') || config.configLabel?.toLowerCase().includes('separate');
+                const target = isSeparate ? separateEnamel : mainEnamel;
+                config.tasks.forEach((task: any) => {
+                  const taskName = task.name?.toLowerCase() || '';
+                  // Only count primer if it's a real selected product (not just "Primer" default)
+                  const isPrimerTask = taskName.includes('primer');
+                  const isRealPrimerProduct = isPrimerTask && task.name && task.name !== 'Primer' && task.name !== 'Enamel Primer' && task.name.toLowerCase() !== 'primer';
+                  if (isPrimerTask && isRealPrimerProduct) {
+                    target.primerSqft += task.area || 0;
+                    target.primerCoats = Math.max(target.primerCoats, task.coats || 1);
+                    target.primerProduct = task.name;
+                    target.primerSelected = true;
+                  } else if (!isPrimerTask) {
+                    target.enamelSqft += task.area || 0;
+                    target.enamelCoats = Math.max(target.enamelCoats, task.coats || 1);
+                    if (!target.enamelProduct) target.enamelProduct = task.name || 'Enamel Topcoat';
                   }
-                  
-                  const mainEnamel: EnamelGroup = { primerSqft: 0, primerCoats: 0, primerProduct: '', primerSelected: false, enamelSqft: 0, enamelCoats: 0, enamelProduct: '' };
-                  const separateEnamel: EnamelGroup = { primerSqft: 0, primerCoats: 0, primerProduct: '', primerSelected: false, enamelSqft: 0, enamelCoats: 0, enamelProduct: '' };
-                  
-                  enamelConfigs.forEach(config => {
-                    const isSeparate = config.configLabel?.toLowerCase().includes('varnish') || 
-                                      config.configLabel?.toLowerCase().includes('separate');
-                    const target = isSeparate ? separateEnamel : mainEnamel;
-                    
-                    config.tasks.forEach((task: any) => {
-                      const taskName = task.name?.toLowerCase() || '';
-                      // Only count primer if it's a real selected product (not just "Primer" default)
-                      const isPrimerTask = taskName.includes('primer');
-                      const isRealPrimerProduct = isPrimerTask && 
-                        task.name && 
-                        task.name !== 'Primer' && 
-                        task.name !== 'Enamel Primer' &&
-                        task.name.toLowerCase() !== 'primer';
-                      
-                      if (isPrimerTask && isRealPrimerProduct) {
-                        target.primerSqft += task.area || 0;
-                        target.primerCoats = Math.max(target.primerCoats, task.coats || 1);
-                        target.primerProduct = task.name;
-                        target.primerSelected = true;
-                      } else if (!isPrimerTask) {
-                        target.enamelSqft += task.area || 0;
-                        target.enamelCoats = Math.max(target.enamelCoats, task.coats || 1);
-                        if (!target.enamelProduct) target.enamelProduct = task.name || 'Enamel Topcoat';
-                      }
-                    });
+                });
+              });
+
+              // Calculate days for each task type (round only final totals)
+              const calcDays = (sqft: number, coats: number, rate: number) => {
+                if (sqft <= 0) return 0;
+                const totalWork = sqft * coats;
+                return Math.ceil(totalWork / (rate * autoLabourPerDay));
+              };
+
+              // Only calculate primer days if primer was explicitly selected
+              const mainPrimerDays = mainEnamel.primerSelected ? calcDays(mainEnamel.primerSqft, mainEnamel.primerCoats, enamelPrimerRate) : 0;
+              const mainEnamelDays = calcDays(mainEnamel.enamelSqft, mainEnamel.enamelCoats, enamelTopcoatRate);
+              const mainTotalDays = mainPrimerDays + mainEnamelDays;
+              const separatePrimerDays = separateEnamel.primerSelected ? calcDays(separateEnamel.primerSqft, separateEnamel.primerCoats, enamelPrimerRate) : 0;
+              const separateEnamelTopDays = calcDays(separateEnamel.enamelSqft, separateEnamel.enamelCoats, enamelTopcoatRate);
+              const separateTotalDays = separatePrimerDays + separateEnamelTopDays;
+
+              // Check if we have any enamel work (primer only counts if explicitly selected)
+              const hasMainEnamel = mainEnamel.primerSelected && mainEnamel.primerSqft > 0 || mainEnamel.enamelSqft > 0;
+              const hasSeparateEnamel = separateEnamel.primerSelected && separateEnamel.primerSqft > 0 || separateEnamel.enamelSqft > 0;
+              if (!hasMainEnamel && !hasSeparateEnamel) return null;
+
+              // Build aggregated tasks for display - only include primer if explicitly selected
+              const buildTasks = (group: EnamelGroup, primerDays: number, topcoatDays: number) => {
+                const tasks: any[] = [];
+                // Only add primer task if primer was explicitly selected with a real product
+                if (group.primerSelected && group.primerSqft > 0) {
+                  tasks.push({
+                    name: group.primerProduct,
+                    area: group.primerSqft,
+                    coats: group.primerCoats || 1,
+                    totalWork: group.primerSqft * (group.primerCoats || 1),
+                    coverage: enamelPrimerRate,
+                    daysRequired: primerDays
                   });
-                  
-                  // Calculate days for each task type (round only final totals)
-                  const calcDays = (sqft: number, coats: number, rate: number) => {
-                    if (sqft <= 0) return 0;
-                    const totalWork = sqft * coats;
-                    return Math.ceil(totalWork / (rate * autoLabourPerDay));
-                  };
-                  
-                  // Only calculate primer days if primer was explicitly selected
-                  const mainPrimerDays = mainEnamel.primerSelected ? calcDays(mainEnamel.primerSqft, mainEnamel.primerCoats, enamelPrimerRate) : 0;
-                  const mainEnamelDays = calcDays(mainEnamel.enamelSqft, mainEnamel.enamelCoats, enamelTopcoatRate);
-                  const mainTotalDays = mainPrimerDays + mainEnamelDays;
-                  
-                  const separatePrimerDays = separateEnamel.primerSelected ? calcDays(separateEnamel.primerSqft, separateEnamel.primerCoats, enamelPrimerRate) : 0;
-                  const separateEnamelTopDays = calcDays(separateEnamel.enamelSqft, separateEnamel.enamelCoats, enamelTopcoatRate);
-                  const separateTotalDays = separatePrimerDays + separateEnamelTopDays;
-                  
-                  // Check if we have any enamel work (primer only counts if explicitly selected)
-                  const hasMainEnamel = (mainEnamel.primerSelected && mainEnamel.primerSqft > 0) || mainEnamel.enamelSqft > 0;
-                  const hasSeparateEnamel = (separateEnamel.primerSelected && separateEnamel.primerSqft > 0) || separateEnamel.enamelSqft > 0;
-                  
-                  if (!hasMainEnamel && !hasSeparateEnamel) return null;
-                  
-                  // Build aggregated tasks for display - only include primer if explicitly selected
-                  const buildTasks = (group: EnamelGroup, primerDays: number, topcoatDays: number) => {
-                    const tasks: any[] = [];
-                    // Only add primer task if primer was explicitly selected with a real product
-                    if (group.primerSelected && group.primerSqft > 0) {
-                      tasks.push({
-                        name: group.primerProduct,
-                        area: group.primerSqft,
-                        coats: group.primerCoats || 1,
-                        totalWork: group.primerSqft * (group.primerCoats || 1),
-                        coverage: enamelPrimerRate,
-                        daysRequired: primerDays
-                      });
-                    }
-                    if (group.enamelSqft > 0) {
-                      tasks.push({
-                        name: group.enamelProduct || 'Enamel Topcoat',
-                        area: group.enamelSqft,
-                        coats: group.enamelCoats || 1,
-                        totalWork: group.enamelSqft * (group.enamelCoats || 1),
-                        coverage: enamelTopcoatRate,
-                        daysRequired: topcoatDays
-                      });
-                    }
-                    return tasks;
-                  };
-                  
-                  const mainTasks = buildTasks(mainEnamel, mainPrimerDays, mainEnamelDays);
-                  const separateTasks = buildTasks(separateEnamel, separatePrimerDays, separateEnamelTopDays);
-                  
-                  return (
-                    <div className="space-y-3">
+                }
+                if (group.enamelSqft > 0) {
+                  tasks.push({
+                    name: group.enamelProduct || 'Enamel Topcoat',
+                    area: group.enamelSqft,
+                    coats: group.enamelCoats || 1,
+                    totalWork: group.enamelSqft * (group.enamelCoats || 1),
+                    coverage: enamelTopcoatRate,
+                    daysRequired: topcoatDays
+                  });
+                }
+                return tasks;
+              };
+              const mainTasks = buildTasks(mainEnamel, mainPrimerDays, mainEnamelDays);
+              const separateTasks = buildTasks(separateEnamel, separatePrimerDays, separateEnamelTopDays);
+              return <div className="space-y-3">
                       <Badge variant="outline" className="bg-orange-500/10 text-orange-600 border-orange-500/20">
                         Enamel Paint Configurations
                       </Badge>
                       <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide" style={{
-                        scrollbarWidth: 'none',
-                        msOverflowStyle: 'none'
-                      }}>
+                  scrollbarWidth: 'none',
+                  msOverflowStyle: 'none'
+                }}>
                         {/* Main Enamel Area Card */}
-                        {hasMainEnamel && (
-                          <Card className="flex-none w-72 min-h-[340px] border-2 snap-start bg-orange-50 border-orange-300 dark:bg-orange-900/20 dark:border-orange-500/50">
+                        {hasMainEnamel && <Card className="flex-none w-72 min-h-[340px] border-2 snap-start bg-orange-50 border-orange-300 dark:bg-orange-900/20 dark:border-orange-500/50">
                             <CardContent className="p-4">
                               <div className="space-y-4">
                                 {/* Header with Enamel Badge */}
@@ -1350,16 +1348,7 @@ export default function GenerateSummaryScreen() {
                                 
                                 {/* Tasks List */}
                                 <div className="space-y-3">
-                                  {mainTasks.map((task: any, taskIdx: number) => (
-                                    <LabourCalculationDetails 
-                                      key={taskIdx} 
-                                      task={task} 
-                                      workingHours={workingHours} 
-                                      standardHours={standardHours} 
-                                      numberOfLabours={numberOfLabours} 
-                                      autoLabourPerDay={autoLabourPerDay} 
-                                    />
-                                  ))}
+                                  {mainTasks.map((task: any, taskIdx: number) => <LabourCalculationDetails key={taskIdx} task={task} workingHours={workingHours} standardHours={standardHours} numberOfLabours={numberOfLabours} autoLabourPerDay={autoLabourPerDay} />)}
                                 </div>
                                 
                                 {/* Total Days */}
@@ -1371,12 +1360,10 @@ export default function GenerateSummaryScreen() {
                                 </div>
                               </div>
                             </CardContent>
-                          </Card>
-                        )}
+                          </Card>}
                         
                         {/* Separate/Varnish Enamel Area Card */}
-                        {hasSeparateEnamel && (
-                          <Card className="flex-none w-72 min-h-[340px] border-2 snap-start bg-orange-50 border-orange-300 dark:bg-orange-900/20 dark:border-orange-500/50">
+                        {hasSeparateEnamel && <Card className="flex-none w-72 min-h-[340px] border-2 snap-start bg-orange-50 border-orange-300 dark:bg-orange-900/20 dark:border-orange-500/50">
                             <CardContent className="p-4">
                               <div className="space-y-4">
                                 {/* Header with Enamel Badge */}
@@ -1389,16 +1376,7 @@ export default function GenerateSummaryScreen() {
                                 
                                 {/* Tasks List */}
                                 <div className="space-y-3">
-                                  {separateTasks.map((task: any, taskIdx: number) => (
-                                    <LabourCalculationDetails 
-                                      key={taskIdx} 
-                                      task={task} 
-                                      workingHours={workingHours} 
-                                      standardHours={standardHours} 
-                                      numberOfLabours={numberOfLabours} 
-                                      autoLabourPerDay={autoLabourPerDay} 
-                                    />
-                                  ))}
+                                  {separateTasks.map((task: any, taskIdx: number) => <LabourCalculationDetails key={taskIdx} task={task} workingHours={workingHours} standardHours={standardHours} numberOfLabours={numberOfLabours} autoLabourPerDay={autoLabourPerDay} />)}
                                 </div>
                                 
                                 {/* Total Days */}
@@ -1410,12 +1388,10 @@ export default function GenerateSummaryScreen() {
                                 </div>
                               </div>
                             </CardContent>
-                          </Card>
-                        )}
+                          </Card>}
                       </div>
-                    </div>
-                  );
-                })()}
+                    </div>;
+            })()}
 
                 {/* Summary */}
                 <div className="p-4 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 rounded-lg border-2 border-red-500">
@@ -1786,11 +1762,7 @@ export default function GenerateSummaryScreen() {
       }
       const totalCost = materials.reduce((sum, m) => sum + m.totalCost, 0);
       // Check if this is an enamel configuration
-      const isEnamelConfig = String(config.paintTypeCategory).toLowerCase() === 'enamel' || 
-        config.areaType === 'Enamel' ||
-        config.label?.toLowerCase().includes('enamel') ||
-        materials.some((m: any) => m.type === 'Enamel' || m.type === 'Enamel Primer');
-      
+      const isEnamelConfig = String(config.paintTypeCategory).toLowerCase() === 'enamel' || config.areaType === 'Enamel' || config.label?.toLowerCase().includes('enamel') || materials.some((m: any) => m.type === 'Enamel' || m.type === 'Enamel Primer');
       configMaterials.push({
         configLabel: config.label || config.areaType,
         paintTypeCategory: config.paintTypeCategory,
@@ -1853,7 +1825,7 @@ export default function GenerateSummaryScreen() {
                             {/* Total Cost */}
                             <div className="pt-3 border-t-2 border-primary/20">
                               <div className="flex items-center justify-between">
-                                <p className="text-sm font-medium text-muted-foreground">Total Material Cost:</p>
+                                <p className="text-sm font-medium text-muted-foreground">Total Cost:</p>
                                 <p className="text-2xl font-bold text-primary">₹{configMat.totalCost.toLocaleString('en-IN')}</p>
                               </div>
                             </div>
@@ -1961,105 +1933,107 @@ export default function GenerateSummaryScreen() {
 
               {/* Enamel (Door & Window) Configurations - Aggregated into 2 boxes like Labour */}
               {(() => {
-                const enamelMaterials = configMaterials.filter(cm => cm.isEnamel && cm.materials.length > 0);
-                if (enamelMaterials.length === 0) return null;
-                
-                // Aggregate materials into Main and Separate groups
-                interface MaterialGroup {
-                  primerMaterials: any[];
-                  enamelMaterials: any[];
-                  totalCost: number;
-                }
-                
-                const mainGroup: MaterialGroup = { primerMaterials: [], enamelMaterials: [], totalCost: 0 };
-                const separateGroup: MaterialGroup = { primerMaterials: [], enamelMaterials: [], totalCost: 0 };
-                
-                enamelMaterials.forEach(configMat => {
-                  const isSeparate = configMat.configLabel?.toLowerCase().includes('varnish') || 
-                                    configMat.configLabel?.toLowerCase().includes('separate');
-                  const target = isSeparate ? separateGroup : mainGroup;
-                  
-                  configMat.materials.forEach((mat: any) => {
-                    const matName = mat.name?.toLowerCase() || '';
-                    const isPrimer = matName.includes('primer');
-                    
-                    // Check if this is a real selected primer (not default)
-                    const isRealPrimer = isPrimer && 
-                      mat.name && 
-                      mat.name !== 'Primer' && 
-                      mat.name !== 'Enamel Primer' &&
-                      mat.name.toLowerCase() !== 'primer';
-                    
-                    if (isRealPrimer) {
-                      // Aggregate primer - find existing or add new (only sum area, recalculate quantity later)
-                      const existing = target.primerMaterials.find((m: any) => m.name === mat.name);
-                      if (existing) {
-                        existing.area += mat.area || 0;
-                        // Store coverage rate for later recalculation
-                        existing.coverageRate = mat.coverageRate || existing.coverageRate;
-                        existing.coats = mat.coats || existing.coats;
-                        existing.unit = mat.unit || existing.unit;
-                      } else {
-                        target.primerMaterials.push({ ...mat, area: mat.area || 0, requiredQuantity: 0, totalCost: 0 });
-                      }
-                    } else if (!isPrimer) {
-                      // Aggregate enamel topcoat (only sum area, recalculate quantity later)
-                      const existing = target.enamelMaterials.find((m: any) => m.name === mat.name);
-                      if (existing) {
-                        existing.area += mat.area || 0;
-                        // Store coverage rate for later recalculation
-                        existing.coverageRate = mat.coverageRate || existing.coverageRate;
-                        existing.coats = mat.coats || existing.coats;
-                        existing.unit = mat.unit || existing.unit;
-                      } else {
-                        target.enamelMaterials.push({ ...mat, area: mat.area || 0, requiredQuantity: 0, totalCost: 0 });
-                      }
-                    }
-                  });
-                });
-                
-                // Recalculate requiredQuantity and totalCost for each aggregated material based on total area
-                const recalculateMaterial = (mat: any) => {
-                  if (mat.area > 0 && mat.coverageRate > 0) {
-                    const rawQuantity = mat.area / mat.coverageRate;
-                    mat.requiredQuantity = Math.ceil(rawQuantity);
-                    // Recalculate pack combination and cost
-                    const calc = calculateMaterial(mat.name, rawQuantity);
-                    mat.totalCost = calc.totalCost || 0;
-                    mat.combination = calc.combination || [];
-                    mat.unit = calc.unit || mat.unit;
+            const enamelMaterials = configMaterials.filter(cm => cm.isEnamel && cm.materials.length > 0);
+            if (enamelMaterials.length === 0) return null;
+
+            // Aggregate materials into Main and Separate groups
+            interface MaterialGroup {
+              primerMaterials: any[];
+              enamelMaterials: any[];
+              totalCost: number;
+            }
+            const mainGroup: MaterialGroup = {
+              primerMaterials: [],
+              enamelMaterials: [],
+              totalCost: 0
+            };
+            const separateGroup: MaterialGroup = {
+              primerMaterials: [],
+              enamelMaterials: [],
+              totalCost: 0
+            };
+            enamelMaterials.forEach(configMat => {
+              const isSeparate = configMat.configLabel?.toLowerCase().includes('varnish') || configMat.configLabel?.toLowerCase().includes('separate');
+              const target = isSeparate ? separateGroup : mainGroup;
+              configMat.materials.forEach((mat: any) => {
+                const matName = mat.name?.toLowerCase() || '';
+                const isPrimer = matName.includes('primer');
+
+                // Check if this is a real selected primer (not default)
+                const isRealPrimer = isPrimer && mat.name && mat.name !== 'Primer' && mat.name !== 'Enamel Primer' && mat.name.toLowerCase() !== 'primer';
+                if (isRealPrimer) {
+                  // Aggregate primer - find existing or add new (only sum area, recalculate quantity later)
+                  const existing = target.primerMaterials.find((m: any) => m.name === mat.name);
+                  if (existing) {
+                    existing.area += mat.area || 0;
+                    // Store coverage rate for later recalculation
+                    existing.coverageRate = mat.coverageRate || existing.coverageRate;
+                    existing.coats = mat.coats || existing.coats;
+                    existing.unit = mat.unit || existing.unit;
+                  } else {
+                    target.primerMaterials.push({
+                      ...mat,
+                      area: mat.area || 0,
+                      requiredQuantity: 0,
+                      totalCost: 0
+                    });
                   }
-                };
-                
-                // Recalculate all aggregated materials
-                mainGroup.primerMaterials.forEach(recalculateMaterial);
-                mainGroup.enamelMaterials.forEach(recalculateMaterial);
-                separateGroup.primerMaterials.forEach(recalculateMaterial);
-                separateGroup.enamelMaterials.forEach(recalculateMaterial);
-                
-                // Recalculate group total costs
-                mainGroup.totalCost = mainGroup.primerMaterials.reduce((sum, m) => sum + (m.totalCost || 0), 0) +
-                                     mainGroup.enamelMaterials.reduce((sum, m) => sum + (m.totalCost || 0), 0);
-                separateGroup.totalCost = separateGroup.primerMaterials.reduce((sum, m) => sum + (m.totalCost || 0), 0) +
-                                          separateGroup.enamelMaterials.reduce((sum, m) => sum + (m.totalCost || 0), 0);
-                
-                const hasMainEnamel = mainGroup.primerMaterials.length > 0 || mainGroup.enamelMaterials.length > 0;
-                const hasSeparateEnamel = separateGroup.primerMaterials.length > 0 || separateGroup.enamelMaterials.length > 0;
-                
-                if (!hasMainEnamel && !hasSeparateEnamel) return null;
-                
-                return (
-                  <div className="space-y-3">
+                } else if (!isPrimer) {
+                  // Aggregate enamel topcoat (only sum area, recalculate quantity later)
+                  const existing = target.enamelMaterials.find((m: any) => m.name === mat.name);
+                  if (existing) {
+                    existing.area += mat.area || 0;
+                    // Store coverage rate for later recalculation
+                    existing.coverageRate = mat.coverageRate || existing.coverageRate;
+                    existing.coats = mat.coats || existing.coats;
+                    existing.unit = mat.unit || existing.unit;
+                  } else {
+                    target.enamelMaterials.push({
+                      ...mat,
+                      area: mat.area || 0,
+                      requiredQuantity: 0,
+                      totalCost: 0
+                    });
+                  }
+                }
+              });
+            });
+
+            // Recalculate requiredQuantity and totalCost for each aggregated material based on total area
+            const recalculateMaterial = (mat: any) => {
+              if (mat.area > 0 && mat.coverageRate > 0) {
+                const rawQuantity = mat.area / mat.coverageRate;
+                mat.requiredQuantity = Math.ceil(rawQuantity);
+                // Recalculate pack combination and cost
+                const calc = calculateMaterial(mat.name, rawQuantity);
+                mat.totalCost = calc.totalCost || 0;
+                mat.combination = calc.combination || [];
+                mat.unit = calc.unit || mat.unit;
+              }
+            };
+
+            // Recalculate all aggregated materials
+            mainGroup.primerMaterials.forEach(recalculateMaterial);
+            mainGroup.enamelMaterials.forEach(recalculateMaterial);
+            separateGroup.primerMaterials.forEach(recalculateMaterial);
+            separateGroup.enamelMaterials.forEach(recalculateMaterial);
+
+            // Recalculate group total costs
+            mainGroup.totalCost = mainGroup.primerMaterials.reduce((sum, m) => sum + (m.totalCost || 0), 0) + mainGroup.enamelMaterials.reduce((sum, m) => sum + (m.totalCost || 0), 0);
+            separateGroup.totalCost = separateGroup.primerMaterials.reduce((sum, m) => sum + (m.totalCost || 0), 0) + separateGroup.enamelMaterials.reduce((sum, m) => sum + (m.totalCost || 0), 0);
+            const hasMainEnamel = mainGroup.primerMaterials.length > 0 || mainGroup.enamelMaterials.length > 0;
+            const hasSeparateEnamel = separateGroup.primerMaterials.length > 0 || separateGroup.enamelMaterials.length > 0;
+            if (!hasMainEnamel && !hasSeparateEnamel) return null;
+            return <div className="space-y-3">
                     <Badge variant="outline" className="bg-orange-500/10 text-orange-600 border-orange-500/20">
                       Enamel Paint Configurations
                     </Badge>
                     <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide" style={{
-                      scrollbarWidth: 'none',
-                      msOverflowStyle: 'none'
-                    }}>
+                scrollbarWidth: 'none',
+                msOverflowStyle: 'none'
+              }}>
                       {/* Main Enamel Area Card */}
-                      {hasMainEnamel && (
-                        <Card className="flex-none w-72 border-2 snap-start bg-orange-50 border-orange-300 dark:bg-orange-900/20 dark:border-orange-500/50">
+                      {hasMainEnamel && <Card className="flex-none w-72 border-2 snap-start bg-orange-50 border-orange-300 dark:bg-orange-900/20 dark:border-orange-500/50">
                           <CardContent className="p-4">
                             <div className="space-y-4">
                               {/* Header with Enamel Badge */}
@@ -2072,18 +2046,14 @@ export default function GenerateSummaryScreen() {
                               
                               {/* Materials List */}
                               <div className="space-y-3">
-                                {mainGroup.primerMaterials.map((mat: any, matIdx: number) => (
-                                  <div key={`primer-${matIdx}`}>
+                                {mainGroup.primerMaterials.map((mat: any, matIdx: number) => <div key={`primer-${matIdx}`}>
                                     {mat.error && <div className="text-xs text-destructive bg-destructive/10 p-2 rounded mb-2">⚠️ {mat.error}</div>}
                                     <MaterialCalculationDetails materialName={mat.name} materialType={mat.type} area={mat.area || 0} coats={mat.coats || 1} coverageRate={mat.coverageRate || 0} coverageDisplay={getMaterialCoverage(mat.name, mat.type)} unit={mat.unit} requiredQuantity={mat.requiredQuantity} totalCost={mat.totalCost} packCombination={mat.combination || []} hasError={!!mat.error} />
-                                  </div>
-                                ))}
-                                {mainGroup.enamelMaterials.map((mat: any, matIdx: number) => (
-                                  <div key={`enamel-${matIdx}`}>
+                                  </div>)}
+                                {mainGroup.enamelMaterials.map((mat: any, matIdx: number) => <div key={`enamel-${matIdx}`}>
                                     {mat.error && <div className="text-xs text-destructive bg-destructive/10 p-2 rounded mb-2">⚠️ {mat.error}</div>}
                                     <MaterialCalculationDetails materialName={mat.name} materialType={mat.type} area={mat.area || 0} coats={mat.coats || 1} coverageRate={mat.coverageRate || 0} coverageDisplay={getMaterialCoverage(mat.name, mat.type)} unit={mat.unit} requiredQuantity={mat.requiredQuantity} totalCost={mat.totalCost} packCombination={mat.combination || []} hasError={!!mat.error} />
-                                  </div>
-                                ))}
+                                  </div>)}
                               </div>
                               
                               {/* Total Cost */}
@@ -2095,12 +2065,10 @@ export default function GenerateSummaryScreen() {
                               </div>
                             </div>
                           </CardContent>
-                        </Card>
-                      )}
+                        </Card>}
                       
                       {/* Separate/Varnish Enamel Area Card */}
-                      {hasSeparateEnamel && (
-                        <Card className="flex-none w-72 border-2 snap-start bg-orange-50 border-orange-300 dark:bg-orange-900/20 dark:border-orange-500/50">
+                      {hasSeparateEnamel && <Card className="flex-none w-72 border-2 snap-start bg-orange-50 border-orange-300 dark:bg-orange-900/20 dark:border-orange-500/50">
                           <CardContent className="p-4">
                             <div className="space-y-4">
                               {/* Header with Enamel Badge */}
@@ -2113,18 +2081,14 @@ export default function GenerateSummaryScreen() {
                               
                               {/* Materials List */}
                               <div className="space-y-3">
-                                {separateGroup.primerMaterials.map((mat: any, matIdx: number) => (
-                                  <div key={`primer-${matIdx}`}>
+                                {separateGroup.primerMaterials.map((mat: any, matIdx: number) => <div key={`primer-${matIdx}`}>
                                     {mat.error && <div className="text-xs text-destructive bg-destructive/10 p-2 rounded mb-2">⚠️ {mat.error}</div>}
                                     <MaterialCalculationDetails materialName={mat.name} materialType={mat.type} area={mat.area || 0} coats={mat.coats || 1} coverageRate={mat.coverageRate || 0} coverageDisplay={getMaterialCoverage(mat.name, mat.type)} unit={mat.unit} requiredQuantity={mat.requiredQuantity} totalCost={mat.totalCost} packCombination={mat.combination || []} hasError={!!mat.error} />
-                                  </div>
-                                ))}
-                                {separateGroup.enamelMaterials.map((mat: any, matIdx: number) => (
-                                  <div key={`enamel-${matIdx}`}>
+                                  </div>)}
+                                {separateGroup.enamelMaterials.map((mat: any, matIdx: number) => <div key={`enamel-${matIdx}`}>
                                     {mat.error && <div className="text-xs text-destructive bg-destructive/10 p-2 rounded mb-2">⚠️ {mat.error}</div>}
                                     <MaterialCalculationDetails materialName={mat.name} materialType={mat.type} area={mat.area || 0} coats={mat.coats || 1} coverageRate={mat.coverageRate || 0} coverageDisplay={getMaterialCoverage(mat.name, mat.type)} unit={mat.unit} requiredQuantity={mat.requiredQuantity} totalCost={mat.totalCost} packCombination={mat.combination || []} hasError={!!mat.error} />
-                                  </div>
-                                ))}
+                                  </div>)}
                               </div>
                               
                               {/* Total Cost */}
@@ -2136,12 +2100,10 @@ export default function GenerateSummaryScreen() {
                               </div>
                             </div>
                           </CardContent>
-                        </Card>
-                      )}
+                        </Card>}
                     </div>
-                  </div>
-                );
-              })()}
+                  </div>;
+          })()}
 
           {/* Total Material Cost Summary */}
           {configMaterials.length > 0 && <div className="p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border-2 border-primary mt-4">
@@ -2497,9 +2459,9 @@ export default function GenerateSummaryScreen() {
 
             {/* Room Measurements - Matching Total Area Summary Style */}
             <div className="rounded-xl overflow-hidden" style={{
-              background: 'linear-gradient(135deg, #fce4ec 0%, #f3e5f5 50%, #e8eaf6 100%)',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
-            }}>
+            background: 'linear-gradient(135deg, #fce4ec 0%, #f3e5f5 50%, #e8eaf6 100%)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+          }}>
               <div className="p-5">
                 <div className="flex items-center mb-4">
                   <TrendingUp className="mr-2 h-5 w-5 text-destructive" />
@@ -2508,62 +2470,48 @@ export default function GenerateSummaryScreen() {
                 
                 {/* Interior Section */}
                 {(() => {
-                  const interiorAreas = totalAreas['Interior'];
-                  if (!interiorAreas) return null;
-                  const hasWall = interiorAreas.wallArea > 0;
-                  const hasCeiling = interiorAreas.ceilingArea > 0;
-                  if (!hasWall && !hasCeiling) return null;
-                  
-                  return (
-                    <div className="mb-4">
+                const interiorAreas = totalAreas['Interior'];
+                if (!interiorAreas) return null;
+                const hasWall = interiorAreas.wallArea > 0;
+                const hasCeiling = interiorAreas.ceilingArea > 0;
+                if (!hasWall && !hasCeiling) return null;
+                return <div className="mb-4">
                       <p className="text-sm font-semibold text-foreground mb-3">Interior</p>
                       <div className={`grid gap-6 ${hasWall && hasCeiling ? 'grid-cols-2' : 'grid-cols-1'}`}>
-                        {hasWall && (
-                          <div className="text-center">
+                        {hasWall && <div className="text-center">
                             <p className="text-xs text-muted-foreground mb-1">Total Wall</p>
                             <p className="text-2xl font-bold text-foreground">{interiorAreas.wallArea.toFixed(1)}</p>
                             <p className="text-xs text-muted-foreground">sq.ft</p>
-                          </div>
-                        )}
-                        {hasCeiling && (
-                          <div className="text-center">
+                          </div>}
+                        {hasCeiling && <div className="text-center">
                             <p className="text-xs text-muted-foreground mb-1">Total Ceiling</p>
                             <p className="text-2xl font-bold text-foreground">{interiorAreas.ceilingArea.toFixed(1)}</p>
                             <p className="text-xs text-muted-foreground">sq.ft</p>
-                          </div>
-                        )}
+                          </div>}
                       </div>
-                    </div>
-                  );
-                })()}
+                    </div>;
+              })()}
 
                 {/* Glass Divider - Interior to Exterior */}
                 {(() => {
-                  const exteriorAreas = totalAreas['Exterior'];
-                  const hasExterior = exteriorAreas && exteriorAreas.wallArea > 0;
-                  if (!hasExterior) return null;
-                  return (
-                    <div className="py-3">
-                      <div 
-                        className="h-[2px] w-full rounded-full"
-                        style={{
-                          background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.5) 10%, rgba(255,255,255,0.85) 50%, rgba(255,255,255,0.5) 90%, transparent 100%)',
-                          boxShadow: '0 0 6px rgba(255,255,255,0.4), 0 0 12px rgba(255,255,255,0.2)'
-                        }}
-                      />
-                    </div>
-                  );
-                })()}
+                const exteriorAreas = totalAreas['Exterior'];
+                const hasExterior = exteriorAreas && exteriorAreas.wallArea > 0;
+                if (!hasExterior) return null;
+                return <div className="py-3">
+                      <div className="h-[2px] w-full rounded-full" style={{
+                    background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.5) 10%, rgba(255,255,255,0.85) 50%, rgba(255,255,255,0.5) 90%, transparent 100%)',
+                    boxShadow: '0 0 6px rgba(255,255,255,0.4), 0 0 12px rgba(255,255,255,0.2)'
+                  }} />
+                    </div>;
+              })()}
 
                 {/* Exterior Section */}
                 {(() => {
-                  const exteriorAreas = totalAreas['Exterior'];
-                  if (!exteriorAreas) return null;
-                  const hasWall = exteriorAreas.wallArea > 0;
-                  if (!hasWall) return null;
-                  
-                  return (
-                    <div className="mb-2">
+                const exteriorAreas = totalAreas['Exterior'];
+                if (!exteriorAreas) return null;
+                const hasWall = exteriorAreas.wallArea > 0;
+                if (!hasWall) return null;
+                return <div className="mb-2">
                       <p className="text-sm font-semibold text-foreground mb-3">Exterior</p>
                       <div className="grid grid-cols-1">
                         <div className="text-center">
@@ -2572,26 +2520,19 @@ export default function GenerateSummaryScreen() {
                           <p className="text-xs text-muted-foreground">sq.ft</p>
                         </div>
                       </div>
-                    </div>
-                  );
-                })()}
+                    </div>;
+              })()}
 
                 {/* Glass Divider - Exterior to Enamel */}
-                {totalEnamelArea > 0 && (
-                  <div className="py-3">
-                    <div 
-                      className="h-[2px] w-full rounded-full"
-                      style={{
-                        background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.5) 10%, rgba(255,255,255,0.85) 50%, rgba(255,255,255,0.5) 90%, transparent 100%)',
-                        boxShadow: '0 0 6px rgba(255,255,255,0.4), 0 0 12px rgba(255,255,255,0.2)'
-                      }}
-                    />
-                  </div>
-                )}
+                {totalEnamelArea > 0 && <div className="py-3">
+                    <div className="h-[2px] w-full rounded-full" style={{
+                  background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.5) 10%, rgba(255,255,255,0.85) 50%, rgba(255,255,255,0.5) 90%, transparent 100%)',
+                  boxShadow: '0 0 6px rgba(255,255,255,0.4), 0 0 12px rgba(255,255,255,0.2)'
+                }} />
+                  </div>}
 
                 {/* Enamel Section */}
-                {totalEnamelArea > 0 && (
-                  <div>
+                {totalEnamelArea > 0 && <div>
                     <p className="text-sm font-semibold text-foreground mb-3">Enamel</p>
                     <div className="grid grid-cols-1">
                       <div className="text-center">
@@ -2600,8 +2541,7 @@ export default function GenerateSummaryScreen() {
                         <p className="text-xs text-muted-foreground">sq.ft</p>
                       </div>
                     </div>
-                  </div>
-                )}
+                  </div>}
               </div>
             </div>
 
