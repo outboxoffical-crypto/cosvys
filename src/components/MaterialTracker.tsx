@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Trash2, Package, Calendar as CalendarIcon } from "lucide-react";
@@ -281,22 +281,22 @@ export const MaterialTracker = ({ projectId, isOpen, onClose }: MaterialTrackerP
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[100vw] max-h-[100vh] h-[100vh] w-[100vw] md:max-w-7xl md:max-h-[95vh] md:h-auto md:w-auto p-0 overflow-hidden">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b">
+      <DialogContent className="max-w-[100vw] max-h-[100vh] h-[100vh] w-[100vw] md:max-w-7xl md:max-h-[95vh] md:h-auto md:w-auto p-0 overflow-hidden tracker-dialog-mobile" style={{ touchAction: 'pan-x pan-y pinch-zoom' }}>
+        <DialogHeader className="px-6 pt-6 pb-4 border-b sticky top-0 bg-background z-10">
           <DialogTitle className="text-2xl font-semibold flex items-center gap-2">
             <Package className="h-5 w-5" />
             Material Tracker
           </DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="h-[calc(100vh-140px)] md:h-[calc(95vh-140px)]">
+        <div className="h-[calc(100vh-140px)] md:h-[calc(95vh-140px)] overflow-auto" style={{ touchAction: 'pan-x pan-y pinch-zoom' }}>
           <div className="p-6">
             {loading ? (
               <div className="flex items-center justify-center p-12">
                 <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
               </div>
             ) : (
-              <div className="overflow-x-auto overflow-y-auto mobile-tracker-container">
+              <div className="overflow-x-auto overflow-y-auto mobile-tracker-container" style={{ touchAction: 'pan-x pan-y pinch-zoom' }}>
                 <table className="w-full border-collapse min-w-[1000px]">
                   <thead>
                     <tr className="bg-muted">
@@ -348,7 +348,7 @@ export const MaterialTracker = ({ projectId, isOpen, onClose }: MaterialTrackerP
               </div>
             </div>
           </div>
-        </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   );
