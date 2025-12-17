@@ -1991,30 +1991,57 @@ export default function GenerateSummaryScreen() {
                       mat.name.toLowerCase() !== 'primer';
                     
                     if (isRealPrimer) {
-                      // Aggregate primer - find existing or add new
+                      // Aggregate primer - find existing or add new (only sum area, recalculate quantity later)
                       const existing = target.primerMaterials.find((m: any) => m.name === mat.name);
                       if (existing) {
                         existing.area += mat.area || 0;
-                        existing.requiredQuantity += mat.requiredQuantity || 0;
-                        existing.totalCost += mat.totalCost || 0;
+                        // Store coverage rate for later recalculation
+                        existing.coverageRate = mat.coverageRate || existing.coverageRate;
+                        existing.coats = mat.coats || existing.coats;
+                        existing.unit = mat.unit || existing.unit;
                       } else {
-                        target.primerMaterials.push({ ...mat, area: mat.area || 0, requiredQuantity: mat.requiredQuantity || 0, totalCost: mat.totalCost || 0 });
+                        target.primerMaterials.push({ ...mat, area: mat.area || 0, requiredQuantity: 0, totalCost: 0 });
                       }
                     } else if (!isPrimer) {
-                      // Aggregate enamel topcoat
+                      // Aggregate enamel topcoat (only sum area, recalculate quantity later)
                       const existing = target.enamelMaterials.find((m: any) => m.name === mat.name);
                       if (existing) {
                         existing.area += mat.area || 0;
-                        existing.requiredQuantity += mat.requiredQuantity || 0;
-                        existing.totalCost += mat.totalCost || 0;
+                        // Store coverage rate for later recalculation
+                        existing.coverageRate = mat.coverageRate || existing.coverageRate;
+                        existing.coats = mat.coats || existing.coats;
+                        existing.unit = mat.unit || existing.unit;
                       } else {
-                        target.enamelMaterials.push({ ...mat, area: mat.area || 0, requiredQuantity: mat.requiredQuantity || 0, totalCost: mat.totalCost || 0 });
+                        target.enamelMaterials.push({ ...mat, area: mat.area || 0, requiredQuantity: 0, totalCost: 0 });
                       }
                     }
                   });
-                  
-                  target.totalCost += configMat.totalCost || 0;
                 });
+                
+                // Recalculate requiredQuantity and totalCost for each aggregated material based on total area
+                const recalculateMaterial = (mat: any) => {
+                  if (mat.area > 0 && mat.coverageRate > 0) {
+                    const rawQuantity = mat.area / mat.coverageRate;
+                    mat.requiredQuantity = Math.ceil(rawQuantity);
+                    // Recalculate pack combination and cost
+                    const calc = calculateMaterial(mat.name, rawQuantity);
+                    mat.totalCost = calc.totalCost || 0;
+                    mat.combination = calc.combination || [];
+                    mat.unit = calc.unit || mat.unit;
+                  }
+                };
+                
+                // Recalculate all aggregated materials
+                mainGroup.primerMaterials.forEach(recalculateMaterial);
+                mainGroup.enamelMaterials.forEach(recalculateMaterial);
+                separateGroup.primerMaterials.forEach(recalculateMaterial);
+                separateGroup.enamelMaterials.forEach(recalculateMaterial);
+                
+                // Recalculate group total costs
+                mainGroup.totalCost = mainGroup.primerMaterials.reduce((sum, m) => sum + (m.totalCost || 0), 0) +
+                                     mainGroup.enamelMaterials.reduce((sum, m) => sum + (m.totalCost || 0), 0);
+                separateGroup.totalCost = separateGroup.primerMaterials.reduce((sum, m) => sum + (m.totalCost || 0), 0) +
+                                          separateGroup.enamelMaterials.reduce((sum, m) => sum + (m.totalCost || 0), 0);
                 
                 const hasMainEnamel = mainGroup.primerMaterials.length > 0 || mainGroup.enamelMaterials.length > 0;
                 const hasSeparateEnamel = separateGroup.primerMaterials.length > 0 || separateGroup.enamelMaterials.length > 0;
