@@ -89,11 +89,11 @@ const MaterialRow = memo(({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="kg">kg</SelectItem>
-            <SelectItem value="litre">litre</SelectItem>
-            <SelectItem value="piece">piece</SelectItem>
-            <SelectItem value="box">box</SelectItem>
-            <SelectItem value="bag">bag</SelectItem>
+            <SelectItem value="Kg">Kg</SelectItem>
+            <SelectItem value="Ltr">Ltr</SelectItem>
+            <SelectItem value="Pcs">Pcs</SelectItem>
+            <SelectItem value="Pkg">Pkg</SelectItem>
+            <SelectItem value="Bag">Bag</SelectItem>
           </SelectContent>
         </Select>
       </td>
