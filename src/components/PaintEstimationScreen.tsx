@@ -1234,22 +1234,30 @@ export default function PaintEstimationScreen() {
     }
   };
 
+  // Track previous rooms hash to prevent unnecessary re-initialization
+  const prevRoomsHashRef = useRef<string>('');
+  const prevPaintTypeRef = useRef<string>('');
+  
   // Re-initialize when rooms change or paint type changes - ONLY after dataReady
+  // CRITICAL: Do NOT use setTimeout - it causes stale closure issues with user input
   useEffect(() => {
     if (rooms.length > 0 && dataReady) {
-      // Run heavy calculations slightly deferred to avoid white screen
-      setIsCalculating(true);
-      requestAnimationFrame(() => {
-        setTimeout(() => {
-          try {
-            initializeConfigurations(rooms);
-          } catch (error) {
-            console.error('Calculation error:', error);
-          } finally {
-            setIsCalculating(false);
-          }
-        }, 50);
-      });
+      // Create a simple hash of room IDs and areas to detect actual data changes
+      const roomsHash = rooms.map(r => `${r.id}-${r.floor_area}-${r.wall_area}-${r.ceiling_area}`).join('|');
+      
+      // Only re-initialize if rooms actually changed OR paint type changed
+      // This prevents input loss during real-time subscription pings
+      if (roomsHash !== prevRoomsHashRef.current || selectedPaintType !== prevPaintTypeRef.current) {
+        prevRoomsHashRef.current = roomsHash;
+        prevPaintTypeRef.current = selectedPaintType;
+        
+        // Run synchronously - NO setTimeout to avoid stale closures
+        try {
+          initializeConfigurations(rooms);
+        } catch (error) {
+          console.error('Calculation error:', error);
+        }
+      }
     }
   }, [rooms, selectedPaintType, dataReady]);
 
@@ -1580,15 +1588,7 @@ export default function PaintEstimationScreen() {
           </CardContent>
         </Card>
         
-        {/* Calculating Indicator - Non-blocking */}
-        {isCalculating && <Card className="eca-shadow border-2 border-primary/30 bg-primary/5 animate-pulse">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-center space-x-3">
-                <div className="h-5 w-5 border-3 border-primary border-t-transparent rounded-full animate-spin" />
-                <p className="text-base font-semibold text-primary">Calculating material & labour... Please wait</p>
-              </div>
-            </CardContent>
-          </Card>}
+        {/* Removed blocking calculating indicator - calculations now run instantly */}
 
         {/* Paint Configuration Summary - SORTED BY areaPriority: Wall(1) → Ceiling(2) → Floor(3) → Separate(4) */}
         {sortedConfigurationsForSummary.some(c => (c.paintingSystem || c.areaType === 'Enamel') && c.areaType !== 'Enamel') && <Card className="eca-shadow border-2 border-primary/30">
