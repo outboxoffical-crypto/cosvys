@@ -1273,61 +1273,58 @@ export default function RoomMeasurementScreen() {
       return;
     }
     
-    // Navigate IMMEDIATELY for instant feel
-    navigate(`/paint-estimation/${projectId}`);
-    
-    // Run background sync only for dirty rooms (non-blocking)
+    // Sync dirty rooms BEFORE navigation to ensure Paint Estimation sees latest data
     const dirtyRoomIds = Array.from(dirtyRoomsRef.current);
-    if (dirtyRoomIds.length === 0) {
-      // No changes, skip sync entirely
-      return;
-    }
-    
-    // Background sync - don't await, let it run async
-    (async () => {
+    if (dirtyRoomIds.length > 0) {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return;
-
-        // Only sync rooms that were actually changed
-        const dirtyRooms = rooms.filter(r => dirtyRoomIds.includes(r.id));
-        
-        if (dirtyRooms.length > 0) {
-          // Batch upsert for efficiency
-          const roomsToSync = dirtyRooms.map(room => ({
-            user_id: session.user.id,
-            project_id: projectId!,
-            room_id: room.id,
-            name: room.name,
-            length: room.length,
-            width: room.width,
-            height: room.height,
-            project_type: room.projectType,
-            pictures: room.pictures as any,
-            opening_areas: room.openingAreas as any,
-            extra_surfaces: room.extraSurfaces as any,
-            door_window_grills: room.doorWindowGrills as any,
-            floor_area: room.floorArea,
-            wall_area: room.wallArea,
-            ceiling_area: room.ceilingArea,
-            adjusted_wall_area: room.adjustedWallArea,
-            total_opening_area: room.totalOpeningArea,
-            total_extra_surface: room.totalExtraSurface,
-            total_door_window_grill_area: room.totalDoorWindowGrillArea,
-            selected_areas: room.selectedAreas as any
-          }));
-
-          await supabase.from('rooms').upsert(roomsToSync, {
-            onConflict: 'room_id,project_id'
-          });
+        if (session) {
+          // Only sync rooms that were actually changed
+          const dirtyRooms = rooms.filter(r => dirtyRoomIds.includes(r.id));
           
-          // Clear dirty rooms after successful sync
-          dirtyRoomsRef.current.clear();
+          if (dirtyRooms.length > 0) {
+            // Batch upsert for efficiency
+            const roomsToSync = dirtyRooms.map(room => ({
+              user_id: session.user.id,
+              project_id: projectId!,
+              room_id: room.id,
+              name: room.name,
+              section_name: room.sectionName || null,
+              length: room.length,
+              width: room.width,
+              height: room.height,
+              project_type: room.projectType,
+              pictures: room.pictures as any,
+              opening_areas: room.openingAreas as any,
+              extra_surfaces: room.extraSurfaces as any,
+              door_window_grills: room.doorWindowGrills as any,
+              sub_areas: room.subAreas as any,
+              floor_area: room.floorArea,
+              wall_area: room.wallArea,
+              ceiling_area: room.ceilingArea,
+              adjusted_wall_area: room.adjustedWallArea,
+              total_opening_area: room.totalOpeningArea,
+              total_extra_surface: room.totalExtraSurface,
+              total_door_window_grill_area: room.totalDoorWindowGrillArea,
+              selected_areas: room.selectedAreas as any
+            }));
+
+            await supabase.from('rooms').upsert(roomsToSync, {
+              onConflict: 'room_id,project_id'
+            });
+            
+            // Clear dirty rooms after successful sync
+            dirtyRoomsRef.current.clear();
+          }
         }
       } catch (error) {
-        console.error('Background sync error:', error);
+        console.error('Sync error:', error);
+        // Continue to navigation even if sync fails
       }
-    })();
+    }
+    
+    // Navigate after sync completes
+    navigate(`/paint-estimation/${projectId}`);
   };
 
   // Handle edit room

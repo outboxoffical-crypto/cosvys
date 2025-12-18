@@ -77,7 +77,8 @@ export default function PaintEstimationScreen() {
   const configsInitialized = useRef(false);
   
   // Data readiness tracking - CRITICAL for mobile hydration
-  const [dataReady, setDataReady] = useState(false);
+  // Start with true to show UI immediately, update silently
+  const [dataReady, setDataReady] = useState(true);
   const [roomsLoaded, setRoomsLoaded] = useState(false);
   const [coverageLoaded, setCoverageLoaded] = useState(false);
   const [localStorageHydrated, setLocalStorageHydrated] = useState(false);
@@ -138,15 +139,14 @@ export default function PaintEstimationScreen() {
   const [isCalculating, setIsCalculating] = useState(false);
   const [emulsionComboOpen, setEmulsionComboOpen] = useState(false);
 
-  // Data readiness check - ALL conditions must be true before rendering
+  // Data readiness check - show loading only initially, then update silently
   useEffect(() => {
-    if (roomsLoaded && coverageLoaded && localStorageHydrated && !configsInitialized.current) {
-      // All data is ready - trigger final initialization
+    if (roomsLoaded && localStorageHydrated && !configsInitialized.current) {
+      // Core data is ready - hide loading immediately
       configsInitialized.current = true;
-      setDataReady(true);
       setIsLoading(false);
     }
-  }, [roomsLoaded, coverageLoaded, localStorageHydrated]);
+  }, [roomsLoaded, localStorageHydrated]);
 
   // Sync initial paint type, prefer snapshot from Generate Summary
   useEffect(() => {
@@ -292,48 +292,59 @@ export default function PaintEstimationScreen() {
     loadEnamelProducts();
   }, []);
 
-  // Force fresh room loading from database - NEVER rely on cached data for areas
+  // Force fresh room loading from database - INSTANT on mobile
   useEffect(() => {
-    const loadRooms = async () => {
-      if (!projectId) {
-        setRoomsLoaded(true);
-        return;
-      }
+    if (!projectId) {
+      setRoomsLoaded(true);
+      return;
+    }
 
+    let isMounted = true;
+    
+    const loadRooms = async () => {
       try {
-        // ALWAYS fetch fresh from database to ensure enamel areas are included
-        const {
-          data: freshRooms,
-          error
-        } = await supabase.from('rooms').select('*').eq('project_id', projectId).order('created_at', { ascending: true });
+        // Fetch immediately - no delays
+        const { data: freshRooms, error } = await supabase
+          .from('rooms')
+          .select('*')
+          .eq('project_id', projectId)
+          .order('created_at', { ascending: true });
+          
         if (error) {
           console.error('Error fetching rooms:', error);
-          setRoomsLoaded(true);
+          if (isMounted) setRoomsLoaded(true);
           return;
         }
-        if (freshRooms && freshRooms.length > 0) {
+        
+        if (isMounted && freshRooms) {
           setRooms(freshRooms);
           initialLoadDone.current = true;
+          setRoomsLoaded(true);
         }
       } catch (err) {
         console.error('Error in loadRooms:', err);
-      } finally {
-        setRoomsLoaded(true);
+        if (isMounted) setRoomsLoaded(true);
       }
     };
+    
+    // Execute immediately
     loadRooms();
 
-    // Set up real-time subscription to detect new rooms
-    const channel = supabase.channel('rooms-changes').on('postgres_changes', {
-      event: '*',
-      schema: 'public',
-      table: 'rooms',
-      filter: `project_id=eq.${projectId}`
-    }, () => {
-      // Reload rooms when any change is detected
-      loadRooms();
-    }).subscribe();
+    // Set up real-time subscription
+    const channel = supabase
+      .channel(`rooms-${projectId}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'rooms',
+        filter: `project_id=eq.${projectId}`
+      }, () => {
+        loadRooms();
+      })
+      .subscribe();
+      
     return () => {
+      isMounted = false;
       supabase.removeChannel(channel);
     };
   }, [projectId]);
@@ -1984,12 +1995,22 @@ export default function PaintEstimationScreen() {
                 </Button>
               </div>}
 
-            {/* No areas message */}
-            {areaConfigurations.length === 0 && <Card className="eca-shadow">
+            {/* No areas message - only show after rooms have loaded */}
+            {areaConfigurations.length === 0 && roomsLoaded && <Card className="eca-shadow">
                 <CardContent className="p-6 text-center">
                   <p className="text-muted-foreground">
                     No {selectedPaintType.toLowerCase()} areas found. Please add rooms for {selectedPaintType.toLowerCase()} in the Room Measurements section.
                   </p>
+                </CardContent>
+              </Card>}
+            
+            {/* Loading state - show while fetching rooms */}
+            {areaConfigurations.length === 0 && !roomsLoaded && <Card className="eca-shadow">
+                <CardContent className="p-6 text-center">
+                  <div className="flex items-center justify-center space-x-2">
+                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                    <p className="text-muted-foreground">Loading room data...</p>
+                  </div>
                 </CardContent>
               </Card>}
 
