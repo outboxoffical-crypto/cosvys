@@ -1064,7 +1064,7 @@ export default function GenerateSummaryScreen() {
                 setAutoLabourPerDay(numValue);
                 setAutoLabourPerDayInput(String(numValue));
               }
-            }} className="w-full px-3 py-2 border border-input-border rounded text-sm bg-background" />
+            }} className="w-full px-3 py-2 border border-border rounded text-sm bg-background text-foreground" />
                 <p className="text-xs text-muted-foreground mt-2">
                   Number of labourers you can arrange per day
                 </p>
