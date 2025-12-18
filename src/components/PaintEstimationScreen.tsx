@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Palette, Plus, Minus, Settings, Trash2, ChevronsUpDown, Check, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { RateInput } from "@/components/ui/rate-input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -293,6 +294,7 @@ export default function PaintEstimationScreen() {
   }, []);
 
   // Force fresh room loading from database - INSTANT on mobile
+  // CRITICAL: NO real-time subscription - it causes re-renders that lose input values
   useEffect(() => {
     if (!projectId) {
       setRoomsLoaded(true);
@@ -327,25 +329,11 @@ export default function PaintEstimationScreen() {
       }
     };
     
-    // Execute immediately
+    // Execute ONCE on mount - no real-time subscription to avoid input disruption
     loadRooms();
-
-    // Set up real-time subscription
-    const channel = supabase
-      .channel(`rooms-${projectId}`)
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'rooms',
-        filter: `project_id=eq.${projectId}`
-      }, () => {
-        loadRooms();
-      })
-      .subscribe();
       
     return () => {
       isMounted = false;
-      supabase.removeChannel(channel);
     };
   }, [projectId]);
 
@@ -1635,22 +1623,27 @@ export default function PaintEstimationScreen() {
 
                           <div className="space-y-2">
                             <Label className="text-sm">Per Sq.ft Rate (₹)</Label>
-                            <Input type="number" placeholder="Enter rate per sq.ft" value={config.perSqFtRate ?? ''} onChange={e => {
-                    setAreaConfigurations(prev => {
-                      const updated = prev.map(c => c.id === config.id ? {
-                        ...c,
-                        perSqFtRate: e.target.value
-                      } : c);
-                      // Save to localStorage
-                      const savedConfigKey = `paint_configs_${projectId}_${selectedPaintType}`;
-                      try {
-                        localStorage.setItem(savedConfigKey, JSON.stringify(updated));
-                      } catch (e) {
-                        console.error('Error saving configs:', e);
-                      }
-                      return updated;
-                    });
-                  }} className="h-10" />
+                            <RateInput 
+                              placeholder="Enter rate per sq.ft" 
+                              value={config.perSqFtRate} 
+                              onChange={(newValue) => {
+                                setAreaConfigurations(prev => {
+                                  const updated = prev.map(c => c.id === config.id ? {
+                                    ...c,
+                                    perSqFtRate: newValue
+                                  } : c);
+                                  // Save to localStorage on blur (when RateInput calls onChange)
+                                  const savedConfigKey = `paint_configs_${projectId}_${selectedPaintType}`;
+                                  try {
+                                    localStorage.setItem(savedConfigKey, JSON.stringify(updated));
+                                  } catch (e) {
+                                    console.error('Error saving configs:', e);
+                                  }
+                                  return updated;
+                                });
+                              }} 
+                              className="h-10" 
+                            />
                           </div>
                         </div>
                       </CardContent>
@@ -1823,22 +1816,27 @@ export default function PaintEstimationScreen() {
 
                           <div className="space-y-2">
                             <Label className="text-sm">Per Sq.ft Rate (₹)</Label>
-                            <Input type="number" placeholder="Enter rate per sq.ft" value={config.perSqFtRate ?? ''} onChange={e => {
-                    setAreaConfigurations(prev => {
-                      const updated = prev.map(c => c.id === config.id ? {
-                        ...c,
-                        perSqFtRate: e.target.value
-                      } : c);
-                      // Save to localStorage
-                      const savedConfigKey = `paint_configs_${projectId}_${selectedPaintType}`;
-                      try {
-                        localStorage.setItem(savedConfigKey, JSON.stringify(updated));
-                      } catch (e) {
-                        console.error('Error saving configs:', e);
-                      }
-                      return updated;
-                    });
-                  }} className="h-10" />
+                            <RateInput 
+                              placeholder="Enter rate per sq.ft" 
+                              value={config.perSqFtRate} 
+                              onChange={(newValue) => {
+                                setAreaConfigurations(prev => {
+                                  const updated = prev.map(c => c.id === config.id ? {
+                                    ...c,
+                                    perSqFtRate: newValue
+                                  } : c);
+                                  // Save to localStorage on blur
+                                  const savedConfigKey = `paint_configs_${projectId}_${selectedPaintType}`;
+                                  try {
+                                    localStorage.setItem(savedConfigKey, JSON.stringify(updated));
+                                  } catch (e) {
+                                    console.error('Error saving configs:', e);
+                                  }
+                                  return updated;
+                                });
+                              }} 
+                              className="h-10" 
+                            />
                           </div>
                         </div>
                       </CardContent>
@@ -1887,22 +1885,27 @@ export default function PaintEstimationScreen() {
 
                           <div className="space-y-2">
                             <Label className="text-sm">Per Sq.ft Rate (₹)</Label>
-                            <Input type="number" placeholder="Enter rate per sq.ft" value={config.perSqFtRate ?? ''} onChange={e => {
-                      setAreaConfigurations(prev => {
-                        const updated = prev.map(c => c.id === config.id ? {
-                          ...c,
-                          perSqFtRate: e.target.value
-                        } : c);
-                        // Save to localStorage
-                        const savedConfigKey = `paint_configs_${projectId}_${selectedPaintType}`;
-                        try {
-                          localStorage.setItem(savedConfigKey, JSON.stringify(updated));
-                        } catch (e) {
-                          console.error('Error saving configs:', e);
-                        }
-                        return updated;
-                      });
-                    }} className="h-10" />
+                            <RateInput 
+                              placeholder="Enter rate per sq.ft" 
+                              value={config.perSqFtRate} 
+                              onChange={(newValue) => {
+                                setAreaConfigurations(prev => {
+                                  const updated = prev.map(c => c.id === config.id ? {
+                                    ...c,
+                                    perSqFtRate: newValue
+                                  } : c);
+                                  // Save to localStorage on blur
+                                  const savedConfigKey = `paint_configs_${projectId}_${selectedPaintType}`;
+                                  try {
+                                    localStorage.setItem(savedConfigKey, JSON.stringify(updated));
+                                  } catch (e) {
+                                    console.error('Error saving configs:', e);
+                                  }
+                                  return updated;
+                                });
+                              }} 
+                              className="h-10" 
+                            />
                           </div>
                         </div>
                       </CardContent>
