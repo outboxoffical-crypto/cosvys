@@ -72,7 +72,7 @@ export default function MaterialCalculationDetails({
       <div className="flex items-baseline justify-between">
         <div className="flex-1">
           <p className="text-sm text-muted-foreground">
-            Type: <span className="font-medium text-foreground">{materialType}</span>
+            Area: <span className="font-medium text-foreground">{area.toFixed(0)} sq.ft</span>
           </p>
           <p className="text-sm text-muted-foreground">
             Quantity: <span className="font-medium text-foreground">{requiredQuantity} {unit}</span>
