@@ -1635,7 +1635,7 @@ export default function PaintEstimationScreen() {
 
                           <div className="space-y-2">
                             <Label className="text-sm">Per Sq.ft Rate (₹)</Label>
-                            <Input type="number" placeholder="Enter rate per sq.ft" value={config.perSqFtRate} onChange={e => {
+                            <Input type="number" placeholder="Enter rate per sq.ft" value={config.perSqFtRate ?? ''} onChange={e => {
                     setAreaConfigurations(prev => {
                       const updated = prev.map(c => c.id === config.id ? {
                         ...c,
@@ -1823,7 +1823,7 @@ export default function PaintEstimationScreen() {
 
                           <div className="space-y-2">
                             <Label className="text-sm">Per Sq.ft Rate (₹)</Label>
-                            <Input type="number" placeholder="Enter rate per sq.ft" value={config.perSqFtRate} onChange={e => {
+                            <Input type="number" placeholder="Enter rate per sq.ft" value={config.perSqFtRate ?? ''} onChange={e => {
                     setAreaConfigurations(prev => {
                       const updated = prev.map(c => c.id === config.id ? {
                         ...c,
@@ -1887,7 +1887,7 @@ export default function PaintEstimationScreen() {
 
                           <div className="space-y-2">
                             <Label className="text-sm">Per Sq.ft Rate (₹)</Label>
-                            <Input type="number" placeholder="Enter rate per sq.ft" value={config.perSqFtRate} onChange={e => {
+                            <Input type="number" placeholder="Enter rate per sq.ft" value={config.perSqFtRate ?? ''} onChange={e => {
                       setAreaConfigurations(prev => {
                         const updated = prev.map(c => c.id === config.id ? {
                           ...c,
