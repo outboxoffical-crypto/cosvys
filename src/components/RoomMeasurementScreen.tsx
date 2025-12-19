@@ -2007,12 +2007,27 @@ export default function RoomMeasurementScreen() {
                           {room.doorWindowGrills && room.doorWindowGrills.length > 0 && 
                             room.doorWindowGrills.map(dwg => <div key={dwg.id} className="mb-3 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
                               <div className="flex items-center justify-between mb-2">
-                                <Input 
-                                  value={dwg.name} 
-                                  onChange={e => updateDoorWindowGrillName(room.id, dwg.id, e.target.value)} 
-                                  className="font-medium bg-white dark:bg-gray-800 border border-border h-8 px-2 rounded flex-1 mr-2" 
-                                  placeholder="Enter name..."
-                                />
+                                <div className="flex items-center space-x-2 flex-1">
+                                  <Input 
+                                    id={`dwg-input-${dwg.id}`}
+                                    value={dwg.name} 
+                                    onChange={e => updateDoorWindowGrillName(room.id, dwg.id, e.target.value)} 
+                                    className="font-medium bg-transparent border-none h-8 p-0 focus:ring-1 focus:ring-primary" 
+                                  />
+                                  <button 
+                                    type="button"
+                                    onClick={() => {
+                                      const input = document.getElementById(`dwg-input-${dwg.id}`) as HTMLInputElement;
+                                      if (input) {
+                                        input.focus();
+                                        input.select();
+                                      }
+                                    }}
+                                    className="p-1 hover:bg-amber-200 dark:hover:bg-amber-800 rounded transition-colors"
+                                  >
+                                    <Edit3 className="h-3 w-3 text-muted-foreground" />
+                                  </button>
+                                </div>
                                 <Button variant="ghost" size="icon" className="h-6 w-6 text-amber-700 dark:text-amber-400" onClick={() => removeDoorWindowGrill(room.id, dwg.id)}>
                                   <X className="h-3 w-3" />
                                 </Button>
