@@ -1970,8 +1970,16 @@ export default function RoomMeasurementScreen() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                {getRoomsByProjectType(activeProjectType).filter(room => room.doorWindowGrills && room.doorWindowGrills.length > 0).length > 0 && <div className="space-y-4">
-                    {getRoomsByProjectType(activeProjectType).filter(room => room.doorWindowGrills && room.doorWindowGrills.length > 0).map(room => <div key={`dwg-${room.id}`} className="space-y-0">
+                {/* Show message when no rooms exist for this project type */}
+                {getRoomsByProjectType(activeProjectType).length === 0 && (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <p className="mb-2">No rooms added for {activeProjectType} yet.</p>
+                    <p className="text-sm">Add rooms in the <span className="font-medium text-primary">"Sq.ft Calculator"</span> tab first, then come back here to add door & window measurements.</p>
+                  </div>
+                )}
+                {/* Show all rooms from this project type - allows adding door/window to any room */}
+                {getRoomsByProjectType(activeProjectType).length > 0 && <div className="space-y-4">
+                    {getRoomsByProjectType(activeProjectType).map(room => <div key={`dwg-${room.id}`} className="space-y-0">
                         {/* Section Header - shown if sectionName exists */}
                         {room.sectionName && <div className="w-full px-3 py-1.5 bg-primary/10 rounded-t-lg border border-b-0 border-primary/20">
                             <span className="text-xs font-semibold text-primary uppercase tracking-wide">
@@ -1981,13 +1989,23 @@ export default function RoomMeasurementScreen() {
                         <Card className={`border-amber-200 dark:border-amber-800 ${room.sectionName ? 'rounded-t-none' : ''}`}>
                         <CardContent className="p-4">
                           <div className="flex items-center justify-between mb-3">
-                            <h3 className="font-semibold text-foreground">{room.name}</h3>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20" onClick={() => removeRoom(room.id)}>
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            <div>
+                              <h3 className="font-semibold text-foreground">{room.name}</h3>
+                              {room.length > 0 && room.width > 0 && (
+                                <p className="text-xs text-muted-foreground">
+                                  {room.length} × {room.width} × {room.height || 0} ft
+                                </p>
+                              )}
+                            </div>
+                            {room.doorWindowGrills.length > 0 && (
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20" onClick={() => removeRoom(room.id)}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
                           </div>
                           
-                          {room.doorWindowGrills.map(dwg => <div key={dwg.id} className="mb-3 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                          {room.doorWindowGrills && room.doorWindowGrills.length > 0 && 
+                            room.doorWindowGrills.map(dwg => <div key={dwg.id} className="mb-3 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
                               <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center space-x-2">
                                   <Input value={dwg.name} onChange={e => updateDoorWindowGrillName(room.id, dwg.id, e.target.value)} className="font-medium bg-transparent border-none h-8 p-0" />
@@ -2172,10 +2190,42 @@ export default function RoomMeasurementScreen() {
               <Input id="dw-section-name" value={doorWindowSectionName} onChange={e => setDoorWindowSectionName(e.target.value)} className="h-12 border border-gray-300" placeholder="" />
             </div>
 
-            {/* Room Name Input */}
+            {/* Room Selection - Show existing rooms as options OR allow creating new */}
             <div className="space-y-2">
-              <Label htmlFor="room-name">Room Name</Label>
-              <Input id="room-name" placeholder="e.g., outside, living room" value={doorWindowRoomName} onChange={e => setDoorWindowRoomName(e.target.value)} className="h-12 border border-gray-300" />
+              <Label>Select Room</Label>
+              {getRoomsByProjectType(doorWindowProjectType || activeProjectType).length > 0 ? (
+                <div className="space-y-2">
+                  <div className="flex flex-wrap gap-2">
+                    {getRoomsByProjectType(doorWindowProjectType || activeProjectType).map(room => (
+                      <Button
+                        key={room.id}
+                        variant={doorWindowRoomName === room.name ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setDoorWindowRoomName(room.name)}
+                        className="h-10"
+                      >
+                        {room.name}
+                      </Button>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-2 pt-2">
+                    <span className="text-sm text-muted-foreground">Or create new:</span>
+                    <Input
+                      placeholder="New room name"
+                      value={getRoomsByProjectType(doorWindowProjectType || activeProjectType).some(r => r.name === doorWindowRoomName) ? "" : doorWindowRoomName}
+                      onChange={e => setDoorWindowRoomName(e.target.value)}
+                      className="h-10 flex-1 border border-gray-300"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <Input
+                  placeholder="e.g., outside, living room"
+                  value={doorWindowRoomName}
+                  onChange={e => setDoorWindowRoomName(e.target.value)}
+                  className="h-12 border border-gray-300"
+                />
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <Input placeholder="e.g., Main Door, Window 1" value={dialogDoorWindowGrill.name} onChange={e => setDialogDoorWindowGrill(prev => ({
