@@ -85,7 +85,8 @@ export const sortByGlobalDisplayOrder = <T extends OrderableConfig>(configs: T[]
 /**
  * Creates a hash of configs for change detection
  * Used to prevent unnecessary re-sorting during render
+ * CRITICAL: Must include all properties that affect display conditions (paintingSystem, enamelConfig, etc.)
  */
 export const createConfigsHash = (configs: OrderableConfig[]): string => {
-  return configs.map(c => `${c.id || ''}-${c.areaType || ''}-${c.displayOrder ?? ''}`).join('|');
+  return configs.map(c => `${c.id || ''}-${c.areaType || ''}-${c.displayOrder ?? ''}-${c.paintingSystem || ''}-${c.perSqFtRate || ''}-${c.selectedMaterials?.emulsion || ''}-${JSON.stringify(c.enamelConfig || {})}`).join('|');
 };
