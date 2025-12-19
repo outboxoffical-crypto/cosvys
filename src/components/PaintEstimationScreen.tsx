@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef, useDeferredValue, startTransition } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +17,15 @@ import { getOrFetchRooms, getOrFetchCoverageData } from "@/hooks/usePrefetch";
 import { useProjectCache } from "@/hooks/useProjectCache";
 import { safeNumber, calculateProjectTotals } from "@/lib/calculations";
 import { Skeleton } from "@/components/ui/skeleton";
+
+// PERFORMANCE: Use requestIdleCallback for non-blocking background work
+const scheduleIdleTask = (callback: () => void) => {
+  if ('requestIdleCallback' in window) {
+    (window as any).requestIdleCallback(callback, { timeout: 100 });
+  } else {
+    setTimeout(callback, 0);
+  }
+};
 import { getGlobalDisplayOrder, sortByGlobalDisplayOrder, createConfigsHash } from "@/lib/configOrdering";
 interface CoverageData {
   id: string;
@@ -84,6 +93,10 @@ export default function PaintEstimationScreen() {
   const [coverageLoaded, setCoverageLoaded] = useState(false);
   const [localStorageHydrated, setLocalStorageHydrated] = useState(false);
   
+  // PERFORMANCE: Progressive rendering state - render cards in batches
+  const [configsCalculating, setConfigsCalculating] = useState(false);
+  const [visibleConfigCount, setVisibleConfigCount] = useState(4); // Start with 4 cards visible
+  
   const [selectedPaintType, setSelectedPaintType] = useState<"Interior" | "Exterior" | "Waterproofing">("Interior");
   const [rooms, setRooms] = useState<any[]>([]);
   const [coverageData, setCoverageData] = useState<CoverageData[]>([]);
@@ -124,6 +137,11 @@ export default function PaintEstimationScreen() {
     // Always return the frozen snapshot
     return frozenOrderRef.current;
   }, [areaConfigurations]);
+
+  // PERFORMANCE: Visible configurations - only render what's needed for progressive loading
+  const visibleConfigurations = useMemo(() => {
+    return sortedConfigurationsForSummary.slice(0, visibleConfigCount);
+  }, [sortedConfigurationsForSummary, visibleConfigCount]);
 
   const setAreaConfigurations = useCallback((updater: AreaConfiguration[] | ((prev: AreaConfiguration[]) => AreaConfiguration[])) => {
     if (selectedPaintType === "Interior") {
@@ -293,7 +311,7 @@ export default function PaintEstimationScreen() {
     loadEnamelProducts();
   }, []);
 
-  // Force fresh room loading from database - INSTANT on mobile
+  // PERFORMANCE: Non-blocking room loading - show UI immediately
   // CRITICAL: NO real-time subscription - it causes re-renders that lose input values
   useEffect(() => {
     if (!projectId) {
@@ -303,9 +321,10 @@ export default function PaintEstimationScreen() {
 
     let isMounted = true;
     
-    const loadRooms = async () => {
+    // PERFORMANCE: Schedule room loading after initial paint
+    scheduleIdleTask(async () => {
       try {
-        // Fetch immediately - no delays
+        // Fetch rooms in background - UI already rendered
         const { data: freshRooms, error } = await supabase
           .from('rooms')
           .select('*')
@@ -319,18 +338,18 @@ export default function PaintEstimationScreen() {
         }
         
         if (isMounted && freshRooms) {
-          setRooms(freshRooms);
-          initialLoadDone.current = true;
-          setRoomsLoaded(true);
+          // Use startTransition to make state update non-blocking
+          startTransition(() => {
+            setRooms(freshRooms);
+            initialLoadDone.current = true;
+            setRoomsLoaded(true);
+          });
         }
       } catch (err) {
         console.error('Error in loadRooms:', err);
         if (isMounted) setRoomsLoaded(true);
       }
-    };
-    
-    // Execute ONCE on mount - no real-time subscription to avoid input disruption
-    loadRooms();
+    });
       
     return () => {
       isMounted = false;
@@ -1226,8 +1245,8 @@ export default function PaintEstimationScreen() {
   const prevRoomsHashRef = useRef<string>('');
   const prevPaintTypeRef = useRef<string>('');
   
+  // PERFORMANCE: Non-blocking configuration initialization
   // Re-initialize when rooms change or paint type changes - ONLY after dataReady
-  // CRITICAL: Do NOT use setTimeout - it causes stale closure issues with user input
   useEffect(() => {
     if (rooms.length > 0 && dataReady) {
       // Create a simple hash of room IDs and areas to detect actual data changes
@@ -1239,12 +1258,19 @@ export default function PaintEstimationScreen() {
         prevRoomsHashRef.current = roomsHash;
         prevPaintTypeRef.current = selectedPaintType;
         
-        // Run synchronously - NO setTimeout to avoid stale closures
-        try {
-          initializeConfigurations(rooms);
-        } catch (error) {
-          console.error('Calculation error:', error);
-        }
+        // PERFORMANCE: Show calculating state briefly, then run in background
+        setConfigsCalculating(true);
+        
+        // Use startTransition to make heavy calculation non-blocking
+        startTransition(() => {
+          try {
+            initializeConfigurations(rooms);
+          } catch (error) {
+            console.error('Calculation error:', error);
+          } finally {
+            setConfigsCalculating(false);
+          }
+        });
       }
     }
   }, [rooms, selectedPaintType, dataReady]);
@@ -1307,6 +1333,35 @@ export default function PaintEstimationScreen() {
       }
     } catch {}
   }, [interiorConfigurations, exteriorConfigurations, waterproofingConfigurations, projectId]);
+
+  // PERFORMANCE: Progressive rendering - gradually show more config cards
+  useEffect(() => {
+    const totalConfigs = areaConfigurations.length;
+    if (totalConfigs === 0 || configsCalculating) {
+      setVisibleConfigCount(4); // Reset to default
+      return;
+    }
+    
+    // If all configs fit in initial batch, show them all
+    if (totalConfigs <= 4) {
+      setVisibleConfigCount(totalConfigs);
+      return;
+    }
+    
+    // Progressive reveal: show 4 more configs every 50ms until all visible
+    let currentVisible = 4;
+    const revealMore = () => {
+      if (currentVisible < totalConfigs) {
+        currentVisible = Math.min(currentVisible + 4, totalConfigs);
+        setVisibleConfigCount(currentVisible);
+        if (currentVisible < totalConfigs) {
+          scheduleIdleTask(revealMore);
+        }
+      }
+    };
+    
+    scheduleIdleTask(revealMore);
+  }, [areaConfigurations.length, configsCalculating]);
 
   // Sync estimation data to localStorage whenever configurations change
   useEffect(() => {
@@ -1576,15 +1631,41 @@ export default function PaintEstimationScreen() {
           </CardContent>
         </Card>
         
-        {/* Removed blocking calculating indicator - calculations now run instantly */}
+        {/* PERFORMANCE: Skeleton loading while configs calculate */}
+        {configsCalculating && (
+          <Card className="eca-shadow border-2 border-primary/30">
+            <CardHeader>
+              <CardTitle className="text-lg">Loading Configurations...</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {[1, 2, 3].map(i => (
+                <Card key={i} className="border-2 border-primary/10 bg-primary/5">
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Skeleton className="h-5 w-32" />
+                      <div className="flex gap-2">
+                        <Skeleton className="h-8 w-8 rounded" />
+                        <Skeleton className="h-8 w-8 rounded" />
+                      </div>
+                    </div>
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-6 w-40" />
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-10 w-full" />
+                  </CardContent>
+                </Card>
+              ))}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Paint Configuration Summary - SORTED BY areaPriority: Wall(1) → Ceiling(2) → Floor(3) → Separate(4) */}
-        {sortedConfigurationsForSummary.some(c => (c.paintingSystem || c.areaType === 'Enamel') && c.areaType !== 'Enamel') && <Card className="eca-shadow border-2 border-primary/30">
+        {!configsCalculating && visibleConfigurations.some(c => (c.paintingSystem || c.areaType === 'Enamel') && c.areaType !== 'Enamel') && <Card className="eca-shadow border-2 border-primary/30">
                 <CardHeader>
                   <CardTitle className="text-lg">Paint Configuration Summary</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {sortedConfigurationsForSummary.filter(c => (c.paintingSystem || c.areaType === 'Enamel') && c.areaType !== 'Enamel').map(config => <Card key={config.id} className="border-2 border-primary/20 bg-primary/5">
+                  {visibleConfigurations.filter(c => (c.paintingSystem || c.areaType === 'Enamel') && c.areaType !== 'Enamel').map(config => <Card key={config.id} className="border-2 border-primary/20 bg-primary/5">
                       <CardContent className="p-4">
                         <div className="space-y-3">
                           <div className="flex items-center justify-between">
