@@ -2344,8 +2344,12 @@ export default function GenerateSummaryScreen() {
         totalArea += areas.wallArea + areas.floorArea + areas.ceilingArea;
       });
 
-      // Calculate quotation value
-      const quotationValue = calculateActualTotalCost();
+      // Calculate quotation value (Company Project Cost = area × perSqFtRate)
+      const quotationValue = areaConfigs.reduce((sum, config) => {
+        const area = Number(config.area) || 0;
+        const rate = parseFloat(config.perSqFtRate) || 0;
+        return sum + area * rate;
+      }, 0);
 
       // Determine project types
       const projectTypes = Array.from(new Set(rooms.map(room => room.project_type).filter(Boolean)));
