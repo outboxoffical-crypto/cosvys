@@ -632,7 +632,7 @@ export default function Dashboard() {
                       </div>
                       <div className="text-right">
                         <p className="text-sm font-medium text-foreground">₹{project.quotation_value.toLocaleString()}</p>
-                        <p className="text-xs text-muted-foreground">{project.area_sqft} sq.ft</p>
+                        <p className="text-xs text-muted-foreground">{Math.round(project.area_sqft)} sq.ft</p>
                       </div>
                     </div>
 
