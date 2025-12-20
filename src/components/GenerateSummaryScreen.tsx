@@ -2355,25 +2355,52 @@ export default function GenerateSummaryScreen() {
       const projectTypes = Array.from(new Set(rooms.map(room => room.project_type).filter(Boolean)));
       const projectTypeString = projectTypes.length > 0 ? projectTypes.join(', ') : projectData?.projectTypes?.join(', ') || 'Interior';
 
-      // Insert project into database
-      const {
-        error
-      } = await supabase.from('projects').insert({
-        user_id: user.id,
-        lead_id: projectId || Date.now().toString(),
-        customer_name: projectData?.customerName || 'Unknown',
-        phone: projectData?.mobile || '',
-        location: projectData?.address || '',
-        project_type: projectTypeString,
-        project_status: 'Quoted',
-        quotation_value: quotationValue,
-        area_sqft: totalArea,
-        project_date: new Date().toISOString(),
-        approval_status: 'Pending',
-        reminder_sent: false,
-        notification_count: 0
-      });
-      if (error) throw error;
+      const leadId = projectId || Date.now().toString();
+
+      // Check if project already exists with this lead_id
+      const { data: existingProject } = await supabase
+        .from('projects')
+        .select('id')
+        .eq('lead_id', leadId)
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (existingProject) {
+        // Update existing project
+        const { error } = await supabase
+          .from('projects')
+          .update({
+            customer_name: projectData?.customerName || 'Unknown',
+            phone: projectData?.mobile || '',
+            location: projectData?.address || '',
+            project_type: projectTypeString,
+            project_status: 'Quoted',
+            quotation_value: quotationValue,
+            area_sqft: totalArea,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingProject.id);
+        if (error) throw error;
+      } else {
+        // Insert new project
+        const { error } = await supabase.from('projects').insert({
+          user_id: user.id,
+          lead_id: leadId,
+          customer_name: projectData?.customerName || 'Unknown',
+          phone: projectData?.mobile || '',
+          location: projectData?.address || '',
+          project_type: projectTypeString,
+          project_status: 'Quoted',
+          quotation_value: quotationValue,
+          area_sqft: totalArea,
+          project_date: new Date().toISOString(),
+          approval_status: 'Pending',
+          reminder_sent: false,
+          notification_count: 0
+        });
+        if (error) throw error;
+      }
+      
       toast({
         title: "Success",
         description: "Project saved successfully!"
