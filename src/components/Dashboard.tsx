@@ -631,7 +631,7 @@ export default function Dashboard() {
                         <span className="text-sm text-muted-foreground">{project.project_type}</span>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-medium text-foreground">₹{project.quotation_value.toLocaleString()}</p>
+                        <p className="text-sm font-medium text-foreground">₹{Math.round(project.quotation_value).toLocaleString()}</p>
                         <p className="text-xs text-muted-foreground">{Math.round(project.area_sqft)} sq.ft</p>
                       </div>
                     </div>
