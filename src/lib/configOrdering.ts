@@ -2,13 +2,15 @@
  * GLOBAL CONFIGURATION ORDERING
  * Single source of truth for paint configuration display order.
  * 
- * LOCKED ORDER:
- * 1. Wall Area (main)
- * 2. Ceiling Area (main)
- * 3. Floor Area (main)
- * 4. Separate Paint Area (custom sections like "Damp Wall Only Putty")
- * 5. Enamel Area (main door/window)
- * 6. Separate Enamel Area (custom enamel sections like "Varnish")
+ * LOCKED ORDER (MVP FINAL):
+ * 1. Wall Area
+ * 2. Ceiling Area
+ * 3. Damp Wall Only Putty (Separate Paint Area)
+ * 4. Enamel Area
+ * 5. Varnish (Separate Paint Area)
+ * 
+ * Floor Area is NOT displayed by default (only if explicitly selected).
+ * This order applies to ALL sections: Paint Config, Labour, Materials, Summary.
  */
 
 export interface OrderableConfig {
@@ -23,40 +25,52 @@ export interface OrderableConfig {
 }
 
 /**
- * GLOBAL DISPLAY ORDER ASSIGNMENT
- * Assigns displayOrder based on area type and whether it's a custom section.
+ * GLOBAL DISPLAY ORDER ASSIGNMENT (MVP LOCKED)
+ * Assigns displayOrder based on area type and section name.
  * This is the SINGLE SOURCE OF TRUTH for ordering.
+ * 
+ * ORDER:
+ * 1 = Wall Area
+ * 2 = Ceiling Area
+ * 3 = Damp Wall Only Putty (Separate Paint Area)
+ * 4 = Enamel Area
+ * 5 = Varnish (Separate Enamel Area)
+ * 6 = Floor Area (only if explicitly selected)
+ * 7 = Other custom sections
  */
 export const getGlobalDisplayOrder = (config: OrderableConfig): number => {
   const areaType = (config.areaType || '').toLowerCase();
   const label = (config.label || '').toLowerCase();
+  const sectionName = (config.sectionName || '').toLowerCase();
   const isCustomSection = config.isCustomSection || !!config.sectionName;
   
-  // Enamel configurations
-  if (areaType === 'enamel' || areaType === 'door & window') {
-    // Custom enamel sections (Varnish, etc.) come after main enamel
-    if (isCustomSection) return 6;
-    return 5; // Main Enamel Area
-  }
+  // 1. Wall Area (main)
+  if (!isCustomSection && (areaType === 'wall' || areaType.includes('wall'))) return 1;
+  if (!isCustomSection && label.includes('wall') && !label.includes('separate') && !label.includes('damp')) return 1;
   
-  // Custom/Separate Paint Areas (non-enamel) - priority 4
-  if (isCustomSection) return 4;
+  // 2. Ceiling Area (main)
+  if (!isCustomSection && (areaType === 'ceiling' || areaType.includes('ceiling'))) return 2;
+  if (!isCustomSection && label.includes('ceiling') && !label.includes('separate')) return 2;
   
-  // Check label for "separate" keyword
-  if (label.includes('separate')) return 4;
+  // 3. Damp Wall Only Putty (Separate Paint Area - priority before enamel)
+  if (sectionName.includes('damp') || label.includes('damp')) return 3;
   
-  // Main paint areas by type
-  if (areaType === 'wall' || areaType.includes('wall')) return 1;
-  if (areaType === 'ceiling' || areaType.includes('ceiling')) return 2;
-  if (areaType === 'floor' || areaType.includes('floor')) return 3;
+  // 4. Enamel Area (main door/window)
+  if (!isCustomSection && (areaType === 'enamel' || areaType === 'door & window')) return 4;
   
-  // Check label as fallback
-  if (label.includes('wall') && !label.includes('separate')) return 1;
-  if (label.includes('ceiling') && !label.includes('separate')) return 2;
-  if (label.includes('floor') && !label.includes('separate')) return 3;
+  // 5. Varnish (Separate Enamel Area - after main enamel)
+  if (sectionName.includes('varnish') || label.includes('varnish')) return 5;
+  if (isCustomSection && (areaType === 'enamel' || areaType === 'door & window')) return 5;
   
-  // Unknown types get lowest priority
-  return 7;
+  // 6. Floor Area (only if explicitly selected - lower priority)
+  if (areaType === 'floor' || areaType.includes('floor')) return 6;
+  if (label.includes('floor') && !label.includes('separate')) return 6;
+  
+  // 7. Other Separate Paint Areas (after floor)
+  if (isCustomSection || label.includes('separate')) return 7;
+  
+  // 8. Unknown types get lowest priority
+  return 8;
 };
 
 /**
