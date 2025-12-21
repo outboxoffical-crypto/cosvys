@@ -385,10 +385,11 @@ export default function PaintEstimationScreen() {
 
     // Process regular rooms (merge into totals)
     regularRooms.forEach((room: any) => {
-      // Only use selected_areas if it exists, otherwise treat all as NOT selected
+      // Use selected_areas from room - if null/undefined, default to wall:true only (standard paint job)
+      // For new projects with empty rooms, this ensures only wall area is selected by default
       const selectedAreas = typeof room.selected_areas === 'object' && room.selected_areas !== null ? room.selected_areas as any : {
         floor: false,
-        wall: false,
+        wall: true,
         ceiling: false
       };
       if (selectedAreas.floor) {
@@ -450,9 +451,10 @@ export default function PaintEstimationScreen() {
 
     // Process rooms with section_name as completely independent configuration boxes
     sectionRooms.forEach((room: any) => {
+      // Use selected_areas from room - if null/undefined, default to wall:true only
       const selectedAreas = typeof room.selected_areas === 'object' && room.selected_areas !== null ? room.selected_areas as any : {
         floor: false,
-        wall: false,
+        wall: true,
         ceiling: false
       };
       const sectionLabel = room.section_name;
@@ -2554,7 +2556,10 @@ export default function PaintEstimationScreen() {
                   </div>
                 </div>}
 
-              <Button className="w-full" onClick={() => setDialogOpen(false)} disabled={selectedConfig.areaType !== 'Enamel' && !selectedConfig.paintingSystem}>
+              <Button className="w-full" onClick={() => {
+                setDialogOpen(false);
+                toast.success('Configuration saved');
+              }} disabled={selectedConfig.areaType !== 'Enamel' && !selectedConfig.paintingSystem}>
                 Save Configuration
               </Button>
             </div>}
