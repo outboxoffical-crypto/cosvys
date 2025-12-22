@@ -64,14 +64,27 @@ export default function LoginScreen() {
   }, [navigate, toast]);
 
   const checkDealerAndNavigate = async (userId: string) => {
+    // Add timeout to prevent hanging forever
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error("Request timeout")), 10000)
+    );
+
     try {
-      const { data: dealerInfo, error } = await supabase
+      const dealerPromise = supabase
         .from('dealer_info')
         .select('id')
         .eq('user_id', userId)
         .maybeSingle();
+
+      const { data: dealerInfo, error } = await Promise.race([
+        dealerPromise,
+        timeoutPromise
+      ]) as any;
       
       if (error) throw error;
+      
+      setLoading(false);
+      setCheckingSession(false);
       
       if (dealerInfo) {
         navigate("/dashboard");
@@ -80,6 +93,7 @@ export default function LoginScreen() {
       }
     } catch (error) {
       console.error("Dealer check failed:", error);
+      setLoading(false);
       setCheckingSession(false);
       // Still navigate to dealer-info as fallback
       navigate("/dealer-info");
@@ -136,6 +150,16 @@ export default function LoginScreen() {
     e.preventDefault();
     setLoading(true);
 
+    // Add timeout for entire login process
+    const loginTimeout = setTimeout(() => {
+      setLoading(false);
+      toast({
+        title: "Login timeout",
+        description: "Request took too long. Please try again.",
+        variant: "destructive",
+      });
+    }, 15000);
+
     try {
       // Validate inputs
       emailSchema.parse(email);
@@ -146,6 +170,8 @@ export default function LoginScreen() {
         password,
       });
 
+      clearTimeout(loginTimeout);
+
       if (error) throw error;
 
       if (data.user) {
@@ -153,17 +179,18 @@ export default function LoginScreen() {
           title: "Login successful!",
           description: "Redirecting...",
         });
-        // Navigation will be handled by onAuthStateChange
+        // Navigate directly instead of relying only on onAuthStateChange
+        await checkDealerAndNavigate(data.user.id);
       }
     } catch (error: any) {
+      clearTimeout(loginTimeout);
       console.error("Login error:", error);
+      setLoading(false);
       toast({
         title: "Login failed",
         description: error.message || "Please check your credentials and try again.",
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
     }
   };
 
