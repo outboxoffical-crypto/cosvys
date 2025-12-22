@@ -3,10 +3,11 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, FileText, Share2, Download, Phone, MapPin, Home, Palette, Users, Calendar, Package } from "lucide-react";
+import { ArrowLeft, FileText, Share2, Download, Phone, MapPin, Home, Palette, Users, Calendar, Package, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { retryOperation } from "@/hooks/useRetryWithWakeup";
 
 export default function ProjectSummaryScreen() {
   const navigate = useNavigate();
@@ -17,9 +18,11 @@ export default function ProjectSummaryScreen() {
   const [estimation, setEstimation] = useState<any>(null);
   const [dealerInfo, setDealerInfo] = useState<any>(null);
   const [areaConfigurations, setAreaConfigurations] = useState<any[]>([]);
+  const [isWakingUp, setIsWakingUp] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
+      setIsWakingUp(true);
       try {
         // Load estimation and area configs from localStorage
         const estimationData = localStorage.getItem(`estimation_${projectId}`);
@@ -28,9 +31,17 @@ export default function ProjectSummaryScreen() {
         if (estimationData) setEstimation(JSON.parse(estimationData));
         if (areaConfigsData) setAreaConfigurations(JSON.parse(areaConfigsData));
 
-        // Load project data, rooms and dealer info from Supabase in parallel
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
+        // Load session with retry
+        const { data: sessionData, error: sessionError } = await retryOperation(
+          async () => {
+            const result = await supabase.auth.getSession();
+            if (result.error) throw result.error;
+            return result.data;
+          },
+          { maxAttempts: 3, delayMs: 2000, timeoutMs: 10000 }
+        );
+        
+        if (sessionError || !sessionData?.session) {
           toast({
             title: "Authentication Required",
             description: "Please log in to view project summary",
@@ -40,10 +51,32 @@ export default function ProjectSummaryScreen() {
           return;
         }
 
+        // Load project data, rooms and dealer info with retry
         const [projectResult, roomsResult, dealerResult] = await Promise.all([
-          supabase.from('projects').select('*').eq('id', projectId).single(),
-          supabase.from('rooms').select('*').eq('project_id', projectId),
-          supabase.from('dealer_info').select('*').eq('user_id', session.user.id).maybeSingle()
+          retryOperation(
+            async () => {
+              const result = await supabase.from('projects').select('*').eq('id', projectId).single();
+              if (result.error) throw result.error;
+              return result.data;
+            },
+            { maxAttempts: 3, delayMs: 2000, timeoutMs: 10000 }
+          ),
+          retryOperation(
+            async () => {
+              const result = await supabase.from('rooms').select('*').eq('project_id', projectId);
+              if (result.error) throw result.error;
+              return result.data;
+            },
+            { maxAttempts: 3, delayMs: 2000, timeoutMs: 10000 }
+          ),
+          retryOperation(
+            async () => {
+              const result = await supabase.from('dealer_info').select('*').eq('user_id', sessionData.session.user.id).maybeSingle();
+              if (result.error) throw result.error;
+              return result.data;
+            },
+            { maxAttempts: 3, delayMs: 2000, timeoutMs: 10000 }
+          )
         ]);
         
         if (projectResult.error) {
@@ -57,14 +90,8 @@ export default function ProjectSummaryScreen() {
         }
 
         if (projectResult.data) {
-          // Verify that customer details exist
           if (!projectResult.data.customer_name || !projectResult.data.phone || !projectResult.data.location) {
             console.warn('Project missing customer details:', projectResult.data);
-            toast({
-              title: "Incomplete Project Data",
-              description: "Customer details are missing. Please update the project.",
-              variant: "destructive",
-            });
           }
           setProjectData(projectResult.data);
         }
@@ -78,6 +105,8 @@ export default function ProjectSummaryScreen() {
           description: "Failed to load project summary",
           variant: "destructive",
         });
+      } finally {
+        setIsWakingUp(false);
       }
     };
 
@@ -208,7 +237,10 @@ export default function ProjectSummaryScreen() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-semibold mb-2">Loading Project Summary...</h2>
+          {isWakingUp && <Loader2 className="h-6 w-6 animate-spin text-primary mx-auto mb-2" />}
+          <h2 className="text-xl font-semibold mb-2">
+            {isWakingUp ? "Waking up server… please wait" : "Loading Project Summary..."}
+          </h2>
           <p className="text-muted-foreground">Please wait while we prepare your summary.</p>
         </div>
       </div>

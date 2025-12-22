@@ -3,11 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Smartphone } from "lucide-react";
+import { Smartphone, Loader2 } from "lucide-react";
 import cosvysLogo from "@/assets/cosvys-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
+import { useRetryWithWakeup } from "@/hooks/useRetryWithWakeup";
 
 const phoneSchema = z.string().regex(/^\d{10}$/, "Please enter a valid 10-digit phone number");
 const emailSchema = z.string().email("Please enter a valid email address");
@@ -16,6 +17,8 @@ const passwordSchema = z.string().min(6, "Password must be at least 6 characters
 export default function LoginScreen() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { retryState, executeWithRetry } = useRetryWithWakeup();
+  
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
@@ -39,63 +42,70 @@ export default function LoginScreen() {
       }
     );
 
-    // THEN check for existing session
-    supabase.auth.getSession()
-      .then(({ data: { session } }) => {
-        if (session?.user) {
-          setTimeout(() => {
-            checkDealerAndNavigate(session.user.id);
-          }, 0);
-        } else {
-          setCheckingSession(false);
-        }
-      })
-      .catch((error) => {
-        console.error("Session check failed:", error);
+    // THEN check for existing session with retry
+    const checkSession = async () => {
+      const { data, error } = await executeWithRetry(
+        async () => {
+          const result = await supabase.auth.getSession();
+          if (result.error) throw result.error;
+          return result.data;
+        },
+        { maxAttempts: 3, delayMs: 2000, timeoutMs: 10000 }
+      );
+
+      if (error) {
+        console.error("Session check failed after retries:", error);
         setCheckingSession(false);
         toast({
           title: "Connection issue",
           description: "Could not connect to server. Please try again.",
           variant: "destructive",
         });
-      });
+        return;
+      }
+
+      if (data?.session?.user) {
+        setTimeout(() => {
+          checkDealerAndNavigate(data.session.user.id);
+        }, 0);
+      } else {
+        setCheckingSession(false);
+      }
+    };
+
+    checkSession();
 
     return () => subscription.unsubscribe();
   }, [navigate, toast]);
 
   const checkDealerAndNavigate = async (userId: string) => {
-    // Add timeout to prevent hanging forever
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error("Request timeout")), 10000)
+    const { data: dealerInfo, error } = await executeWithRetry(
+      async () => {
+        const result = await supabase
+          .from('dealer_info')
+          .select('id')
+          .eq('user_id', userId)
+          .maybeSingle();
+        
+        if (result.error) throw result.error;
+        return result.data;
+      },
+      { maxAttempts: 3, delayMs: 2000, timeoutMs: 10000 }
     );
-
-    try {
-      const dealerPromise = supabase
-        .from('dealer_info')
-        .select('id')
-        .eq('user_id', userId)
-        .maybeSingle();
-
-      const { data: dealerInfo, error } = await Promise.race([
-        dealerPromise,
-        timeoutPromise
-      ]) as any;
-      
-      if (error) throw error;
-      
-      setLoading(false);
-      setCheckingSession(false);
-      
-      if (dealerInfo) {
-        navigate("/dashboard");
-      } else {
-        navigate("/dealer-info");
-      }
-    } catch (error) {
-      console.error("Dealer check failed:", error);
-      setLoading(false);
-      setCheckingSession(false);
+    
+    setLoading(false);
+    setCheckingSession(false);
+    
+    if (error) {
+      console.error("Dealer check failed after retries:", error);
       // Still navigate to dealer-info as fallback
+      navigate("/dealer-info");
+      return;
+    }
+    
+    if (dealerInfo) {
+      navigate("/dashboard");
+    } else {
       navigate("/dealer-info");
     }
   };
@@ -114,21 +124,29 @@ export default function LoginScreen() {
         throw new Error("Full name is required");
       }
 
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            phone,
-            full_name: fullName.trim()
-          }
-        }
-      });
+      const { data: signUpResult, error: signUpError } = await executeWithRetry(
+        async () => {
+          const result = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              emailRedirectTo: `${window.location.origin}/`,
+              data: {
+                phone,
+                full_name: fullName.trim()
+              }
+            }
+          });
+          
+          if (result.error) throw result.error;
+          return result.data;
+        },
+        { maxAttempts: 3, delayMs: 2000, timeoutMs: 15000 }
+      );
 
-      if (error) throw error;
+      if (signUpError) throw signUpError;
 
-      if (data.user) {
+      if (signUpResult?.user) {
         toast({
           title: "Account created successfully!",
           description: "Please complete your dealer setup.",
@@ -150,40 +168,35 @@ export default function LoginScreen() {
     e.preventDefault();
     setLoading(true);
 
-    // Add timeout for entire login process
-    const loginTimeout = setTimeout(() => {
-      setLoading(false);
-      toast({
-        title: "Login timeout",
-        description: "Request took too long. Please try again.",
-        variant: "destructive",
-      });
-    }, 15000);
-
     try {
       // Validate inputs
       emailSchema.parse(email);
       passwordSchema.parse(password);
 
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const { data: loginResult, error: loginError } = await executeWithRetry(
+        async () => {
+          const result = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+          
+          if (result.error) throw result.error;
+          return result.data;
+        },
+        { maxAttempts: 3, delayMs: 2000, timeoutMs: 15000 }
+      );
 
-      clearTimeout(loginTimeout);
+      if (loginError) throw loginError;
 
-      if (error) throw error;
-
-      if (data.user) {
+      if (loginResult?.user) {
         toast({
           title: "Login successful!",
           description: "Redirecting...",
         });
         // Navigate directly instead of relying only on onAuthStateChange
-        await checkDealerAndNavigate(data.user.id);
+        await checkDealerAndNavigate(loginResult.user.id);
       }
     } catch (error: any) {
-      clearTimeout(loginTimeout);
       console.error("Login error:", error);
       setLoading(false);
       toast({
@@ -194,7 +207,18 @@ export default function LoginScreen() {
     }
   };
 
-  // Show loading while checking session
+  // Determine what message to show
+  const getLoadingMessage = () => {
+    if (retryState.isRetrying) {
+      return retryState.message;
+    }
+    if (checkingSession) {
+      return "Loading...";
+    }
+    return "Please wait...";
+  };
+
+  // Show loading while checking session or retrying
   if (checkingSession) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background to-muted flex flex-col items-center justify-center p-4">
@@ -205,7 +229,10 @@ export default function LoginScreen() {
             className="h-16 w-auto object-contain"
           />
         </div>
-        <p className="text-muted-foreground">Loading...</p>
+        <div className="flex items-center gap-2">
+          {retryState.isRetrying && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
+          <p className="text-muted-foreground">{getLoadingMessage()}</p>
+        </div>
       </div>
     );
   }
@@ -235,6 +262,14 @@ export default function LoginScreen() {
         </CardHeader>
 
         <CardContent className="space-y-6">
+          {/* Show waking up message during retry */}
+          {retryState.isRetrying && (
+            <div className="flex items-center justify-center gap-2 py-2 px-4 bg-muted/50 rounded-lg">
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              <span className="text-sm text-muted-foreground">{retryState.message}</span>
+            </div>
+          )}
+
           <form onSubmit={isLogin ? handleLogin : handleSignUp} className="space-y-4">
             {!isLogin && (
               <>
@@ -248,6 +283,7 @@ export default function LoginScreen() {
                     className="h-12"
                     required={!isLogin}
                     maxLength={100}
+                    disabled={loading}
                   />
                 </div>
 
@@ -263,6 +299,7 @@ export default function LoginScreen() {
                       className="pl-10 h-12"
                       maxLength={10}
                       required={!isLogin}
+                      disabled={loading}
                     />
                   </div>
                 </div>
@@ -279,6 +316,7 @@ export default function LoginScreen() {
                 className="h-12"
                 required
                 maxLength={255}
+                disabled={loading}
               />
             </div>
 
@@ -292,6 +330,7 @@ export default function LoginScreen() {
                 className="h-12"
                 required
                 minLength={6}
+                disabled={loading}
               />
             </div>
 
@@ -300,7 +339,14 @@ export default function LoginScreen() {
               className="w-full h-12 text-base font-medium"
               disabled={loading}
             >
-              {loading ? "Please wait..." : (isLogin ? "Login" : "Sign Up")}
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {retryState.isRetrying ? retryState.message : "Please wait..."}
+                </span>
+              ) : (
+                isLogin ? "Login" : "Sign Up"
+              )}
             </Button>
           </form>
 
@@ -317,6 +363,7 @@ export default function LoginScreen() {
             variant="outline"
             onClick={() => setIsLogin(!isLogin)}
             className="w-full h-12 text-base font-medium"
+            disabled={loading}
           >
             {isLogin ? "Create New Account" : "Already have an account? Login"}
           </Button>
