@@ -18,32 +18,73 @@ export default function LoginScreen() {
   const { toast } = useToast();
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [phone, setPhone] = useState("");
   const [fullName, setFullName] = useState("");
 
   useEffect(() => {
-    // Check if user is already logged in
-    const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        // Check if dealer setup is complete
-        const { data: dealerInfo } = await supabase
-          .from('dealer_info')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .maybeSingle();
-        
-        if (dealerInfo) {
-          navigate("/dashboard");
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (session?.user) {
+          // Defer database call to avoid deadlock
+          setTimeout(() => {
+            checkDealerAndNavigate(session.user.id);
+          }, 0);
         } else {
-          navigate("/dealer-info");
+          setCheckingSession(false);
         }
       }
-    };
-    checkUser();
-  }, [navigate]);
+    );
+
+    // THEN check for existing session
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        if (session?.user) {
+          setTimeout(() => {
+            checkDealerAndNavigate(session.user.id);
+          }, 0);
+        } else {
+          setCheckingSession(false);
+        }
+      })
+      .catch((error) => {
+        console.error("Session check failed:", error);
+        setCheckingSession(false);
+        toast({
+          title: "Connection issue",
+          description: "Could not connect to server. Please try again.",
+          variant: "destructive",
+        });
+      });
+
+    return () => subscription.unsubscribe();
+  }, [navigate, toast]);
+
+  const checkDealerAndNavigate = async (userId: string) => {
+    try {
+      const { data: dealerInfo, error } = await supabase
+        .from('dealer_info')
+        .select('id')
+        .eq('user_id', userId)
+        .maybeSingle();
+      
+      if (error) throw error;
+      
+      if (dealerInfo) {
+        navigate("/dashboard");
+      } else {
+        navigate("/dealer-info");
+      }
+    } catch (error) {
+      console.error("Dealer check failed:", error);
+      setCheckingSession(false);
+      // Still navigate to dealer-info as fallback
+      navigate("/dealer-info");
+    }
+  };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,20 +149,14 @@ export default function LoginScreen() {
       if (error) throw error;
 
       if (data.user) {
-        // Check if dealer setup is complete
-        const { data: dealerInfo } = await supabase
-          .from('dealer_info')
-          .select('*')
-          .eq('user_id', data.user.id)
-          .maybeSingle();
-        
-        if (dealerInfo) {
-          navigate("/dashboard");
-        } else {
-          navigate("/dealer-info");
-        }
+        toast({
+          title: "Login successful!",
+          description: "Redirecting...",
+        });
+        // Navigation will be handled by onAuthStateChange
       }
     } catch (error: any) {
+      console.error("Login error:", error);
       toast({
         title: "Login failed",
         description: error.message || "Please check your credentials and try again.",
@@ -131,6 +166,22 @@ export default function LoginScreen() {
       setLoading(false);
     }
   };
+
+  // Show loading while checking session
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background to-muted flex flex-col items-center justify-center p-4">
+        <div className="mb-8">
+          <img 
+            src={cosvysLogo} 
+            alt="Cosvys" 
+            className="h-16 w-auto object-contain"
+          />
+        </div>
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted flex flex-col items-center justify-center p-4">
