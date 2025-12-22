@@ -17,6 +17,7 @@ import { getOrFetchRooms, getOrFetchCoverageData } from "@/hooks/usePrefetch";
 import { useProjectCache } from "@/hooks/useProjectCache";
 import { safeNumber, calculateProjectTotals } from "@/lib/calculations";
 import { Skeleton } from "@/components/ui/skeleton";
+import { retryOperation } from "@/hooks/useRetryWithWakeup";
 
 // PERFORMANCE: Use requestIdleCallback for non-blocking background work
 const scheduleIdleTask = (callback: () => void) => {
@@ -267,51 +268,96 @@ export default function PaintEstimationScreen() {
     });
   };
 
-  // Optimized coverage data fetch - use prefetched data if available
+  // Retry state for waking up server message
+  const [isWakingUp, setIsWakingUp] = useState(false);
+
+  // Optimized coverage data fetch - use prefetched data if available with retry
   useEffect(() => {
     const loadCoverage = async () => {
+      setIsWakingUp(true);
       try {
-        const data = await getOrFetchCoverageData();
-        setCoverageData(data);
+        const { data, error } = await retryOperation(
+          async () => {
+            const result = await getOrFetchCoverageData();
+            return result;
+          },
+          { maxAttempts: 3, delayMs: 2000, timeoutMs: 10000 }
+        );
+        
+        if (data) {
+          setCoverageData(data);
+        } else if (error) {
+          console.error('Error loading coverage data after retries:', error);
+          toast.error('Failed to load coverage data. Please refresh the page.');
+        }
       } catch (err) {
         console.error('Error loading coverage data:', err);
       } finally {
         setCoverageLoaded(true);
+        setIsWakingUp(false);
       }
     };
     loadCoverage();
   }, []);
 
-  // Fetch Enamel Primer and Apcolite Enamel products from product_pricing table
+  // Fetch Enamel Primer and Apcolite Enamel products from product_pricing table with retry
   useEffect(() => {
     const loadEnamelProducts = async () => {
-      const {
-        data: session
-      } = await supabase.auth.getSession();
-      if (!session?.session?.user?.id) return;
+      const { data: sessionResult } = await retryOperation(
+        async () => {
+          const result = await supabase.auth.getSession();
+          if (result.error) throw result.error;
+          return result.data;
+        },
+        { maxAttempts: 3, delayMs: 2000, timeoutMs: 10000 }
+      );
+      
+      if (!sessionResult?.session?.user?.id) return;
 
-      // Fetch Enamel Primer products
-      const {
-        data: primerData,
-        error: primerError
-      } = await supabase.from('product_pricing').select('product_name').eq('user_id', session.session.user.id).eq('category', 'Enamel Primer').eq('is_visible', true).order('product_name');
-      if (!primerError && primerData) {
-        setEnamelPrimerProducts(primerData.map(p => p.product_name));
+      // Fetch Enamel Primer products with retry
+      const { data: primerResult } = await retryOperation(
+        async () => {
+          const result = await supabase
+            .from('product_pricing')
+            .select('product_name')
+            .eq('user_id', sessionResult.session.user.id)
+            .eq('category', 'Enamel Primer')
+            .eq('is_visible', true)
+            .order('product_name');
+          if (result.error) throw result.error;
+          return result.data;
+        },
+        { maxAttempts: 3, delayMs: 2000, timeoutMs: 10000 }
+      );
+      
+      if (primerResult) {
+        setEnamelPrimerProducts(primerResult.map(p => p.product_name));
       }
 
-      // Fetch Apcolite Enamel products
-      const {
-        data: enamelData,
-        error: enamelError
-      } = await supabase.from('product_pricing').select('product_name').eq('user_id', session.session.user.id).eq('category', 'Apcolite Enamel').eq('is_visible', true).order('product_name');
-      if (!enamelError && enamelData) {
-        setApcoliteEnamelProducts(enamelData.map(p => p.product_name));
+      // Fetch Apcolite Enamel products with retry
+      const { data: enamelResult } = await retryOperation(
+        async () => {
+          const result = await supabase
+            .from('product_pricing')
+            .select('product_name')
+            .eq('user_id', sessionResult.session.user.id)
+            .eq('category', 'Apcolite Enamel')
+            .eq('is_visible', true)
+            .order('product_name');
+          if (result.error) throw result.error;
+          return result.data;
+        },
+        { maxAttempts: 3, delayMs: 2000, timeoutMs: 10000 }
+      );
+      
+      if (enamelResult) {
+        setApcoliteEnamelProducts(enamelResult.map(p => p.product_name));
       }
     };
     loadEnamelProducts();
   }, []);
 
-  // PERFORMANCE: Non-blocking room loading - show UI immediately
+  // PERFORMANCE: Non-blocking room loading - show UI immediately with retry
   // CRITICAL: NO real-time subscription - it causes re-renders that lose input values
   useEffect(() => {
     if (!projectId) {
@@ -324,15 +370,24 @@ export default function PaintEstimationScreen() {
     // PERFORMANCE: Schedule room loading after initial paint
     scheduleIdleTask(async () => {
       try {
-        // Fetch rooms in background - UI already rendered
-        const { data: freshRooms, error } = await supabase
-          .from('rooms')
-          .select('*')
-          .eq('project_id', projectId)
-          .order('created_at', { ascending: true });
+        // Fetch rooms in background with retry
+        const { data: freshRooms, error } = await retryOperation(
+          async () => {
+            const result = await supabase
+              .from('rooms')
+              .select('*')
+              .eq('project_id', projectId)
+              .order('created_at', { ascending: true });
+            
+            if (result.error) throw result.error;
+            return result.data;
+          },
+          { maxAttempts: 3, delayMs: 2000, timeoutMs: 10000 }
+        );
           
         if (error) {
-          console.error('Error fetching rooms:', error);
+          console.error('Error fetching rooms after retries:', error);
+          toast.error('Failed to load rooms. Please refresh the page.');
           if (isMounted) setRoomsLoaded(true);
           return;
         }
