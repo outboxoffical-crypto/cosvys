@@ -88,7 +88,7 @@ export async function ensureBackendReady(
 }
 
 /**
- * Force refresh the auth session
+ * Force refresh the auth session with timeout
  * Call this on app load to ensure fresh tokens
  */
 export async function refreshSession(): Promise<{
@@ -96,33 +96,61 @@ export async function refreshSession(): Promise<{
   hasSession: boolean;
   error?: string;
 }> {
+  const SESSION_TIMEOUT = 8000; // 8 seconds max for session operations
+
   try {
-    // First check if we have a session
-    const { data: { session }, error: getError } = await supabase.auth.getSession();
+    // Create timeout wrapper
+    const withTimeout = <T>(promise: Promise<T>, timeoutMs: number): Promise<T> => {
+      return Promise.race([
+        promise,
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Session operation timed out')), timeoutMs)
+        )
+      ]);
+    };
+
+    // First check if we have a session (with timeout)
+    const { data: { session }, error: getError } = await withTimeout(
+      supabase.auth.getSession(),
+      SESSION_TIMEOUT
+    );
 
     if (getError) {
-      console.error("Error getting session:", getError);
+      console.warn("Error getting session:", getError);
       return { success: false, hasSession: false, error: getError.message };
     }
 
     if (!session) {
+      // No session is a valid state - user needs to login
       return { success: true, hasSession: false };
     }
 
-    // Try to refresh the session
-    const { data, error: refreshError } = await supabase.auth.refreshSession();
+    // Try to refresh the session (with timeout)
+    try {
+      const { data, error: refreshError } = await withTimeout(
+        supabase.auth.refreshSession(),
+        SESSION_TIMEOUT
+      );
 
-    if (refreshError) {
-      console.error("Error refreshing session:", refreshError);
-      // If refresh fails, sign out to force clean state
-      await supabase.auth.signOut();
-      return { success: false, hasSession: false, error: refreshError.message };
+      if (refreshError) {
+        console.warn("Error refreshing session:", refreshError);
+        // If refresh fails, clear session and let user re-login
+        try {
+          await supabase.auth.signOut();
+        } catch {}
+        return { success: true, hasSession: false };
+      }
+
+      return { success: true, hasSession: !!data.session };
+    } catch (refreshErr) {
+      // Refresh failed, but we had a session - try to use it anyway
+      console.warn("Session refresh timed out, using existing session");
+      return { success: true, hasSession: true };
     }
-
-    return { success: true, hasSession: !!data.session };
   } catch (err: any) {
-    console.error("Session refresh exception:", err);
-    return { success: false, hasSession: false, error: err.message };
+    console.warn("Session check exception:", err?.message || err);
+    // On timeout/error, assume no session and let user login
+    return { success: true, hasSession: false };
   }
 }
 
@@ -154,21 +182,38 @@ export async function initializeConnection(
   backendReady: boolean;
   hasSession: boolean;
 }> {
-  onStatus?.("Checking connection…");
+  onStatus?.("Connecting…");
 
-  // Check backend health first
-  const backendReady = await ensureBackendReady(onStatus);
-  
-  if (!backendReady) {
+  // Simple fast initialization - just check if we can reach the backend
+  // and if there's an existing session, without refreshing
+  const INIT_TIMEOUT = 8000;
+
+  try {
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('timeout')), INIT_TIMEOUT)
+    );
+
+    const sessionPromise = supabase.auth.getSession();
+    
+    const { data, error } = await Promise.race([sessionPromise, timeoutPromise]);
+
+    if (error) {
+      console.warn("Session check error:", error);
+      // Backend is reachable but session has issues - proceed to login
+      state.isConnected = true;
+      state.lastCheck = Date.now();
+      return { backendReady: true, hasSession: false };
+    }
+
+    // Backend is reachable
+    state.isConnected = true;
+    state.lastCheck = Date.now();
+    
+    return { backendReady: true, hasSession: !!data.session };
+  } catch (err: any) {
+    console.warn("Connection initialization failed:", err?.message || err);
     return { backendReady: false, hasSession: false };
   }
-
-  onStatus?.("Refreshing session…");
-  
-  // Refresh session to ensure fresh tokens
-  const { hasSession } = await refreshSession();
-
-  return { backendReady: true, hasSession };
 }
 
 /**
