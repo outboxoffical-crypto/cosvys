@@ -28,7 +28,7 @@ export default function SplashScreen() {
         {/* App Title */}
         <div className={`text-center transform transition-all duration-1000 delay-300 ${isLoading ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-90'}`}>
           <h1 className="text-4xl font-bold text-white mb-2">Cosvys</h1>
-          <p className="text-white/90 text-lg font-medium">Minutes to measure. Seconds to estimate</p>
+          <p className="text-white/90 text-lg font-medium">Minutes to Measure. Seconds to Estimate</p>
         </div>
 
         {/* Loading Animation */}
