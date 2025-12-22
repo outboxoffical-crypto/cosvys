@@ -15,7 +15,7 @@ export default function SplashScreen() {
 
     const initApp = async () => {
       // Show splash for minimum time
-      const minSplashTime = new Promise(resolve => setTimeout(resolve, 2000));
+      const minSplashTime = new Promise(resolve => setTimeout(resolve, 1500));
 
       // Initialize connection and refresh session
       const initPromise = initializeConnection((msg) => {
@@ -29,13 +29,15 @@ export default function SplashScreen() {
 
       if (!initResult.backendReady) {
         setConnectionFailed(true);
-        setStatusMessage("Unable to connect to server");
+        setStatusMessage("Unable to connect to server. Please check your internet connection.");
         setIsLoading(false);
         return;
       }
 
       // Fade out and navigate
+      setStatusMessage("Ready!");
       setIsLoading(false);
+      
       setTimeout(() => {
         if (mounted) {
           // If user has valid session, try to go to dashboard
@@ -45,7 +47,7 @@ export default function SplashScreen() {
             navigate("/login");
           }
         }
-      }, 500);
+      }, 300);
     };
 
     initApp();
