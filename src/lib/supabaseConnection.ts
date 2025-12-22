@@ -13,43 +13,32 @@ const state: ConnectionState = {
 };
 
 const CHECK_INTERVAL = 30000; // 30 seconds minimum between checks
-const HEALTH_TIMEOUT = 8000; // 8 seconds timeout for health check
+const HEALTH_TIMEOUT = 10000; // 10 seconds timeout for health check
 
 /**
  * Check if Supabase backend is reachable
  */
 export async function checkBackendHealth(): Promise<boolean> {
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), HEALTH_TIMEOUT);
+    // Create a simple timeout promise
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('timeout')), HEALTH_TIMEOUT);
+    });
 
     // Use auth.getSession as a lightweight health check
     const sessionPromise = supabase.auth.getSession();
     
-    const result = await Promise.race([
-      sessionPromise,
-      new Promise<{ error: Error }>((_, reject) => {
-        controller.signal.addEventListener('abort', () => {
-          reject({ error: new Error('timeout') });
-        });
-      })
-    ]);
-
-    clearTimeout(timeoutId);
+    // Race between session check and timeout
+    const result = await Promise.race([sessionPromise, timeoutPromise]);
     
-    // If we got here without error, connection is healthy
+    // If we got here, connection is healthy (even if session is null)
     state.isConnected = true;
     state.lastCheck = Date.now();
     return true;
   } catch (err: any) {
-    if (err?.message === 'timeout' || err?.error?.message === 'timeout') {
-      state.isConnected = false;
-      return false;
-    }
-    // Other errors might still mean connection works
-    state.isConnected = true;
-    state.lastCheck = Date.now();
-    return true;
+    console.warn("Backend health check failed:", err?.message || err);
+    state.isConnected = false;
+    return false;
   }
 }
 
@@ -74,22 +63,22 @@ export async function ensureBackendReady(
 
   state.isReconnecting = true;
 
-  const maxAttempts = 3;
-  const delayMs = 2000;
+  const maxAttempts = 4;
+  const delayMs = 2500;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    if (attempt > 1) {
-      onReconnecting?.("Reconnecting to server… please wait");
-    }
+    onReconnecting?.(`Connecting to server (attempt ${attempt}/${maxAttempts})…`);
 
     const isHealthy = await checkBackendHealth();
     
     if (isHealthy) {
       state.isReconnecting = false;
+      onReconnecting?.("Connected!");
       return true;
     }
 
     if (attempt < maxAttempts) {
+      onReconnecting?.(`Retrying in ${delayMs / 1000}s…`);
       await new Promise(resolve => setTimeout(resolve, delayMs));
     }
   }
