@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { retryOperation } from "@/hooks/useRetryWithWakeup";
+import { ensureBackendReady, markConnectionActive } from "@/lib/supabaseConnection";
 
 export default function ProjectSummaryScreen() {
   const navigate = useNavigate();
@@ -19,11 +20,26 @@ export default function ProjectSummaryScreen() {
   const [dealerInfo, setDealerInfo] = useState<any>(null);
   const [areaConfigurations, setAreaConfigurations] = useState<any[]>([]);
   const [isWakingUp, setIsWakingUp] = useState(false);
+  const [connectionMessage, setConnectionMessage] = useState("");
 
   useEffect(() => {
     const loadData = async () => {
       setIsWakingUp(true);
+      setConnectionMessage("");
+      
       try {
+        // Ensure backend is ready first
+        const backendReady = await ensureBackendReady((msg) => setConnectionMessage(msg));
+        if (!backendReady) {
+          toast({
+            title: "Connection issue",
+            description: "Could not connect to server. Please try again.",
+            variant: "destructive",
+          });
+          setIsWakingUp(false);
+          return;
+        }
+        setConnectionMessage("");
         // Load estimation and area configs from localStorage
         const estimationData = localStorage.getItem(`estimation_${projectId}`);
         const areaConfigsData = localStorage.getItem(`areaConfigurations_${projectId}`);
@@ -94,6 +110,7 @@ export default function ProjectSummaryScreen() {
             console.warn('Project missing customer details:', projectResult.data);
           }
           setProjectData(projectResult.data);
+          markConnectionActive();
         }
         
         if (roomsResult.data) setRooms(roomsResult.data);

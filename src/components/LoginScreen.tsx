@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { useRetryWithWakeup } from "@/hooks/useRetryWithWakeup";
+import { ensureBackendReady, markConnectionActive, refreshSession } from "@/lib/supabaseConnection";
 
 const phoneSchema = z.string().regex(/^\d{10}$/, "Please enter a valid 10-digit phone number");
 const emailSchema = z.string().email("Please enter a valid email address");
@@ -22,63 +23,13 @@ export default function LoginScreen() {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
+  const [reconnectMessage, setReconnectMessage] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [phone, setPhone] = useState("");
   const [fullName, setFullName] = useState("");
 
-  useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (session?.user) {
-          // Defer database call to avoid deadlock
-          setTimeout(() => {
-            checkDealerAndNavigate(session.user.id);
-          }, 0);
-        } else {
-          setCheckingSession(false);
-        }
-      }
-    );
-
-    // THEN check for existing session with retry
-    const checkSession = async () => {
-      const { data, error } = await executeWithRetry(
-        async () => {
-          const result = await supabase.auth.getSession();
-          if (result.error) throw result.error;
-          return result.data;
-        },
-        { maxAttempts: 3, delayMs: 2000, timeoutMs: 10000 }
-      );
-
-      if (error) {
-        console.error("Session check failed after retries:", error);
-        setCheckingSession(false);
-        toast({
-          title: "Connection issue",
-          description: "Could not connect to server. Please try again.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (data?.session?.user) {
-        setTimeout(() => {
-          checkDealerAndNavigate(data.session.user.id);
-        }, 0);
-      } else {
-        setCheckingSession(false);
-      }
-    };
-
-    checkSession();
-
-    return () => subscription.unsubscribe();
-  }, [navigate, toast]);
-
-  const checkDealerAndNavigate = async (userId: string) => {
+  const checkDealerAndNavigate = useCallback(async (userId: string) => {
     const { data: dealerInfo, error } = await executeWithRetry(
       async () => {
         const result = await supabase
@@ -88,6 +39,7 @@ export default function LoginScreen() {
           .maybeSingle();
         
         if (result.error) throw result.error;
+        markConnectionActive();
         return result.data;
       },
       { maxAttempts: 3, delayMs: 2000, timeoutMs: 10000 }
@@ -98,7 +50,6 @@ export default function LoginScreen() {
     
     if (error) {
       console.error("Dealer check failed after retries:", error);
-      // Still navigate to dealer-info as fallback
       navigate("/dealer-info");
       return;
     }
@@ -108,7 +59,70 @@ export default function LoginScreen() {
     } else {
       navigate("/dealer-info");
     }
-  };
+  }, [executeWithRetry, navigate]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (!mounted) return;
+        
+        if (session?.user) {
+          setTimeout(() => {
+            if (mounted) checkDealerAndNavigate(session.user.id);
+          }, 0);
+        } else {
+          setCheckingSession(false);
+        }
+      }
+    );
+
+    // Ensure backend is ready, then check session
+    const initializeAuth = async () => {
+      // First ensure backend is reachable
+      const backendReady = await ensureBackendReady((msg) => {
+        if (mounted) setReconnectMessage(msg);
+      });
+
+      if (!mounted) return;
+      setReconnectMessage("");
+
+      if (!backendReady) {
+        setCheckingSession(false);
+        toast({
+          title: "Connection issue",
+          description: "Could not connect to server. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Refresh session to ensure fresh tokens
+      const { hasSession } = await refreshSession();
+
+      if (!mounted) return;
+
+      if (hasSession) {
+        const { data } = await supabase.auth.getSession();
+        if (data?.session?.user) {
+          checkDealerAndNavigate(data.session.user.id);
+        } else {
+          setCheckingSession(false);
+        }
+      } else {
+        setCheckingSession(false);
+      }
+    };
+
+    initializeAuth();
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [navigate, toast, checkDealerAndNavigate]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -209,6 +223,9 @@ export default function LoginScreen() {
 
   // Determine what message to show
   const getLoadingMessage = () => {
+    if (reconnectMessage) {
+      return reconnectMessage;
+    }
     if (retryState.isRetrying) {
       return retryState.message;
     }
@@ -230,7 +247,7 @@ export default function LoginScreen() {
           />
         </div>
         <div className="flex items-center gap-2">
-          {retryState.isRetrying && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
+          <Loader2 className="h-4 w-4 animate-spin text-primary" />
           <p className="text-muted-foreground">{getLoadingMessage()}</p>
         </div>
       </div>
