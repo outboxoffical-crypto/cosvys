@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { useRetryWithWakeup } from "@/hooks/useRetryWithWakeup";
-import { ensureBackendReady, markConnectionActive, refreshSession } from "@/lib/supabaseConnection";
+import { markConnectionActive } from "@/lib/supabaseConnection";
 
 const phoneSchema = z.string().regex(/^\d{10}$/, "Please enter a valid 10-digit phone number");
 const emailSchema = z.string().email("Please enter a valid email address");
@@ -79,44 +79,33 @@ export default function LoginScreen() {
       }
     );
 
-    // Ensure backend is ready, then check session
-    const initializeAuth = async () => {
-      // First ensure backend is reachable
-      const backendReady = await ensureBackendReady((msg) => {
-        if (mounted) setReconnectMessage(msg);
-      });
-
-      if (!mounted) return;
-      setReconnectMessage("");
-
-      if (!backendReady) {
-        setCheckingSession(false);
-        toast({
-          title: "Connection issue",
-          description: "Could not connect to server. Please try again.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Refresh session to ensure fresh tokens
-      const { hasSession } = await refreshSession();
-
-      if (!mounted) return;
-
-      if (hasSession) {
-        const { data } = await supabase.auth.getSession();
-        if (data?.session?.user) {
-          checkDealerAndNavigate(data.session.user.id);
+    // Quick session check - don't block on backend health
+    const checkExistingSession = async () => {
+      try {
+        // Give a short timeout for session check
+        const timeout = new Promise<null>(resolve => 
+          setTimeout(() => resolve(null), 3000)
+        );
+        
+        const sessionCheck = supabase.auth.getSession();
+        const result = await Promise.race([sessionCheck, timeout]);
+        
+        if (!mounted) return;
+        
+        if (result && 'data' in result && result.data?.session?.user) {
+          checkDealerAndNavigate(result.data.session.user.id);
         } else {
           setCheckingSession(false);
         }
-      } else {
-        setCheckingSession(false);
+      } catch (err) {
+        console.warn("Session check error:", err);
+        if (mounted) {
+          setCheckingSession(false);
+        }
       }
     };
 
-    initializeAuth();
+    checkExistingSession();
 
     return () => {
       mounted = false;
