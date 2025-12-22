@@ -10,9 +10,11 @@ import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { getPrefetchedData } from "@/hooks/useProjectCache";
 import { safeNumber, parseCoverageRange, calculateLabourDays, calculateLabourCost, calculateMaterialQuantity } from "@/lib/calculations";
+import { validateSqftInput, MAX_SQFT_VALUE, safeCalculate } from "@/lib/summaryCalculations";
 import LabourCalculationDetails from "@/components/LabourCalculationDetails";
 import MaterialCalculationDetails from "@/components/MaterialCalculationDetails";
 import { getGlobalDisplayOrder, sortByGlobalDisplayOrder, createConfigsHash } from "@/lib/configOrdering";
+
 interface AreaConfig {
   id: string;
   areaType: string;
@@ -43,6 +45,7 @@ interface AreaConfig {
     enamelCoats: number;
   };
 }
+
 export default function GenerateSummaryScreen() {
   const navigate = useNavigate();
   const {
@@ -51,6 +54,7 @@ export default function GenerateSummaryScreen() {
   const {
     toast
   } = useToast();
+  
   // Paint Configuration Details shows only Paint Estimation configs
   const [areaConfigs, setAreaConfigs] = useState<AreaConfig[]>([]);
   // Labour & Material use Paint Estimation + Room Measurement enamel areas
@@ -66,16 +70,26 @@ export default function GenerateSummaryScreen() {
   const [activeConfigIndex, setActiveConfigIndex] = useState(0);
   const paintConfigRef = useRef<HTMLDivElement>(null);
   const topSectionRef = useRef<HTMLDivElement>(null);
-  const totalMaterialCostRef = useRef<number>(0); // Store total material cost for access across sections
-  const totalLabourCostRef = useRef<number>(0); // Store total labour cost for access across sections
-  const enamelMaterialTotalRef = useRef<number>(0); // Store enamel material total (aggregated) for accurate total calculation
-
+  const totalMaterialCostRef = useRef<number>(0);
+  const totalLabourCostRef = useRef<number>(0);
+  const enamelMaterialTotalRef = useRef<number>(0);
+  
+  // STABILIZATION: Prevent duplicate calculations and preserve valid state
+  const isCalculatingRef = useRef<boolean>(false);
+  const lastValidStateRef = useRef<{
+    areaConfigs: AreaConfig[];
+    calculationConfigs: AreaConfig[];
+    materialCost: number;
+    labourCost: number;
+  } | null>(null);
+  const dataLoadedRef = useRef<boolean>(false);
+  
   // CRITICAL: Frozen snapshots to prevent mobile incremental rendering from affecting order
   const frozenAreaConfigsRef = useRef<AreaConfig[]>([]);
   const frozenCalculationConfigsRef = useRef<AreaConfig[]>([]);
   const lastAreaConfigsHash = useRef<string>('');
   const lastCalculationConfigsHash = useRef<string>('');
-  const perDayLabourCost = 1100; // Fixed per day labour cost in rupees
+  const perDayLabourCost = 1100;
   const [projectData, setProjectData] = useState<any>(null);
   const [coverageData, setCoverageData] = useState<any>({});
   const [productPricing, setProductPricing] = useState<any>({});
@@ -84,6 +98,9 @@ export default function GenerateSummaryScreen() {
   const [isLoadingPaintConfig, setIsLoadingPaintConfig] = useState(true);
   const [isLoadingLabour, setIsLoadingLabour] = useState(true);
   const [isLoadingMaterial, setIsLoadingMaterial] = useState(true);
+  
+  // Error state for calculation failures
+  const [calculationError, setCalculationError] = useState<string | null>(null);
 
   // GLOBAL ORDERING: Use centralized sorting from configOrdering.ts
   // Priority: Wall(1) → Ceiling(2) → Floor(3) → Separate(4) → Enamel(5) → Separate Enamel(6)
@@ -108,6 +125,9 @@ export default function GenerateSummaryScreen() {
     return frozenCalculationConfigsRef.current;
   }, [calculationConfigs]);
   useEffect(() => {
+    // Prevent duplicate data loading
+    if (dataLoadedRef.current) return;
+    dataLoadedRef.current = true;
     loadData();
   }, [projectId]);
 
@@ -120,6 +140,18 @@ export default function GenerateSummaryScreen() {
       });
     }, 100);
   }, []);
+
+  // Save valid state when calculations complete successfully
+  useEffect(() => {
+    if (areaConfigs.length > 0 && !isLoadingPaintConfig && !isLoadingLabour && !isLoadingMaterial) {
+      lastValidStateRef.current = {
+        areaConfigs,
+        calculationConfigs,
+        materialCost: totalMaterialCostRef.current,
+        labourCost: totalLabourCostRef.current
+      };
+    }
+  }, [areaConfigs, calculationConfigs, isLoadingPaintConfig, isLoadingLabour, isLoadingMaterial]);
 
   // Progressive loading: handled directly in loadData to avoid extra re-renders
 
