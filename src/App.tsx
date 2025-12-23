@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import SplashScreen from "./components/SplashScreen";
 import LoginScreen from "./components/LoginScreen";
 import DealerInfoScreen from "./components/DealerInfoScreen";
@@ -19,6 +19,7 @@ import SettingsScreen from "./components/SettingsScreen";
 import ProjectDetailsPage from "./components/ProjectDetailsPage";
 import LeadBookScreen from "./components/LeadBookScreen";
 import NotFound from "./pages/NotFound";
+import { TEST_MODE } from "./lib/testMode";
 
 const queryClient = new QueryClient();
 
@@ -29,8 +30,9 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<SplashScreen />} />
-          <Route path="/login" element={<LoginScreen />} />
+          {/* In TEST_MODE, redirect splash and login directly to dashboard */}
+          <Route path="/" element={TEST_MODE ? <Navigate to="/dashboard" replace /> : <SplashScreen />} />
+          <Route path="/login" element={TEST_MODE ? <Navigate to="/dashboard" replace /> : <LoginScreen />} />
           <Route path="/dealer-info" element={<DealerInfoScreen />} />
           <Route path="/dealer-pricing" element={<DealerPricingScreen />} />
           <Route path="/dashboard" element={<Dashboard />} />
