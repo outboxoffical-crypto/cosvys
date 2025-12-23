@@ -2,55 +2,23 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import cosvysLogo from "@/assets/cosvys-logo.png";
-import { supabase } from "@/integrations/supabase/client";
 
+/**
+ * SplashScreen - Shows briefly then navigates to login
+ * NO Supabase calls here - completely non-blocking
+ */
 export default function SplashScreen() {
   const navigate = useNavigate();
-  const [statusMessage, setStatusMessage] = useState("Loading…");
+  const [statusMessage] = useState("Loading…");
 
   useEffect(() => {
-    let mounted = true;
+    // Simply show splash for 1.2 seconds then go to login
+    // Authentication check happens on LoginScreen, not here
+    const timer = setTimeout(() => {
+      navigate("/login", { replace: true });
+    }, 1200);
 
-    const initApp = async () => {
-      // Brief splash screen delay
-      await new Promise(resolve => setTimeout(resolve, 1200));
-      
-      if (!mounted) return;
-
-      setStatusMessage("Checking session…");
-
-      try {
-        // Quick session check with timeout
-        const sessionCheck = supabase.auth.getSession();
-        const timeout = new Promise<null>(resolve => 
-          setTimeout(() => resolve(null), 5000)
-        );
-        
-        const result = await Promise.race([sessionCheck, timeout]);
-        
-        if (!mounted) return;
-
-        // If we got a session result and it has a session, go to dashboard
-        if (result && 'data' in result && result.data?.session) {
-          navigate("/dashboard", { replace: true });
-        } else {
-          // No session or timeout - go to login
-          navigate("/login", { replace: true });
-        }
-      } catch (err) {
-        console.warn("Session check failed:", err);
-        if (mounted) {
-          // On any error, just go to login
-          navigate("/login", { replace: true });
-        }
-      }
-    };
-
-    initApp();
-
-    return () => {
-      mounted = false;
-    };
+    return () => clearTimeout(timer);
   }, [navigate]);
 
   return (
