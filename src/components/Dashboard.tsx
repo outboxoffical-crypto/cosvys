@@ -15,7 +15,6 @@ import { MaterialTracker } from "./MaterialTracker";
 import { LabourTracker } from "./LabourTracker";
 import { LeadSummaryBox } from "./LeadSummaryBox";
 import { format } from "date-fns";
-import { TEST_MODE, MOCK_PROJECTS, MOCK_DEALER_INFO, MOCK_USER, MOCK_LEAD_STATS } from "@/lib/testMode";
 import { 
   Plus, 
   Search, 
@@ -62,27 +61,21 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
-  const [dealerInfo, setDealerInfo] = useState<any>(TEST_MODE ? MOCK_DEALER_INFO : null);
-  const [projects, setProjects] = useState<Project[]>(TEST_MODE ? MOCK_PROJECTS : []);
-  const [loading, setLoading] = useState(!TEST_MODE);
+  const [dealerInfo, setDealerInfo] = useState<any>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [materialTrackerOpen, setMaterialTrackerOpen] = useState(false);
   const [materialTrackerProjectId, setMaterialTrackerProjectId] = useState<string | null>(null);
   const [labourTrackerOpen, setLabourTrackerOpen] = useState(false);
   const [labourTrackerProjectId, setLabourTrackerProjectId] = useState<string | null>(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
-  const [leadStats, setLeadStats] = useState(TEST_MODE ? MOCK_LEAD_STATS : { total: 0, converted: 0, dropped: 0, pending: 0 });
-  const [userName, setUserName] = useState<string>(TEST_MODE ? MOCK_USER.full_name : "");
+  const [leadStats, setLeadStats] = useState({ total: 0, converted: 0, dropped: 0, pending: 0 });
+  const [userName, setUserName] = useState<string>("");
   const [avatarUrl, setAvatarUrl] = useState<string>("");
-  const [userInitials, setUserInitials] = useState<string>(TEST_MODE ? "TU" : "");
+  const [userInitials, setUserInitials] = useState<string>("");
 
   useEffect(() => {
-    // Skip all Supabase calls in TEST_MODE
-    if (TEST_MODE) {
-      setLoading(false);
-      return;
-    }
-
     const stored = localStorage.getItem('dealerInfo');
     if (stored) {
       setDealerInfo(JSON.parse(stored));
@@ -105,7 +98,6 @@ export default function Dashboard() {
   }, []);
 
   const fetchUserProfile = async () => {
-    if (TEST_MODE) return; // Skip in test mode
     const { data: { user } } = await supabase.auth.getUser();
     
     if (user) {
@@ -133,10 +125,6 @@ export default function Dashboard() {
   };
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (TEST_MODE) {
-      toast({ title: "Test Mode", description: "Avatar upload disabled in test mode" });
-      return;
-    }
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -217,7 +205,6 @@ export default function Dashboard() {
   };
 
   const fetchProjects = async () => {
-    if (TEST_MODE) return; // Skip in test mode
     setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
     
@@ -253,7 +240,6 @@ export default function Dashboard() {
   };
 
   const fetchLeadStats = async () => {
-    if (TEST_MODE) return; // Skip in test mode
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -282,14 +268,6 @@ export default function Dashboard() {
   );
 
   const handleApproval = async (projectId: string) => {
-    if (TEST_MODE) {
-      // Update local state in test mode
-      setProjects(prev => prev.map(p => 
-        p.id === projectId ? { ...p, approval_status: 'Approved' } : p
-      ));
-      toast({ title: "Test Mode", description: "Project approved (local only)" });
-      return;
-    }
     try {
       // Get the project to log activity
       const { data: project } = await supabase
@@ -333,10 +311,6 @@ export default function Dashboard() {
   };
 
   const handleReminder = async (projectId: string) => {
-    if (TEST_MODE) {
-      toast({ title: "Test Mode", description: "Reminder sent (simulated)" });
-      return;
-    }
     const companyName = dealerInfo?.shopName || "Cosvys";
     
     try {
@@ -388,16 +362,6 @@ export default function Dashboard() {
 
   const handleDateUpdate = async (projectId: string, dateField: 'start_date' | 'end_date', date: Date | undefined) => {
     if (!date) return;
-    
-    if (TEST_MODE) {
-      // Update local state in test mode
-      const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-      setProjects(prev => prev.map(p => 
-        p.id === projectId ? { ...p, [dateField]: formattedDate } : p
-      ));
-      toast({ title: "Test Mode", description: `${dateField === 'start_date' ? 'Start' : 'End'} date updated (local only)` });
-      return;
-    }
     
     try {
       // Format date properly to avoid timezone issues
@@ -457,12 +421,6 @@ export default function Dashboard() {
   return (
     <TooltipProvider>
       <div className="min-h-screen bg-background">
-      {/* Test Mode Banner */}
-      {TEST_MODE && (
-        <div className="bg-orange-500 text-white text-center py-2 text-sm font-medium">
-          🧪 TEST MODE - Supabase Disabled - Local Data Only
-        </div>
-      )}
       {/* Header */}
       <div className="eca-gradient text-white p-4">
         <div className="flex items-center justify-between mb-4">
