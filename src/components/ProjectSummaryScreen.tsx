@@ -7,8 +7,7 @@ import { ArrowLeft, FileText, Share2, Download, Phone, MapPin, Home, Palette, Us
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { retryOperation } from "@/hooks/useRetryWithWakeup";
-import { ensureBackendReady, markConnectionActive } from "@/lib/supabaseConnection";
+import { markConnectionActive } from "@/lib/supabaseConnection";
 
 export default function ProjectSummaryScreen() {
   const navigate = useNavigate();
@@ -28,18 +27,6 @@ export default function ProjectSummaryScreen() {
       setConnectionMessage("");
       
       try {
-        // Ensure backend is ready first
-        const backendReady = await ensureBackendReady((msg) => setConnectionMessage(msg));
-        if (!backendReady) {
-          toast({
-            title: "Connection issue",
-            description: "Could not connect to server. Please try again.",
-            variant: "destructive",
-          });
-          setIsWakingUp(false);
-          return;
-        }
-        setConnectionMessage("");
         // Load estimation and area configs from localStorage
         const estimationData = localStorage.getItem(`estimation_${projectId}`);
         const areaConfigsData = localStorage.getItem(`areaConfigurations_${projectId}`);
@@ -47,15 +34,8 @@ export default function ProjectSummaryScreen() {
         if (estimationData) setEstimation(JSON.parse(estimationData));
         if (areaConfigsData) setAreaConfigurations(JSON.parse(areaConfigsData));
 
-        // Load session with retry
-        const { data: sessionData, error: sessionError } = await retryOperation(
-          async () => {
-            const result = await supabase.auth.getSession();
-            if (result.error) throw result.error;
-            return result.data;
-          },
-          { maxAttempts: 3, delayMs: 2000, timeoutMs: 10000 }
-        );
+        // Get session
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError || !sessionData?.session) {
           toast({
@@ -63,36 +43,15 @@ export default function ProjectSummaryScreen() {
             description: "Please log in to view project summary",
             variant: "destructive",
           });
-          navigate('/');
+          navigate('/login');
           return;
         }
 
-        // Load project data, rooms and dealer info with retry
+        // Load project data, rooms and dealer info in parallel
         const [projectResult, roomsResult, dealerResult] = await Promise.all([
-          retryOperation(
-            async () => {
-              const result = await supabase.from('projects').select('*').eq('id', projectId).single();
-              if (result.error) throw result.error;
-              return result.data;
-            },
-            { maxAttempts: 3, delayMs: 2000, timeoutMs: 10000 }
-          ),
-          retryOperation(
-            async () => {
-              const result = await supabase.from('rooms').select('*').eq('project_id', projectId);
-              if (result.error) throw result.error;
-              return result.data;
-            },
-            { maxAttempts: 3, delayMs: 2000, timeoutMs: 10000 }
-          ),
-          retryOperation(
-            async () => {
-              const result = await supabase.from('dealer_info').select('*').eq('user_id', sessionData.session.user.id).maybeSingle();
-              if (result.error) throw result.error;
-              return result.data;
-            },
-            { maxAttempts: 3, delayMs: 2000, timeoutMs: 10000 }
-          )
+          supabase.from('projects').select('*').eq('id', projectId).single(),
+          supabase.from('rooms').select('*').eq('project_id', projectId),
+          supabase.from('dealer_info').select('*').eq('user_id', sessionData.session.user.id).maybeSingle()
         ]);
         
         if (projectResult.error) {

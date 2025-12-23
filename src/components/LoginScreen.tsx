@@ -8,83 +8,69 @@ import cosvysLogo from "@/assets/cosvys-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
-import { useRetryWithWakeup } from "@/hooks/useRetryWithWakeup";
-import { markConnectionActive } from "@/lib/supabaseConnection";
 
 const phoneSchema = z.string().regex(/^\d{10}$/, "Please enter a valid 10-digit phone number");
 const emailSchema = z.string().email("Please enter a valid email address");
 const passwordSchema = z.string().min(6, "Password must be at least 6 characters");
 
+/**
+ * LoginScreen - Renders immediately, handles auth non-blockingly
+ * All Supabase calls have timeouts and graceful fallbacks
+ */
 export default function LoginScreen() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { retryState, executeWithRetry } = useRetryWithWakeup();
   
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [checkingSession, setCheckingSession] = useState(true);
-  const [reconnectMessage, setReconnectMessage] = useState("");
+  const [isReady, setIsReady] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [phone, setPhone] = useState("");
   const [fullName, setFullName] = useState("");
 
+  // Check if user has dealer info (with graceful failure)
   const checkDealerAndNavigate = useCallback(async (userId: string) => {
-    const { data: dealerInfo, error } = await executeWithRetry(
-      async () => {
-        const result = await supabase
-          .from('dealer_info')
-          .select('id')
-          .eq('user_id', userId)
-          .maybeSingle();
-        
-        if (result.error) throw result.error;
-        markConnectionActive();
-        return result.data;
-      },
-      { maxAttempts: 3, delayMs: 2000, timeoutMs: 10000 }
-    );
-    
-    setLoading(false);
-    setCheckingSession(false);
-    
-    if (error) {
-      console.error("Dealer check failed after retries:", error);
-      navigate("/dealer-info");
-      return;
+    try {
+      const { data: dealerInfo } = await supabase
+        .from('dealer_info')
+        .select('id')
+        .eq('user_id', userId)
+        .maybeSingle();
+      
+      if (dealerInfo) {
+        navigate("/dashboard", { replace: true });
+      } else {
+        navigate("/dealer-info", { replace: true });
+      }
+    } catch (err) {
+      console.warn("Dealer check failed, redirecting to dealer-info:", err);
+      navigate("/dealer-info", { replace: true });
     }
-    
-    if (dealerInfo) {
-      navigate("/dashboard");
-    } else {
-      navigate("/dealer-info");
-    }
-  }, [executeWithRetry, navigate]);
+  }, [navigate]);
 
   useEffect(() => {
     let mounted = true;
 
-    // Set up auth state listener FIRST
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (!mounted) return;
         
-        if (session?.user) {
+        if (session?.user && event === 'SIGNED_IN') {
           setTimeout(() => {
             if (mounted) checkDealerAndNavigate(session.user.id);
           }, 0);
-        } else {
-          setCheckingSession(false);
         }
       }
     );
 
-    // Quick session check - don't block on backend health
-    const checkExistingSession = async () => {
+    // Quick non-blocking session check
+    const checkSession = async () => {
       try {
-        // Give a short timeout for session check
+        // Very short timeout - if backend is slow, just show login
         const timeout = new Promise<null>(resolve => 
-          setTimeout(() => resolve(null), 3000)
+          setTimeout(() => resolve(null), 2000)
         );
         
         const sessionCheck = supabase.auth.getSession();
@@ -93,32 +79,31 @@ export default function LoginScreen() {
         if (!mounted) return;
         
         if (result && 'data' in result && result.data?.session?.user) {
+          // User already logged in, navigate
           checkDealerAndNavigate(result.data.session.user.id);
         } else {
-          setCheckingSession(false);
+          // No session or timeout - show login form
+          setIsReady(true);
         }
-      } catch (err) {
-        console.warn("Session check error:", err);
-        if (mounted) {
-          setCheckingSession(false);
-        }
+      } catch {
+        // Any error - just show login form
+        if (mounted) setIsReady(true);
       }
     };
 
-    checkExistingSession();
+    checkSession();
 
     return () => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [navigate, toast, checkDealerAndNavigate]);
+  }, [checkDealerAndNavigate]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      // Validate inputs
       emailSchema.parse(email);
       passwordSchema.parse(password);
       phoneSchema.parse(phone);
@@ -127,34 +112,26 @@ export default function LoginScreen() {
         throw new Error("Full name is required");
       }
 
-      const { data: signUpResult, error: signUpError } = await executeWithRetry(
-        async () => {
-          const result = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-              emailRedirectTo: `${window.location.origin}/`,
-              data: {
-                phone,
-                full_name: fullName.trim()
-              }
-            }
-          });
-          
-          if (result.error) throw result.error;
-          return result.data;
-        },
-        { maxAttempts: 3, delayMs: 2000, timeoutMs: 15000 }
-      );
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            phone,
+            full_name: fullName.trim()
+          }
+        }
+      });
 
-      if (signUpError) throw signUpError;
+      if (error) throw error;
 
-      if (signUpResult?.user) {
+      if (data?.user) {
         toast({
           title: "Account created successfully!",
           description: "Please complete your dealer setup.",
         });
-        navigate("/dealer-info");
+        navigate("/dealer-info", { replace: true });
       }
     } catch (error: any) {
       toast({
@@ -172,60 +149,37 @@ export default function LoginScreen() {
     setLoading(true);
 
     try {
-      // Validate inputs
       emailSchema.parse(email);
       passwordSchema.parse(password);
 
-      const { data: loginResult, error: loginError } = await executeWithRetry(
-        async () => {
-          const result = await supabase.auth.signInWithPassword({
-            email,
-            password,
-          });
-          
-          if (result.error) throw result.error;
-          return result.data;
-        },
-        { maxAttempts: 3, delayMs: 2000, timeoutMs: 15000 }
-      );
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-      if (loginError) throw loginError;
+      if (error) throw error;
 
-      if (loginResult?.user) {
+      if (data?.user) {
         toast({
           title: "Login successful!",
           description: "Redirecting...",
         });
-        // Navigate directly instead of relying only on onAuthStateChange
-        await checkDealerAndNavigate(loginResult.user.id);
+        await checkDealerAndNavigate(data.user.id);
       }
     } catch (error: any) {
       console.error("Login error:", error);
-      setLoading(false);
       toast({
         title: "Login failed",
         description: error.message || "Please check your credentials and try again.",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Determine what message to show
-  const getLoadingMessage = () => {
-    if (reconnectMessage) {
-      return reconnectMessage;
-    }
-    if (retryState.isRetrying) {
-      return retryState.message;
-    }
-    if (checkingSession) {
-      return "Loading...";
-    }
-    return "Please wait...";
-  };
-
-  // Show loading while checking session or retrying
-  if (checkingSession) {
+  // Show brief loading while checking for existing session (max 2 seconds)
+  if (!isReady) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background to-muted flex flex-col items-center justify-center p-4">
         <div className="mb-8">
@@ -237,7 +191,7 @@ export default function LoginScreen() {
         </div>
         <div className="flex items-center gap-2">
           <Loader2 className="h-4 w-4 animate-spin text-primary" />
-          <p className="text-muted-foreground">{getLoadingMessage()}</p>
+          <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
@@ -268,14 +222,6 @@ export default function LoginScreen() {
         </CardHeader>
 
         <CardContent className="space-y-6">
-          {/* Show waking up message during retry */}
-          {retryState.isRetrying && (
-            <div className="flex items-center justify-center gap-2 py-2 px-4 bg-muted/50 rounded-lg">
-              <Loader2 className="h-4 w-4 animate-spin text-primary" />
-              <span className="text-sm text-muted-foreground">{retryState.message}</span>
-            </div>
-          )}
-
           <form onSubmit={isLogin ? handleLogin : handleSignUp} className="space-y-4">
             {!isLogin && (
               <>
@@ -348,7 +294,7 @@ export default function LoginScreen() {
               {loading ? (
                 <span className="flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  {retryState.isRetrying ? retryState.message : "Please wait..."}
+                  Please wait...
                 </span>
               ) : (
                 isLogin ? "Login" : "Sign Up"
