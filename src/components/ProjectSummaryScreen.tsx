@@ -3,11 +3,10 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, FileText, Share2, Download, Phone, MapPin, Home, Palette, Users, Calendar, Package, Loader2 } from "lucide-react";
+import { ArrowLeft, FileText, Share2, Download, Phone, MapPin, Home, Palette, Users, Calendar, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { markConnectionActive } from "@/lib/supabaseConnection";
 
 export default function ProjectSummaryScreen() {
   const navigate = useNavigate();
@@ -18,14 +17,9 @@ export default function ProjectSummaryScreen() {
   const [estimation, setEstimation] = useState<any>(null);
   const [dealerInfo, setDealerInfo] = useState<any>(null);
   const [areaConfigurations, setAreaConfigurations] = useState<any[]>([]);
-  const [isWakingUp, setIsWakingUp] = useState(false);
-  const [connectionMessage, setConnectionMessage] = useState("");
 
   useEffect(() => {
     const loadData = async () => {
-      setIsWakingUp(true);
-      setConnectionMessage("");
-      
       try {
         // Load estimation and area configs from localStorage
         const estimationData = localStorage.getItem(`estimation_${projectId}`);
@@ -34,24 +28,22 @@ export default function ProjectSummaryScreen() {
         if (estimationData) setEstimation(JSON.parse(estimationData));
         if (areaConfigsData) setAreaConfigurations(JSON.parse(areaConfigsData));
 
-        // Get session
-        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError || !sessionData?.session) {
+        // Load project data, rooms and dealer info from Supabase in parallel
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
           toast({
             title: "Authentication Required",
             description: "Please log in to view project summary",
             variant: "destructive",
           });
-          navigate('/login');
+          navigate('/');
           return;
         }
 
-        // Load project data, rooms and dealer info in parallel
         const [projectResult, roomsResult, dealerResult] = await Promise.all([
           supabase.from('projects').select('*').eq('id', projectId).single(),
           supabase.from('rooms').select('*').eq('project_id', projectId),
-          supabase.from('dealer_info').select('*').eq('user_id', sessionData.session.user.id).maybeSingle()
+          supabase.from('dealer_info').select('*').eq('user_id', session.user.id).maybeSingle()
         ]);
         
         if (projectResult.error) {
@@ -65,11 +57,16 @@ export default function ProjectSummaryScreen() {
         }
 
         if (projectResult.data) {
+          // Verify that customer details exist
           if (!projectResult.data.customer_name || !projectResult.data.phone || !projectResult.data.location) {
             console.warn('Project missing customer details:', projectResult.data);
+            toast({
+              title: "Incomplete Project Data",
+              description: "Customer details are missing. Please update the project.",
+              variant: "destructive",
+            });
           }
           setProjectData(projectResult.data);
-          markConnectionActive();
         }
         
         if (roomsResult.data) setRooms(roomsResult.data);
@@ -81,8 +78,6 @@ export default function ProjectSummaryScreen() {
           description: "Failed to load project summary",
           variant: "destructive",
         });
-      } finally {
-        setIsWakingUp(false);
       }
     };
 
@@ -213,10 +208,7 @@ export default function ProjectSummaryScreen() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          {isWakingUp && <Loader2 className="h-6 w-6 animate-spin text-primary mx-auto mb-2" />}
-          <h2 className="text-xl font-semibold mb-2">
-            {isWakingUp ? "Waking up server… please wait" : "Loading Project Summary..."}
-          </h2>
+          <h2 className="text-xl font-semibold mb-2">Loading Project Summary...</h2>
           <p className="text-muted-foreground">Please wait while we prepare your summary.</p>
         </div>
       </div>
