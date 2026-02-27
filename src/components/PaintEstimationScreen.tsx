@@ -2334,9 +2334,12 @@ export default function PaintEstimationScreen() {
                         <SelectValue placeholder="Select putty type" />
                       </SelectTrigger>
                       <SelectContent>
-                        {coverageData.filter(item => item.category === "Putty").map(item => item.product_name).filter((value, index, self) => self.indexOf(value) === index).sort((a, b) => a.localeCompare(b)).map(puttyName => <SelectItem key={puttyName} value={puttyName}>
-                              {puttyName}
-                            </SelectItem>)}
+                        <SelectItem value="AP TruCare Wall Putty">
+                              AP TruCare Wall Putty
+                            </SelectItem>
+                        <SelectItem value="AP SmartCare Waterproof Wall Putty">
+                           AP SmartCare Waterproof Wall Putty
+                            </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
