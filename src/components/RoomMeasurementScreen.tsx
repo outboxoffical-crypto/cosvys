@@ -1522,14 +1522,14 @@ export default function RoomMeasurementScreen() {
                   {/* Picture Upload */}
                   <div className="space-y-2">
                     <p className="text-sm font-medium text-foreground">
-                      Upload Room Pictures ({newRoom.pictures.length}/5)
+                      Upload Room Pictures ({newRoom.pictures.length}/3)
                     </p>
                     <div className="grid grid-cols-2 gap-2">
-                      <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} className="h-12" disabled={newRoom.pictures.length >= 5}>
+                      <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} className="h-12" disabled={newRoom.pictures.length >= 3}>
                         <Image className="mr-2 h-4 w-4" />
                         Choose File
                       </Button>
-                      <Button type="button" variant="outline" onClick={() => cameraInputRef.current?.click()} className="h-12" disabled={newRoom.pictures.length >= 5}>
+                      <Button type="button" variant="outline" onClick={() => cameraInputRef.current?.click()} className="h-12" disabled={newRoom.pictures.length >= 3}>
                         <Camera className="mr-2 h-4 w-4" />
                         Take Photo
                       </Button>
@@ -1547,7 +1547,7 @@ export default function RoomMeasurementScreen() {
                       </div>}
                   </div>
 
-                  {!showOpenAreaSection ? <Button onClick={handleAddRoomClick} disabled={!newRoom.name || !newRoom.length || !newRoom.width || newRoom.pictures.length < 2} className="w-full h-12">
+                  {!showOpenAreaSection ? <Button onClick={handleAddRoomClick} disabled={!newRoom.name || !newRoom.length || !newRoom.width || newRoom.pictures.length < 1} className="w-full h-12">
                       <Plus className="mr-2 h-4 w-4" />
                       Add Room
                     </Button> : <>
