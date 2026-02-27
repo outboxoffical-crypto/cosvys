@@ -2334,12 +2334,12 @@ export default function PaintEstimationScreen() {
                         <SelectValue placeholder="Select putty type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="AP TruCare Wall Putty">
+                          <SelectItem value="AP TruCare Wall Putty">
                               AP TruCare Wall Putty
-                            </SelectItem>
-                        <SelectItem value="AP SmartCare Waterproof Wall Putty">
-                           AP SmartCare Waterproof Wall Putty
-                            </SelectItem>
+                          </SelectItem>
+                          <SelectItem value="AP SmartCare Waterproof Wall Putty">
+                              AP SmartCare Waterproof Wall Putty
+                          </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
