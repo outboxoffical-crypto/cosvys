@@ -448,7 +448,7 @@ export default function RoomMeasurementScreen() {
   const handlePictureUpload = useCallback((files: FileList | null, isCamera: boolean = false) => {
     if (!files) return;
     const currentPictureCount = newRoom.pictures.length;
-    const maxPictures = 5;
+    const maxPictures = 2;
 
     // Process images asynchronously in the background
     Array.from(files).forEach((file, index) => {
