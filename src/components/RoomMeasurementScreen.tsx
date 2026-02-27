@@ -201,12 +201,19 @@ export default function RoomMeasurementScreen() {
   };
   const updateRoomInDatabase = async (roomId: string, updates: any) => {
     try {
-      const {
-        error
-      } = await supabase.from('rooms').update(updates).eq('room_id', roomId).eq('project_id', projectId!);
-      if (error) console.error('Update room error:', error);
-    } catch (error) {
+      const { error } = await supabase
+        .from('rooms')
+        .update(updates)
+        .eq('room_id', roomId)
+        .eq('project_id', projectId!);
+      
+      if (error) {
+        console.error('Update room error:', error);
+        toast.error('Failed to save room changes. Please try again.');
+    }
+  } catch (error) {
       console.error('Update room error:', error);
+      toast.error('Failed to save room changes. Please try again.');
     }
   };
   useEffect(() => {
