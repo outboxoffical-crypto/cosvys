@@ -481,7 +481,7 @@ export default function RoomMeasurementScreen() {
     }
 
     // Height is now optional - only require name, length, width, and pictures
-    if (newRoom.name && newRoom.length && newRoom.width && newRoom.pictures.length >= 2) {
+    if (newRoom.name && newRoom.length && newRoom.width && newRoom.pictures.length >= 1) {
       const {
         data: {
           session
@@ -1522,14 +1522,14 @@ export default function RoomMeasurementScreen() {
                   {/* Picture Upload */}
                   <div className="space-y-2">
                     <p className="text-sm font-medium text-foreground">
-                      Upload Room Pictures ({newRoom.pictures.length}/3)
+                      Upload Room Pictures ({newRoom.pictures.length}/2)
                     </p>
                     <div className="grid grid-cols-2 gap-2">
-                      <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} className="h-12" disabled={newRoom.pictures.length >= 3}>
+                      <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} className="h-12" disabled={newRoom.pictures.length >= 2}>
                         <Image className="mr-2 h-4 w-4" />
                         Choose File
                       </Button>
-                      <Button type="button" variant="outline" onClick={() => cameraInputRef.current?.click()} className="h-12" disabled={newRoom.pictures.length >= 3}>
+                      <Button type="button" variant="outline" onClick={() => cameraInputRef.current?.click()} className="h-12" disabled={newRoom.pictures.length >= 2}>
                         <Camera className="mr-2 h-4 w-4" />
                         Take Photo
                       </Button>
