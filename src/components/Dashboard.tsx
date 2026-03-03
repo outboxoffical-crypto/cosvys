@@ -233,8 +233,38 @@ export default function Dashboard() {
         description: "Failed to load projects",
         variant: "destructive",
       });
+    } else if (data) {
+      // Deduplicate projects by phone number (unique per customer)
+      const statusPriority: Record<string, number> = { 'Quoted': 3, 'In Progress': 2 };
+      const uniqueMap = new Map();
+
+      data.forEach(project => {
+        const key = project.phone; // Use phone as unique identifier
+        const existing = uniqueMap.get(key);
+        const currentPriority = statusPriority[project.project_status] || 1;
+
+        if (!existing) {
+          uniqueMap.set(key, project);
+        } else {
+          const existingPriority = statusPriority[existing.project_status] || 1;
+          if (currentPriority > existingPriority) {
+            // Higher status wins (Quoted > In Progress)
+            uniqueMap.set(key, project);
+          } else if (currentPriority === existingPriority) {
+            // Same status: keep the newest (by updated_at or created_at)
+            const existingDate = new Date(existing.updated_at || existing.created_at);
+            const currentDate = new Date(project.updated_at || project.created_at);
+            if (currentDate > existingDate) {
+              uniqueMap.set(key, project);
+            }
+          }
+        }
+      });
+
+      const uniqueProjects = Array.from(uniqueMap.values());
+      setProjects(uniqueProjects);
     } else {
-      setProjects(data || []);
+      setProjects([]);
     }
     setLoading(false);
   };
@@ -344,10 +374,78 @@ export default function Dashboard() {
     setDetailsModalOpen(true);
   };
 
-  const handleEditProject = (projectId: string) => {
-    // Navigate to Room Measurements for full project edit flow
+const handleEditProject = async (projectId: string) => {
+  // Check if the current project has any rooms
+  const { data: rooms, error } = await supabase
+    .from('rooms')
+    .select('id')
+    .eq('project_id', projectId)
+    .limit(1);
+
+  if (error) {
+    console.error('Error checking rooms:', error);
+    // If there's an error, fallback to original behavior
     navigate(`/room-measurement/${projectId}`);
-  };
+    return;
+  }
+
+  // If rooms exist, navigate directly
+  if (rooms && rooms.length > 0) {
+    navigate(`/room-measurement/${projectId}`);
+    return;
+  }
+
+  // No rooms found – try to find another project for the same customer that has rooms
+  // First, get the current project's phone number (unique identifier)
+  const { data: currentProject, error: projectError } = await supabase
+    .from('projects')
+    .select('phone, customer_name')
+    .eq('id', projectId)
+    .single();
+
+  if (projectError || !currentProject) {
+    console.error('Error fetching current project:', projectError);
+    navigate(`/room-measurement/${projectId}`);
+    return;
+  }
+
+  // Look for another project with the same phone, status 'In Progress', and with rooms
+  const { data: otherProjects, error: otherError } = await supabase
+    .from('projects')
+    .select('id')
+    .eq('phone', currentProject.phone)
+    .eq('project_status', 'In Progress')
+    .neq('id', projectId)
+    .limit(1);
+
+  if (otherError) {
+    console.error('Error finding other projects:', otherError);
+    navigate(`/room-measurement/${projectId}`);
+    return;
+  }
+
+  if (otherProjects && otherProjects.length > 0) {
+    // Check if that candidate project has rooms
+    const { data: otherRooms } = await supabase
+      .from('rooms')
+      .select('id')
+      .eq('project_id', otherProjects[0].id)
+      .limit(1);
+
+    if (otherRooms && otherRooms.length > 0) {
+      // Found a project with rooms – navigate there
+      navigate(`/room-measurement/${otherProjects[0].id}`);
+      return;
+    }
+  }
+
+  // No project with rooms found – show a message and navigate to current (empty) project
+  toast({
+    title: "No rooms found",
+    description: "This project has no room measurements yet. Please add rooms.",
+  });
+  navigate(`/room-measurement/${projectId}`);
+};
 
 
   const handleOpenMaterialTracker = (projectId: string) => {
