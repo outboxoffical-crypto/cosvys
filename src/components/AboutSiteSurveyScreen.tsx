@@ -203,10 +203,19 @@ export default function AboutSiteSurveyScreen() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!projectId) return;
+    if (!projectId) {
+      toast.error("Project ID is missing.");
+      return;
+    }
+
+    // Ensure project type has been loaded
+    if (allowedCategories.length === 0) {
+      toast.error("Loading project information. Please wait...");
+      return;
+    }
 
     // Basic validation – ensure all required fields in each category are filled
-    const categories = allowedCategories as const;
+    const categories = allowedCategories as (keyof Omit<SiteSurvey, "project_id" | "notes">)[];
     const requiredFields: (keyof CategorySurvey)[] = [
       "work_type",
       "surface_condition",
@@ -217,10 +226,13 @@ export default function AboutSiteSurveyScreen() {
       "accessibility",
     ];
 
+    // Check if all required fields are filled for allowed categories
     for (const cat of categories) {
       for (const field of requiredFields) {
-        if (!formData[cat][field]) {
+        if (!formData[cat]?.[field]) {
           toast.error(`Please fill in all required fields for the ${cat} category.`);
+          // Switch to the tab with missing fields
+          setActiveTab(cat);
           return;
         }
       }
@@ -231,48 +243,29 @@ export default function AboutSiteSurveyScreen() {
     try {
       // Prepare data for upsert – store everything except project_id in a JSONB column
       const surveyData = {
-        interior: formData.interior,
-        exterior: formData.exterior,
-        waterproofing: formData.waterproofing,
+        interior: allowedCategories.includes("interior") ? formData.interior : {},
+        exterior: allowedCategories.includes("exterior") ? formData.exterior : {},
+        waterproofing: allowedCategories.includes("waterproofing") ? formData.waterproofing : {},
         notes: formData.notes,
       };
 
-      console.log("Attempting to save survey data:", { projectId, surveyData });
+      console.log("Attempting to save survey data:", { projectId, surveyData, allowedCategories });
 
-      // Try to update first, if no rows affected, insert
-      const { data: existingData, error: fetchError } = await supabase
+      // Use simple upsert - Supabase handles insert/update automatically
+      const { data, error } = await supabase
         .from("site_surveys")
-        .select("id")
-        .eq("project_id", projectId)
-        .maybeSingle();
-
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        throw fetchError;
-      }
-
-      let result;
-      if (existingData) {
-        // Update existing record
-        result = await supabase
-          .from("site_surveys")
-          .update({
-            survey_data: surveyData,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("project_id", projectId)
-          .select();
-      } else {
-        // Insert new record
-        result = await supabase
-          .from("site_surveys")
-          .insert({
+        .upsert(
+          {
             project_id: projectId,
             survey_data: surveyData,
-          })
-          .select();
-      }
-
-      const { data, error } = result;
+            updated_at: new Date().toISOString(),
+          },
+          {
+            onConflict: "project_id",
+            ignoreDuplicates: false
+          }
+        )
+        .select();
 
       if (error) {
         console.error("Error saving survey:", error);
@@ -282,7 +275,15 @@ export default function AboutSiteSurveyScreen() {
           details: error.details,
           hint: error.hint
         });
-        toast.error(`Failed to save site survey: ${error.message}`);
+
+        // Provide more specific error messages
+        if (error.code === 'PGRST116') {
+          toast.error("No permission to save survey data. Please check your account.");
+        } else if (error.code === '23503') {
+          toast.error("Invalid project. Please try creating the project again.");
+        } else {
+          toast.error(`Failed to save site survey: ${error.message}`);
+        }
         return;
       }
 
@@ -291,16 +292,18 @@ export default function AboutSiteSurveyScreen() {
       navigate(`/room-measurement/${projectId}`);
     } catch (err) {
       console.error("Unexpected error:", err);
-      toast.error("An unexpected error occurred while saving the survey.");
+      toast.error("An unexpected error occurred while saving the survey. Please try again.");
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (loading) {
+  if (loading || allowedCategories.length === 0) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">Loading survey data...</div>
+        <div className="text-center">
+          {loading ? "Loading survey data..." : "Loading project information..."}
+        </div>
       </div>
     );
   }
