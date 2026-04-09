@@ -241,6 +241,14 @@ export default function AboutSiteSurveyScreen() {
     setSubmitting(true);
 
     try {
+      // Verify user is authenticated
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        toast.error("Please log in to save the survey.");
+        setSubmitting(false);
+        return;
+      }
+
       // Prepare data for upsert – store everything except project_id in a JSONB column
       const surveyData = {
         interior: allowedCategories.includes("interior") ? formData.interior : {},
@@ -249,23 +257,40 @@ export default function AboutSiteSurveyScreen() {
         notes: formData.notes,
       };
 
-      console.log("Attempting to save survey data:", { projectId, surveyData, allowedCategories });
+      console.log("Attempting to save survey data:", { projectId, surveyData, allowedCategories, userId: user.id });
 
-      // Use simple upsert - Supabase handles insert/update automatically
-      const { data, error } = await supabase
+      // Try insert first, then update if it fails
+      let result;
+
+      // First, try to check if record exists
+      const { data: existingRecord } = await supabase
         .from("site_surveys")
-        .upsert(
-          {
-            project_id: projectId,
+        .select("id")
+        .eq("project_id", projectId)
+        .maybeSingle();
+
+      if (existingRecord) {
+        // Update existing
+        result = await supabase
+          .from("site_surveys")
+          .update({
             survey_data: surveyData,
             updated_at: new Date().toISOString(),
-          },
-          {
-            onConflict: "project_id",
-            ignoreDuplicates: false
-          }
-        )
-        .select();
+          })
+          .eq("project_id", projectId)
+          .select();
+      } else {
+        // Insert new
+        result = await supabase
+          .from("site_surveys")
+          .insert({
+            project_id: projectId,
+            survey_data: surveyData,
+          })
+          .select();
+      }
+
+      const { data, error } = result;
 
       if (error) {
         console.error("Error saving survey:", error);
@@ -277,7 +302,9 @@ export default function AboutSiteSurveyScreen() {
         });
 
         // Provide more specific error messages
-        if (error.code === 'PGRST116') {
+        if (error.message.includes("row-level security")) {
+          toast.error("You don't have permission to save this survey. Please ensure you're logged in with the correct account.");
+        } else if (error.code === 'PGRST116') {
           toast.error("No permission to save survey data. Please check your account.");
         } else if (error.code === '23503') {
           toast.error("Invalid project. Please try creating the project again.");
