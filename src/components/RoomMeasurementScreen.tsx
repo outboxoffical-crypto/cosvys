@@ -16,6 +16,7 @@ import { usePrefetchProjectData } from "@/hooks/usePrefetch";
 import { useProjectCache } from "@/hooks/useProjectCache";
 import { useDebouncedCallback } from "@/hooks/useDebounce";
 import { calculateRoomAreas as calcAreas } from "@/lib/calculations";
+import { MeasurementInput } from "@/components/ui/measurement-input";
 
 // Utility function for safe numeric parsing - always returns a valid number
 const safeParseFloat = (value: string | number | null | undefined, defaultValue: number = 0): number => {
@@ -169,7 +170,7 @@ export default function RoomMeasurementScreen() {
   const [subAreaRoomId, setSubAreaRoomId] = useState<string | null>(null);
   const [editingSubArea, setEditingSubArea] = useState<SubArea | null>(null);
 
-  // Custom Section Dialog state (name-only sections for new room)
+  // Custom Section Dialog (name-only sections for new room)
   const [customSectionDialogOpen, setCustomSectionDialogOpen] = useState(false);
   const [customSectionName, setCustomSectionName] = useState("");
   const [tempCustomSections, setTempCustomSections] = useState<Array<{
@@ -178,7 +179,7 @@ export default function RoomMeasurementScreen() {
   }>>([]);
   const [editingCustomSectionId, setEditingCustomSectionId] = useState<string | null>(null);
 
-  // Separate Section Dialog state (adds a section to existing room, shown as separate box in Paint Estimation)
+  // Separate Section Dialog (adds a section to existing room, shown as separate box in Paint Estimation)
   const [separateSectionDialogOpen, setSeparateSectionDialogOpen] = useState(false);
   const [separateSectionRoomId, setSeparateSectionRoomId] = useState<string | null>(null);
   const [separateSectionName, setSeparateSectionName] = useState("");
@@ -1063,7 +1064,7 @@ export default function RoomMeasurementScreen() {
         id: roomId,
         name: roomName,
         sectionName: sectionNameTrimmed,
-        // Section header for separate Paint Estimation box
+        // Section header for separate Paint Estimation
         length: 0,
         width: 0,
         height: 0,
@@ -1505,23 +1506,23 @@ export default function RoomMeasurementScreen() {
                   <div className="grid grid-cols-3 gap-3">
                     <div className="space-y-2">
                       <Label className="text-base font-medium">Length (ft)</Label>
-                      <Input type="number" placeholder="0" value={newRoom.length} onChange={e => setNewRoom(prev => ({
+                      <MeasurementInput type="number" placeholder="0" value={newRoom.length} onValueChange={(value) => setNewRoom(prev => ({
                     ...prev,
-                    length: e.target.value
+                    length: value
                   }))} className="h-12" step="0.1" />
                     </div>
                     <div className="space-y-2">
                       <Label className="text-base font-medium">Width (ft)</Label>
-                      <Input type="number" placeholder="0" value={newRoom.width} onChange={e => setNewRoom(prev => ({
+                      <MeasurementInput type="number" placeholder="0" value={newRoom.width} onValueChange={(value) => setNewRoom(prev => ({
                     ...prev,
-                    width: e.target.value
+                    width: value
                   }))} className="h-12" step="0.1" />
                     </div>
                     <div className="space-y-2">
                       <Label className="text-base font-medium">Height (ft)</Label>
-                      <Input type="number" placeholder="0" value={newRoom.height} onChange={e => setNewRoom(prev => ({
+                      <MeasurementInput type="number" placeholder="0" value={newRoom.height} onValueChange={(value) => setNewRoom(prev => ({
                     ...prev,
-                    height: e.target.value
+                    height: value
                   }))} className="h-12" step="0.1" />
                     </div>
                   </div>
@@ -1570,13 +1571,13 @@ export default function RoomMeasurementScreen() {
                           </div>)}
 
                         <div className="grid grid-cols-3 gap-2">
-                          <Input type="number" placeholder="Height" value={newOpeningArea.height} onChange={e => setNewOpeningArea(prev => ({
+                          <MeasurementInput type="number" placeholder="Height" value={newOpeningArea.height} onValueChange={(value) => setNewOpeningArea(prev => ({
                       ...prev,
-                      height: e.target.value
+                      height: value
                     }))} className="h-10" step="0.1" />
-                          <Input type="number" placeholder="Width" value={newOpeningArea.width} onChange={e => setNewOpeningArea(prev => ({
+                          <MeasurementInput type="number" placeholder="Width" value={newOpeningArea.width} onValueChange={(value) => setNewOpeningArea(prev => ({
                       ...prev,
-                      width: e.target.value
+                      width: value
                     }))} className="h-10" step="0.1" />
                           <Input type="number" placeholder="Qty" value={newOpeningArea.quantity} onChange={e => setNewOpeningArea(prev => ({
                       ...prev,
@@ -1601,13 +1602,13 @@ export default function RoomMeasurementScreen() {
                           </div>)}
 
                         <div className="grid grid-cols-3 gap-2">
-                          <Input type="number" placeholder="Height" value={newExtraSurface.height} onChange={e => setNewExtraSurface(prev => ({
+                          <MeasurementInput type="number" placeholder="Height" value={newExtraSurface.height} onValueChange={(value) => setNewExtraSurface(prev => ({
                       ...prev,
-                      height: e.target.value
+                      height: value
                     }))} className="h-10" step="0.1" />
-                          <Input type="number" placeholder="Width" value={newExtraSurface.width} onChange={e => setNewExtraSurface(prev => ({
+                          <MeasurementInput type="number" placeholder="Width" value={newExtraSurface.width} onValueChange={(value) => setNewExtraSurface(prev => ({
                       ...prev,
-                      width: e.target.value
+                      width: value
                     }))} className="h-10" step="0.1" />
                           <Input type="number" placeholder="Qty" value={newExtraSurface.quantity} onChange={e => setNewExtraSurface(prev => ({
                       ...prev,
@@ -1751,7 +1752,7 @@ export default function RoomMeasurementScreen() {
                             
                             {/* Add new opening area */}
                             <div className="grid grid-cols-3 gap-2 mt-2">
-                              <Input type="number" placeholder="Height" value={roomOpeningInputs[room.id]?.height || ""} onChange={e => setRoomOpeningInputs(prev => ({
+                              <MeasurementInput type="number" placeholder="Height" value={roomOpeningInputs[room.id]?.height || ""} onValueChange={(value) => setRoomOpeningInputs(prev => ({
                             ...prev,
                             [room.id]: {
                               ...(prev[room.id] || {
@@ -1759,10 +1760,10 @@ export default function RoomMeasurementScreen() {
                                 width: "",
                                 quantity: ""
                               }),
-                              height: e.target.value
+                              height: value
                             }
-                          }))} className="h-9" step="0.1" />
-                              <Input type="number" placeholder="Width" value={roomOpeningInputs[room.id]?.width || ""} onChange={e => setRoomOpeningInputs(prev => ({
+                     }))} className="h-9" step="0.1" />
+                              <MeasurementInput type="number" placeholder="Width" value={roomOpeningInputs[room.id]?.width || ""} onValueChange={(value) => setRoomOpeningInputs(prev => ({
                             ...prev,
                             [room.id]: {
                               ...(prev[room.id] || {
@@ -1770,7 +1771,7 @@ export default function RoomMeasurementScreen() {
                                 width: "",
                                 quantity: ""
                               }),
-                              width: e.target.value
+                              width: value
                             }
                           }))} className="h-9" step="0.1" />
                               <Input type="number" placeholder="Qty" value={roomOpeningInputs[room.id]?.quantity || ""} onChange={e => setRoomOpeningInputs(prev => ({
@@ -1805,7 +1806,7 @@ export default function RoomMeasurementScreen() {
                             
                             {/* Add new extra surface */}
                             <div className="grid grid-cols-3 gap-2 mt-2">
-                              <Input type="number" placeholder="Height" value={roomExtraSurfaceInputs[room.id]?.height || ""} onChange={e => setRoomExtraSurfaceInputs(prev => ({
+                              <MeasurementInput type="number" placeholder="Height" value={roomExtraSurfaceInputs[room.id]?.height || ""} onValueChange={(value) => setRoomExtraSurfaceInputs(prev => ({
                             ...prev,
                             [room.id]: {
                               ...(prev[room.id] || {
@@ -1813,10 +1814,10 @@ export default function RoomMeasurementScreen() {
                                 width: "",
                                 quantity: ""
                               }),
-                              height: e.target.value
+                              height: value
                             }
                           }))} className="h-9" step="0.1" />
-                              <Input type="number" placeholder="Width" value={roomExtraSurfaceInputs[room.id]?.width || ""} onChange={e => setRoomExtraSurfaceInputs(prev => ({
+                              <MeasurementInput type="number" placeholder="Width" value={roomExtraSurfaceInputs[room.id]?.width || ""} onValueChange={(value) => setRoomExtraSurfaceInputs(prev => ({
                             ...prev,
                             [room.id]: {
                               ...(prev[room.id] || {
@@ -1824,7 +1825,7 @@ export default function RoomMeasurementScreen() {
                                 width: "",
                                 quantity: ""
                               }),
-                              width: e.target.value
+                              width: value
                             }
                           }))} className="h-9" step="0.1" />
                               <Input type="number" placeholder="Qty" value={roomExtraSurfaceInputs[room.id]?.quantity || ""} onChange={e => setRoomExtraSurfaceInputs(prev => ({
@@ -2069,11 +2070,11 @@ export default function RoomMeasurementScreen() {
                             }),
                             sides: e.target.value
                           }
-                        }))} className="h-10" step="1" />
+                        }))} className="h-10" />
                           </div>
 
                           <div className="grid grid-cols-3 gap-3 mb-3">
-                            <Input type="number" placeholder="Height" value={newDoorWindowGrill[room.id]?.height || ""} onChange={e => setNewDoorWindowGrill(prev => ({
+                            <MeasurementInput type="number" placeholder="Height" value={newDoorWindowGrill[room.id]?.height || ""} onValueChange={(value) => setNewDoorWindowGrill(prev => ({
                           ...prev,
                           [room.id]: {
                             ...(prev[room.id] || {
@@ -2083,10 +2084,10 @@ export default function RoomMeasurementScreen() {
                               sides: "",
                               grillMultiplier: "1"
                             }),
-                            height: e.target.value
+                            height: value
                           }
                         }))} className="h-10" step="0.1" />
-                            <Input type="number" placeholder="Width" value={newDoorWindowGrill[room.id]?.width || ""} onChange={e => setNewDoorWindowGrill(prev => ({
+                            <MeasurementInput type="number" placeholder="Width" value={newDoorWindowGrill[room.id]?.width || ""} onValueChange={(value) => setNewDoorWindowGrill(prev => ({
                           ...prev,
                           [room.id]: {
                             ...(prev[room.id] || {
@@ -2096,7 +2097,7 @@ export default function RoomMeasurementScreen() {
                               sides: "",
                               grillMultiplier: "1"
                             }),
-                            width: e.target.value
+                            width: value
                           }
                         }))} className="h-10" step="0.1" />
                             <Input type="number" placeholder="Grill Multiplier" value={newDoorWindowGrill[room.id]?.grillMultiplier || ""} onChange={e => setNewDoorWindowGrill(prev => ({
@@ -2154,23 +2155,23 @@ export default function RoomMeasurementScreen() {
             <div className="grid grid-cols-3 gap-3">
               <div className="space-y-2">
                 <Label htmlFor="edit-length">Length (ft)</Label>
-                <Input id="edit-length" type="number" placeholder="0" value={editFormData.length} onChange={e => setEditFormData(prev => ({
+                <MeasurementInput id="edit-length" type="number" placeholder="0" value={editFormData.length} onValueChange={(value) => setEditFormData(prev => ({
                 ...prev,
-                length: e.target.value
+                length: value
               }))} className="h-12" step="0.1" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="edit-width">Width (ft)</Label>
-                <Input id="edit-width" type="number" placeholder="0" value={editFormData.width} onChange={e => setEditFormData(prev => ({
+                <MeasurementInput id="edit-width" type="number" placeholder="0" value={editFormData.width} onValueChange={(value) => setEditFormData(prev => ({
                 ...prev,
-                width: e.target.value
+                width: value
               }))} className="h-12" step="0.1" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="edit-height">Height (ft)</Label>
-                <Input id="edit-height" type="number" placeholder="0" value={editFormData.height} onChange={e => setEditFormData(prev => ({
+                <MeasurementInput id="edit-height" type="number" placeholder="0" value={editFormData.height} onValueChange={(value) => setEditFormData(prev => ({
                 ...prev,
-                height: e.target.value
+                height: value
               }))} className="h-12" step="0.1" />
               </div>
             </div>
@@ -2258,17 +2259,17 @@ export default function RoomMeasurementScreen() {
               <Input type="number" placeholder="Sides" value={dialogDoorWindowGrill.sides} onChange={e => setDialogDoorWindowGrill(prev => ({
               ...prev,
               sides: e.target.value
-            }))} className="h-12 border border-gray-300" step="1" />
+            }))} className="h-12 border border-gray-300" />
             </div>
 
             <div className="grid grid-cols-3 gap-3">
-              <Input type="number" placeholder="Height" value={dialogDoorWindowGrill.height} onChange={e => setDialogDoorWindowGrill(prev => ({
+              <MeasurementInput type="number" placeholder="Height" value={dialogDoorWindowGrill.height} onValueChange={value => setDialogDoorWindowGrill(prev => ({
               ...prev,
-              height: e.target.value
+              height: value
             }))} className="h-12 border border-gray-300" step="0.1" />
-              <Input type="number" placeholder="Width" value={dialogDoorWindowGrill.width} onChange={e => setDialogDoorWindowGrill(prev => ({
+              <MeasurementInput type="number" placeholder="Width" value={dialogDoorWindowGrill.width} onValueChange={value => setDialogDoorWindowGrill(prev => ({
               ...prev,
-              width: e.target.value
+              width: value
             }))} className="h-12 border border-gray-300" step="0.1" />
               <Input type="number" placeholder="Grill Multiplier" value={dialogDoorWindowGrill.grillMultiplier} onChange={e => setDialogDoorWindowGrill(prev => ({
               ...prev,
@@ -2396,3 +2397,5 @@ export default function RoomMeasurementScreen() {
       </Dialog>
     </div>;
 }
+
+

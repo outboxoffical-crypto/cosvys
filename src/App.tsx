@@ -10,6 +10,7 @@ import DealerPricingScreen from "./components/DealerPricingScreen";
 import CoverageDataScreen from "./components/CoverageDataScreen";
 import Dashboard from "./components/Dashboard";
 import AddProjectScreen from "./components/AddProjectScreen";
+import AboutSiteSurveyScreen from "./components/AboutSiteSurveyScreen";
 import RoomMeasurementScreen from "./components/RoomMeasurementScreen";
 import PaintEstimationScreen from "./components/PaintEstimationScreen";
 import ProjectSummaryScreen from "./components/ProjectSummaryScreen";
@@ -35,6 +36,7 @@ const App = () => (
           <Route path="/dealer-pricing" element={<DealerPricingScreen />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/add-project" element={<AddProjectScreen />} />
+          <Route path="/site-survey/:projectId" element={<AboutSiteSurveyScreen />} />
           <Route path="/project-details" element={<ProjectDetailsPage />} />
           <Route path="/room-measurement/:projectId" element={<RoomMeasurementScreen />} />
           <Route path="/paint-estimation/:projectId" element={<PaintEstimationScreen />} />

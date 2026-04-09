@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { MeasurementInput } from "@/components/ui/measurement-input";
 import { Label } from "@/components/ui/label";
 
 export interface SubArea {
@@ -106,36 +107,36 @@ export function SubAreaDialog({ open, onClose, onSave, editingSubArea }: SubArea
           <div className="grid grid-cols-3 gap-3">
             <div className="space-y-2">
               <Label htmlFor="subarea-length">Length (ft)</Label>
-              <Input
+              <MeasurementInput
                 id="subarea-length"
                 type="number"
                 placeholder="0"
                 value={length}
-                onChange={(e) => setLength(e.target.value)}
+                onValueChange={setLength}
                 min="0"
                 step="0.1"
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="subarea-width">Width (ft)</Label>
-              <Input
+              <MeasurementInput
                 id="subarea-width"
                 type="number"
                 placeholder="0"
                 value={width}
-                onChange={(e) => setWidth(e.target.value)}
+                onValueChange={setWidth}
                 min="0"
                 step="0.1"
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="subarea-height">Height (ft)</Label>
-              <Input
+              <MeasurementInput
                 id="subarea-height"
                 type="number"
                 placeholder="0"
                 value={height}
-                onChange={(e) => setHeight(e.target.value)}
+                onValueChange={setHeight}
                 min="0"
                 step="0.1"
               />

@@ -188,7 +188,7 @@ export default function AddProjectScreen() {
           description: "Project created successfully!",
         });
 
-        navigate(`/room-measurement/${newProject.id}`);
+        navigate(`/site-survey/${newProject.id}`);
       }
     } catch (error: any) {
       console.error('Submit error:', error);

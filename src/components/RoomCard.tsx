@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Trash2, Edit3, X, Image as ImageIcon, Plus } from "lucide-react";
+import { MeasurementInput } from "@/components/ui/measurement-input";
 
 interface OpeningArea {
   id: string;
@@ -198,19 +199,19 @@ export const RoomCard = memo(({
         <div className="border-t pt-3 mt-3">
           <h4 className="text-sm font-medium mb-2">Add Opening Area</h4>
           <div className="grid grid-cols-3 gap-2">
-            <Input
+            <MeasurementInput
               type="number"
               placeholder="Height"
               value={newOpeningArea.height}
-              onChange={(e) => onOpeningAreaChange('height', e.target.value)}
+              onValueChange={(value) => onOpeningAreaChange('height', value)}
               className="h-9"
               step="0.01"
             />
-            <Input
+            <MeasurementInput
               type="number"
               placeholder="Width"
               value={newOpeningArea.width}
-              onChange={(e) => onOpeningAreaChange('width', e.target.value)}
+              onValueChange={(value) => onOpeningAreaChange('width', value)}
               className="h-9"
               step="0.01"
             />
@@ -262,19 +263,19 @@ export const RoomCard = memo(({
         <div className="border-t pt-3">
           <h4 className="text-sm font-medium mb-2">Add Extra Surface</h4>
           <div className="grid grid-cols-3 gap-2">
-            <Input
+            <MeasurementInput
               type="number"
               placeholder="Height"
               value={newExtraSurface.height}
-              onChange={(e) => onExtraSurfaceChange('height', e.target.value)}
+              onValueChange={(value) => onExtraSurfaceChange('height', value)}
               className="h-9"
               step="0.01"
             />
-            <Input
+            <MeasurementInput
               type="number"
               placeholder="Width"
               value={newExtraSurface.width}
-              onChange={(e) => onExtraSurfaceChange('width', e.target.value)}
+              onValueChange={(value) => onExtraSurfaceChange('width', value)}
               className="h-9"
               step="0.01"
             />
