@@ -20,7 +20,7 @@ CREATE POLICY "Users can select their own site surveys"
   FOR SELECT
   USING (
     project_id IN (
-      SELECT id FROM public.projects WHERE user_id = auth.uid()
+      SELECT id FROM public.projects WHERE user_id = auth.uid()::uuid
     )
   );
 
@@ -30,7 +30,7 @@ CREATE POLICY "Users can insert site surveys for their projects"
   FOR INSERT
   WITH CHECK (
     project_id IN (
-      SELECT id FROM public.projects WHERE user_id = auth.uid()
+      SELECT id FROM public.projects WHERE user_id = auth.uid()::uuid
     )
   );
 
@@ -40,7 +40,7 @@ CREATE POLICY "Users can update their own site surveys"
   FOR UPDATE
   USING (
     project_id IN (
-      SELECT id FROM public.projects WHERE user_id = auth.uid()
+      SELECT id FROM public.projects WHERE user_id = auth.uid()::uuid
     )
   );
 
@@ -50,7 +50,7 @@ CREATE POLICY "Users can delete their own site surveys"
   FOR DELETE
   USING (
     project_id IN (
-      SELECT id FROM public.projects WHERE user_id = auth.uid()
+      SELECT id FROM public.projects WHERE user_id = auth.uid()::uuid
     )
   );
 
