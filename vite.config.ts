@@ -10,6 +10,44 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
   },
+  build: {
+    // Aggressive optimization for production
+    minify: "terser",
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+      },
+    },
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Core dependencies
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-ui': ['@radix-ui/react-dialog', '@radix-ui/react-popover', '@radix-ui/react-tabs'],
+          'vendor-form': ['react-hook-form', '@hookform/resolvers', 'zod'],
+          'vendor-supabase': ['@supabase/supabase-js'],
+          'vendor-query': ['@tanstack/react-query'],
+          'vendor-charts': ['recharts'],
+          'vendor-date': ['date-fns'],
+          'vendor-utils': ['clsx', 'tailwind-merge', 'lucide-react'],
+        },
+        chunkFileNames: 'js/[name]-[hash].js',
+        entryFileNames: 'js/[name]-[hash].js',
+        assetFileNames: (assetInfo) => {
+          if (assetInfo.name.endsWith('.css')) {
+            return 'css/[name]-[hash].css';
+          }
+          return 'assets/[name]-[hash][extname]';
+        },
+      },
+    },
+    // Optimize chunk size
+    chunkSizeWarningLimit: 1000,
+    sourcemap: false, // Disable sourcemaps in production
+    cssCodeSplit: true, // Split CSS per chunk
+    cssMinify: true, // Minify CSS
+  },
   plugins: [
     react(),
     mode === "development" && componentTagger(),
