@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Input } from "./input";
 import { convertFeetInchToDecimal } from "@/lib/utils";
 
@@ -13,6 +13,10 @@ export const MeasurementInput: React.FC<MeasurementInputProps> = ({
 }) => {
   const [internalValue, setInternalValue] = useState(props.value as string || "");
   const isConvertingRef = useRef(false);
+
+  useEffect(() => {
+    setInternalValue(props.value as string || "");
+  }, [props.value]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;

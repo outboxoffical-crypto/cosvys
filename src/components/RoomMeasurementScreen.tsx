@@ -366,11 +366,9 @@ export default function RoomMeasurementScreen() {
         area
       };
       setTempOpeningAreas(prev => [...prev, openingArea]);
-      setNewOpeningArea({
-        height: "",
-        width: "",
-        quantity: ""
-      });
+      setTimeout(() => {
+        setNewOpeningArea({ height: "", width: "", quantity: "" });
+      }, 10);
     }
   };
   const addTempExtraSurface = () => {
@@ -387,11 +385,9 @@ export default function RoomMeasurementScreen() {
         area
       };
       setTempExtraSurfaces(prev => [...prev, extraSurface]);
-      setNewExtraSurface({
-        height: "",
-        width: "",
-        quantity: ""
-      });
+      setTimeout(() => {
+        setNewExtraSurface({ height: "", width: "", quantity: "" });
+      }, 10);
     }
   };
   const removeTempOpeningArea = (id: string) => {
@@ -453,25 +449,48 @@ export default function RoomMeasurementScreen() {
     }
     return null;
   };
-  const handlePictureUpload = useCallback((files: FileList | null, isCamera: boolean = false) => {
+  const handlePictureUpload = useCallback(async (files: FileList | null, isCamera: boolean = false) => {
     if (!files) return;
     const currentPictureCount = newRoom.pictures.length;
     const maxPictures = 2;
-
-    // Process images asynchronously in the background
-    Array.from(files).forEach((file, index) => {
-      if (currentPictureCount + index >= maxPictures) return;
-      const reader = new FileReader();
-      reader.onload = e => {
-        const result = e.target?.result as string;
-        setNewRoom(prev => ({
-          ...prev,
-          pictures: [...prev.pictures, result]
-        }));
-      };
-      reader.readAsDataURL(file);
-    });
-  }, [newRoom.pictures.length]);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast.error('Please log in to upload images');
+      return;
+    }
+    // Process images asynchronously
+    for (const file of Array.from(files)) {
+      if (newRoom.pictures.length >= maxPictures) break;
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        toast.error('Only JPG, PNG, or WebP images are allowed');
+        continue;
+      }
+      // Validate file size (max 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error('Image must be less than 2MB');
+        continue;
+      }
+      // Use timestamp and random for unique filename
+      const ext = file.type === 'image/jpeg' ? 'jpg' : file.type === 'image/png' ? 'png' : 'webp';
+      const filePath = `${user.id}/room-images/${Date.now()}-${Math.random().toString(36).substr(2, 6)}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from('room-images')
+        .upload(filePath, file, { upsert: false, contentType: file.type });
+      if (uploadError) {
+        toast.error('Failed to upload image');
+        continue;
+      }
+      const { data: { publicUrl } } = supabase.storage
+        .from('room-images')
+        .getPublicUrl(filePath);
+      setNewRoom(prev => ({
+        ...prev,
+        pictures: [...prev.pictures, publicUrl]
+      }));
+    }
+  }, [newRoom.pictures.length, supabase, toast]);
   const removePicture = useCallback((index: number) => {
     setNewRoom(prev => ({
       ...prev,
@@ -1571,18 +1590,9 @@ export default function RoomMeasurementScreen() {
                           </div>)}
 
                         <div className="grid grid-cols-3 gap-2">
-                          <MeasurementInput type="number" placeholder="Height" value={newOpeningArea.height} onValueChange={(value) => setNewOpeningArea(prev => ({
-                      ...prev,
-                      height: value
-                    }))} className="h-10" step="0.1" />
-                          <MeasurementInput type="number" placeholder="Width" value={newOpeningArea.width} onValueChange={(value) => setNewOpeningArea(prev => ({
-                      ...prev,
-                      width: value
-                    }))} className="h-10" step="0.1" />
-                          <Input type="number" placeholder="Qty" value={newOpeningArea.quantity} onChange={e => setNewOpeningArea(prev => ({
-                      ...prev,
-                      quantity: e.target.value
-                    }))} className="h-10" step="1" />
+                          <MeasurementInput type="number" placeholder="Height" value={newOpeningArea.height} onValueChange={value => { console.log('OpeningArea Height', value); setNewOpeningArea(prev => ({ ...prev, height: value })); }} className="h-10" step="0.1" />
+                          <MeasurementInput type="number" placeholder="Width" value={newOpeningArea.width} onValueChange={value => { console.log('OpeningArea Width', value); setNewOpeningArea(prev => ({ ...prev, width: value })); }} className="h-10" step="0.1" />
+                          <Input type="number" placeholder="Qty" value={newOpeningArea.quantity} onChange={e => { console.log('OpeningArea Qty', e.target.value); setNewOpeningArea(prev => ({ ...prev, quantity: e.target.value })); }} className="h-10" step="1" />
                         </div>
                         <Button variant="outline" size="sm" onClick={addTempOpeningArea} disabled={!newOpeningArea.height || !newOpeningArea.width} className="w-full">
                           <Plus className="mr-1 h-3 w-3" />
@@ -1602,18 +1612,9 @@ export default function RoomMeasurementScreen() {
                           </div>)}
 
                         <div className="grid grid-cols-3 gap-2">
-                          <MeasurementInput type="number" placeholder="Height" value={newExtraSurface.height} onValueChange={(value) => setNewExtraSurface(prev => ({
-                      ...prev,
-                      height: value
-                    }))} className="h-10" step="0.1" />
-                          <MeasurementInput type="number" placeholder="Width" value={newExtraSurface.width} onValueChange={(value) => setNewExtraSurface(prev => ({
-                      ...prev,
-                      width: value
-                    }))} className="h-10" step="0.1" />
-                          <Input type="number" placeholder="Qty" value={newExtraSurface.quantity} onChange={e => setNewExtraSurface(prev => ({
-                      ...prev,
-                      quantity: e.target.value
-                    }))} className="h-10" step="1" />
+                          <MeasurementInput type="number" placeholder="Height" value={newExtraSurface.height} onValueChange={value => { console.log('ExtraSurface Height', value); setNewExtraSurface(prev => ({ ...prev, height: value })); }} className="h-10" step="0.1" />
+                          <MeasurementInput type="number" placeholder="Width" value={newExtraSurface.width} onValueChange={value => { console.log('ExtraSurface Width', value); setNewExtraSurface(prev => ({ ...prev, width: value })); }} className="h-10" step="0.1" />
+                          <Input type="number" placeholder="Qty" value={newExtraSurface.quantity} onChange={e => { console.log('ExtraSurface Qty', e.target.value); setNewExtraSurface(prev => ({ ...prev, quantity: e.target.value })); }} className="h-10" step="1" />
                         </div>
                         <Button variant="outline" size="sm" onClick={addTempExtraSurface} disabled={!newExtraSurface.height || !newExtraSurface.width} className="w-full">
                           <Plus className="mr-1 h-3 w-3" />
