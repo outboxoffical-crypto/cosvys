@@ -2,6 +2,8 @@
 
 Professional room measurement, paint calculation, and cost estimation tool.
 
+<!-- Deployment trigger: 2026-04-20 -->
+
 ## How can I edit this code?
 
 There are several ways of editing your application.
