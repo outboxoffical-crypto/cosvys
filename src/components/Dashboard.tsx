@@ -142,11 +142,9 @@ export default function Dashboard() {
     // Validate file size (max 2MB)
     const maxSizeBytes = 2 * 1024 * 1024;
     if (file.size > maxSizeBytes) {
-      toast({
-        title: "File too large",
-        description: "Please upload an image smaller than 2MB",
-        variant: "destructive",
-      });
+      // Size check kept but notification suppressed per user request.
+      // Silently ignore files that exceed the configured maximum.
+      console.warn('Avatar upload skipped: file exceeds max size');
       return;
     }
 

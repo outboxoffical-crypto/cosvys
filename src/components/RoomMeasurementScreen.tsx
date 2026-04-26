@@ -195,9 +195,28 @@ export default function RoomMeasurementScreen() {
       const {
         error
       } = await supabase.from('rooms').insert(roomData);
-      if (error) console.error('Save room error:', error);
+      if (error) {
+        console.error('Save room error:', error);
+        // Surface the error to the user so they know why save failed
+        const msg = (error && (error.message || error.details || String(error))) || 'Failed to save room';
+        toast.error(`Failed to save room: ${msg}`);
+
+        // If insert failed due to RLS, rollback the instant UI add so the app state stays consistent
+        if (roomData && roomData.room_id) {
+          setRooms(prev => prev.filter(r => r.id !== roomData.room_id && r.room_id !== roomData.room_id));
+          // Also remove from dirty set
+          try {
+            dirtyRoomsRef.current.delete(roomData.room_id);
+          } catch {}
+        }
+      }
     } catch (error) {
       console.error('Save room error:', error);
+      toast.error(`Failed to save room: ${String(error)}`);
+      if (roomData && roomData.room_id) {
+        setRooms(prev => prev.filter(r => r.id !== roomData.room_id && r.room_id !== roomData.room_id));
+        try { dirtyRoomsRef.current.delete(roomData.room_id); } catch {}
+      }
     }
   };
   const updateRoomInDatabase = async (roomId: string, updates: any) => {
@@ -467,9 +486,9 @@ export default function RoomMeasurementScreen() {
         toast.error('Only JPG, PNG, or WebP images are allowed');
         continue;
       }
-      // Validate file size (max 2MB)
-      if (file.size > 2 * 1024 * 1024) {
-        toast.error('Image must be less than 2MB');
+      // Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error('Image must be less than 10MB');
         continue;
       }
       // Use timestamp and random for unique filename
@@ -479,7 +498,10 @@ export default function RoomMeasurementScreen() {
         .from('room-images')
         .upload(filePath, file, { upsert: false, contentType: file.type });
       if (uploadError) {
-        toast.error('Failed to upload image');
+        // Show the server error so the user can understand why upload failed (e.g. missing bucket / RLS).
+        console.error('Room image upload error:', uploadError);
+        const msg = (uploadError && (uploadError.message || uploadError.details || uploadError.code)) || 'Unknown upload error';
+        toast.error(`Image upload failed: ${msg}`);
         continue;
       }
       const { data: { publicUrl } } = supabase.storage
@@ -573,6 +595,7 @@ export default function RoomMeasurementScreen() {
       };
 
       // INSTANT UI UPDATE - no waiting
+
       setRooms(prev => [...prev, room]);
       markRoomDirty(roomId); // Mark as dirty for background sync
       setNewRoom({
@@ -580,18 +603,20 @@ export default function RoomMeasurementScreen() {
         length: "",
         width: "",
         height: "",
-        pictures: []
+        pictures: [],
       });
       setShowOpenAreaSection(false);
       setTempOpeningAreas([]);
       setTempExtraSurfaces([]);
       setTempCustomSections([]);
 
-      // Show instant visual confirmation
-      toast.success('Room added');
+        // Show instant visual confirmation
+        toast.success('Room added');
 
-      // Save to database immediately - no debouncing for instant sync
-      const roomData = {
+
+
+        // Save to database immediately - no debouncing for instant sync
+        const roomData = {
         user_id: session.user.id,
         project_id: projectId!,
         room_id: roomId,
@@ -1314,7 +1339,7 @@ export default function RoomMeasurementScreen() {
             const dirtyRooms = rooms.filter(r => dirtyRoomIds.includes(r.id));
             
             if (dirtyRooms.length > 0) {
-              const roomsToSync = dirtyRooms.map(room => ({
+                const roomsToSync = dirtyRooms.map(room => ({
                 user_id: session.user.id,
                 project_id: projectId!,
                 room_id: room.id,
@@ -1348,6 +1373,9 @@ export default function RoomMeasurementScreen() {
           }
         } catch (error) {
           console.error('Background sync error:', error);
+          // Show an actionable error to the user (common cause: row-level security policies)
+          const msg = (error && (error.message || error.details || String(error))) || 'Background sync failed';
+          toast.error(`Background sync failed: ${msg}`);
         }
       })();
     }
@@ -1548,9 +1576,9 @@ export default function RoomMeasurementScreen() {
 
                   {/* Picture Upload */}
                   <div className="space-y-2">
-                    <p className="text-sm font-medium text-foreground">
-                      Upload Room Pictures ({newRoom.pictures.length}/2)
-                    </p>
+                      <p className="text-sm font-medium text-foreground">
+                        Upload Room Picture ({newRoom.pictures.length}/1)
+                      </p>
                     <div className="grid grid-cols-2 gap-2">
                       <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} className="h-12" disabled={newRoom.pictures.length >= 2}>
                         <Image className="mr-2 h-4 w-4" />
