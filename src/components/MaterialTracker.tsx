@@ -218,9 +218,10 @@ export const MaterialTracker = ({ projectId, isOpen, onClose }: MaterialTrackerP
 
     if (error) {
       console.error("Error adding material:", error);
+      const msg = error?.message || (typeof error === 'string' ? error : JSON.stringify(error));
       toast({
         title: "Error",
-        description: "Failed to add material",
+        description: msg || "Failed to add material",
         variant: "destructive",
       });
     } else {

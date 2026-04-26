@@ -188,9 +188,11 @@ export function LabourTracker({ projectId, isOpen, onClose }: LabourTrackerProps
 
     if (error) {
       console.error("Error adding entry:", error);
+      // Surface server error message to help debugging (kept concise for users)
+      const msg = error?.message || (typeof error === 'string' ? error : JSON.stringify(error));
       toast({
         title: "Error",
-        description: "Failed to add entry",
+        description: msg || "Failed to add entry",
         variant: "destructive",
       });
     } else {
