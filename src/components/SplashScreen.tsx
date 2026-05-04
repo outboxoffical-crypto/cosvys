@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import cosvysLogo from "@/assets/cosvys-logo (3).png";
+import cosvysLogo from "@/assets/cosvys-logo.png";
 export default function SplashScreen() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
