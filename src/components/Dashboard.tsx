@@ -36,7 +36,7 @@ import {
   TrendingDown,
   Clock
 } from "lucide-react";
-import cosvysLogo from "@/assets/cosvys-logo.png";
+import cosvysLogo from "@/assets/cosvys-logo (3).png";
 
 interface Project {
   id: string;
