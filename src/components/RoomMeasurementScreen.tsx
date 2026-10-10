@@ -529,8 +529,8 @@ export default function RoomMeasurementScreen() {
       return;
     }
 
-    // Height is now optional - only require name, length, width, and pictures
-    if (newRoom.name && newRoom.length && newRoom.width && newRoom.pictures.length >= 1) {
+    // Images are optional. Room can be saved without a photo.
+    if (newRoom.name && newRoom.length && newRoom.width) {
       const {
         data: {
           session
@@ -1574,10 +1574,10 @@ export default function RoomMeasurementScreen() {
                     </div>
                   </div>
 
-                  {/* Picture Upload */}
+                  {/* Picture Upload (optional) */}
                   <div className="space-y-2">
                       <p className="text-sm font-medium text-foreground">
-                        Upload Room Picture ({newRoom.pictures.length}/1)
+                        Upload Room Picture (Optional) {newRoom.pictures.length > 0 ? `(${newRoom.pictures.length})` : ""}
                       </p>
                     <div className="grid grid-cols-2 gap-2">
                       <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} className="h-12" disabled={newRoom.pictures.length >= 2}>
@@ -1602,7 +1602,7 @@ export default function RoomMeasurementScreen() {
                       </div>}
                   </div>
 
-                  {!showOpenAreaSection ? <Button onClick={handleAddRoomClick} disabled={!newRoom.name || !newRoom.length || !newRoom.width || newRoom.pictures.length < 1} className="w-full h-12">
+                  {!showOpenAreaSection ? <Button onClick={handleAddRoomClick} disabled={!newRoom.name || !newRoom.length || !newRoom.width} className="w-full h-12">
                       <Plus className="mr-2 h-4 w-4" />
                       Add Room
                     </Button> : <>
@@ -1656,19 +1656,25 @@ export default function RoomMeasurementScreen() {
                           <div className="grid grid-cols-3 gap-3">
                             {tempCustomSections.map(section => <div key={section.id} className="p-3 rounded-lg border-2 border-primary bg-primary/10 relative group">
                                 <div className="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => handleOpenCustomSectionDialog(section.id)}>
-                                    <Edit3 className="h-3 w-3" />
-                                  </Button>
-                                  <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive hover:text-destructive" onClick={() => handleRemoveCustomSection(section.id)}>
-                                    <X className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                                <div className="text-center">
-                                  <p className="text-xs font-medium text-foreground mb-1 truncate pr-8">{section.name}</p>
-                                  <p className="text-lg font-bold text-foreground">—</p>
-                                  <p className="text-xs text-muted-foreground">sq.ft (enter in Paint Estimation)</p>
-                                </div>
-                              </div>)}
+                                  <Button variant="ghost" size="icon" className="h-5 w-5" onClick={e => {
+                                e.stopPropagation();
+                                handleEditSubArea(room.id, subArea);
+                              }}>
+                                        <Edit3 className="h-3 w-3" />
+                                      </Button>
+                                      <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive hover:text-destructive" onClick={e => {
+                                e.stopPropagation();
+                                handleRemoveSubArea(room.id, subArea.id);
+                              }}>
+                                        <X className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                    <div className="text-center">
+                                      <p className="text-xs text-muted-foreground mb-1 truncate">{section.name}</p>
+                                      <p className="text-lg font-bold text-foreground">{section.area.toFixed(1)}</p>
+                                      <p className="text-xs text-muted-foreground">sq.ft</p>
+                                    </div>
+                                  </div>)}
                           </div>
                         </div>}
 
@@ -1702,7 +1708,7 @@ export default function RoomMeasurementScreen() {
                         room.sectionName.toLowerCase().includes('window') ||
                         room.sectionName.toLowerCase().includes('grill')
                       );
-                      return (room.length > 0 || room.width > 0 || room.height > 0) && !isEnamelSection;
+                      return (room.length > 0 || room.width > 0 || room.height > 0 || room.sectionName) && !isEnamelSection;
                     }).length} room(s)
                   </p>
                 </div>
