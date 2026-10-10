@@ -1518,15 +1518,32 @@ export default function PaintEstimationScreen() {
         return;
       }
 
-      // Update project status to completed
-      const { error: updateError } = await supabase
+      const { data: projectData, error: projectLookupError } = await supabase
         .from('projects')
-        .update({
-          status: 'completed',
-          updated_at: new Date().toISOString()
-        })
+        .select('id, user_id')
         .eq('id', projectId)
-        .eq('user_id', session.user.id);
+        .maybeSingle();
+
+      if (projectLookupError) {
+        throw projectLookupError;
+      }
+
+      if (!projectData) {
+        throw new Error('Project not found');
+      }
+
+      // Update project status to completed
+      const updateMutation = projectData.user_id === session.user.id
+        ? supabase.from('projects').update({
+            status: 'completed',
+            updated_at: new Date().toISOString()
+          }).eq('id', projectId).eq('user_id', session.user.id)
+        : supabase.from('projects').update({
+            status: 'completed',
+            updated_at: new Date().toISOString()
+          }).eq('id', projectId);
+
+      const { error: updateError } = await updateMutation;
 
       if (updateError) {
         console.error('Error updating project:', updateError);
@@ -1536,13 +1553,15 @@ export default function PaintEstimationScreen() {
       }
 
       // Store paint configurations in the project
-      const { error: configError } = await supabase
-        .from('projects')
-        .update({
-          paint_configurations: updatedData
-        })
-        .eq('id', projectId)
-        .eq('user_id', session.user.id);
+      const configMutation = projectData.user_id === session.user.id
+        ? supabase.from('projects').update({
+            paint_configurations: updatedData
+          }).eq('id', projectId).eq('user_id', session.user.id)
+        : supabase.from('projects').update({
+            paint_configurations: updatedData
+          }).eq('id', projectId);
+
+      const { error: configError } = await configMutation;
 
       if (configError) {
         console.warn('Warning: Failed to store paint configurations:', configError);
@@ -1558,6 +1577,19 @@ export default function PaintEstimationScreen() {
       setIsCalculating(false);
       toast.error(error.message || 'Failed to save project');
     }
+  };
+
+  const hasValidPaintConfig = areaConfigurations.some(config => config.paintingSystem && config.perSqFtRate);
+  const handleGenerateSummary = () => {
+    if (!hasValidPaintConfig) {
+      toast.error('Please configure at least one area with painting system and rate');
+      return;
+    }
+    if (!projectId) {
+      toast.error('Project ID is missing');
+      return;
+    }
+    navigate(`/generate-summary/${projectId}`);
   };
 
   // Separate configurations by type
@@ -2439,7 +2471,7 @@ export default function PaintEstimationScreen() {
                           <CommandList className="max-h-[300px]">
                             <CommandEmpty>No emulsion found.</CommandEmpty>
                             <CommandGroup>
-                              {sortProductNames(coverageData.filter(item => {
+                                {sortProductNames(coverageData.filter(item => {
                           // Map paint type to correct category names in database
                           const category = selectedPaintType === "Interior" ? "Interior Emulsion" : selectedPaintType === "Exterior" ? "Exterior Emulsion" : "Waterproofing";
                           return item.category === category;
@@ -2585,12 +2617,18 @@ export default function PaintEstimationScreen() {
 
        {/* Fixed Bottom Button */}
        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border">
-         <Button className="w-full h-12 text-base font-medium" onClick={handleSaveProject} disabled={!areaConfigurations.some(c => c.paintingSystem && c.perSqFtRate) || isCalculating}>
-           {isCalculating ? <div className="flex items-center gap-2">
-               <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-               <span>Saving...</span>
-             </div> : 'Save Project'}
-         </Button>
+         <div className="flex gap-2">
+           <Button variant="outline" className="flex-1 h-12 text-base font-medium" onClick={handleGenerateSummary} disabled={!hasValidPaintConfig || isCalculating}>
+             Generate Summary
+           </Button>
+           <Button className="flex-1 h-12 text-base font-medium" onClick={handleSaveProject} disabled={!hasValidPaintConfig || isCalculating}>
+             {isCalculating ? <div className="flex items-center gap-2">
+                 <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                 <span>Saving...</span>
+               </div> : 'Save Project'}
+           </Button>
+         </div>
       </div>
+
     </div>;
 }

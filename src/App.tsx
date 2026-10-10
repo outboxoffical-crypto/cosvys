@@ -21,6 +21,8 @@ const SettingsScreen = lazy(() => import("./components/SettingsScreen"));
 const ProjectDetailsPage = lazy(() => import("./components/ProjectDetailsPage"));
 const LeadBookScreen = lazy(() => import("./components/LeadBookScreen"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const ProjectSummaryScreen = lazy(() => import("./components/ProjectSummaryScreen"));
+const GenerateSummaryScreen = lazy(() => import("./components/GenerateSummaryScreen"));
 
 // Loading component for suspense fallback
 const LoadingFallback = () => (
@@ -61,6 +63,8 @@ const App = () => {
                <Route path="/project-details" element={<ProjectDetailsPage />} />
                <Route path="/room-measurement/:projectId" element={<RoomMeasurementScreen />} />
                <Route path="/paint-estimation/:projectId" element={<PaintEstimationScreen />} />
+               <Route path="/generate-summary/:projectId" element={<GenerateSummaryScreen />} />
+               <Route path="/project-summary/:projectId" element={<ProjectSummaryScreen />} />
                <Route path="/saved-projects" element={<SavedProjectsScreen />} />
               <Route path="/lead-book" element={<LeadBookScreen />} />
               <Route path="/coverage-data" element={<CoverageDataScreen />} />
