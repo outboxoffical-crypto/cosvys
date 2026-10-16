@@ -22,12 +22,11 @@ export default function SplashScreen() {
       <div className="relative z-10 flex flex-col items-center space-y-8">
         {/* Logo */}
         <div className={`transform transition-all duration-1000 ${isLoading ? 'scale-100 opacity-100' : 'scale-110 opacity-90'}`}>
-          <img src={cosvysLogo} alt="Cosvys" className="h-24 w-auto object-contain" />
+          <img src={cosvysLogo} alt="Cosvys" className="h-32 w-auto object-contain" />
         </div>
 
         {/* App Title */}
         <div className={`text-center transform transition-all duration-1000 delay-300 ${isLoading ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-90'}`}>
-          <h1 className="text-4xl font-bold text-white mb-2">Cosvys</h1>
           <p className="text-white/90 text-lg font-medium">Minutes to Measure. Seconds to Estimate</p>
         </div>
 
