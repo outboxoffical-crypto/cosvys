@@ -19,7 +19,6 @@ export default function DealerInfoScreen() {
     name: "",
     phone: "",
     email: "",
-    shopName: "",
     address: ""
   });
 
@@ -46,7 +45,6 @@ export default function DealerInfoScreen() {
            name: dealerInfo.dealer_name || "",
            phone: dealerInfo.phone || "",
            email: dealerInfo.email || "",
-           shopName: dealerInfo.shop_name || "",
            address: dealerInfo.address || ""
          });
        }
@@ -66,9 +64,6 @@ export default function DealerInfoScreen() {
       if (!formData.phone || formData.phone.length !== 10) {
         throw new Error("Please enter a valid 10-digit phone number");
       }
-      if (!formData.shopName.trim()) {
-        throw new Error("Shop Name is required");
-      }
       if (!formData.address.trim()) {
         throw new Error("Address is required");
       }
@@ -86,8 +81,7 @@ export default function DealerInfoScreen() {
             dealer_name: formData.name,
             phone: formData.phone,
             email: formData.email || null,
-            address: formData.address,
-            shop_name: formData.shopName
+            address: formData.address
           })
           .eq('user_id', session.user.id);
 
@@ -108,7 +102,6 @@ export default function DealerInfoScreen() {
              dealer_name: formData.name,
              phone: formData.phone,
              email: formData.email || null,
-             shop_name: formData.shopName,
              address: formData.address
            });
 
@@ -132,7 +125,7 @@ export default function DealerInfoScreen() {
     }
   };
 
-   const isFormValid = formData.name && formData.phone.length === 10 && formData.shopName && formData.address;
+   const isFormValid = formData.name && formData.phone.length === 10 && formData.address;
 
   return (
     <div className="min-h-screen bg-background">
@@ -229,28 +222,6 @@ export default function DealerInfoScreen() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Shop Information */}
-          <Card className="eca-shadow">
-            <CardHeader>
-              <CardTitle className="text-lg">Shop Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="shopName" className="text-sm font-medium">
-                  Shop Name *
-                </Label>
-               <Input
-                   id="shopName"
-                   placeholder="Enter shop name"
-                   value={formData.shopName}
-                   onChange={(e) => setFormData(prev => ({ ...prev, shopName: e.target.value }))}
-                   className="h-12"
-                   required
-                 />
-               </div>
-             </CardContent>
-           </Card>
 
           {/* Submit Button */}
           <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border">
