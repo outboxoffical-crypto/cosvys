@@ -79,6 +79,7 @@ export default function DealerInfoScreen() {
           .from('dealer_info')
           .update({
             dealer_name: formData.name,
+            shop_name: formData.name.trim(),
             phone: formData.phone,
             email: formData.email || null,
             address: formData.address
@@ -100,6 +101,7 @@ export default function DealerInfoScreen() {
            .insert({
              user_id: session.user.id,
              dealer_name: formData.name,
+             shop_name: formData.name.trim(),
              phone: formData.phone,
              email: formData.email || null,
              address: formData.address
