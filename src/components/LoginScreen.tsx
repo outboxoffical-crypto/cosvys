@@ -1,15 +1,14 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Smartphone } from "lucide-react";
 import cosvysLogo from "@/assets/cosvys-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 
-const phoneSchema = z.string().regex(/^\d{10}$/, "Please enter a valid 10-digit phone number");
 const emailSchema = z.string().email("Please enter a valid email address");
 const passwordSchema = z.string().min(6, "Password must be at least 6 characters");
 
@@ -20,8 +19,9 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [phone, setPhone] = useState("");
-  const [fullName, setFullName] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [awaitingEmailVerification, setAwaitingEmailVerification] = useState(false);
+  const [verificationCode, setVerificationCode] = useState("");
 
   useEffect(() => {
     // Check if user is already logged in
@@ -53,10 +53,8 @@ export default function LoginScreen() {
       // Validate inputs
       emailSchema.parse(email);
       passwordSchema.parse(password);
-      phoneSchema.parse(phone);
-      
-      if (!fullName.trim()) {
-        throw new Error("Full name is required");
+      if (password !== confirmPassword) {
+        throw new Error("Passwords do not match.");
       }
 
       const { data, error } = await supabase.auth.signUp({
@@ -64,26 +62,90 @@ export default function LoginScreen() {
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            phone,
-            full_name: fullName.trim()
-          }
         }
       });
 
       if (error) throw error;
+      if (!data.user) throw new Error("Sign up did not return a user.");
 
-      if (data.user) {
-        toast({
-          title: "Account created successfully!",
-          description: "Please complete your dealer setup.",
-        });
-        navigate("/dealer-info");
-      }
-    } catch (error: any) {
+      setVerificationCode("");
+      setIsLogin(false);
+      setAwaitingEmailVerification(true);
+      toast({
+        title: "Check your email",
+        description: `Enter the verification code sent to ${email}.`,
+      });
+    } catch (error: unknown) {
       toast({
         title: "Sign up failed",
-        description: error.message || "Please check your details and try again.",
+        description:
+          error instanceof Error ? error.message : "Please check your details and try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      emailSchema.parse(email);
+      const code = verificationCode.trim();
+      if (!/^\d{6}$/.test(code)) {
+        throw new Error("Please enter the 6-digit verification code.");
+      }
+
+      const { data, error } = await supabase.auth.verifyOtp({
+        email,
+        token: code,
+        type: "signup",
+      });
+
+      if (error) throw error;
+      if (!data.user) throw new Error("Email verification did not return a user.");
+
+      const { data: dealerInfo, error: dealerInfoError } = await supabase
+        .from("dealer_info")
+        .select("*")
+        .eq("user_id", data.user.id)
+        .maybeSingle();
+
+      if (dealerInfoError) throw dealerInfoError;
+      navigate(dealerInfo ? "/dashboard" : "/dealer-info");
+    } catch (error: unknown) {
+      toast({
+        title: "Verification failed",
+        description:
+          error instanceof Error ? error.message : "Please check the code and try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendVerificationCode = async () => {
+    setLoading(true);
+
+    try {
+      emailSchema.parse(email);
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email,
+      });
+
+      if (error) throw error;
+      toast({
+        title: "Code sent",
+        description: `A new verification code was sent to ${email}.`,
+      });
+    } catch (error: unknown) {
+      toast({
+        title: "Unable to resend code",
+        description: error instanceof Error ? error.message : "Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -121,10 +183,11 @@ export default function LoginScreen() {
           navigate("/dealer-info");
         }
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Login failed",
-        description: error.message || "Please check your credentials and try again.",
+        description:
+          error instanceof Error ? error.message : "Please check your credentials and try again.",
         variant: "destructive",
       });
     } finally {
@@ -146,99 +209,131 @@ export default function LoginScreen() {
       <Card className="w-full max-w-md eca-shadow-medium">
         <CardHeader className="text-center pb-4">
           <CardTitle className="text-2xl font-semibold text-foreground">
-            {isLogin ? "Login to Cosvys" : "Create Account"}
+            {awaitingEmailVerification
+              ? "Verify your email"
+              : isLogin
+                ? "Login to Cosvys"
+                : "Create Account"}
           </CardTitle>
           <p className="text-muted-foreground">
-            {isLogin 
-              ? "Enter your credentials to continue" 
-              : "Sign up to get started"
-            }
+            {awaitingEmailVerification
+              ? `Enter the 6-digit code sent to ${email}`
+              : isLogin
+                ? "Enter your credentials to continue"
+                : "Sign up to get started"}
           </p>
         </CardHeader>
 
         <CardContent className="space-y-6">
-          <form onSubmit={isLogin ? handleLogin : handleSignUp} className="space-y-4">
-            {!isLogin && (
-              <>
+          {awaitingEmailVerification ? (
+            <form onSubmit={handleVerifyEmail} className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Verification Code</label>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  placeholder="Enter 6-digit code"
+                  value={verificationCode}
+                  onChange={(e) =>
+                    setVerificationCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+                  }
+                  className="h-12 text-center tracking-[0.3em]"
+                  maxLength={6}
+                  required
+                />
+              </div>
+              <Button
+                type="submit"
+                className="w-full h-12 text-base font-medium"
+                disabled={loading}
+              >
+                {loading ? "Verifying..." : "Verify Email"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleResendVerificationCode}
+                className="w-full h-12 text-base font-medium"
+                disabled={loading}
+              >
+                Resend Code
+              </Button>
+            </form>
+          ) : (
+            <form onSubmit={isLogin ? handleLogin : handleSignUp} className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Email</label>
+                <Input
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="h-12"
+                  required
+                  maxLength={255}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Password</label>
+                <Input
+                  type="password"
+                  placeholder={isLogin ? "Enter your password" : "Create a password (min. 6 characters)"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="h-12"
+                  required
+                  minLength={6}
+                />
+              </div>
+
+              {!isLogin && (
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">Full Name</label>
+                  <label className="text-sm font-medium text-foreground">Re-enter Password</label>
                   <Input
-                    type="text"
-                    placeholder="Enter your full name"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
+                    type="password"
+                    placeholder="Re-enter your password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
                     className="h-12"
-                    required={!isLogin}
-                    maxLength={100}
+                    required
+                    minLength={6}
                   />
                 </div>
+              )}
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">Phone Number</label>
-                  <div className="relative">
-                    <Smartphone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                    <Input
-                      type="tel"
-                      placeholder="Enter 10-digit phone number"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                      className="pl-10 h-12"
-                      maxLength={10}
-                      required={!isLogin}
-                    />
-                  </div>
-                </div>
-              </>
-            )}
+              <Button
+                type="submit"
+                className="w-full h-12 text-base font-medium"
+                disabled={loading}
+              >
+                {loading ? "Please wait..." : (isLogin ? "Login" : "Sign Up")}
+              </Button>
+            </form>
+          )}
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Email</label>
-              <Input
-                type="email"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="h-12"
-                required
-                maxLength={255}
-              />
+          {!awaitingEmailVerification && (
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-border" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">Or</span>
+              </div>
             </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Password</label>
-              <Input
-                type="password"
-                placeholder={isLogin ? "Enter your password" : "Create a password (min. 6 characters)"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="h-12"
-                required
-                minLength={6}
-              />
-            </div>
-
-            <Button 
-              type="submit"
-              className="w-full h-12 text-base font-medium"
-              disabled={loading}
-            >
-              {loading ? "Please wait..." : (isLogin ? "Login" : "Sign Up")}
-            </Button>
-          </form>
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-border" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">Or</span>
-            </div>
-          </div>
+          )}
 
           <Button 
             variant="outline"
-            onClick={() => setIsLogin(!isLogin)}
+            onClick={() => {
+              setAwaitingEmailVerification(false);
+              setVerificationCode("");
+              setConfirmPassword("");
+              setIsLogin(!isLogin);
+            }}
             className="w-full h-12 text-base font-medium"
+            disabled={loading}
           >
             {isLogin ? "Create New Account" : "Already have an account? Login"}
           </Button>
