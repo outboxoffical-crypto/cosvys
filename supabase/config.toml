@@ -1,5 +1,8 @@
 project_id = "zowvdfoqarppwqvsvcjk"
 
+[auth.email]
+otp_length = 6
+
 [functions.calculate-room-areas]
 verify_jwt = true
 

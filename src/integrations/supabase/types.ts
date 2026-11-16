@@ -93,11 +93,13 @@ export type Database = {
           address: string
           created_at: string | null
           dealer_name: string
+          date_of_birth: string | null
           email: string | null
           employee_id: string | null
           id: string
           margin: number
           phone: string
+          profession: string | null
           shop_name: string
           updated_at: string | null
           user_id: string
@@ -106,11 +108,13 @@ export type Database = {
           address: string
           created_at?: string | null
           dealer_name: string
+          date_of_birth?: string | null
           email?: string | null
           employee_id?: string | null
           id?: string
           margin?: number
           phone: string
+          profession?: string | null
           shop_name: string
           updated_at?: string | null
           user_id: string
@@ -119,11 +123,13 @@ export type Database = {
           address?: string
           created_at?: string | null
           dealer_name?: string
+          date_of_birth?: string | null
           email?: string | null
           employee_id?: string | null
           id?: string
           margin?: number
           phone?: string
+          profession?: string | null
           shop_name?: string
           updated_at?: string | null
           user_id?: string

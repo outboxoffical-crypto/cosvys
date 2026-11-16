@@ -5,20 +5,32 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Phone, MapPin, Mail } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Phone, MapPin } from "lucide-react";
 import cosvysLogo from "@/assets/cosvys-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+
+const professions = ["Engineer", "Builder", "Painting Contractor", "Property Owner"];
+
+const getTodayDate = () => {
+  const today = new Date();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+  return `${today.getFullYear()}-${month}-${day}`;
+};
 
 export default function DealerInfoScreen() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+  const today = getTodayDate();
   const [formData, setFormData] = useState({
     name: "",
+    profession: "",
+    dateOfBirth: "",
     phone: "",
-    email: "",
     address: ""
   });
 
@@ -43,8 +55,9 @@ export default function DealerInfoScreen() {
          setIsEditMode(true);
          setFormData({
            name: dealerInfo.dealer_name || "",
+           profession: dealerInfo.profession || "",
+           dateOfBirth: dealerInfo.date_of_birth || "",
            phone: dealerInfo.phone || "",
-           email: dealerInfo.email || "",
            address: dealerInfo.address || ""
          });
        }
@@ -60,6 +73,12 @@ export default function DealerInfoScreen() {
       // Validate required fields
       if (!formData.name.trim()) {
         throw new Error("Name is required");
+      }
+      if (!professions.includes(formData.profession)) {
+        throw new Error("Please select your type of profession");
+      }
+      if (!formData.dateOfBirth || formData.dateOfBirth > today) {
+        throw new Error("Please enter a valid date of birth");
       }
       if (!formData.phone || formData.phone.length !== 10) {
         throw new Error("Please enter a valid 10-digit phone number");
@@ -80,8 +99,9 @@ export default function DealerInfoScreen() {
           .update({
             dealer_name: formData.name,
             shop_name: formData.name.trim(),
+            profession: formData.profession,
+            date_of_birth: formData.dateOfBirth,
             phone: formData.phone,
-            email: formData.email || null,
             address: formData.address
           })
           .eq('user_id', session.user.id);
@@ -102,8 +122,9 @@ export default function DealerInfoScreen() {
              user_id: session.user.id,
              dealer_name: formData.name,
              shop_name: formData.name.trim(),
+             profession: formData.profession,
+             date_of_birth: formData.dateOfBirth,
              phone: formData.phone,
-             email: formData.email || null,
              address: formData.address
            });
 
@@ -116,10 +137,20 @@ export default function DealerInfoScreen() {
 
         navigate("/dashboard");
       }
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : typeof error === "object" &&
+              error !== null &&
+              "message" in error &&
+              typeof error.message === "string"
+            ? error.message
+            : "Please check your inputs and try again.";
+
       toast({
         title: "Error",
-        description: error.message || "Please check your inputs and try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -127,7 +158,13 @@ export default function DealerInfoScreen() {
     }
   };
 
-   const isFormValid = formData.name && formData.phone.length === 10 && formData.address;
+  const isFormValid =
+    formData.name.trim() &&
+    professions.includes(formData.profession) &&
+    formData.dateOfBirth &&
+    formData.dateOfBirth <= today &&
+    formData.phone.length === 10 &&
+    formData.address.trim();
 
   return (
     <div className="min-h-screen bg-background">
@@ -169,8 +206,44 @@ export default function DealerInfoScreen() {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="profession" className="text-sm font-medium">
+                  Type of Profession *
+                </Label>
+                <Select
+                  value={formData.profession}
+                  onValueChange={(profession) => setFormData(prev => ({ ...prev, profession }))}
+                >
+                  <SelectTrigger id="profession" className="h-12">
+                    <SelectValue placeholder="Select your profession" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {professions.map((profession) => (
+                      <SelectItem key={profession} value={profession}>
+                        {profession}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="dateOfBirth" className="text-sm font-medium">
+                  Date of Birth *
+                </Label>
+                <Input
+                  id="dateOfBirth"
+                  type="date"
+                  value={formData.dateOfBirth}
+                  onChange={(e) => setFormData(prev => ({ ...prev, dateOfBirth: e.target.value }))}
+                  className="h-12"
+                  max={today}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="phone" className="text-sm font-medium">
-                  Phone Number *
+                  Ph No *
                 </Label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
@@ -191,25 +264,8 @@ export default function DealerInfoScreen() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium">
-                  Email
-                </Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="Enter email address"
-                    value={formData.email}
-                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                    className="pl-10 h-12"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
                 <Label htmlFor="address" className="text-sm font-medium">
-                  Address
+                  Address *
                 </Label>
                 <div className="relative">
                   <MapPin className="absolute left-3 top-3 text-muted-foreground h-4 w-4" />
@@ -219,6 +275,7 @@ export default function DealerInfoScreen() {
                     value={formData.address}
                     onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
                     className="pl-10 min-h-[80px]"
+                    required
                   />
                 </div>
               </div>
