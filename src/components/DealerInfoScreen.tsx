@@ -11,7 +11,7 @@ import cosvysLogo from "@/assets/cosvys-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-const professions = ["Engineer", "Builder", "Painting Contractor", "Property Owner"];
+const professions = ["Engineer", "Builder", "Painting Contractor", "Property Owner", "Working Professional"];
 
 const getTodayDate = () => {
   const today = new Date();
