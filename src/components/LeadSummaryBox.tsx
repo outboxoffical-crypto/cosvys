@@ -79,15 +79,15 @@ export const LeadSummaryBox = () => {
     e.preventDefault();
     
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session) {
         toast.error("Please log in to add leads");
         return;
       }
 
       const leadData = {
         ...formData,
-        user_id: user.id,
+        user_id: session.user.id,
         nps: formData.nps === null ? null : Number(formData.nps),
         quotation_value: Number(formData.quotation_value),
       };
